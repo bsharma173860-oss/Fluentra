@@ -3,9 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import {
-  DMSerifDisplay_400Regular,
-} from '@expo-google-fonts/dm-serif-display';
+import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -24,29 +22,34 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Wait for initial session + profile resolution before redirecting
     if (loading) return;
 
     const inAuth = segments[0] === '(auth)';
     const onOnboarding = (segments as string[])[1] === 'onboarding';
 
     if (!session) {
-      // Not signed in → force to login
-      if (!inAuth) router.replace('/(auth)/login');
+      // Not signed in — force to login
+      if (!inAuth) {
+        console.log('[Guard] no session → login');
+        router.replace('/(auth)/login');
+      }
       return;
     }
 
-    // Signed in but profile not yet personalised → onboarding
-    // (native_language is 'en' default, target_exam is 'IELTS' default;
-    //  we detect a brand-new user by checking if full_name is still null
-    //  AND they are not already on onboarding)
-    const isNewUser = profile !== null && profile.name === null;
-    if (isNewUser && !onOnboarding) {
+    // Signed in but profile not yet fetched — wait, let auth screen navigate
+    if (!profile) return;
+
+    // New user (name not set) → onboarding
+    if (profile.name === null && !onOnboarding) {
+      console.log('[Guard] new user → onboarding');
       router.replace('/(auth)/onboarding');
       return;
     }
 
-    // Signed in and in auth → push to home
+    // Returning user stuck on auth screen → home
     if (inAuth && !onOnboarding) {
+      console.log('[Guard] returning user in auth → home');
       router.replace('/(tabs)/home');
     }
   }, [session, profile, loading, segments]);
@@ -54,6 +57,7 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// ── Root layout ───────────────────────────────────────────────
 function RootLayoutInner() {
   const [fontsLoaded, fontError] = useFonts({
     DMSerifDisplay_400Regular,
@@ -78,10 +82,11 @@ function RootLayoutInner() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: Colors.bg },
+          animation: 'fade',
         }}
       >
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" options={{ animation: 'none' }} />
+        <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </RouteGuard>

@@ -146,15 +146,23 @@ export default function OnboardingScreen() {
   async function handleSave() {
     setSaving(true);
     if (user) {
-      await supabase
+      const updatePayload = {
+        target_exam: exam.key,
+        target_score: score,
+        native_language: nativeLang.trim() || 'en',
+        // Stamp the name from auth metadata so profile.name is no longer null
+        // (this also stops the RouteGuard from looping back to onboarding)
+        name: user.user_metadata?.full_name ?? user.email ?? 'User',
+      };
+      console.log('[Onboarding] saving profile:', updatePayload);
+      const { error } = await supabase
         .from('profiles')
-        .update({
-          target_exam: exam.key,
-          target_score: score,
-          native_language: nativeLang.trim() || 'en',
-        })
+        .update(updatePayload)
         .eq('id', user.id);
+      if (error) console.error('[Onboarding] profile update error:', error.message);
       await refreshProfile();
+    } else {
+      console.warn('[Onboarding] no user — skipping profile save');
     }
     setSaving(false);
     router.replace('/(tabs)/home');

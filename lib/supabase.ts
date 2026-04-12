@@ -2,24 +2,56 @@ import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// ── SecureStore adapter ───────────────────────────────────────
+// ── Env var validation ────────────────────────────────────────
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+const PLACEHOLDER_URL = 'https://your-project.supabase.co';
+const PLACEHOLDER_KEY = 'your-anon-key-here';
+
+if (!supabaseUrl || supabaseUrl === PLACEHOLDER_URL) {
+  console.error(
+    '[Fluentra] ⚠️  EXPO_PUBLIC_SUPABASE_URL is not set.\n' +
+    '  1. Go to https://supabase.com/dashboard → your project → Settings → API\n' +
+    '  2. Copy "Project URL" into .env.local as EXPO_PUBLIC_SUPABASE_URL\n' +
+    '  3. Restart the dev server (npx expo start)'
+  );
+}
+
+if (!supabaseAnonKey || supabaseAnonKey === PLACEHOLDER_KEY) {
+  console.error(
+    '[Fluentra] ⚠️  EXPO_PUBLIC_SUPABASE_ANON_KEY is not set.\n' +
+    '  1. Go to https://supabase.com/dashboard → your project → Settings → API\n' +
+    '  2. Copy "anon public" key into .env.local as EXPO_PUBLIC_SUPABASE_ANON_KEY\n' +
+    '  3. Restart the dev server (npx expo start)'
+  );
+}
+
+console.log('[Fluentra] Supabase URL:', supabaseUrl || '(not set)');
+
+// ── SecureStore adapter (native) / localStorage (web) ────────
 const SecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') return localStorage.getItem(key);
+    if (Platform.OS === 'web') {
+      return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+    }
     return SecureStore.getItemAsync(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
-    if (Platform.OS === 'web') { localStorage.setItem(key, value); return; }
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+      return;
+    }
     await SecureStore.setItemAsync(key, value);
   },
   removeItem: async (key: string): Promise<void> => {
-    if (Platform.OS === 'web') { localStorage.removeItem(key); return; }
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+      return;
+    }
     await SecureStore.deleteItemAsync(key);
   },
 };
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -57,7 +89,7 @@ export type UserLanguage = {
   created_at: string;
 };
 
-export type Session = {
+export type AppSession = {
   id: string;
   user_id: string;
   mode: 'speaking' | 'writing' | 'listening' | 'reading';

@@ -16,50 +16,77 @@ import { Colors } from '@/constants/colors';
 import { supabase } from '@/lib/supabase';
 
 export default function SignupScreen() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [name, setName]           = useState('');
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
+  const [confirm, setConfirm]     = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [success, setSuccess]     = useState('');
 
   async function handleSignup() {
-    if (!name.trim() || !email.trim() || !password) {
-      setError('Please fill in all fields.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
     setError('');
+    setSuccess('');
+
+    // Client-side validation
+    if (!name.trim())    { setError('Please enter your name.'); return; }
+    if (!email.trim())   { setError('Please enter your email.'); return; }
+    if (!password)       { setError('Please enter a password.'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (password !== confirm) { setError('Passwords do not match.'); return; }
+
     setLoading(true);
-    const { error: err } = await supabase.auth.signUp({
+    console.log('[Signup] calling supabase.auth.signUp for:', email.trim());
+
+    const { data, error: err } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: name.trim() } },
+      options: {
+        data: { full_name: name.trim() },
+      },
     });
+
     setLoading(false);
+    console.log('[Signup] result:', JSON.stringify({ user: data?.user?.email, err: err?.message }));
+
     if (err) {
       setError(err.message);
       return;
     }
-    // Profile auto-created by DB trigger; go to onboarding to personalise
+
+    // Supabase may require email confirmation depending on your project settings.
+    // If confirmations are ON, data.user will be set but data.session will be null.
+    if (data.session === null && data.user !== null) {
+      setSuccess(
+        '✅  Check your email to confirm your account, then come back to sign in.'
+      );
+      return;
+    }
+
+    // Confirmation OFF (default for new projects) — session is returned immediately
+    console.log('[Signup] account created, navigating to onboarding');
     router.replace('/(auth)/onboarding');
   }
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView style={s.kav} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-
+      <KeyboardAvoidingView
+        style={s.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={s.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Logo */}
           <View style={s.logoWrap}>
             <Text style={s.logo}>Fluent<Text style={s.ra}>ra</Text></Text>
             <Text style={s.tagline}>Start your language journey</Text>
           </View>
 
-          {/* Form */}
-          <View style={s.form}>
+          {/* Form card */}
+          <View style={s.card}>
             <Text style={s.title}>Create account</Text>
 
             <View style={s.field}>
@@ -72,6 +99,7 @@ export default function SignupScreen() {
                 placeholderTextColor={Colors.ink4}
                 autoCapitalize="words"
                 textContentType="name"
+                editable={!loading}
               />
             </View>
 
@@ -87,6 +115,7 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 textContentType="emailAddress"
+                editable={!loading}
               />
             </View>
 
@@ -100,10 +129,35 @@ export default function SignupScreen() {
                 placeholderTextColor={Colors.ink4}
                 secureTextEntry
                 textContentType="newPassword"
+                editable={!loading}
               />
             </View>
 
-            {error !== '' && <Text style={s.errorText}>{error}</Text>}
+            <View style={s.field}>
+              <Text style={s.label}>Confirm password</Text>
+              <TextInput
+                style={[s.input, confirm && confirm !== password && s.inputError]}
+                value={confirm}
+                onChangeText={setConfirm}
+                placeholder="Re-enter password"
+                placeholderTextColor={Colors.ink4}
+                secureTextEntry
+                textContentType="newPassword"
+                editable={!loading}
+              />
+            </View>
+
+            {error !== '' && (
+              <View style={s.errorBox}>
+                <Text style={s.errorText}>⚠️  {error}</Text>
+              </View>
+            )}
+
+            {success !== '' && (
+              <View style={s.successBox}>
+                <Text style={s.successText}>{success}</Text>
+              </View>
+            )}
 
             <TouchableOpacity
               style={[s.btn, loading && s.btnDisabled]}
@@ -133,7 +187,6 @@ export default function SignupScreen() {
               </TouchableOpacity>
             </Link>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -143,37 +196,65 @@ export default function SignupScreen() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
   kav: { flex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: 28, paddingVertical: 24, gap: 28 },
+  content: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 24, gap: 24 },
 
-  logoWrap: { alignItems: 'center', paddingTop: 16, gap: 8 },
-  logo: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 42, color: Colors.ink },
+  logoWrap: { alignItems: 'center', paddingTop: 12, gap: 8 },
+  logo: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 44, color: Colors.ink },
   ra: { color: Colors.p },
   tagline: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3 },
 
-  form: { gap: 14 },
-  title: { fontFamily: 'Inter_700Bold', fontSize: 24, color: Colors.ink, marginBottom: 4 },
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 24,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  title: { fontFamily: 'Inter_700Bold', fontSize: 22, color: Colors.ink, marginBottom: 2 },
 
   field: { gap: 6 },
   label: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
   input: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.bg,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     fontFamily: 'Inter_400Regular',
     fontSize: 15,
     color: Colors.ink,
   },
+  inputError: {
+    borderColor: Colors.danger,
+  },
 
+  errorBox: {
+    backgroundColor: '#FFF0F0',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FFCCCC',
+  },
   errorText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
     color: Colors.danger,
-    backgroundColor: '#FFF0F0',
-    borderRadius: 8,
-    padding: 10,
+    lineHeight: 18,
+  },
+  successBox: {
+    backgroundColor: Colors.green_bg,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.green,
+  },
+  successText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: Colors.green,
+    lineHeight: 18,
   },
 
   btn: {
@@ -181,9 +262,8 @@ const s = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 4,
   },
-  btnDisabled: { opacity: 0.5 },
+  btnDisabled: { opacity: 0.45 },
   btnText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: Colors.white },
 
   terms: {
