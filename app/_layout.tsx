@@ -39,7 +39,7 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
     // (native_language is 'en' default, target_exam is 'IELTS' default;
     //  we detect a brand-new user by checking if full_name is still null
     //  AND they are not already on onboarding)
-    const isNewUser = profile !== null && profile.full_name === null;
+    const isNewUser = profile !== null && profile.name === null;
     if (isNewUser && !onOnboarding) {
       router.replace('/(auth)/onboarding');
       return;

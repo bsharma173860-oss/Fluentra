@@ -1,38 +1,34 @@
 -- ============================================================
--- Fluentra — Initial Schema
+-- Fluentra — Initial Schema v2
 -- Run via: supabase db push  OR  paste into Supabase SQL editor
 -- ============================================================
 
--- Enable uuid_generate_v4()
 create extension if not exists "uuid-ossp";
 
 -- ── 1. profiles ──────────────────────────────────────────────
 create table if not exists public.profiles (
-  id               uuid primary key references auth.users(id) on delete cascade,
-  username         text unique,
-  full_name        text,
-  avatar_url       text,
-  native_language  text default 'en',
-  target_exam      text default 'IELTS',         -- IELTS | TOEFL | DELF | DELE | FREE
-  target_band      numeric(3,1) default 7.0,      -- e.g. 7.5
-  streak           integer not null default 0,
-  longest_streak   integer not null default 0,
-  band_score       numeric(3,1) not null default 0.0,
-  global_rank      integer,
-  total_sessions   integer not null default 0,
-  total_minutes    integer not null default 0,
-  created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now()
+  id                 uuid primary key references auth.users(id) on delete cascade,
+  email              text,
+  name               text,
+  avatar_url         text,
+  target_exam        text default 'IELTS',
+  target_score       decimal(4,2) default 7.0,
+  native_language    text default 'en',
+  subscription_tier  text not null default 'free',
+  daily_usage        jsonb not null default '{}',
+  streak_count       integer not null default 0,
+  streak_last_active date,
+  created_at         timestamptz not null default now()
 );
-comment on table public.profiles is 'One row per auth.users account.';
 
 -- Auto-create profile on sign-up
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, full_name, avatar_url)
+  insert into public.profiles (id, email, name, avatar_url)
   values (
     new.id,
+    new.email,
     new.raw_user_meta_data ->> 'full_name',
     new.raw_user_meta_data ->> 'avatar_url'
   )
@@ -46,120 +42,126 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Auto-update updated_at
-create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-create trigger profiles_updated_at
-  before update on public.profiles
-  for each row execute function public.set_updated_at();
-
-
 -- ── 2. user_languages ────────────────────────────────────────
 create table if not exists public.user_languages (
-  id          uuid primary key default uuid_generate_v4(),
-  user_id     uuid not null references public.profiles(id) on delete cascade,
-  language    text not null,              -- ISO 639-1 e.g. 'en', 'fr', 'es'
-  fluency     integer not null default 0  check (fluency between 0 and 100),
-  is_native   boolean not null default false,
-  added_at    timestamptz not null default now(),
-  unique (user_id, language)
+  id                    uuid primary key default uuid_generate_v4(),
+  user_id               uuid not null references public.profiles(id) on delete cascade,
+  language_code         text not null,
+  language_name_en      text not null,
+  language_name_native  text,
+  fluency_percent       integer not null default 0 check (fluency_percent between 0 and 100),
+  exams                 text[],
+  created_at            timestamptz not null default now(),
+  unique (user_id, language_code)
 );
 
--- ── 3. sessions (umbrella table for all practice) ────────────
+-- ── 3. sessions ──────────────────────────────────────────────
 create table if not exists public.sessions (
   id             uuid primary key default uuid_generate_v4(),
   user_id        uuid not null references public.profiles(id) on delete cascade,
-  type           text not null check (type in ('speaking','writing','listening','reading')),
-  exam_type      text,                     -- IELTS | TOEFL | DELF | DELE | FREE | null
-  language       text not null default 'en',
-  score          numeric(5,2),
-  max_score      numeric(5,2),
-  duration_secs  integer not null default 0,
-  completed      boolean not null default false,
-  metadata       jsonb,
-  created_at     timestamptz not null default now()
+  mode           text not null,                       -- speaking | writing | listening | reading
+  exam_type      text,
+  language_code  text not null default 'en',
+  status         text not null default 'in_progress', -- in_progress | completed | abandoned
+  started_at     timestamptz not null default now(),
+  completed_at   timestamptz,
+  overall_band   decimal(4,2),
+  module_scores  jsonb
 );
 
--- ── 4. speaking_sessions ────────────────────────────────────
+-- ── 4. writing_attempts ──────────────────────────────────────
+create table if not exists public.writing_attempts (
+  id                    uuid primary key default uuid_generate_v4(),
+  session_id            uuid not null references public.sessions(id) on delete cascade,
+  user_id               uuid not null references public.profiles(id) on delete cascade,
+  exam_type             text,
+  task_type             text,                          -- task1 | task2 | essay
+  prompt                text,
+  user_response         text not null default '',
+  word_count            integer,
+  time_taken_seconds    integer,
+  band_score            decimal(4,2),
+  task_achievement      decimal(4,2),
+  coherence_cohesion    decimal(4,2),
+  lexical_resource      decimal(4,2),
+  grammatical_range     decimal(4,2),
+  detailed_feedback     text,
+  strengths             jsonb,
+  improvements          jsonb,
+  corrected_sentences   jsonb,
+  created_at            timestamptz not null default now()
+);
+
+-- ── 5. reading_attempts ──────────────────────────────────────
+create table if not exists public.reading_attempts (
+  id                 uuid primary key default uuid_generate_v4(),
+  session_id         uuid not null references public.sessions(id) on delete cascade,
+  user_id            uuid not null references public.profiles(id) on delete cascade,
+  exam_type          text,
+  passage_number     integer,
+  passage_title      text,
+  passage_text       text,
+  questions          jsonb,
+  user_answers       jsonb,
+  correct_answers    jsonb,
+  score              integer,
+  total_questions    integer,
+  band_score         decimal(4,2),
+  time_taken_seconds integer,
+  created_at         timestamptz not null default now()
+);
+
+-- ── 6. listening_attempts ────────────────────────────────────
+create table if not exists public.listening_attempts (
+  id                 uuid primary key default uuid_generate_v4(),
+  session_id         uuid not null references public.sessions(id) on delete cascade,
+  user_id            uuid not null references public.profiles(id) on delete cascade,
+  exam_type          text,
+  section_number     integer,
+  questions          jsonb,
+  user_answers       jsonb,
+  correct_answers    jsonb,
+  score              integer,
+  total_questions    integer,
+  band_score         decimal(4,2),
+  time_taken_seconds integer,
+  created_at         timestamptz not null default now()
+);
+
+-- ── 7. speaking_sessions ─────────────────────────────────────
 create table if not exists public.speaking_sessions (
   id                  uuid primary key default uuid_generate_v4(),
   session_id          uuid not null references public.sessions(id) on delete cascade,
   user_id             uuid not null references public.profiles(id) on delete cascade,
-  prompt              text,
-  transcript          text,
-  fluency_score       numeric(4,2),
-  pronunciation_score numeric(4,2),
-  vocabulary_score    numeric(4,2),
-  grammar_score       numeric(4,2),
-  coherence_score     numeric(4,2),
-  ai_feedback         text,
-  duration_secs       integer not null default 0,
+  exam_type           text,
+  part                integer,                         -- 1 | 2 | 3
+  transcript          jsonb,
+  duration_seconds    integer,
+  fluency_score       decimal(4,2),
+  lexical_score       decimal(4,2),
+  grammar_score       decimal(4,2),
+  pronunciation_score decimal(4,2),
+  overall_band        decimal(4,2),
+  detailed_feedback   text,
+  face_analysis       jsonb,
   created_at          timestamptz not null default now()
 );
 
--- ── 5. audio_clips ──────────────────────────────────────────
+-- ── 8. audio_clips ───────────────────────────────────────────
+-- Shared content table (no user_id — managed by backend/admin)
 create table if not exists public.audio_clips (
-  id                  uuid primary key default uuid_generate_v4(),
-  speaking_session_id uuid not null references public.speaking_sessions(id) on delete cascade,
-  user_id             uuid not null references public.profiles(id) on delete cascade,
-  storage_path        text not null,       -- path in Supabase Storage bucket
-  duration_secs       integer,
-  mime_type           text default 'audio/m4a',
-  transcript          text,
-  created_at          timestamptz not null default now()
-);
-
--- ── 6. writing_attempts ──────────────────────────────────────
-create table if not exists public.writing_attempts (
   id              uuid primary key default uuid_generate_v4(),
-  session_id      uuid not null references public.sessions(id) on delete cascade,
-  user_id         uuid not null references public.profiles(id) on delete cascade,
-  task_type       text,                    -- 'task1' | 'task2' | 'essay' etc.
-  prompt          text,
-  response_text   text not null default '',
-  word_count      integer,
-  ta_score        numeric(4,2),            -- Task Achievement
-  cc_score        numeric(4,2),            -- Coherence & Cohesion
-  lr_score        numeric(4,2),            -- Lexical Resource
-  gra_score       numeric(4,2),            -- Grammatical Range & Accuracy
-  overall_score   numeric(4,2),
-  ai_feedback     text,
-  created_at      timestamptz not null default now()
-);
-
--- ── 7. reading_attempts ──────────────────────────────────────
-create table if not exists public.reading_attempts (
-  id              uuid primary key default uuid_generate_v4(),
-  session_id      uuid not null references public.sessions(id) on delete cascade,
-  user_id         uuid not null references public.profiles(id) on delete cascade,
-  passage_id      text,
-  passage_title   text,
-  questions_total integer not null default 0,
-  correct         integer not null default 0,
-  score           numeric(5,2),
-  time_taken_secs integer,
-  answers         jsonb,                   -- {questionId: selectedAnswer}
-  created_at      timestamptz not null default now()
-);
-
--- ── 8. listening_attempts ────────────────────────────────────
-create table if not exists public.listening_attempts (
-  id              uuid primary key default uuid_generate_v4(),
-  session_id      uuid not null references public.sessions(id) on delete cascade,
-  user_id         uuid not null references public.profiles(id) on delete cascade,
-  audio_url       text,
-  section         integer,                 -- 1–4 for IELTS sections
-  questions_total integer not null default 0,
-  correct         integer not null default 0,
-  score           numeric(5,2),
-  time_taken_secs integer,
-  answers         jsonb,
+  exam_type       text,
+  section_number  integer,
+  difficulty      text,
+  accent          text,
+  speaker_setup   text,
+  topic           text,
+  script          text,
+  storage_url     text not null,
+  duration_seconds integer,
+  questions       jsonb,
+  correct_answers jsonb,
   created_at      timestamptz not null default now()
 );
 
@@ -167,56 +169,50 @@ create table if not exists public.listening_attempts (
 create table if not exists public.score_history (
   id          uuid primary key default uuid_generate_v4(),
   user_id     uuid not null references public.profiles(id) on delete cascade,
+  module      text not null,            -- speaking | writing | listening | reading | overall
   exam_type   text not null,
-  skill       text not null check (skill in ('speaking','writing','listening','reading','overall')),
-  score       numeric(5,2) not null,
-  max_score   numeric(5,2) not null,
+  score       decimal(5,2) not null,
   recorded_at timestamptz not null default now()
 );
 
 -- ── 10. leaderboard_entries ──────────────────────────────────
 create table if not exists public.leaderboard_entries (
-  id          uuid primary key default uuid_generate_v4(),
-  user_id     uuid not null references public.profiles(id) on delete cascade,
-  exam_type   text not null,
-  period      text not null default 'global',  -- 'global' | 'monthly' | 'weekly'
-  band_score  numeric(3,1) not null,
-  rank        integer,
-  updated_at  timestamptz not null default now(),
-  unique (user_id, exam_type, period)
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid not null references public.profiles(id) on delete cascade,
+  display_name  text not null,
+  exam_type     text not null,
+  language_code text not null default 'en',
+  week_start    date not null,
+  score         decimal(5,2) not null,
+  country_code  text,
+  created_at    timestamptz not null default now(),
+  unique (user_id, exam_type, week_start)
 );
 
 -- ── 11. monthly_exams ────────────────────────────────────────
 create table if not exists public.monthly_exams (
   id               uuid primary key default uuid_generate_v4(),
   exam_type        text not null,
-  title            text not null,
-  scheduled_for    date not null,
-  registration_end date not null,
-  streak_required  integer not null default 30,
-  max_participants integer,
-  is_active        boolean not null default true,
+  language_code    text not null default 'en',
+  exam_month       date not null,
+  entry_fee_cents  integer not null default 500,
+  status           text not null default 'upcoming',  -- upcoming | open | closed | completed
+  registered_count integer not null default 0,
   created_at       timestamptz not null default now()
 );
 
 -- ── 12. monthly_exam_entries ─────────────────────────────────
 create table if not exists public.monthly_exam_entries (
-  id              uuid primary key default uuid_generate_v4(),
-  exam_id         uuid not null references public.monthly_exams(id) on delete cascade,
-  user_id         uuid not null references public.profiles(id) on delete cascade,
-  registered_at   timestamptz not null default now(),
-  started_at      timestamptz,
-  completed_at    timestamptz,
-  overall_score   numeric(3,1),
-  speaking_score  numeric(3,1),
-  writing_score   numeric(3,1),
-  listening_score numeric(3,1),
-  reading_score   numeric(3,1),
-  status          text not null default 'registered'  -- registered | in_progress | completed | abandoned
-    check (status in ('registered','in_progress','completed','abandoned')),
+  id             uuid primary key default uuid_generate_v4(),
+  exam_id        uuid not null references public.monthly_exams(id) on delete cascade,
+  user_id        uuid not null references public.profiles(id) on delete cascade,
+  payment_status text not null default 'pending',     -- pending | paid | refunded
+  session_id     uuid references public.sessions(id),
+  final_score    decimal(4,2),
+  rank           integer,
+  created_at     timestamptz not null default now(),
   unique (exam_id, user_id)
 );
-
 
 -- ============================================================
 -- Row Level Security
@@ -225,84 +221,76 @@ create table if not exists public.monthly_exam_entries (
 alter table public.profiles             enable row level security;
 alter table public.user_languages       enable row level security;
 alter table public.sessions             enable row level security;
-alter table public.speaking_sessions    enable row level security;
-alter table public.audio_clips          enable row level security;
 alter table public.writing_attempts     enable row level security;
 alter table public.reading_attempts     enable row level security;
 alter table public.listening_attempts   enable row level security;
+alter table public.speaking_sessions    enable row level security;
+alter table public.audio_clips          enable row level security;
 alter table public.score_history        enable row level security;
 alter table public.leaderboard_entries  enable row level security;
 alter table public.monthly_exams        enable row level security;
 alter table public.monthly_exam_entries enable row level security;
 
+-- profiles: own row only
+create policy "profiles_select" on public.profiles for select using (auth.uid() = id);
+create policy "profiles_insert" on public.profiles for insert with check (auth.uid() = id);
+create policy "profiles_update" on public.profiles for update using (auth.uid() = id);
 
--- ── profiles ─────────────────────────────────────────────────
-create policy "profiles_select_own"   on public.profiles for select using (auth.uid() = id);
-create policy "profiles_insert_own"   on public.profiles for insert with check (auth.uid() = id);
-create policy "profiles_update_own"   on public.profiles for update using (auth.uid() = id);
+-- user_languages
+create policy "user_languages_all" on public.user_languages
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Leaderboard: anyone authenticated can read others' band scores (for ranking)
-create policy "profiles_select_public_band" on public.profiles
+-- sessions
+create policy "sessions_all" on public.sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- writing_attempts
+create policy "writing_attempts_all" on public.writing_attempts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- reading_attempts
+create policy "reading_attempts_all" on public.reading_attempts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- listening_attempts
+create policy "listening_attempts_all" on public.listening_attempts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- speaking_sessions
+create policy "speaking_sessions_all" on public.speaking_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- audio_clips: read-only for all authenticated users (shared content)
+create policy "audio_clips_read" on public.audio_clips
   for select using (auth.role() = 'authenticated');
 
--- ── user_languages ───────────────────────────────────────────
-create policy "user_languages_own" on public.user_languages
+-- score_history
+create policy "score_history_all" on public.score_history
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- ── sessions ─────────────────────────────────────────────────
-create policy "sessions_own" on public.sessions
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── speaking_sessions ────────────────────────────────────────
-create policy "speaking_sessions_own" on public.speaking_sessions
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── audio_clips ──────────────────────────────────────────────
-create policy "audio_clips_own" on public.audio_clips
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── writing_attempts ─────────────────────────────────────────
-create policy "writing_attempts_own" on public.writing_attempts
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── reading_attempts ─────────────────────────────────────────
-create policy "reading_attempts_own" on public.reading_attempts
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── listening_attempts ───────────────────────────────────────
-create policy "listening_attempts_own" on public.listening_attempts
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── score_history ────────────────────────────────────────────
-create policy "score_history_own" on public.score_history
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
--- ── leaderboard_entries ──────────────────────────────────────
--- Anyone authenticated can read; only owner can write
+-- leaderboard: read all, write own
 create policy "leaderboard_read"  on public.leaderboard_entries for select using (auth.role() = 'authenticated');
 create policy "leaderboard_write" on public.leaderboard_entries
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- ── monthly_exams ────────────────────────────────────────────
--- Public read; only service role inserts (managed from backend)
-create policy "monthly_exams_read" on public.monthly_exams for select using (true);
+-- monthly_exams: read-only for authenticated users
+create policy "monthly_exams_read" on public.monthly_exams for select using (auth.role() = 'authenticated');
 
--- ── monthly_exam_entries ─────────────────────────────────────
-create policy "monthly_exam_entries_own" on public.monthly_exam_entries
+-- monthly_exam_entries
+create policy "monthly_exam_entries_read"  on public.monthly_exam_entries for select using (auth.role() = 'authenticated');
+create policy "monthly_exam_entries_write" on public.monthly_exam_entries
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
--- Allow reading others' entries for leaderboard purposes (score only, via view in future)
-create policy "monthly_exam_entries_read_all" on public.monthly_exam_entries
-  for select using (auth.role() = 'authenticated');
-
 
 -- ============================================================
--- Indexes for common query patterns
+-- Indexes
 -- ============================================================
 
-create index if not exists idx_sessions_user_id     on public.sessions(user_id);
-create index if not exists idx_sessions_type        on public.sessions(type);
+create index if not exists idx_sessions_user        on public.sessions(user_id);
+create index if not exists idx_sessions_status      on public.sessions(status);
 create index if not exists idx_score_history_user   on public.score_history(user_id, exam_type);
-create index if not exists idx_leaderboard_period   on public.leaderboard_entries(period, band_score desc);
+create index if not exists idx_leaderboard_week     on public.leaderboard_entries(week_start, score desc);
 create index if not exists idx_speaking_session     on public.speaking_sessions(session_id);
-create index if not exists idx_audio_speaking       on public.audio_clips(speaking_session_id);
+create index if not exists idx_writing_session      on public.writing_attempts(session_id);
+create index if not exists idx_reading_session      on public.reading_attempts(session_id);
+create index if not exists idx_listening_session    on public.listening_attempts(session_id);
 create index if not exists idx_exam_entries_exam    on public.monthly_exam_entries(exam_id);
