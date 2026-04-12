@@ -47,7 +47,7 @@ const MODULES: ModuleCard[] = [
     hero: false,
     bg: Colors.gold_bg,
     textColor: Colors.gold,
-    route: '/(tabs)/practice',
+    route: '/modules/writing/select',
   },
   {
     key: 'listening',
@@ -67,7 +67,7 @@ const MODULES: ModuleCard[] = [
     hero: false,
     bg: Colors.orange_bg,
     textColor: Colors.orange,
-    route: '/(tabs)/practice',
+    route: '/modules/reading/select',
   },
 ];
 
