@@ -57,7 +57,7 @@ const MODULES: ModuleCard[] = [
     hero: false,
     bg: Colors.green_bg,
     textColor: Colors.green,
-    route: '/(tabs)/practice',
+    route: '/modules/listening/select',
   },
   {
     key: 'reading',

@@ -83,6 +83,27 @@ export default function PracticeScreen() {
           <Button label="Start speaking session" onPress={() => {}} fullWidth style={{ marginTop: 12 }} />
         </Card>
 
+        {/* Listening module card */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push('/modules/listening/select' as any)}
+        >
+          <Card style={styles.writingCard}>
+            <View style={styles.writingLeft}>
+              <View style={[styles.writingIconWrap, { backgroundColor: Colors.green_bg }]}>
+                <Text style={styles.writingIcon}>🎧</Text>
+              </View>
+              <View style={styles.writingInfo}>
+                <Text style={styles.writingTitle}>Listening Practice</Text>
+                <Text style={styles.writingSub}>Section 1 · 2 · 3 · 4</Text>
+              </View>
+            </View>
+            <View style={[styles.writingBadge, { backgroundColor: Colors.green }]}>
+              <Text style={styles.writingBadgeText}>Start →</Text>
+            </View>
+          </Card>
+        </TouchableOpacity>
+
         {/* Writing module card */}
         <TouchableOpacity
           activeOpacity={0.85}
@@ -125,7 +146,12 @@ export default function PracticeScreen() {
             <TouchableOpacity
             key={session.key}
             activeOpacity={0.85}
-            onPress={session.type === 'writing' ? () => router.push('/modules/writing/select' as any) : undefined}
+            onPress={
+              session.type === 'writing'   ? () => router.push('/modules/writing/select' as any) :
+              session.type === 'listening' ? () => router.push('/modules/listening/select' as any) :
+              session.type === 'reading'   ? () => router.push('/modules/reading/select' as any) :
+              undefined
+            }
           >
               <Card padding={14} style={styles.sessionCard}>
                 <View style={styles.sessionTop}>
