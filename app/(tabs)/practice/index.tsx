@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Card } from '@/components/ui/Card';
 import { TimerChip } from '@/components/ui/TimerChip';
@@ -82,6 +83,27 @@ export default function PracticeScreen() {
           <Button label="Start speaking session" onPress={() => {}} fullWidth style={{ marginTop: 12 }} />
         </Card>
 
+        {/* Writing module card */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push('/modules/writing/select' as any)}
+        >
+          <Card style={styles.writingCard}>
+            <View style={styles.writingLeft}>
+              <View style={styles.writingIconWrap}>
+                <Text style={styles.writingIcon}>✍️</Text>
+              </View>
+              <View style={styles.writingInfo}>
+                <Text style={styles.writingTitle}>Writing Practice</Text>
+                <Text style={styles.writingSub}>Task 1 · Task 2 · Full Exam</Text>
+              </View>
+            </View>
+            <View style={styles.writingBadge}>
+              <Text style={styles.writingBadgeText}>Start →</Text>
+            </View>
+          </Card>
+        </TouchableOpacity>
+
         {/* Filter chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {CATEGORIES.map((cat) => (
@@ -100,7 +122,11 @@ export default function PracticeScreen() {
         {/* Session cards */}
         <View style={styles.sessions}>
           {filtered.map((session) => (
-            <TouchableOpacity key={session.key} activeOpacity={0.85}>
+            <TouchableOpacity
+            key={session.key}
+            activeOpacity={0.85}
+            onPress={session.type === 'writing' ? () => router.push('/modules/writing/select' as any) : undefined}
+          >
               <Card padding={14} style={styles.sessionCard}>
                 <View style={styles.sessionTop}>
                   <View style={[styles.sessionIconWrap, { backgroundColor: session.bg }]}>
@@ -155,6 +181,24 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: Colors.p, borderColor: Colors.p },
   chipText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
   chipTextActive: { color: Colors.white },
+  writingCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  writingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  writingIconWrap: {
+    width: 46, height: 46, borderRadius: 13,
+    backgroundColor: Colors.gold_bg,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  writingIcon: { fontSize: 22 },
+  writingInfo: { gap: 2 },
+  writingTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
+  writingSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+  writingBadge: {
+    backgroundColor: Colors.p,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  writingBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.white },
   sessions: { gap: 12 },
   sessionCard: { gap: 12 },
   sessionTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
