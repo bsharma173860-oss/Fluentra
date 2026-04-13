@@ -80,7 +80,7 @@ export default function PracticeScreen() {
         <Card style={styles.quickStart}>
           <Text style={styles.qs_label}>Ready to practice?</Text>
           <Text style={styles.qs_sub}>Your AI tutor is waiting.</Text>
-          <Button label="Start speaking session" onPress={() => {}} fullWidth style={{ marginTop: 12 }} />
+          <Button label="Start speaking session" onPress={() => router.push('/modules/speaking/select' as any)} fullWidth style={{ marginTop: 12 }} />
         </Card>
 
         {/* Listening module card */}

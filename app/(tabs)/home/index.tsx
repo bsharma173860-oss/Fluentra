@@ -37,7 +37,7 @@ const MODULES: ModuleCard[] = [
     hero: true,
     bg: Colors.p,
     textColor: Colors.white,
-    route: '/(tabs)/practice',
+    route: '/modules/speaking/select',
   },
   {
     key: 'writing',
