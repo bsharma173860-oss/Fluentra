@@ -1,69 +1,59 @@
 export type ExamProfile = {
   id: string;
   name: string;
-  shortName: string;
+  fullName: string;
   color: string;
-  bgColor: string;
-  sections: string[];
-  scoreRange: { min: number; max: number };
-  description: string;
-  streakRequired: number;
+  bg: string;
+  scoreLabel: string;
+  scoreMin: number;
+  scoreMax: number;
 };
 
-export const ExamProfiles: Record<string, ExamProfile> = {
-  IELTS: {
-    id: 'IELTS',
-    name: 'IELTS Academic',
-    shortName: 'IELTS',
-    color: '#5B4EFF',
-    bgColor: '#EEEEFF',
-    sections: ['Listening', 'Reading', 'Writing', 'Speaking'],
-    scoreRange: { min: 0, max: 9 },
-    description: 'International English Language Testing System',
-    streakRequired: 30,
-  },
-  TOEFL: {
-    id: 'TOEFL',
-    name: 'TOEFL iBT',
-    shortName: 'TOEFL',
-    color: '#0A8C5A',
-    bgColor: '#EDFAF4',
-    sections: ['Reading', 'Listening', 'Speaking', 'Writing'],
-    scoreRange: { min: 0, max: 120 },
-    description: 'Test of English as a Foreign Language',
-    streakRequired: 30,
-  },
-  DELF: {
-    id: 'DELF',
-    name: 'DELF B2',
-    shortName: 'DELF',
-    color: '#B07A10',
-    bgColor: '#FEF9EC',
-    sections: ['Compréhension orale', 'Compréhension écrite', 'Production écrite', 'Production orale'],
-    scoreRange: { min: 0, max: 100 },
-    description: 'Diplôme d\'Études en Langue Française',
-    streakRequired: 40,
-  },
-  DELE: {
-    id: 'DELE',
-    name: 'DELE B2',
-    shortName: 'DELE',
-    color: '#C04A06',
-    bgColor: '#FFF3ED',
-    sections: ['Comprensión de lectura', 'Comprensión auditiva', 'Expresión e interacción escritas', 'Expresión e interacción orales'],
-    scoreRange: { min: 0, max: 100 },
-    description: 'Diplomas de Español como Lengua Extranjera',
-    streakRequired: 40,
-  },
-  FREE: {
-    id: 'FREE',
-    name: 'Free Practice',
-    shortName: 'Free',
-    color: '#5B4EFF',
-    bgColor: '#EEEEFF',
-    sections: ['Speaking', 'Writing', 'Listening', 'Reading'],
-    scoreRange: { min: 0, max: 100 },
-    description: 'Practice without exam constraints',
-    streakRequired: 0,
-  },
+export const LANGUAGE_EXAMS: Record<string, ExamProfile[]> = {
+  en: [
+    {
+      id: 'ielts',
+      name: 'IELTS Academic',
+      fullName: 'International English Language Testing System',
+      color: '#5B4EFF',
+      bg: '#EEEEFF',
+      scoreLabel: 'Band score',
+      scoreMin: 0,
+      scoreMax: 9,
+    },
+    {
+      id: 'toefl',
+      name: 'TOEFL iBT',
+      fullName: 'Test of English as a Foreign Language',
+      color: '#1558B0',
+      bg: '#EEF6FF',
+      scoreLabel: 'Score',
+      scoreMin: 0,
+      scoreMax: 120,
+    },
+  ],
+  es: [
+    {
+      id: 'dele',
+      name: 'DELE B2',
+      fullName: 'Diplomas de Español como Lengua Extranjera',
+      color: '#C04A06',
+      bg: '#FFF3ED',
+      scoreLabel: 'Points',
+      scoreMin: 0,
+      scoreMax: 100,
+    },
+  ],
+  fr: [
+    {
+      id: 'delf',
+      name: 'DELF B2',
+      fullName: "Diplôme d'Études en Langue Française",
+      color: '#1558B0',
+      bg: '#EEF6FF',
+      scoreLabel: 'Points',
+      scoreMin: 0,
+      scoreMax: 100,
+    },
+  ],
 };

@@ -5,12 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Switch,
   Alert,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { LANGUAGE_EXAMS, type ExamProfile } from '@/constants/examProfiles';
 import { useAuth } from '@/lib/authContext';
 import { supabase, type UserLanguage } from '@/lib/supabase';
 import {
@@ -148,11 +150,14 @@ export default function LanguageDashboard() {
   const [practiced, setPracticed] = useState<Record<PracticeModule, boolean>>({
     speaking: false, writing: false, listening: false, reading: false,
   });
+  const [translateEnabled, setTranslateEnabled] = useState(false);
 
   const streak = profile?.streak_count ?? 32;
   const scores = MOCK_SCORES[langCode] ?? MOCK_SCORES.en;
   const remaining = Math.max(0, STREAK_TARGET - streak);
   const examsUnlocked = streak >= STREAK_TARGET;
+  const examProfiles: ExamProfile[] = LANGUAGE_EXAMS[langCode] ?? [];
+  const showTranslateToggle = langCode !== 'en';
 
   // Fetch language record from DB
   useEffect(() => {
@@ -180,10 +185,17 @@ export default function LanguageDashboard() {
 
   const practicedToday  = hasPracticedAnyToday(langCode);
   const completedToday  = completedModulesToday(langCode);
-  const langName        = langRecord?.language_name_en ?? langCode.toUpperCase();
-  const langNative      = langRecord?.language_name_native ?? langName;
-  const fluencyPct      = langRecord?.fluency_percent ?? (MOCK_SCORES[langCode] ? scores.band / 9 * 100 : 50);
-  const exams           = langRecord?.exams ?? [];
+  const langName   = langRecord?.language_name_en ?? langCode.toUpperCase();
+  const langNative = langRecord?.language_name_native ?? langName;
+  const fluencyPct = langRecord?.fluency_percent ?? (MOCK_SCORES[langCode] ? scores.band / 9 * 100 : 50);
+
+  // Build streak unlock text from the exam profiles for this language
+  const streakUnlockText = (() => {
+    if (examProfiles.length === 0) return `${remaining} more days to unlock the monthly exam`;
+    const names = examProfiles.map(e => e.name);
+    const joined = names.length > 1 ? names.slice(0, -1).join(', ') + ' + ' + names[names.length - 1] : names[0];
+    return `${remaining} more days to unlock ${joined} exam${examProfiles.length > 1 ? 's' : ''}`;
+  })();
 
   function onPracticeCardTap(card: PracticeCard) {
     if (card.pro) {
@@ -235,9 +247,9 @@ export default function LanguageDashboard() {
                 }]} />
               </View>
               <View style={s.examChips}>
-                {exams.map(e => (
-                  <View key={e} style={[s.examChip, { borderColor: meta.color }]}>
-                    <Text style={[s.examChipText, { color: meta.color }]}>{e}</Text>
+                {examProfiles.map(e => (
+                  <View key={e.id} style={[s.examChip, { borderColor: e.color, backgroundColor: e.bg }]}>
+                    <Text style={[s.examChipText, { color: e.color }]}>{e.name}</Text>
                   </View>
                 ))}
               </View>
@@ -263,9 +275,7 @@ export default function LanguageDashboard() {
             <View style={[s.streakFill, { width: `${Math.min((streak / STREAK_TARGET) * 100, 100)}%` as any, backgroundColor: Colors.orange }]} />
           </View>
           <Text style={s.streakNote}>
-            {examsUnlocked
-              ? '🎉 Monthly exam is unlocked!'
-              : `${remaining} more days to unlock the monthly ${exams[0] ?? 'exam'}`}
+            {examsUnlocked ? '🎉 Monthly exam is unlocked!' : streakUnlockText}
           </Text>
         </View>
 
@@ -281,6 +291,19 @@ export default function LanguageDashboard() {
             </View>
           )}
         </View>
+
+        {/* Translate toggle — only for non-English languages */}
+        {showTranslateToggle && (
+          <View style={s.translateRow}>
+            <Text style={s.translateLabel}>Translate to English</Text>
+            <Switch
+              value={translateEnabled}
+              onValueChange={setTranslateEnabled}
+              trackColor={{ false: Colors.border, true: Colors.p }}
+              thumbColor={Colors.white}
+            />
+          </View>
+        )}
 
         <View style={s.practiceGrid}>
           {PRACTICE_CARDS.map(card => {
@@ -343,36 +366,40 @@ export default function LanguageDashboard() {
         </View>
 
         <View style={s.examList}>
-          {(exams.length > 0 ? exams : ['IELTS', 'TOEFL']).map(exam => (
+          {examProfiles.length === 0 ? (
+            <View style={s.examEmpty}>
+              <Text style={s.examEmptyText}>No exams available for this language yet.</Text>
+            </View>
+          ) : examProfiles.map(exam => (
             <TouchableOpacity
-              key={exam}
+              key={exam.id}
               style={[s.examCard, !examsUnlocked && s.examCardLocked]}
               onPress={() => {
                 if (!examsUnlocked) {
                   Alert.alert(
                     'Exam locked',
-                    `Complete ${remaining} more streak days to unlock the monthly ${exam} exam.`
+                    `Complete ${remaining} more streak days to unlock the monthly ${exam.name} exam.`
                   );
                 }
               }}
               activeOpacity={examsUnlocked ? 0.85 : 0.7}
             >
               <View style={s.examCardLeft}>
-                <View style={[s.examIconWrap, { backgroundColor: examsUnlocked ? meta.color : Colors.bg2 }]}>
+                <View style={[s.examIconWrap, { backgroundColor: examsUnlocked ? exam.bg : Colors.bg2 }]}>
                   <Text style={s.examIconText}>{examsUnlocked ? '📋' : '🔒'}</Text>
                 </View>
-                <View>
-                  <Text style={[s.examCardTitle, !examsUnlocked && s.examCardTitleLocked]}>{exam}</Text>
-                  <Text style={s.examCardSub}>
-                    {examsUnlocked ? 'Monthly exam available' : `${remaining} streak days to unlock`}
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.examCardTitle, !examsUnlocked && s.examCardTitleLocked]}>{exam.name}</Text>
+                  <Text style={s.examCardSub} numberOfLines={1}>
+                    {examsUnlocked ? exam.fullName : `${remaining} streak days to unlock`}
                   </Text>
                 </View>
               </View>
               {examsUnlocked ? (
-                <Text style={[s.examArrow, { color: meta.color }]}>›</Text>
+                <Text style={[s.examArrow, { color: exam.color }]}>›</Text>
               ) : (
-                <View style={s.examLockTag}>
-                  <Text style={s.examLockTagText}>{remaining}d</Text>
+                <View style={[s.examLockTag, { backgroundColor: exam.bg, borderColor: exam.color + '55' }]}>
+                  <Text style={[s.examLockTagText, { color: exam.color }]}>{remaining}d</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -483,6 +510,15 @@ const s = StyleSheet.create({
   },
   practicedBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.green },
 
+  // Translate toggle
+  translateRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.white,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
+  },
+  translateLabel: { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.ink },
+
   // Practice 2x2 grid
   practiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   practiceCard: {
@@ -533,6 +569,8 @@ const s = StyleSheet.create({
 
   // Exam list
   examList: { gap: 10 },
+  examEmpty: { padding: 16, backgroundColor: Colors.bg2, borderRadius: 12, alignItems: 'center' },
+  examEmptyText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
   examCard: {
     backgroundColor: Colors.white,
     borderRadius: 16, borderWidth: 1, borderColor: Colors.border,
