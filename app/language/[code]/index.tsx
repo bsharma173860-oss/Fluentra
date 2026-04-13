@@ -406,6 +406,51 @@ export default function LanguageDashboard() {
           ))}
         </View>
 
+        {/* ── Exam action buttons ── */}
+        {examProfiles.length > 0 && (
+          <View style={s.examActions}>
+            <TouchableOpacity
+              style={s.fullExamBtn}
+              activeOpacity={0.88}
+              onPress={() =>
+                router.push(
+                  `/language/${langCode}/${examProfiles[0].id}/exam-entry` as any
+                )
+              }
+            >
+              <View style={s.fullExamBtnLeft}>
+                <Text style={s.fullExamBtnIcon}>📋</Text>
+                <View>
+                  <Text style={s.fullExamBtnTitle}>Practice Full Exam</Text>
+                  <Text style={s.fullExamBtnSub}>~3 hours · All 4 modules · Instant results</Text>
+                </View>
+              </View>
+              <Text style={s.fullExamBtnArrow}>›</Text>
+            </TouchableOpacity>
+
+            {examsUnlocked && (
+              <TouchableOpacity
+                style={s.monthlyExamBtn}
+                activeOpacity={0.88}
+                onPress={() =>
+                  router.push(
+                    `/language/${langCode}/${examProfiles[0].id}/monthly-exam` as any
+                  )
+                }
+              >
+                <View style={s.fullExamBtnLeft}>
+                  <Text style={s.fullExamBtnIcon}>🏆</Text>
+                  <View>
+                    <Text style={s.monthlyExamBtnTitle}>Enter Monthly Exam</Text>
+                    <Text style={s.monthlyExamBtnSub}>April 2026 · $5 · 847 registered</Text>
+                  </View>
+                </View>
+                <Text style={[s.fullExamBtnArrow, { color: Colors.white }]}>›</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         {/* ── Score breakdown ── */}
         <View style={s.sectionHeader}>
           <Text style={s.sectionTitle}>Your Scores</Text>
@@ -594,6 +639,25 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.orange,
   },
   examLockTagText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: Colors.orange },
+
+  // Exam action buttons
+  examActions: { gap: 10 },
+  fullExamBtn: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  fullExamBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  fullExamBtnIcon: { fontSize: 22 },
+  fullExamBtnTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
+  fullExamBtnSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3, marginTop: 2 },
+  fullExamBtnArrow: { fontFamily: 'Inter_400Regular', fontSize: 22, color: Colors.ink3 },
+  monthlyExamBtn: {
+    backgroundColor: '#1A1A2E', borderRadius: 16,
+    padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  monthlyExamBtnTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.white },
+  monthlyExamBtnSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
 
   // Scores
   scoresCard: {
