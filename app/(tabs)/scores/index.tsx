@@ -31,10 +31,10 @@ const MODULE_CARDS = [
 ];
 
 const RECENT_SESSIONS = [
-  { icon: '🎙', title: 'IELTS Speaking Part 2', date: 'Today, 9:00 AM', score: 7.5, color: Colors.p },
-  { icon: '✏️', title: 'Task 1 – Graph Description', date: 'Yesterday', score: 6.5, color: Colors.gold },
-  { icon: '🎧', title: 'Section 3 – Academic Discussion', date: '2 days ago', score: 32, color: Colors.green, maxScore: 40 },
-  { icon: '📖', title: 'Passage 2 – Science', date: '3 days ago', score: 11, color: Colors.orange, maxScore: 13 },
+  { icon: '🎙', title: 'Speaking', subtitle: 'Parts 1+2', date: 'Today', score: 7.0, color: Colors.p },
+  { icon: '✏️', title: 'Writing', subtitle: 'Task 2', date: 'Yesterday', score: 6.5, color: Colors.gold },
+  { icon: '🎧', title: 'Listening', subtitle: 'Sections 1-4', date: 'Apr 10', score: 7.5, color: Colors.green },
+  { icon: '📖', title: 'Reading', subtitle: '3 Passages', date: 'Apr 9', score: 7.0, color: Colors.orange },
 ];
 
 function LineChart({ data }: { data: { label: string; score: number }[] }) {
@@ -166,15 +166,12 @@ export default function ScoresScreen() {
                 <Text style={s.sessionIcon}>{session.icon}</Text>
               </View>
               <View style={s.sessionInfo}>
-                <Text style={s.sessionTitle}>{session.title}</Text>
+                <Text style={s.sessionTitle}>{session.title} · {session.subtitle}</Text>
                 <Text style={s.sessionDate}>{session.date}</Text>
               </View>
               <View style={[s.scoreBadge, { backgroundColor: session.color + '18' }]}>
                 <Text style={[s.scoreBadgeText, { color: session.color }]}>
-                  {('maxScore' in session && session.maxScore)
-                    ? `${session.score}/${session.maxScore}`
-                    : (session.score as number).toFixed(1)
-                  }
+                  {session.score.toFixed(1)}
                 </Text>
               </View>
             </View>
