@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { LANGUAGE_EXAMS, type ExamProfile } from '@/constants/examProfiles';
+import { getLangNames } from '@/constants/languages';
 import { useAuth } from '@/lib/authContext';
 import { supabase, type UserLanguage } from '@/lib/supabase';
 import {
@@ -185,8 +186,9 @@ export default function LanguageDashboard() {
 
   const practicedToday  = hasPracticedAnyToday(langCode);
   const completedToday  = completedModulesToday(langCode);
-  const langName   = langRecord?.language_name_en ?? langCode.toUpperCase();
-  const langNative = langRecord?.language_name_native ?? langName;
+  const langMeta   = getLangNames(langCode);
+  const langName   = langRecord?.language_name_en ?? langMeta.english;
+  const langNative = langRecord?.language_name_native ?? langMeta.native;
   const fluencyPct = langRecord?.fluency_percent ?? (MOCK_SCORES[langCode] ? scores.band / 9 * 100 : 50);
 
   // Build streak unlock text from the exam profiles for this language
@@ -222,11 +224,13 @@ export default function LanguageDashboard() {
         <View style={s.headerCenter}>
           <Text style={s.headerFlag}>{meta.flag}</Text>
           <View>
-            <Text style={s.headerTitle}>{langName}</Text>
-            <Text style={s.headerSub}>{langNative}</Text>
+            <Text style={s.headerSub}>{langName}</Text>
+            <Text style={s.headerTitle}>{langNative}</Text>
           </View>
         </View>
-        <View style={s.headerSpacer} />
+        <View style={[s.streakPill]}>
+          <Text style={s.streakPillText}>🔥 {streak} days</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -282,7 +286,7 @@ export default function LanguageDashboard() {
         {/* ── Daily Practice ── */}
         <View style={s.sectionHeader}>
           <View>
-            <Text style={s.sectionTitle}>Daily Practice</Text>
+            <Text style={s.sectionCap}>DAILY PRACTICE</Text>
             <Text style={s.sectionSub}>Builds your streak · Complete any one today</Text>
           </View>
           {practicedToday && (
@@ -357,9 +361,24 @@ export default function LanguageDashboard() {
           </View>
         )}
 
+        {/* ── Stats 2×2 grid ── */}
+        <View style={s.statsGrid}>
+          {[
+            { label: 'AVG SCORE',  value: scores.band.toFixed(1), color: Colors.p      },
+            { label: 'SESSIONS',   value: '24',                   color: Colors.ink     },
+            { label: 'BEST SCORE', value: '8.0',                  color: Colors.gold    },
+            { label: 'STREAK',     value: `${streak}d`,           color: Colors.orange  },
+          ].map(stat => (
+            <View key={stat.label} style={s.statCard}>
+              <Text style={[s.statVal, { color: stat.color }]}>{stat.value}</Text>
+              <Text style={s.statLbl}>{stat.label}</Text>
+            </View>
+          ))}
+        </View>
+
         {/* ── Exam access ── */}
         <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Exams</Text>
+          <Text style={s.sectionCap}>EXAMS</Text>
           {!examsUnlocked && (
             <Text style={s.sectionLink}>🔒 Unlocks at {STREAK_TARGET} days</Text>
           )}
@@ -371,38 +390,40 @@ export default function LanguageDashboard() {
               <Text style={s.examEmptyText}>No exams available for this language yet.</Text>
             </View>
           ) : examProfiles.map(exam => (
-            <TouchableOpacity
+            <View
               key={exam.id}
-              style={[s.examCard, !examsUnlocked && s.examCardLocked]}
-              onPress={() => {
-                if (!examsUnlocked) {
-                  Alert.alert(
-                    'Exam locked',
-                    `Complete ${remaining} more streak days to unlock the monthly ${exam.name} exam.`
-                  );
-                }
-              }}
-              activeOpacity={examsUnlocked ? 0.85 : 0.7}
+              style={[s.examCard, { borderLeftColor: examsUnlocked ? exam.color : Colors.ink4 }]}
             >
-              <View style={s.examCardLeft}>
-                <View style={[s.examIconWrap, { backgroundColor: examsUnlocked ? exam.bg : Colors.bg2 }]}>
-                  <Text style={s.examIconText}>{examsUnlocked ? '📋' : '🔒'}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.examCardTitle, !examsUnlocked && s.examCardTitleLocked]}>{exam.name}</Text>
-                  <Text style={s.examCardSub} numberOfLines={1}>
-                    {examsUnlocked ? exam.fullName : `${remaining} streak days to unlock`}
-                  </Text>
-                </View>
+              <Text style={[s.examCardTitle, !examsUnlocked && s.examCardTitleLocked]}>{exam.name}</Text>
+              <Text style={s.examCardSub}>
+                {examsUnlocked ? `Average: 7.0 · Last: Apr 10` : `${remaining} streak days to unlock`}
+              </Text>
+              <View style={s.examCardActions}>
+                {examsUnlocked ? (
+                  <>
+                    <TouchableOpacity
+                      style={[s.examPracticeBtn, { borderColor: exam.color }]}
+                      onPress={() => router.push(`/language/${langCode}/${exam.id}/exam-entry` as any)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[s.examPracticeBtnText, { color: exam.color }]}>Practice</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={s.examMonthlyBtn}
+                      onPress={() => router.push(`/language/${langCode}/${exam.id}/monthly-exam` as any)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={s.examMonthlyBtnText}>Monthly Exam</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <View style={s.examLockRow}>
+                    <Text style={s.examLockIcon}>🔒</Text>
+                    <Text style={s.examLockMsg}>{remaining} more streak days to unlock</Text>
+                  </View>
+                )}
               </View>
-              {examsUnlocked ? (
-                <Text style={[s.examArrow, { color: exam.color }]}>›</Text>
-              ) : (
-                <View style={[s.examLockTag, { backgroundColor: exam.bg, borderColor: exam.color + '55' }]}>
-                  <Text style={[s.examLockTagText, { color: exam.color }]}>{remaining}d</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            </View>
           ))}
         </View>
 
@@ -451,9 +472,31 @@ export default function LanguageDashboard() {
           </View>
         )}
 
+        {/* ── Quick links ── */}
+        <View style={s.quickLinks}>
+          <TouchableOpacity
+            style={s.quickLinkBtn}
+            onPress={() => router.push(`/(tabs)/progress?lang=${langCode}` as any)}
+            activeOpacity={0.82}
+          >
+            <Text style={s.quickLinkIcon}>📊</Text>
+            <Text style={s.quickLinkText}>View full progress</Text>
+            <Text style={s.quickLinkArrow}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.quickLinkBtn}
+            onPress={() => router.push(`/(tabs)/exams?lang=${langCode}` as any)}
+            activeOpacity={0.82}
+          >
+            <Text style={s.quickLinkIcon}>🏆</Text>
+            <Text style={s.quickLinkText}>View leaderboard</Text>
+            <Text style={s.quickLinkArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ── Score breakdown ── */}
         <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Your Scores</Text>
+          <Text style={s.sectionCap}>YOUR SCORES</Text>
         </View>
         <View style={s.scoresCard}>
           <View style={s.bandRow}>
@@ -492,16 +535,21 @@ const s = StyleSheet.create({
     backgroundColor: Colors.white, gap: 12,
   },
   backBtn: {
-    width: 36, height: 36, borderRadius: 11,
+    width: 32, height: 32, borderRadius: 10,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 18, color: Colors.ink },
+  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 17, color: Colors.ink },
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerFlag: { fontSize: 28 },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink },
-  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  headerSpacer: { width: 36 },
+  headerFlag: { fontSize: 26 },
+  headerTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: Colors.ink },
+  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+  streakPill: {
+    backgroundColor: Colors.gold_bg, borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderColor: Colors.gold + '55',
+  },
+  streakPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.gold },
 
   content: { padding: 20, gap: 20 },
 
@@ -612,15 +660,33 @@ const s = StyleSheet.create({
   },
   todayChipText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: Colors.ink },
 
+  // Section cap title
+  sectionCap: {
+    fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.ink3,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+  },
+
+  // Stats 2×2 grid
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  statCard: {
+    flex: 1, minWidth: '45%',
+    backgroundColor: Colors.white,
+    borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
+    padding: 14, alignItems: 'center', gap: 4,
+  },
+  statVal: { fontFamily: 'Inter_700Bold', fontSize: 22 },
+  statLbl: { fontFamily: 'Inter_500Medium', fontSize: 10, color: Colors.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
+
   // Exam list
   examList: { gap: 10 },
   examEmpty: { padding: 16, backgroundColor: Colors.bg2, borderRadius: 12, alignItems: 'center' },
   examEmptyText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
   examCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16, borderWidth: 1, borderColor: Colors.border,
-    padding: 14,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderRadius: 18, borderWidth: 1, borderColor: Colors.border,
+    borderLeftWidth: 4,
+    padding: 16, gap: 4,
+    overflow: 'hidden',
   },
   examCardLocked: { backgroundColor: Colors.bg2 },
   examCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -629,9 +695,23 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   examIconText: { fontSize: 20 },
-  examCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
+  examCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
   examCardTitleLocked: { color: Colors.ink3 },
-  examCardSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },
+  examCardSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+  examCardActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  examPracticeBtn: {
+    borderWidth: 1.5, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 7,
+  },
+  examPracticeBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  examMonthlyBtn: {
+    backgroundColor: Colors.gold_bg, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 7,
+  },
+  examMonthlyBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.gold },
+  examLockRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  examLockIcon: { fontSize: 13 },
+  examLockMsg: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
   examArrow: { fontFamily: 'Inter_400Regular', fontSize: 22 },
   examLockTag: {
     backgroundColor: Colors.orange_bg,
@@ -658,6 +738,17 @@ const s = StyleSheet.create({
   },
   monthlyExamBtnTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.white },
   monthlyExamBtnSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
+
+  // Quick links
+  quickLinks: { gap: 10 },
+  quickLinkBtn: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10,
+  },
+  quickLinkIcon: { fontSize: 20 },
+  quickLinkText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink, flex: 1 },
+  quickLinkArrow: { fontFamily: 'Inter_400Regular', fontSize: 20, color: Colors.ink3 },
 
   // Scores
   scoresCard: {

@@ -419,16 +419,29 @@ function TfngQuestion({
         <Text style={tfng.qText}>{q.text}</Text>
       </View>
       <View style={tfng.pills}>
-        {OPTIONS.map(opt => (
-          <TouchableOpacity
-            key={opt}
-            style={[tfng.pill, value === opt && tfng.pillSelected]}
-            onPress={() => onSelect(opt)}
-            activeOpacity={0.8}
-          >
-            <Text style={[tfng.pillText, value === opt && tfng.pillTextSelected]}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
+        {OPTIONS.map(opt => {
+          const sel = value === opt;
+          const selStyle = sel
+            ? opt === 'TRUE'      ? tfng.pillTrue
+            : opt === 'FALSE'     ? tfng.pillFalse
+            : tfng.pillNG
+            : undefined;
+          const textSelStyle = sel
+            ? opt === 'TRUE'      ? tfng.pillTextTrue
+            : opt === 'FALSE'     ? tfng.pillTextFalse
+            : tfng.pillTextNG
+            : undefined;
+          return (
+            <TouchableOpacity
+              key={opt}
+              style={[tfng.pill, selStyle]}
+              onPress={() => onSelect(opt)}
+              activeOpacity={0.8}
+            >
+              <Text style={[tfng.pillText, textSelStyle]}>{opt}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -454,9 +467,13 @@ const tfng = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.white,
   },
-  pillSelected: { backgroundColor: Colors.p, borderColor: Colors.p },
+  pillTrue:      { backgroundColor: Colors.green_bg, borderColor: Colors.green },
+  pillFalse:     { backgroundColor: '#FFF0F0', borderColor: '#C84040' },
+  pillNG:        { backgroundColor: Colors.bg2, borderColor: Colors.ink3 },
   pillText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.ink2 },
-  pillTextSelected: { color: Colors.white },
+  pillTextTrue:  { color: Colors.green },
+  pillTextFalse: { color: '#C84040' },
+  pillTextNG:    { color: Colors.ink3 },
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -760,7 +777,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 34, height: 34,
+    width: 32, height: 32,
     borderRadius: 10,
     backgroundColor: Colors.bg2,
     alignItems: 'center',
@@ -874,7 +891,7 @@ const s = StyleSheet.create({
   },
   submitBtn: {
     backgroundColor: Colors.p,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
   },

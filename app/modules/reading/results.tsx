@@ -63,7 +63,7 @@ function AnswerRow({ q, userAnswer }: { q: ReadingResult['questions'][0]; userAn
 const ar = StyleSheet.create({
   wrap: {
     backgroundColor: Colors.white,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
@@ -321,7 +321,7 @@ const s = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: Colors.white,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     paddingVertical: 14,
@@ -337,7 +337,7 @@ const s = StyleSheet.create({
   tryAgainBtn: {
     flex: 1,
     backgroundColor: Colors.bg2,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
     borderWidth: 1,
@@ -347,7 +347,7 @@ const s = StyleSheet.create({
   homeBtn: {
     flex: 1,
     backgroundColor: Colors.p,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
   },

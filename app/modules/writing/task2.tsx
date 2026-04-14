@@ -192,8 +192,8 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   backBtn: {
-    width: 36, height: 36,
-    borderRadius: 11,
+    width: 32, height: 32,
+    borderRadius: 10,
     backgroundColor: Colors.bg2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -212,7 +212,7 @@ const s = StyleSheet.create({
     borderColor: Colors.border,
   },
   timerBadgeWarn: { backgroundColor: '#FFF3ED', borderColor: Colors.orange },
-  timerText: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
+  timerText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
   timerTextWarn: { color: Colors.orange },
 
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },

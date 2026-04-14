@@ -698,7 +698,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 34, height: 34, borderRadius: 10,
+    width: 32, height: 32, borderRadius: 10,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -774,7 +774,7 @@ const s = StyleSheet.create({
   submitProgressText: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
   submitBtn: {
     backgroundColor: Colors.p,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
   },

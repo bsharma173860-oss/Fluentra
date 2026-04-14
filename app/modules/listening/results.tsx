@@ -61,7 +61,7 @@ function AnswerRow({ q, userAnswer }: {
 const ar = StyleSheet.create({
   wrap: {
     backgroundColor: Colors.white,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
@@ -273,7 +273,7 @@ const s = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 10 },
   statCard:  {
     flex: 1, backgroundColor: Colors.white,
-    borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
     paddingVertical: 14, alignItems: 'center', gap: 4,
   },
   statValue: { fontFamily: 'Inter_700Bold', fontSize: 22 },
@@ -283,11 +283,11 @@ const s = StyleSheet.create({
 
   actions: { flexDirection: 'row', gap: 12, marginTop: 6 },
   tryBtn:  {
-    flex: 1, backgroundColor: Colors.bg2, borderRadius: 14,
+    flex: 1, backgroundColor: Colors.bg2, borderRadius: 12,
     paddingVertical: 15, alignItems: 'center',
     borderWidth: 1, borderColor: Colors.border,
   },
   tryText:    { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink },
-  homeBtn:    { flex: 1, backgroundColor: Colors.p, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+  homeBtn:    { flex: 1, backgroundColor: Colors.p, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
   homeBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
 });

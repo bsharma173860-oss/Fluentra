@@ -570,7 +570,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 34, height: 34, borderRadius: 10,
+    width: 32, height: 32, borderRadius: 10,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },

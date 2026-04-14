@@ -258,14 +258,14 @@ const s = StyleSheet.create({
     gap: 4,
   },
   bandLabel: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink3 },
-  bandScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 80, lineHeight: 88 },
+  bandScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 52, lineHeight: 60 },
   bandSub: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, textAlign: 'center' },
 
   actions: { flexDirection: 'row', gap: 12 },
   tryAgainBtn: {
     flex: 1,
     backgroundColor: Colors.bg2,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
     borderWidth: 1,
@@ -275,7 +275,7 @@ const s = StyleSheet.create({
   homeBtn: {
     flex: 1,
     backgroundColor: Colors.p,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
   },

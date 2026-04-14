@@ -251,7 +251,7 @@ const s = StyleSheet.create({
     padding: 24, alignItems: 'center', gap: 6,
   },
   bandLabel: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink3 },
-  bandScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 80, lineHeight: 88 },
+  bandScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 52, lineHeight: 60 },
   bandDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, textAlign: 'center' },
 
   listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
@@ -286,7 +286,7 @@ const s = StyleSheet.create({
   txAvatarText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: Colors.white },
   txBubble: {
     backgroundColor: Colors.bg2,
-    borderRadius: 14, borderBottomLeftRadius: 4,
+    borderRadius: 12, borderBottomLeftRadius: 4,
     paddingHorizontal: 12, paddingVertical: 8, flex: 1,
   },
   txBubbleUser: {
@@ -298,11 +298,11 @@ const s = StyleSheet.create({
 
   actions: { flexDirection: 'row', gap: 12, marginTop: 6 },
   tryBtn: {
-    flex: 1, backgroundColor: Colors.bg2, borderRadius: 14,
+    flex: 1, backgroundColor: Colors.bg2, borderRadius: 12,
     paddingVertical: 15, alignItems: 'center',
     borderWidth: 1, borderColor: Colors.border,
   },
   tryText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink },
-  homeBtn: { flex: 1, backgroundColor: Colors.p, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+  homeBtn: { flex: 1, backgroundColor: Colors.p, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
   homeBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
 });
