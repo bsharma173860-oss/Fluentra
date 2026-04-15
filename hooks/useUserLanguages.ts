@@ -23,17 +23,25 @@ export function useUserLanguages() {
   useEffect(() => {
     fetchLanguages();
 
+    const channelName = `user_languages_${Math.random()}`;
+
     const sub = supabase
-      .channel('user_languages_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_languages',
-      }, () => fetchLanguages())
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_languages',
+        },
+        () => fetchLanguages()
+      )
       .subscribe();
 
-    return () => { sub.unsubscribe(); };
-  }, [fetchLanguages]);
+    return () => {
+      supabase.removeChannel(sub);
+    };
+  }, []);
 
   return { languages, loading, refetch: fetchLanguages };
 }
