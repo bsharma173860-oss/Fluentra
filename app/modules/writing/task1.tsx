@@ -1,119 +1,164 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, ScrollView, KeyboardAvoidingView,
+  Platform, Alert, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Svg, { Rect, Text as SvgText, Line, G } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { mockScore, setWritingResult } from '@/lib/writingStore';
+import { getTodaysTask1, type Task1Chart } from '@/constants/dailyContent';
+import { ChevronLeftIcon } from '@/components/icons';
 
-const PROMPT =
-  'The chart below shows the percentage of households in owned and rented accommodation in England and Wales between 1918 and 2011. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.';
-
-const EXAM = 'IELTS';
-const MIN_WORDS = 150;
-const TOTAL_SECONDS = 20 * 60; // 20 minutes
-const WARN_SECONDS = 5 * 60;
+const EXAM        = 'IELTS';
+const MIN_WORDS   = 150;
+const TOTAL_SEC   = 20 * 60;
+const WARN_SEC    = 5 * 60;
 
 function secondsToMMSS(s: number) {
-  const m = Math.floor(s / 60);
+  const m   = Math.floor(s / 60);
   const sec = s % 60;
   return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
-
 function countWords(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-// ── Simple placeholder bar chart ─────────────────────────────────
-const CHART_DATA = [
-  { year: '1918', owned: 23, rented: 77 },
-  { year: '1939', owned: 32, rented: 68 },
-  { year: '1953', owned: 38, rented: 62 },
-  { year: '1971', owned: 52, rented: 48 },
-  { year: '1991', owned: 68, rented: 32 },
-  { year: '2001', owned: 70, rented: 30 },
-  { year: '2011', owned: 65, rented: 35 },
-];
+// ── SVG Bar Chart ─────────────────────────────────────────────────
+const SVG_W    = 280;
+const SVG_H    = 160;
+const PAD_L    = 32;   // left  (y-axis labels)
+const PAD_B    = 36;   // bottom (x-axis labels)
+const PAD_T    = 12;
+const PAD_R    = 8;
+const PLOT_W   = SVG_W - PAD_L - PAD_R;
+const PLOT_H   = SVG_H - PAD_T - PAD_B;
+const Y_TICKS  = [0, 25, 50, 75, 100];
 
-function MiniChart() {
-  const BAR_MAX_H = 60;
+function BarChart({ chart }: { chart: Task1Chart }) {
+  const xLabels  = chart.xLabels;
+  const series   = chart.series;
+  const nGroups  = xLabels.length;
+  const nSeries  = series.length;
+
+  const groupW   = PLOT_W / nGroups;
+  const barW     = Math.min(14, (groupW * 0.7) / nSeries);
+  const gap      = 2;
+  const totalBarW = nSeries * barW + (nSeries - 1) * gap;
+
+  // find max value across all series
+  const maxVal = Math.max(...series.flatMap(s => s.values), 100);
+
+  function yPos(val: number) {
+    return PAD_T + PLOT_H - (val / maxVal) * PLOT_H;
+  }
+
   return (
-    <View style={chart.wrap}>
-      <Text style={chart.chartTitle}>Owned vs Rented Accommodation (%)</Text>
-      <View style={chart.barsRow}>
-        {CHART_DATA.map(d => (
-          <View key={d.year} style={chart.col}>
-            <View style={chart.stackWrap}>
-              <View style={[chart.bar, { height: (d.owned / 100) * BAR_MAX_H, backgroundColor: Colors.p }]} />
-              <View style={[chart.bar, { height: (d.rented / 100) * BAR_MAX_H, backgroundColor: Colors.gold }]} />
-            </View>
-            <Text style={chart.year}>{d.year}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={chart.legend}>
-        <View style={chart.legendItem}>
-          <View style={[chart.legendDot, { backgroundColor: Colors.p }]} />
-          <Text style={chart.legendLabel}>Owned</Text>
-        </View>
-        <View style={chart.legendItem}>
-          <View style={[chart.legendDot, { backgroundColor: Colors.gold }]} />
-          <Text style={chart.legendLabel}>Rented</Text>
-        </View>
-      </View>
-    </View>
+    <Svg width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`}>
+      {/* Y axis ticks + grid lines */}
+      {Y_TICKS.filter(t => t <= maxVal + 10).map(tick => {
+        const y = yPos(tick);
+        return (
+          <G key={tick}>
+            <Line x1={PAD_L} y1={y} x2={PAD_L + PLOT_W} y2={y} stroke={Colors.border} strokeWidth="0.5" />
+            <SvgText
+              x={PAD_L - 4} y={y + 3}
+              fontSize="8" fill={Colors.ink3}
+              textAnchor="end"
+            >{tick}%</SvgText>
+          </G>
+        );
+      })}
+
+      {/* X axis line */}
+      <Line x1={PAD_L} y1={PAD_T + PLOT_H} x2={PAD_L + PLOT_W} y2={PAD_T + PLOT_H} stroke={Colors.borderStrong} strokeWidth="1" />
+
+      {/* Bars */}
+      {xLabels.map((label, gi) => {
+        const groupX = PAD_L + gi * groupW + (groupW - totalBarW) / 2;
+        return (
+          <G key={gi}>
+            {series.map((s, si) => {
+              const x  = groupX + si * (barW + gap);
+              const h  = (s.values[gi] / maxVal) * PLOT_H;
+              const y  = PAD_T + PLOT_H - h;
+              return (
+                <Rect key={si} x={x} y={y} width={barW} height={Math.max(h, 0)} fill={s.color} rx="2" />
+              );
+            })}
+            {/* X label */}
+            <SvgText
+              x={PAD_L + gi * groupW + groupW / 2}
+              y={PAD_T + PLOT_H + 14}
+              fontSize="8" fill={Colors.ink2}
+              textAnchor="middle"
+            >{label}</SvgText>
+          </G>
+        );
+      })}
+
+      {/* Legend */}
+      {series.map((s, i) => (
+        <G key={i}>
+          <Rect
+            x={PAD_L + i * 60} y={SVG_H - 12}
+            width={8} height={8} fill={s.color} rx="2"
+          />
+          <SvgText
+            x={PAD_L + i * 60 + 11} y={SVG_H - 5}
+            fontSize="8" fill={Colors.ink2}
+          >{s.name}</SvgText>
+        </G>
+      ))}
+    </Svg>
   );
 }
 
-const chart = StyleSheet.create({
-  wrap: {
+// ── Chart panel ───────────────────────────────────────────────────
+function ChartPanel({ chart }: { chart: Task1Chart }) {
+  return (
+    <View style={ch.card}>
+      <Text style={ch.hint}>Study the chart carefully</Text>
+      <Text style={ch.chartTitle}>{chart.chartTitle}</Text>
+      <BarChart chart={chart} />
+      <Text style={ch.taskNote}>Summarise the information and make comparisons where relevant.</Text>
+    </View>
+  );
+}
+const ch = StyleSheet.create({
+  card: {
     backgroundColor: Colors.white,
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
-    borderWidth: 1,
+    borderRadius: 12, borderWidth: 1,
     borderColor: Colors.border,
+    padding: 14, gap: 8,
   },
-  chartTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.ink2, textAlign: 'center' },
-  barsRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 4 },
-  col: { alignItems: 'center', gap: 4, flex: 1 },
-  stackWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
-  bar: { width: 8, borderRadius: 3 },
-  year: { fontFamily: 'Inter_400Regular', fontSize: 8, color: Colors.ink3 },
-  legend: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink2 },
+  hint:       { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+  chartTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.ink2, lineHeight: 17 },
+  taskNote:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, lineHeight: 18 },
 });
 
-// ── Main Screen ───────────────────────────────────────────────────
+// ── Main screen ───────────────────────────────────────────────────
 export default function WritingTask1Screen() {
-  const [text, setText] = useState('');
-  const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
-  const [submitting, setSubmitting] = useState(false);
+  const { width }       = useWindowDimensions();
+  const isDesktop       = Platform.OS === 'web' && width >= 768;
+  const todaysChart     = getTodaysTask1();
+
+  const [text,        setText]       = useState('');
+  const [secondsLeft, setSecondsLeft]= useState(TOTAL_SEC);
+  const [submitting,  setSubmitting] = useState(false);
   const startedAt = useRef(Date.now());
 
-  const wordCount = countWords(text);
-  const isWarning = secondsLeft <= WARN_SECONDS;
-  const wordOk = wordCount >= MIN_WORDS;
+  const wordCount  = countWords(text);
+  const isWarning  = secondsLeft <= WARN_SEC;
+  const wordOk     = wordCount >= MIN_WORDS;
 
   useEffect(() => {
     const id = setInterval(() => {
       setSecondsLeft(s => {
-        if (s <= 1) {
-          clearInterval(id);
-          doSubmit();
-          return 0;
-        }
+        if (s <= 1) { clearInterval(id); doSubmit(); return 0; }
         return s - 1;
       });
     }, 1000);
@@ -123,248 +168,214 @@ export default function WritingTask1Screen() {
   const handleSubmit = useCallback((forced = false) => {
     if (submitting) return;
     if (!forced && wordCount < MIN_WORDS) {
-      Alert.alert(
-        'Too short',
-        `You have ${wordCount} words. Task 1 requires at least ${MIN_WORDS} words. Submit anyway?`,
-        [
-          { text: 'Keep writing', style: 'cancel' },
-          { text: 'Submit anyway', style: 'destructive', onPress: () => doSubmit() },
-        ]
-      );
+      Alert.alert('Too short', `You have ${wordCount} words. Task 1 requires at least ${MIN_WORDS}. Submit anyway?`, [
+        { text: 'Keep writing', style: 'cancel' },
+        { text: 'Submit anyway', style: 'destructive', onPress: () => doSubmit() },
+      ]);
       return;
     }
     doSubmit();
-  }, [submitting, wordCount, text]);
+  }, [submitting, wordCount]);
 
   function doSubmit() {
     setSubmitting(true);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
-    const result = mockScore(text, 'task1', EXAM, PROMPT, timeTaken);
+    const result = mockScore(text, 'task1', EXAM, todaysChart.prompt, timeTaken);
     setWritingResult(result);
     router.replace('/modules/writing/results' as any);
   }
 
-  return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
-        {/* Header */}
-        <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-            <Text style={s.backArrow}>←</Text>
-          </TouchableOpacity>
-          <View style={s.headerCenter}>
-            <Text style={s.headerTitle}>Task 1</Text>
-            <Text style={s.headerSub}>Graph description · 150+ words</Text>
-          </View>
-          <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
-            <Text style={[s.timerText, isWarning && s.timerTextWarn]}>
-              {secondsToMMSS(secondsLeft)}
-            </Text>
-          </View>
+  // ── Editor component (shared) ─────────────────────────────────
+  const editorBlock = (
+    <View style={s.editorCard}>
+      <TextInput
+        style={s.editor}
+        multiline
+        value={text}
+        onChangeText={setText}
+        placeholder="Describe the key trends shown in the chart…"
+        placeholderTextColor={Colors.ink4}
+        textAlignVertical="top"
+        autoCorrect={false}
+        spellCheck={false}
+      />
+      <View style={s.editorFooter}>
+        <View style={[s.wordBadge, wordOk ? s.wordBadgeOk : s.wordBadgeWarn]}>
+          <Text style={[s.wordCount, wordOk ? s.wordCountOk : s.wordCountWarn]}>
+            {wordCount} / {MIN_WORDS} words
+          </Text>
         </View>
-
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={s.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <TouchableOpacity
+          style={[s.submitBtn, submitting && s.submitBtnDisabled]}
+          onPress={() => handleSubmit(false)}
+          disabled={submitting}
+          activeOpacity={0.85}
         >
-          {/* Prompt */}
-          <View style={s.promptCard}>
-            <Text style={s.promptLabel}>TASK 1 PROMPT</Text>
-            <Text style={s.promptText}>{PROMPT}</Text>
-          </View>
+          <Text style={s.submitBtnText}>{submitting ? 'Scoring…' : 'Submit →'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
-          {/* Chart */}
-          <MiniChart />
+  return (
+    <AppLayout>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {/* ── Header ── */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+          <ChevronLeftIcon size={14} color={Colors.ink2} />
+        </TouchableOpacity>
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>Task 1</Text>
+          <Text style={s.headerSub}>Graph description · {MIN_WORDS}+ words</Text>
+        </View>
+        <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
+          <Text style={[s.timerText, isWarning && s.timerTextWarn]}>
+            {secondsToMMSS(secondsLeft)}
+          </Text>
+        </View>
+      </View>
 
-          {/* Instructions */}
-          <View style={s.instructionsRow}>
-            <Text style={s.instruction}>Write at least <Text style={s.instructionBold}>{MIN_WORDS} words</Text></Text>
-            <Text style={s.instruction}>You have <Text style={s.instructionBold}>20 minutes</Text></Text>
-          </View>
+      {/* Topic label */}
+      <View style={s.topicBar}>
+        <Text style={s.topicLabel}>TODAY: </Text>
+        <Text style={s.topicText}>{todaysChart.topic}</Text>
+      </View>
 
-          {/* Editor */}
-          <View style={s.editorWrap}>
-            <TextInput
-              style={s.editor}
-              multiline
-              value={text}
-              onChangeText={setText}
-              placeholder="Describe the key trends shown in the chart…"
-              placeholderTextColor={Colors.ink4}
-              textAlignVertical="top"
-              autoCorrect={false}
-              spellCheck={false}
-            />
-            <View style={s.editorFooter}>
-              <View style={[s.wordBadge, wordOk ? s.wordBadgeOk : s.wordBadgeWarn]}>
-                <Text style={[s.wordCount, wordOk ? s.wordCountOk : s.wordCountWarn]}>
-                  {wordCount} / {MIN_WORDS} words
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[s.submitBtn, submitting && s.submitBtnDisabled]}
-                onPress={() => handleSubmit(false)}
-                disabled={submitting}
-                activeOpacity={0.85}
+      {/* ── Desktop: side-by-side ── */}
+      {isDesktop ? (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <View style={s.desktopLayout}>
+            {/* Editor — left 2/3 */}
+            <View style={s.desktopEditor}>
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ padding: 20, gap: 12 }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
               >
-                <Text style={s.submitBtnText}>
-                  {submitting ? 'Scoring…' : 'Submit →'}
-                </Text>
-              </TouchableOpacity>
+                {editorBlock}
+                <View style={s.instructionsRow}>
+                  <Text style={s.instruction}>Write at least <Text style={s.instructionBold}>{MIN_WORDS} words</Text></Text>
+                  <Text style={s.instruction}><Text style={s.instructionBold}>20 minutes</Text></Text>
+                </View>
+                <View style={{ height: 40 }} />
+              </ScrollView>
+            </View>
+            {/* Chart panel — right 1/3 */}
+            <View style={s.desktopChart}>
+              <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+                <ChartPanel chart={todaysChart} />
+              </ScrollView>
             </View>
           </View>
+        </KeyboardAvoidingView>
+      ) : (
+        /* ── Mobile: stacked ── */
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={s.mobileContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Chart first on mobile */}
+            <ChartPanel chart={todaysChart} />
 
-          {/* Tips */}
-          <View style={s.tipsRow}>
-            {[
-              { icon: '📊', tip: 'Describe the overall trend before specific details.' },
-              { icon: '🔢', tip: 'Include key data points and figures from the chart.' },
-              { icon: '↔️', tip: 'Compare and contrast different categories or time periods.' },
-            ].map((t, i) => (
-              <View key={i} style={s.tipChip}>
-                <Text style={s.tipIcon}>{t.icon}</Text>
-                <Text style={s.tipText}>{t.tip}</Text>
-              </View>
-            ))}
-          </View>
+            <View style={s.instructionsRow}>
+              <Text style={s.instruction}>Write at least <Text style={s.instructionBold}>{MIN_WORDS} words</Text></Text>
+              <Text style={s.instruction}><Text style={s.instructionBold}>20 min</Text></Text>
+            </View>
 
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+            {editorBlock}
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
+    </AppLayout>
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 10, gap: 12,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 32, height: 32,
-    borderRadius: 10,
+    width: 32, height: 32, borderRadius: 10,
     backgroundColor: Colors.bg2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 18, color: Colors.ink },
   headerCenter: { flex: 1 },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
-  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+  headerTitle:  { fontFamily: 'Inter_700Bold',    fontSize: 16, color: Colors.ink },
+  headerSub:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
 
   timerBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 99,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 99, backgroundColor: Colors.bg2,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  timerBadgeWarn: { backgroundColor: Colors.orange_bg, borderColor: Colors.orange },
+  timerText:      { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
+  timerTextWarn:  { color: Colors.orange },
+
+  topicBar: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 8,
     backgroundColor: Colors.bg2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  timerBadgeWarn: { backgroundColor: '#FFF3ED', borderColor: Colors.orange },
-  timerText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
-  timerTextWarn: { color: Colors.orange },
+  topicLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.ink3, letterSpacing: 0.5 },
+  topicText:  { fontFamily: 'Inter_500Medium',   fontSize: 11, color: Colors.ink2, flex: 1 },
 
-  content: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
+  // Desktop layout
+  desktopLayout: { flex: 1, flexDirection: 'row' },
+  desktopEditor: { flex: 2, borderRightWidth: 1, borderRightColor: Colors.border },
+  desktopChart:  { flex: 1, backgroundColor: Colors.bg },
 
-  promptCard: {
-    backgroundColor: Colors.bg2,
-    borderRadius: 16,
-    padding: 16,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  promptLabel: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    letterSpacing: 1,
-    color: Colors.p,
-    textTransform: 'uppercase',
-  },
-  promptText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: Colors.ink,
-    lineHeight: 22,
-  },
+  // Mobile layout
+  mobileContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
 
-  instructionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  instruction: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  instructionBold: { fontFamily: 'Inter_600SemiBold', color: Colors.ink2 },
-
-  editorWrap: {
+  // Editor card
+  editorCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
+    borderRadius: 12, borderWidth: 1,
+    borderColor: Colors.border, overflow: 'hidden',
   },
   editor: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: Colors.ink,
-    lineHeight: 24,
-    minHeight: 260,
-    padding: 16,
+    fontFamily: 'Inter_400Regular', fontSize: 15,
+    color: Colors.ink, lineHeight: 24,
+    minHeight: 280, padding: 16,
   },
   editorFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
   },
 
-  wordBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 99,
-    borderWidth: 1,
-  },
-  wordBadgeOk: { backgroundColor: Colors.green_bg, borderColor: Colors.green },
-  wordBadgeWarn: { backgroundColor: '#FFF3ED', borderColor: Colors.orange },
-  wordCount: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
-  wordCountOk: { color: Colors.green },
-  wordCountWarn: { color: Colors.orange },
+  instructionsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  instruction:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+  instructionBold: { fontFamily: 'Inter_600SemiBold', color: Colors.ink2 },
 
-  submitBtn: {
-    backgroundColor: Colors.p,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
+  wordBadge:    { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, borderWidth: 1 },
+  wordBadgeOk:  { backgroundColor: Colors.green_bg,  borderColor: Colors.green  },
+  wordBadgeWarn:{ backgroundColor: Colors.orange_bg, borderColor: Colors.orange },
+  wordCount:    { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  wordCountOk:  { color: Colors.green  },
+  wordCountWarn:{ color: Colors.orange },
 
-  tipsRow: { gap: 8 },
-  tipChip: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-  },
-  tipIcon: { fontSize: 16, marginTop: 1 },
-  tipText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 19 },
+  submitBtn:        { backgroundColor: Colors.p, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  submitBtnDisabled:{ opacity: 0.5 },
+  submitBtnText:    { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
 });

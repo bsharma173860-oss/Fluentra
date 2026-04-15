@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { getLangNames } from '@/constants/languages';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 const { width: W } = Dimensions.get('window');
 const H_PAD = 20;
@@ -224,6 +225,7 @@ export default function ExamsScreen() {
   }
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <Text style={s.title}>Exams & Rankings</Text>
@@ -360,6 +362,7 @@ export default function ExamsScreen() {
         <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

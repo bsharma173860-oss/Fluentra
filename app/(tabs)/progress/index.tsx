@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { getLangNames } from '@/constants/languages';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 // ─── Dimensions ───────────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get('window');
@@ -156,6 +157,7 @@ export default function ProgressScreen() {
   const chartData = CHART_DATA[lang] ?? CHART_DATA.en;
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <Text style={s.title}>Your Progress</Text>
@@ -303,6 +305,7 @@ export default function ProgressScreen() {
         <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

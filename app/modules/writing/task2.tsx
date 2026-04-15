@@ -13,10 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { mockScore, setWritingResult } from '@/lib/writingStore';
-
-const PROMPT =
-  'Some people believe technology has made it easier to learn new skills, while others think it has actually made people lazier and less likely to develop real abilities. Discuss both views and give your own opinion.';
+import { getTodaysTask2 } from '@/constants/dailyContent';
 
 const EXAM = 'IELTS';
 const MIN_WORDS = 250;
@@ -34,6 +33,9 @@ function countWords(text: string) {
 }
 
 export default function WritingTask2Screen() {
+  const todaysTask2  = getTodaysTask2();
+  const PROMPT       = todaysTask2.prompt;
+
   const [text, setText] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
   const [submitting, setSubmitting] = useState(false);
@@ -83,6 +85,7 @@ export default function WritingTask2Screen() {
   }
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -114,7 +117,7 @@ export default function WritingTask2Screen() {
         >
           {/* Prompt card */}
           <View style={s.promptCard}>
-            <Text style={s.promptLabel}>TASK 2 PROMPT</Text>
+            <Text style={s.promptLabel}>TASK 2 PROMPT · {todaysTask2.topic.toUpperCase()}</Text>
             <Text style={s.promptText}>{PROMPT}</Text>
           </View>
 
@@ -176,6 +179,7 @@ export default function WritingTask2Screen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

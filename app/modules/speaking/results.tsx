@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { getSpeakingResult, clearSpeakingResult, SpeakingResult } from '@/lib/speakingStore';
 
 // ── Score bar ────────────────────────────────────────────────────
@@ -116,6 +117,7 @@ export default function SpeakingResultsScreen() {
   const secs = timeTakenSeconds % 60;
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
@@ -225,6 +227,7 @@ export default function SpeakingResultsScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

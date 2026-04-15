@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { getWritingResult, clearWritingResult, WritingResult } from '@/lib/writingStore';
 
 // ── Score bar ────────────────────────────────────────────────────
@@ -98,6 +99,7 @@ export default function WritingResultsScreen() {
   const bandColor = bandScore >= 7 ? Colors.green : bandScore >= 5.5 ? Colors.p : Colors.orange;
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
@@ -191,6 +193,7 @@ export default function WritingResultsScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

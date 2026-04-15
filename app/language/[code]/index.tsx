@@ -1,112 +1,81 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Alert,
-  Dimensions,
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Colors } from '@/constants/colors';
 import { LANGUAGE_EXAMS, type ExamProfile } from '@/constants/examProfiles';
 import { getLangNames } from '@/constants/languages';
 import { useAuth } from '@/lib/authContext';
 import { supabase, type UserLanguage } from '@/lib/supabase';
 import {
-  hasPracticed,
-  hasPracticedAnyToday,
-  completedModulesToday,
-  type PracticeModule,
+  hasPracticed, type PracticeModule,
 } from '@/lib/practiceStore';
+import {
+  ChevronLeftIcon, ChevronRightIcon,
+  MicIcon, PenIcon, HeadphoneIcon, BookIcon, SpeakIcon,
+  LockIcon, CheckIcon, FlameIcon,
+} from '@/components/icons';
+import { getDifficulty, DIFFICULTY_COLOR, DIFFICULTY_BG } from '@/constants/dailyContent';
 
-const { width: W } = Dimensions.get('window');
-
-// ─────────────────────────────────────────────────────────────────
-// Language metadata lookup
-// ─────────────────────────────────────────────────────────────────
-const LANG_META: Record<string, {
-  flag: string; color: string; trackColor: string;
-}> = {
-  en: { flag: '🇬🇧', color: Colors.p,      trackColor: Colors.p_soft    },
-  es: { flag: '🇪🇸', color: Colors.orange,  trackColor: Colors.orange_bg  },
-  fr: { flag: '🇫🇷', color: Colors.green,   trackColor: Colors.green_bg   },
-  de: { flag: '🇩🇪', color: Colors.gold,    trackColor: Colors.gold_bg    },
-  pt: { flag: '🇵🇹', color: Colors.orange,  trackColor: Colors.orange_bg  },
-  zh: { flag: '🇨🇳', color: '#D93025',      trackColor: '#FFF0F0'         },
-  ja: { flag: '🇯🇵', color: '#D93025',      trackColor: '#FFF0F0'         },
-  ar: { flag: '🇸🇦', color: Colors.green,   trackColor: Colors.green_bg   },
+// ── Language metadata ─────────────────────────────────────────────
+const LANG_META: Record<string, { color: string; trackColor: string }> = {
+  en: { color: Colors.p,      trackColor: Colors.p_soft    },
+  es: { color: Colors.orange, trackColor: Colors.orange_bg },
+  fr: { color: Colors.green,  trackColor: Colors.green_bg  },
+  de: { color: Colors.gold,   trackColor: Colors.gold_bg   },
+  pt: { color: Colors.orange, trackColor: Colors.orange_bg },
+  zh: { color: Colors.danger, trackColor: Colors.danger_bg },
+  ja: { color: Colors.danger, trackColor: Colors.danger_bg },
+  ar: { color: Colors.green,  trackColor: Colors.green_bg  },
 };
-function langMeta(code: string) {
-  return LANG_META[code] ?? { flag: '🌐', color: Colors.p, trackColor: Colors.p_soft };
+function langColor(code: string) {
+  return LANG_META[code] ?? { color: Colors.p, trackColor: Colors.p_soft };
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Practice module configs
-// ─────────────────────────────────────────────────────────────────
+// ── Practice card config ──────────────────────────────────────────
 type PracticeCard = {
-  module: PracticeModule;
-  icon: string;
-  title: string;
-  duration: string;
-  freeLabel: string;
-  color: string;
-  bgColor: string;
-  route: string;
-  pro: boolean;
+  module:   PracticeModule;
+  Icon:     typeof MicIcon;
+  title:    string;
+  desc:     string;
+  color:    string;
+  bgColor:  string;
+  route:    string;
+  pro:      boolean;
 };
 
 const PRACTICE_CARDS: PracticeCard[] = [
   {
-    module: 'speaking',
-    icon: '🎙',
-    title: 'Speaking',
-    duration: '5–15 min',
-    freeLabel: '10 min/day',
-    color: Colors.p,
-    bgColor: Colors.p_soft,
-    route: '/modules/speaking/select',
-    pro: false,
+    module: 'speaking', Icon: MicIcon,
+    title: 'Speaking', desc: '5–15 min · AI examiner',
+    color: Colors.orange, bgColor: Colors.orange_bg,
+    route: '/modules/speaking/select', pro: false,
   },
   {
-    module: 'writing',
-    icon: '✏️',
-    title: 'Writing',
-    duration: 'Essay or short response',
-    freeLabel: '1/day',
-    color: Colors.gold,
-    bgColor: Colors.gold_bg,
-    route: '/modules/writing/select',
-    pro: false,
+    module: 'writing', Icon: PenIcon,
+    title: 'Writing', desc: 'Essay or short response',
+    color: Colors.gold, bgColor: Colors.gold_bg,
+    route: '/modules/writing/select', pro: false,
   },
   {
-    module: 'listening',
-    icon: '🎧',
-    title: 'Listening',
-    duration: 'Audio comprehension',
-    freeLabel: '1/day',
-    color: Colors.green,
-    bgColor: Colors.green_bg,
-    route: '/modules/listening/select',
-    pro: false,
+    module: 'listening', Icon: HeadphoneIcon,
+    title: 'Listening', desc: 'Audio comprehension',
+    color: Colors.green, bgColor: Colors.green_bg,
+    route: '/modules/listening/select', pro: false,
   },
   {
-    module: 'reading',
-    icon: '📖',
-    title: 'Reading',
-    duration: 'Passage + questions',
-    freeLabel: 'Pro only',
-    color: Colors.orange,
-    bgColor: Colors.orange_bg,
-    route: '/modules/reading/select',
-    pro: true,
+    module: 'reading', Icon: BookIcon,
+    title: 'Reading', desc: 'Passage analysis',
+    color: Colors.blue, bgColor: Colors.blue_bg,
+    route: '/modules/reading/select', pro: false,
   },
 ];
 
-// Mock per-language scores (replace with Supabase queries Day 10+)
+// Mock scores
 const MOCK_SCORES: Record<string, { band: number; speaking: number; writing: number; listening: number; reading: number }> = {
   en: { band: 6.5, speaking: 7.0, writing: 6.5, listening: 7.5, reading: 6.5 },
   es: { band: 5.5, speaking: 5.5, writing: 5.0, listening: 6.0, reading: 5.5 },
@@ -115,64 +84,394 @@ const MOCK_SCORES: Record<string, { band: number; speaking: number; writing: num
 
 const STREAK_TARGET = 40;
 
-// ─────────────────────────────────────────────────────────────────
-// Score bar
-// ─────────────────────────────────────────────────────────────────
+type Tab = 'practice' | 'dashboard' | 'exams';
+
+// ── Sub-components ────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: string }) {
+  return <Text style={sl.label}>{children}</Text>;
+}
+const sl = StyleSheet.create({
+  label: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 11,
+    color: Colors.ink3, letterSpacing: 0.8,
+    textTransform: 'uppercase', marginBottom: 10,
+  },
+});
+
 function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
-  const pct = (value / 9) * 100;
   return (
     <View style={sb.row}>
       <Text style={sb.label}>{label}</Text>
       <View style={sb.track}>
-        <View style={[sb.fill, { width: `${pct}%` as any, backgroundColor: color }]} />
+        <View style={[sb.fill, { width: `${(value / 9) * 100}%` as any, backgroundColor: color }]} />
       </View>
       <Text style={[sb.val, { color }]}>{value.toFixed(1)}</Text>
     </View>
   );
 }
 const sb = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  label: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, width: 80 },
-  track: { flex: 1, height: 6, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 99 },
-  val: { fontFamily: 'Inter_700Bold', fontSize: 12, width: 30, textAlign: 'right' },
+  row:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  label: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, width: 72 },
+  track: { flex: 1, height: 5, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
+  fill:  { height: '100%', borderRadius: 99 },
+  val:   { fontFamily: 'Inter_700Bold', fontSize: 12, width: 30, textAlign: 'right' },
 });
 
-// ─────────────────────────────────────────────────────────────────
-// Main screen
-// ─────────────────────────────────────────────────────────────────
+// ── Practice tab ──────────────────────────────────────────────────
+function PracticeTab({
+  langCode, practiced, streak, remaining, examsUnlocked,
+  accentColor, onCardTap,
+}: {
+  langCode:      string;
+  practiced:     Record<PracticeModule, boolean>;
+  streak:        number;
+  remaining:     number;
+  examsUnlocked: boolean;
+  accentColor:   string;
+  onCardTap:     (card: PracticeCard) => void;
+}) {
+  return (
+    <View style={pt.wrap}>
+      <Text style={pt.title}>Daily Practice</Text>
+      <Text style={pt.sub}>One session counts as your streak for today</Text>
+
+      <View style={pt.cardList}>
+        {PRACTICE_CARDS.map(card => {
+          const done = practiced[card.module];
+          const { Icon } = card;
+          return (
+            <TouchableOpacity
+              key={card.module}
+              style={pt.card}
+              onPress={() => onCardTap(card)}
+              activeOpacity={0.8}
+            >
+              {/* Left icon */}
+              <View style={[pt.iconBox, { backgroundColor: card.bgColor }]}>
+                <Icon size={18} color={card.color} strokeWidth={1.5} />
+              </View>
+
+              {/* Middle */}
+              <View style={pt.cardMeta}>
+                <Text style={pt.cardName}>{card.title}</Text>
+                <Text style={pt.cardDesc}>{card.desc}</Text>
+              </View>
+
+              {/* Right */}
+              <View style={pt.cardRight}>
+                {done ? (
+                  <View style={[pt.statusPill, { backgroundColor: card.bgColor }]}>
+                    <CheckIcon size={12} color={card.color} strokeWidth={2.5} />
+                  </View>
+                ) : card.pro ? (
+                  <LockIcon size={14} color={Colors.ink3} />
+                ) : (
+                  <View style={[pt.statusPill, { backgroundColor: card.bgColor }]}>
+                    <Text style={[pt.statusText, { color: card.color }]}>1 left</Text>
+                  </View>
+                )}
+                <ChevronRightIcon size={14} color={Colors.borderStrong} />
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* AI Tutor card */}
+        <TouchableOpacity
+          style={pt.card}
+          onPress={() => router.push(`/language/${langCode}/tutor` as any)}
+          activeOpacity={0.8}
+        >
+          <View style={[pt.iconBox, { backgroundColor: Colors.purple_bg }]}>
+            <SpeakIcon size={18} color={Colors.purple} strokeWidth={1.5} />
+          </View>
+          <View style={pt.cardMeta}>
+            <Text style={pt.cardName}>AI Tutor</Text>
+            <Text style={pt.cardDesc}>Free conversation</Text>
+          </View>
+          <View style={pt.cardRight}>
+            <View style={[pt.statusPill, { backgroundColor: Colors.purple_bg }]}>
+              <Text style={[pt.statusText, { color: Colors.purple }]}>Free</Text>
+            </View>
+            <ChevronRightIcon size={14} color={Colors.borderStrong} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Content Library card */}
+        <TouchableOpacity
+          style={pt.card}
+          onPress={() => router.push(`/language/${langCode}/library` as any)}
+          activeOpacity={0.8}
+        >
+          <View style={[pt.iconBox, { backgroundColor: Colors.blue_bg }]}>
+            <BookIcon size={18} color={Colors.blue} strokeWidth={1.5} />
+          </View>
+          <View style={pt.cardMeta}>
+            <Text style={pt.cardName}>Content Library</Text>
+            <Text style={pt.cardDesc}>Browse all passages & prompts</Text>
+          </View>
+          <View style={pt.cardRight}>
+            <ChevronRightIcon size={14} color={Colors.borderStrong} />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Streak card */}
+      <View style={pt.streakCard}>
+        <View style={pt.streakCardTop}>
+          <Text style={pt.streakLabel}>Your streak</Text>
+          {/* Difficulty badge */}
+          {(() => {
+            const diff = getDifficulty(streak);
+            return (
+              <View style={[pt.diffBadge, { backgroundColor: DIFFICULTY_BG[diff] }]}>
+                <Text style={[pt.diffBadgeText, { color: DIFFICULTY_COLOR[diff] }]}>
+                  {diff}
+                </Text>
+              </View>
+            );
+          })()}
+        </View>
+        <View style={pt.streakRow}>
+          <Text style={[pt.streakNum, { color: accentColor }]}>{streak}</Text>
+          <Text style={pt.streakDen}> /{STREAK_TARGET} days</Text>
+        </View>
+        <View style={pt.streakTrack}>
+          <View style={[pt.streakFill, { width: `${Math.min((streak / STREAK_TARGET) * 100, 100)}%` as any, backgroundColor: accentColor }]} />
+        </View>
+        <Text style={pt.streakNote}>
+          {examsUnlocked
+            ? 'Monthly exam is unlocked!'
+            : `Keep going — ${remaining} more day${remaining === 1 ? '' : 's'} to unlock exams`
+          }
+        </Text>
+        <Text style={pt.levelNote}>Current level: {getDifficulty(streak)} · Increases as you practice</Text>
+      </View>
+    </View>
+  );
+}
+const pt = StyleSheet.create({
+  wrap:      { padding: 20, gap: 0 },
+  title:     { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 18, color: Colors.ink, marginBottom: 4 },
+  sub:       { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, marginBottom: 16 },
+  cardList:  { gap: 8 },
+  card: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.white,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    paddingVertical: 14, paddingHorizontal: 14, height: 68,
+  },
+  iconBox:   { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  cardMeta:  { flex: 1 },
+  cardName:  { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink },
+  cardDesc:  { fontFamily: 'Inter_400Regular',  fontSize: 12, color: Colors.ink3, marginTop: 2 },
+  cardRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statusPill:{ borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, alignItems: 'center', justifyContent: 'center' },
+  statusText:{ fontFamily: 'Inter_600SemiBold', fontSize: 10 },
+
+  streakCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  diffBadge:     { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  diffBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
+  levelNote:     { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3, marginTop: 2 },
+  streakCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    padding: 20, marginTop: 16, gap: 8,
+  },
+  streakLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+  streakRow:   { flexDirection: 'row', alignItems: 'baseline', gap: 0 },
+  streakNum:   { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 48, lineHeight: 52 },
+  streakDen:   { fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3 },
+  streakTrack: { height: 6, backgroundColor: Colors.bg2, borderRadius: 3, overflow: 'hidden' },
+  streakFill:  { height: '100%', borderRadius: 3 },
+  streakNote:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, lineHeight: 18 },
+});
+
+// ── Dashboard tab ─────────────────────────────────────────────────
+function DashboardTab({ langCode, streak, accentColor }: { langCode: string; streak: number; accentColor: string }) {
+  const scores = MOCK_SCORES[langCode] ?? MOCK_SCORES.en;
+  const metrics = [
+    { label: 'SESSIONS', value: '24',              color: Colors.ink },
+    { label: 'BAND SCORE', value: scores.band.toFixed(1), color: accentColor },
+    { label: 'BEST SCORE', value: '8.0',           color: Colors.gold },
+    { label: 'STREAK',     value: `${streak}d`,    color: Colors.orange },
+  ];
+  return (
+    <View style={db.wrap}>
+      <SectionLabel>OVERVIEW</SectionLabel>
+      <View style={db.grid}>
+        {metrics.map(m => (
+          <View key={m.label} style={db.metricCard}>
+            <Text style={[db.metricVal, { color: m.color }]}>{m.value}</Text>
+            <Text style={db.metricLbl}>{m.label}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={db.scoresCard}>
+        <SectionLabel>SKILL BREAKDOWN</SectionLabel>
+        <View style={db.scoreBars}>
+          <ScoreBar label="Speaking"  value={scores.speaking}  color={Colors.orange} />
+          <ScoreBar label="Writing"   value={scores.writing}   color={Colors.gold}   />
+          <ScoreBar label="Listening" value={scores.listening} color={Colors.green}  />
+          <ScoreBar label="Reading"   value={scores.reading}   color={Colors.blue}   />
+        </View>
+      </View>
+    </View>
+  );
+}
+const db = StyleSheet.create({
+  wrap: { padding: 20, gap: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  metricCard: {
+    flex: 1, minWidth: '45%',
+    backgroundColor: Colors.white,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    padding: 16, alignItems: 'center', gap: 4,
+  },
+  metricVal: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 26 },
+  metricLbl: { fontFamily: 'Inter_500Medium', fontSize: 10, color: Colors.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
+  scoresCard: { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 16, gap: 12 },
+  scoreBars:  { gap: 12 },
+});
+
+// ── Exams tab ─────────────────────────────────────────────────────
+function ExamsTab({
+  langCode, examProfiles, examsUnlocked, remaining,
+}: {
+  langCode:      string;
+  examProfiles:  ExamProfile[];
+  examsUnlocked: boolean;
+  remaining:     number;
+}) {
+  if (examProfiles.length === 0) {
+    return (
+      <View style={ex.empty}>
+        <Text style={ex.emptyTitle}>No exams available</Text>
+        <Text style={ex.emptySub}>Exam support for this language is coming soon.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={ex.wrap}>
+      {!examsUnlocked && (
+        <View style={ex.lockBanner}>
+          <LockIcon size={14} color={Colors.ink3} />
+          <Text style={ex.lockBannerText}>{remaining} more streak days to unlock exams</Text>
+        </View>
+      )}
+
+      {examProfiles.map(exam => (
+        <View key={exam.id} style={[ex.card, { borderLeftColor: examsUnlocked ? exam.color : Colors.borderStrong }]}>
+          <View style={ex.cardTop}>
+            <View style={[ex.examBadge, { backgroundColor: exam.bg }]}>
+              <Text style={[ex.examBadgeText, { color: exam.color }]}>{exam.id.toUpperCase()}</Text>
+            </View>
+            <Text style={[ex.cardTitle, !examsUnlocked && ex.cardTitleLocked]}>{exam.name}</Text>
+          </View>
+          <Text style={ex.cardSub}>
+            {examsUnlocked ? `Avg score: 7.0 · Last attempt: Apr 10` : exam.fullName}
+          </Text>
+
+          {examsUnlocked ? (
+            <View style={ex.actions}>
+              <TouchableOpacity
+                style={[ex.practiceBtn, { borderColor: exam.color }]}
+                onPress={() => router.push(`/language/${langCode}/${exam.id}/exam-entry` as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={[ex.practiceBtnText, { color: exam.color }]}>Practice</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={ex.monthlyBtn}
+                onPress={() => router.push(`/language/${langCode}/${exam.id}/monthly-exam` as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={ex.monthlyBtnText}>Monthly Exam</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={ex.lockRow}>
+              <LockIcon size={12} color={Colors.ink3} />
+              <Text style={ex.lockMsg}>Unlock at {STREAK_TARGET} day streak</Text>
+            </View>
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+const ex = StyleSheet.create({
+  wrap:  { padding: 20, gap: 10 },
+  empty: { padding: 32, alignItems: 'center', gap: 8 },
+  emptyTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink },
+  emptySub:   { fontFamily: 'Inter_400Regular',  fontSize: 13, color: Colors.ink3, textAlign: 'center' },
+
+  lockBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.bg2,
+    borderRadius: 10, padding: 12, marginBottom: 4,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  lockBannerText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
+
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    borderLeftWidth: 4, padding: 16, gap: 8,
+    overflow: 'hidden',
+  },
+  cardTop:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  examBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3 },
+  examBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 10 },
+  cardTitle:       { fontFamily: 'Inter_700Bold',    fontSize: 15, color: Colors.ink, flex: 1 },
+  cardTitleLocked: { color: Colors.ink3 },
+  cardSub:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+
+  actions:     { flexDirection: 'row', gap: 8, marginTop: 4 },
+  practiceBtn: { borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7 },
+  practiceBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  monthlyBtn:  { backgroundColor: Colors.gold_bg, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7 },
+  monthlyBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.gold },
+
+  lockRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  lockMsg: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+});
+
+// ── Main screen ───────────────────────────────────────────────────
 export default function LanguageDashboard() {
   const { code } = useLocalSearchParams<{ code: string }>();
-  const langCode = code ?? 'en';
-  const meta = langMeta(langCode);
+  const langCode  = code ?? 'en';
+  const { color: accentColor } = langColor(langCode);
 
   const { user, profile } = useAuth();
-  const [langRecord, setLangRecord] = useState<UserLanguage | null>(null);
-  const [practiced, setPracticed] = useState<Record<PracticeModule, boolean>>({
+  const [langRecord,  setLangRecord]  = useState<UserLanguage | null>(null);
+  const [practiced,   setPracticed]   = useState<Record<PracticeModule, boolean>>({
     speaking: false, writing: false, listening: false, reading: false,
   });
-  const [translateEnabled, setTranslateEnabled] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('practice');
 
-  const streak = profile?.streak_count ?? 32;
-  const scores = MOCK_SCORES[langCode] ?? MOCK_SCORES.en;
-  const remaining = Math.max(0, STREAK_TARGET - streak);
-  const examsUnlocked = streak >= STREAK_TARGET;
-  const examProfiles: ExamProfile[] = LANGUAGE_EXAMS[langCode] ?? [];
-  const showTranslateToggle = langCode !== 'en';
+  const streak       = profile?.streak_count ?? 32;
+  const scores       = MOCK_SCORES[langCode] ?? MOCK_SCORES.en;
+  const remaining    = Math.max(0, STREAK_TARGET - streak);
+  const examsUnlocked= streak >= STREAK_TARGET;
+  const examProfiles : ExamProfile[] = LANGUAGE_EXAMS[langCode] ?? [];
+  const fluencyPct   = langRecord?.fluency_percent ?? (scores.band / 9 * 100);
 
-  // Fetch language record from DB
+  const names    = getLangNames(langCode);
+  const langNative = langRecord?.language_name_native ?? names.native;
+
+  // Fetch language record
   useEffect(() => {
     if (!user?.id) return;
-    supabase
-      .from('user_languages')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('language_code', langCode)
-      .single()
+    supabase.from('user_languages').select('*')
+      .eq('user_id', user.id).eq('language_code', langCode).single()
       .then(({ data }) => { if (data) setLangRecord(data); });
   }, [user?.id, langCode]);
 
-  // Refresh practice completion status every time screen focuses
+  // Refresh practice status on focus
   useFocusEffect(
     useCallback(() => {
       setPracticed({
@@ -184,582 +483,133 @@ export default function LanguageDashboard() {
     }, [langCode])
   );
 
-  const practicedToday  = hasPracticedAnyToday(langCode);
-  const completedToday  = completedModulesToday(langCode);
-  const langMeta   = getLangNames(langCode);
-  const langName   = langRecord?.language_name_en ?? langMeta.english;
-  const langNative = langRecord?.language_name_native ?? langMeta.native;
-  const fluencyPct = langRecord?.fluency_percent ?? (MOCK_SCORES[langCode] ? scores.band / 9 * 100 : 50);
-
-  // Build streak unlock text from the exam profiles for this language
-  const streakUnlockText = (() => {
-    if (examProfiles.length === 0) return `${remaining} more days to unlock the monthly exam`;
-    const names = examProfiles.map(e => e.name);
-    const joined = names.length > 1 ? names.slice(0, -1).join(', ') + ' + ' + names[names.length - 1] : names[0];
-    return `${remaining} more days to unlock ${joined} exam${examProfiles.length > 1 ? 's' : ''}`;
-  })();
-
-  function onPracticeCardTap(card: PracticeCard) {
+  function onCardTap(card: PracticeCard) {
     if (card.pro) {
-      Alert.alert(
-        'Pro Feature',
-        'Reading practice is available with a Fluentra Pro subscription.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Upgrade to Pro', style: 'default', onPress: () => {} },
-        ]
-      );
+      Alert.alert('Pro Feature', 'Reading is available with Fluentra Pro.', [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Upgrade', onPress: () => {} },
+      ]);
       return;
     }
     router.push(card.route as any);
   }
 
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'practice',  label: 'Practice'  },
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'exams',     label: 'Exams'     },
+  ];
+
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <Text style={s.backArrow}>←</Text>
+          <ChevronLeftIcon size={14} color={Colors.ink2} />
         </TouchableOpacity>
         <View style={s.headerCenter}>
-          <Text style={s.headerFlag}>{meta.flag}</Text>
-          <View>
-            <Text style={s.headerSub}>{langName}</Text>
-            <Text style={s.headerTitle}>{langNative}</Text>
-          </View>
+          <Text style={s.headerFlag}>{names.flag}</Text>
+          <Text style={s.headerTitle}>{langNative}</Text>
         </View>
-        <View style={[s.streakPill]}>
-          <Text style={s.streakPillText}>🔥 {streak} days</Text>
+        <View style={[s.streakPill, { backgroundColor: Colors.p_soft }]}>
+          <FlameIcon size={12} color={Colors.p} strokeWidth={1.5} />
+          <Text style={[s.streakPillText, { color: Colors.p }]}>Day {streak}</Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-
-        {/* ── Fluency + streak card ── */}
-        <View style={s.fluencyCard}>
-          {/* Progress bar */}
-          <View style={s.fluencyRow}>
-            <View style={s.fluencyLeft}>
-              <Text style={s.fluencyLabel}>Overall proficiency</Text>
-              <Text style={[s.fluencyPct, { color: meta.color }]}>{Math.round(fluencyPct)}%</Text>
-            </View>
-            <View style={s.fluencyBarWrap}>
-              <View style={s.fluencyTrack}>
-                <View style={[s.fluencyFill, {
-                  width: `${Math.min(fluencyPct, 100)}%` as any,
-                  backgroundColor: meta.color,
-                }]} />
-              </View>
-              <View style={s.examChips}>
-                {examProfiles.map(e => (
-                  <View key={e.id} style={[s.examChip, { borderColor: e.color, backgroundColor: e.bg }]}>
-                    <Text style={[s.examChipText, { color: e.color }]}>{e.name}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          <View style={s.divider} />
-
-          {/* Streak */}
-          <View style={s.streakRow}>
-            <View style={s.streakLeft}>
-              <Text style={s.streakIcon}>🔥</Text>
-              <View>
-                <Text style={s.streakCount}>{streak} day streak</Text>
-                <Text style={s.streakTarget}>
-                  {practicedToday ? '✅ Practiced today' : 'Practice today to continue'}
-                </Text>
-              </View>
-            </View>
-            <Text style={s.streakNum}>{streak}<Text style={s.streakDen}>/{STREAK_TARGET}</Text></Text>
-          </View>
-          <View style={s.streakTrack}>
-            <View style={[s.streakFill, { width: `${Math.min((streak / STREAK_TARGET) * 100, 100)}%` as any, backgroundColor: Colors.orange }]} />
-          </View>
-          <Text style={s.streakNote}>
-            {examsUnlocked ? '🎉 Monthly exam is unlocked!' : streakUnlockText}
-          </Text>
-        </View>
-
-        {/* ── Daily Practice ── */}
-        <View style={s.sectionHeader}>
-          <View>
-            <Text style={s.sectionCap}>DAILY PRACTICE</Text>
-            <Text style={s.sectionSub}>Builds your streak · Complete any one today</Text>
-          </View>
-          {practicedToday && (
-            <View style={s.practicedBadge}>
-              <Text style={s.practicedBadgeText}>Practiced today ✓</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Translate toggle — only for non-English languages */}
-        {showTranslateToggle && (
-          <View style={s.translateRow}>
-            <Text style={s.translateLabel}>Translate to English</Text>
-            <Switch
-              value={translateEnabled}
-              onValueChange={setTranslateEnabled}
-              trackColor={{ false: Colors.border, true: Colors.p }}
-              thumbColor={Colors.white}
-            />
-          </View>
-        )}
-
-        <View style={s.practiceGrid}>
-          {PRACTICE_CARDS.map(card => {
-            const done = practiced[card.module];
-            return (
-              <TouchableOpacity
-                key={card.module}
-                style={[s.practiceCard, { backgroundColor: card.bgColor }]}
-                onPress={() => onPracticeCardTap(card)}
-                activeOpacity={0.82}
-              >
-                {/* Lock / check overlay */}
-                {card.pro && (
-                  <View style={s.lockBadge}>
-                    <Text style={s.lockBadgeText}>🔒 Pro</Text>
-                  </View>
-                )}
-                {done && !card.pro && (
-                  <View style={[s.doneBadge, { backgroundColor: card.color }]}>
-                    <Text style={s.doneBadgeText}>✓</Text>
-                  </View>
-                )}
-
-                <Text style={s.practiceIcon}>{card.icon}</Text>
-                <Text style={[s.practiceTitle, { color: card.color }]}>{card.title}</Text>
-                <Text style={s.practiceDuration}>{card.duration}</Text>
-                <View style={[s.freeChip, { borderColor: card.color + '55' }]}>
-                  <Text style={[s.freeChipText, { color: card.color }]}>
-                    {card.pro ? 'Pro only' : `Free: ${card.freeLabel}`}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* ── Today's progress ── */}
-        {completedToday.length > 0 && (
-          <View style={s.todayCard}>
-            <Text style={s.todayTitle}>Today's practice ✅</Text>
-            <View style={s.todayModules}>
-              {completedToday.map(m => {
-                const c = PRACTICE_CARDS.find(p => p.module === m)!;
-                return (
-                  <View key={m} style={[s.todayChip, { backgroundColor: c.bgColor, borderColor: c.color + '55' }]}>
-                    <Text style={s.todayChipText}>{c.icon} {c.title}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* ── Stats 2×2 grid ── */}
-        <View style={s.statsGrid}>
-          {[
-            { label: 'AVG SCORE',  value: scores.band.toFixed(1), color: Colors.p      },
-            { label: 'SESSIONS',   value: '24',                   color: Colors.ink     },
-            { label: 'BEST SCORE', value: '8.0',                  color: Colors.gold    },
-            { label: 'STREAK',     value: `${streak}d`,           color: Colors.orange  },
-          ].map(stat => (
-            <View key={stat.label} style={s.statCard}>
-              <Text style={[s.statVal, { color: stat.color }]}>{stat.value}</Text>
-              <Text style={s.statLbl}>{stat.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* ── Exam access ── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionCap}>EXAMS</Text>
-          {!examsUnlocked && (
-            <Text style={s.sectionLink}>🔒 Unlocks at {STREAK_TARGET} days</Text>
-          )}
-        </View>
-
-        <View style={s.examList}>
-          {examProfiles.length === 0 ? (
-            <View style={s.examEmpty}>
-              <Text style={s.examEmptyText}>No exams available for this language yet.</Text>
-            </View>
-          ) : examProfiles.map(exam => (
-            <View
-              key={exam.id}
-              style={[s.examCard, { borderLeftColor: examsUnlocked ? exam.color : Colors.ink4 }]}
-            >
-              <Text style={[s.examCardTitle, !examsUnlocked && s.examCardTitleLocked]}>{exam.name}</Text>
-              <Text style={s.examCardSub}>
-                {examsUnlocked ? `Average: 7.0 · Last: Apr 10` : `${remaining} streak days to unlock`}
-              </Text>
-              <View style={s.examCardActions}>
-                {examsUnlocked ? (
-                  <>
-                    <TouchableOpacity
-                      style={[s.examPracticeBtn, { borderColor: exam.color }]}
-                      onPress={() => router.push(`/language/${langCode}/${exam.id}/exam-entry` as any)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[s.examPracticeBtnText, { color: exam.color }]}>Practice</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={s.examMonthlyBtn}
-                      onPress={() => router.push(`/language/${langCode}/${exam.id}/monthly-exam` as any)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={s.examMonthlyBtnText}>Monthly Exam</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <View style={s.examLockRow}>
-                    <Text style={s.examLockIcon}>🔒</Text>
-                    <Text style={s.examLockMsg}>{remaining} more streak days to unlock</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* ── Exam action buttons ── */}
-        {examProfiles.length > 0 && (
-          <View style={s.examActions}>
-            <TouchableOpacity
-              style={s.fullExamBtn}
-              activeOpacity={0.88}
-              onPress={() =>
-                router.push(
-                  `/language/${langCode}/${examProfiles[0].id}/exam-entry` as any
-                )
-              }
-            >
-              <View style={s.fullExamBtnLeft}>
-                <Text style={s.fullExamBtnIcon}>📋</Text>
-                <View>
-                  <Text style={s.fullExamBtnTitle}>Practice Full Exam</Text>
-                  <Text style={s.fullExamBtnSub}>~3 hours · All 4 modules · Instant results</Text>
-                </View>
-              </View>
-              <Text style={s.fullExamBtnArrow}>›</Text>
-            </TouchableOpacity>
-
-            {examsUnlocked && (
-              <TouchableOpacity
-                style={s.monthlyExamBtn}
-                activeOpacity={0.88}
-                onPress={() =>
-                  router.push(
-                    `/language/${langCode}/${examProfiles[0].id}/monthly-exam` as any
-                  )
-                }
-              >
-                <View style={s.fullExamBtnLeft}>
-                  <Text style={s.fullExamBtnIcon}>🏆</Text>
-                  <View>
-                    <Text style={s.monthlyExamBtnTitle}>Enter Monthly Exam</Text>
-                    <Text style={s.monthlyExamBtnSub}>April 2026 · $5 · 847 registered</Text>
-                  </View>
-                </View>
-                <Text style={[s.fullExamBtnArrow, { color: Colors.white }]}>›</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        {/* ── Quick links ── */}
-        <View style={s.quickLinks}>
+      {/* ── Tab bar ── */}
+      <View style={s.tabBar}>
+        {tabs.map(({ key, label }) => (
           <TouchableOpacity
-            style={s.quickLinkBtn}
-            onPress={() => router.push(`/(tabs)/progress?lang=${langCode}` as any)}
-            activeOpacity={0.82}
+            key={key}
+            style={s.tab}
+            onPress={() => setActiveTab(key)}
+            activeOpacity={0.75}
           >
-            <Text style={s.quickLinkIcon}>📊</Text>
-            <Text style={s.quickLinkText}>View full progress</Text>
-            <Text style={s.quickLinkArrow}>›</Text>
+            <Text style={[s.tabText, activeTab === key && s.tabTextActive]}>{label}</Text>
+            {activeTab === key && <View style={[s.tabIndicator, { backgroundColor: accentColor }]} />}
           </TouchableOpacity>
-          <TouchableOpacity
-            style={s.quickLinkBtn}
-            onPress={() => router.push(`/(tabs)/exams?lang=${langCode}` as any)}
-            activeOpacity={0.82}
-          >
-            <Text style={s.quickLinkIcon}>🏆</Text>
-            <Text style={s.quickLinkText}>View leaderboard</Text>
-            <Text style={s.quickLinkArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
+        ))}
+      </View>
 
-        {/* ── Score breakdown ── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionCap}>YOUR SCORES</Text>
-        </View>
-        <View style={s.scoresCard}>
-          <View style={s.bandRow}>
-            <Text style={[s.bandNum, { color: meta.color }]}>{scores.band.toFixed(1)}</Text>
-            <View style={s.bandMeta}>
-              <Text style={s.bandLabel}>Overall band</Text>
-              <Text style={s.bandDesc}>
-                {scores.band >= 7 ? 'Good — effective command' :
-                 scores.band >= 6 ? 'Competent' : 'Developing'}
-              </Text>
-            </View>
-          </View>
-          <View style={s.scoreBars}>
-            <ScoreBar label="Speaking"  value={scores.speaking}  color={Colors.p} />
-            <ScoreBar label="Writing"   value={scores.writing}   color={Colors.gold} />
-            <ScoreBar label="Listening" value={scores.listening} color={Colors.green} />
-            <ScoreBar label="Reading"   value={scores.reading}   color={Colors.orange} />
-          </View>
-        </View>
-
-        <View style={{ height: 32 }} />
+      {/* ── Content ── */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {activeTab === 'practice' && (
+          <PracticeTab
+            langCode={langCode}
+            practiced={practiced}
+            streak={streak}
+            remaining={remaining}
+            examsUnlocked={examsUnlocked}
+            accentColor={accentColor}
+            onCardTap={onCardTap}
+          />
+        )}
+        {activeTab === 'dashboard' && (
+          <DashboardTab
+            langCode={langCode}
+            streak={streak}
+            accentColor={accentColor}
+          />
+        )}
+        {activeTab === 'exams' && (
+          <ExamsTab
+            langCode={langCode}
+            examProfiles={examProfiles}
+            examsUnlocked={examsUnlocked}
+            remaining={remaining}
+          />
+        )}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 
-const CARD_W = (W - 20 * 2 - 12) / 2;
-
+// ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 12,
+    paddingHorizontal: 20, paddingVertical: 14,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
-    backgroundColor: Colors.white, gap: 12,
+    gap: 12,
   },
   backBtn: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: Colors.bg2,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: Colors.bgHover,
     alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 17, color: Colors.ink },
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerFlag: { fontSize: 26 },
-  headerTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: Colors.ink },
-  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+  headerFlag:   { fontSize: 22 },
+  headerTitle:  { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 24, color: Colors.ink },
+
   streakPill: {
-    backgroundColor: Colors.gold_bg, borderRadius: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 10, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.gold + '55',
+    borderRadius: 20,
   },
-  streakPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.gold },
+  streakPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
 
-  content: { padding: 20, gap: 20 },
-
-  // Fluency + streak card
-  fluencyCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20, borderWidth: 1, borderColor: Colors.border,
-    padding: 16, gap: 12,
-  },
-  fluencyRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
-  fluencyLeft: { gap: 4 },
-  fluencyLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
-  fluencyPct: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 40, lineHeight: 46 },
-  fluencyBarWrap: { flex: 1, paddingTop: 10, gap: 8 },
-  fluencyTrack: { height: 8, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
-  fluencyFill: { height: '100%', borderRadius: 99 },
-  examChips: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  examChip: {
-    borderWidth: 1, borderRadius: 99,
-    paddingHorizontal: 8, paddingVertical: 3,
-  },
-  examChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 10 },
-
-  divider: { height: 1, backgroundColor: Colors.border },
-
-  streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  streakLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  streakIcon: { fontSize: 22 },
-  streakCount: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
-  streakTarget: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },
-  streakNum: { fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.orange },
-  streakDen: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink4 },
-  streakTrack: { height: 6, backgroundColor: Colors.orange_bg, borderRadius: 99, overflow: 'hidden' },
-  streakFill: { height: '100%', borderRadius: 99 },
-  streakNote: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, textAlign: 'center' },
-
-  // Section headers
-  sectionHeader: {
+  tabBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: -8,
-  },
-  sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink },
-  sectionSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },
-  sectionLink: { fontFamily: 'Inter_500Medium', fontSize: 12, color: Colors.orange },
-  practicedBadge: {
-    backgroundColor: Colors.green_bg,
-    borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.green,
-  },
-  practicedBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.green },
-
-  // Translate toggle
-  translateRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: Colors.white,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
-    paddingHorizontal: 14, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: 20,
   },
-  translateLabel: { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.ink },
-
-  // Practice 2x2 grid
-  practiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  practiceCard: {
-    width: CARD_W,
-    borderRadius: 18,
-    padding: 14,
-    gap: 5,
-    position: 'relative',
-    overflow: 'hidden',
-    minHeight: 130,
+  tab: {
+    paddingVertical: 12, marginRight: 24,
+    position: 'relative', alignItems: 'center',
   },
-  lockBadge: {
-    position: 'absolute', top: 8, right: 8,
-    backgroundColor: Colors.bg2,
-    borderRadius: 99, paddingHorizontal: 7, paddingVertical: 3,
+  tabText:       { fontFamily: 'Inter_400Regular',   fontSize: 14, color: Colors.ink3 },
+  tabTextActive: { fontFamily: 'Inter_600SemiBold',  fontSize: 14, color: Colors.ink  },
+  tabIndicator: {
+    position: 'absolute', bottom: 0,
+    left: 0, right: 0, height: 2,
+    borderTopLeftRadius: 1, borderTopRightRadius: 1,
   },
-  lockBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: Colors.ink3 },
-  doneBadge: {
-    position: 'absolute', top: 8, right: 8,
-    width: 22, height: 22, borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  doneBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
-  practiceIcon: { fontSize: 26, marginBottom: 2 },
-  practiceTitle: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  practiceDuration: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3, lineHeight: 16 },
-  freeChip: {
-    borderWidth: 1, borderRadius: 99,
-    paddingHorizontal: 8, paddingVertical: 3,
-    alignSelf: 'flex-start', marginTop: 4,
-  },
-  freeChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 10 },
-
-  // Today's progress
-  todayCard: {
-    backgroundColor: Colors.green_bg,
-    borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.green,
-    padding: 14, gap: 10,
-  },
-  todayTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.green },
-  todayModules: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  todayChip: {
-    borderWidth: 1, borderRadius: 99,
-    paddingHorizontal: 10, paddingVertical: 5,
-  },
-  todayChipText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: Colors.ink },
-
-  // Section cap title
-  sectionCap: {
-    fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.ink3,
-    textTransform: 'uppercase', letterSpacing: 0.6,
-  },
-
-  // Stats 2×2 grid
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  statCard: {
-    flex: 1, minWidth: '45%',
-    backgroundColor: Colors.white,
-    borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
-    padding: 14, alignItems: 'center', gap: 4,
-  },
-  statVal: { fontFamily: 'Inter_700Bold', fontSize: 22 },
-  statLbl: { fontFamily: 'Inter_500Medium', fontSize: 10, color: Colors.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
-
-  // Exam list
-  examList: { gap: 10 },
-  examEmpty: { padding: 16, backgroundColor: Colors.bg2, borderRadius: 12, alignItems: 'center' },
-  examEmptyText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
-  examCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 18, borderWidth: 1, borderColor: Colors.border,
-    borderLeftWidth: 4,
-    padding: 16, gap: 4,
-    overflow: 'hidden',
-  },
-  examCardLocked: { backgroundColor: Colors.bg2 },
-  examCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  examIconWrap: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  examIconText: { fontSize: 20 },
-  examCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
-  examCardTitleLocked: { color: Colors.ink3 },
-  examCardSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
-  examCardActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  examPracticeBtn: {
-    borderWidth: 1.5, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 7,
-  },
-  examPracticeBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  examMonthlyBtn: {
-    backgroundColor: Colors.gold_bg, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 7,
-  },
-  examMonthlyBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.gold },
-  examLockRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
-  examLockIcon: { fontSize: 13 },
-  examLockMsg: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  examArrow: { fontFamily: 'Inter_400Regular', fontSize: 22 },
-  examLockTag: {
-    backgroundColor: Colors.orange_bg,
-    borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.orange,
-  },
-  examLockTagText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: Colors.orange },
-
-  // Exam action buttons
-  examActions: { gap: 10 },
-  fullExamBtn: {
-    backgroundColor: Colors.white, borderRadius: 16,
-    borderWidth: 1, borderColor: Colors.border,
-    padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  fullExamBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  fullExamBtnIcon: { fontSize: 22 },
-  fullExamBtnTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
-  fullExamBtnSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3, marginTop: 2 },
-  fullExamBtnArrow: { fontFamily: 'Inter_400Regular', fontSize: 22, color: Colors.ink3 },
-  monthlyExamBtn: {
-    backgroundColor: '#1A1A2E', borderRadius: 16,
-    padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  monthlyExamBtnTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.white },
-  monthlyExamBtnSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
-
-  // Quick links
-  quickLinks: { gap: 10 },
-  quickLinkBtn: {
-    backgroundColor: Colors.white, borderRadius: 16,
-    borderWidth: 1, borderColor: Colors.border,
-    padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10,
-  },
-  quickLinkIcon: { fontSize: 20 },
-  quickLinkText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink, flex: 1 },
-  quickLinkArrow: { fontFamily: 'Inter_400Regular', fontSize: 20, color: Colors.ink3 },
-
-  // Scores
-  scoresCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 18, borderWidth: 1, borderColor: Colors.border,
-    padding: 16, gap: 14,
-  },
-  bandRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  bandNum: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 48, lineHeight: 54 },
-  bandMeta: { flex: 1, gap: 3 },
-  bandLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  bandDesc: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
-  scoreBars: { gap: 10 },
 });

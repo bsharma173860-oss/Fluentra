@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import {
   setReadingResult,
   estimateBand,
@@ -642,6 +643,7 @@ export default function ReadingSessionScreen() {
   });
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* ── Header ── */}
       <View style={s.header}>
@@ -760,6 +762,7 @@ export default function ReadingSessionScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

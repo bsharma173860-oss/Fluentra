@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/lib/authContext';
 
@@ -81,6 +82,7 @@ export default function ProfileScreen() {
   }
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
@@ -174,6 +176,7 @@ export default function ProfileScreen() {
         <View style={{ height: 16 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

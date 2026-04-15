@@ -13,8 +13,8 @@ import { Colors } from '@/constants/colors';
 type Exam = 'IELTS' | 'TOEFL';
 type Difficulty = 'B1' | 'B2' | 'C1' | 'C2';
 
-// Hardcode free-user gate — swap with real profile.is_pro check once subscriptions are built
-const IS_PRO = false;
+// Free users get 1 session per day (same as writing/listening)
+const IS_PRO = true; // gate removed — UsageLimitBanner shown after session instead
 
 const EXAM_DESC: Record<Exam, string> = {
   IELTS: 'Three passages, 40 questions, 60 minutes. Matching headings, MCQ, True/False/Not Given.',
@@ -45,22 +45,10 @@ export default function ReadingSelectScreen() {
           <View style={s.headerSpacer} />
         </View>
 
-        {/* Pro gate */}
-        {!IS_PRO && (
-          <View style={s.proGate}>
-            <View style={s.proIconWrap}>
-              <Text style={s.proIcon}>🔒</Text>
-            </View>
-            <Text style={s.proTitle}>Reading is a Pro feature</Text>
-            <Text style={s.proBody}>
-              Unlock all reading passages, difficulty levels, and detailed answer explanations with a Fluentra Pro subscription.
-            </Text>
-            <TouchableOpacity style={s.upgradeBtn} activeOpacity={0.85}>
-              <Text style={s.upgradeBtnText}>Upgrade to Pro →</Text>
-            </TouchableOpacity>
-            <Text style={s.proNote}>Preview available below — limited to 1 session</Text>
-          </View>
-        )}
+        {/* Free tier info (replaces old pro gate) */}
+        <View style={s.freeInfo}>
+          <Text style={s.freeInfoText}>1 free session per day · Detailed explanations included</Text>
+        </View>
 
         {/* Exam pills */}
         <Text style={s.sectionLabel}>Exam Format</Text>
@@ -170,42 +158,15 @@ const s = StyleSheet.create({
   },
   headerSpacer: { width: 38 },
 
-  // Pro gate
-  proGate: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: Colors.p,
-    padding: 20,
-    alignItems: 'center',
-    gap: 10,
+  freeInfo: {
+    backgroundColor: Colors.blue_bg,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
   },
-  proIconWrap: {
-    width: 56, height: 56,
-    borderRadius: 18,
-    backgroundColor: Colors.p_soft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  proIcon: { fontSize: 26 },
-  proTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink, textAlign: 'center' },
-  proBody: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: Colors.ink3,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  upgradeBtn: {
-    backgroundColor: Colors.p,
-    borderRadius: 12,
-    paddingVertical: 13,
-    paddingHorizontal: 28,
-    marginTop: 4,
-  },
-  upgradeBtnText: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.white },
-  proNote: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink4 },
+  freeInfoText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.blue, textAlign: 'center' },
 
   sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
 

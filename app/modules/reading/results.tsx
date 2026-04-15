@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { getReadingResult, clearReadingResult, ReadingResult } from '@/lib/readingStore';
 
 // ── Band color helper ───────────────────────────────────────────
@@ -170,6 +171,7 @@ export default function ReadingResultsScreen() {
   const tfngQs = questions.filter(q => q.type === 'tfng');
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
@@ -259,6 +261,7 @@ export default function ReadingResultsScreen() {
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

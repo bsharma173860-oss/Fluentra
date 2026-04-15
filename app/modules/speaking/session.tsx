@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { setSpeakingResult, buildMockResult, TranscriptMsg } from '@/lib/speakingStore';
 
 // ─────────────────────────────────────────────────────────────────
@@ -429,6 +430,7 @@ export default function SpeakingSessionScreen() {
   }
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
 
       {/* ── Header ── */}
@@ -551,6 +553,7 @@ export default function SpeakingSessionScreen() {
       </View>
 
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

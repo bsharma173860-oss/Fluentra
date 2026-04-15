@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import { Colors } from '@/constants/colors';
+import { AppLayout } from '@/components/layout/AppLayout';
 import {
   setListeningResult,
   estimateListeningBand,
@@ -582,6 +583,7 @@ export default function ListeningSessionScreen() {
   const noteQs = QUESTIONS.filter(q => q.type === 'note');
 
   return (
+    <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
@@ -684,6 +686,7 @@ export default function ListeningSessionScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </AppLayout>
   );
 }
 

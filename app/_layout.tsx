@@ -116,8 +116,10 @@ function RootLayoutInner() {
           animation: 'fade',
         }}
       >
-        <Stack.Screen name="(auth)" options={{ animation: 'none' }} />
-        <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+        <Stack.Screen name="(auth)"   options={{ animation: 'none' }} />
+        <Stack.Screen name="(tabs)"   options={{ animation: 'none' }} />
+        <Stack.Screen name="upgrade"  options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="library"  options={{ animation: 'none' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </>
