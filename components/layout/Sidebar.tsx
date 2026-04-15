@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -8,11 +8,22 @@ import { useAuth } from '@/lib/authContext';
 import { FluentraLogo } from '@/components/FluentraLogo';
 import {
   HomeIcon, TrophyIcon, BookIcon, ChartIcon, GearIcon,
-  PlusIcon, ChevronRightIcon, type IconProps,
+  PlusIcon, type IconProps,
 } from '@/components/icons';
 import { UserMenu } from '@/components/layout/UserMenu';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { getTheme } from '@/constants/languageThemes';
+
+// ── Search icon ───────────────────────────────────────────────────
+function SearchIcon({ size = 12, color = Colors.sidebarLabel }: IconProps) {
+  const { Svg, Circle, Line } = require('react-native-svg');
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="11" cy="11" r="8" stroke={color} strokeWidth="2" />
+      <Line x1="21" y1="21" x2="16.65" y2="16.65" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </Svg>
+  );
+}
 
 // ── Nav items ─────────────────────────────────────────────────────
 type NavItem = {
@@ -47,17 +58,30 @@ export function Sidebar() {
     <View style={s.sidebar}>
       {/* ── Logo ── */}
       <View style={s.logoWrap}>
-        <FluentraLogo iconSize={24} textSize={20} />
+        <FluentraLogo iconSize={22} textSize={18} />
       </View>
 
-      {/* ── Scrollable nav + languages ── */}
+      {/* ── Search bar ── */}
+      <View style={s.searchWrap}>
+        <View style={s.searchBar}>
+          <SearchIcon size={12} color={Colors.sidebarLabel} />
+          <TextInput
+            style={s.searchInput}
+            placeholder="Search..."
+            placeholderTextColor={Colors.sidebarLabel}
+            editable={false}
+          />
+        </View>
+      </View>
+
+      {/* ── Scrollable nav ── */}
       <ScrollView
         style={s.scroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 8 }}
       >
-        {/* NAVIGATE section */}
-        <Text style={s.sectionLabel}>NAVIGATE</Text>
+        {/* LEARN section */}
+        <Text style={s.sectionLabel}>LEARN</Text>
         <View style={s.navGroup}>
           {NAV_ITEMS.map(({ label, route, pathSegment, Icon }) => {
             const active = isActive(pathSegment);
@@ -68,7 +92,7 @@ export function Sidebar() {
                 onPress={() => router.push(route as any)}
                 activeOpacity={0.7}
               >
-                <Icon size={16} color={active ? Colors.ink : Colors.ink3} />
+                <Icon size={14} color={active ? Colors.sidebarTextActive : Colors.sidebarText} />
                 <Text style={[s.navLabel, active && s.navLabelActive]}>{label}</Text>
               </TouchableOpacity>
             );
@@ -85,17 +109,14 @@ export function Sidebar() {
             return (
               <TouchableOpacity
                 key={lang.id}
-                style={[s.langItem, active && { backgroundColor: theme.accentLight }]}
+                style={[s.langItem, active && s.navItemActive]}
                 onPress={() => router.push(route as any)}
                 activeOpacity={0.7}
               >
-                <View style={[s.langFlag, { backgroundColor: theme.bg }]}>
-                  <Text style={s.langFlagText}>{theme.flag}</Text>
-                </View>
-                <Text style={[s.langLabel, active && { color: theme.accentDark, fontFamily: 'Inter_500Medium' }]} numberOfLines={1}>
+                <View style={[s.langDot, { backgroundColor: theme.accent }]} />
+                <Text style={[s.langLabel, active && s.navLabelActive]} numberOfLines={1}>
                   {theme.native}
                 </Text>
-                <Text style={[s.langStreak, { color: theme.accent }]}>{lang.fluency_percent}%</Text>
               </TouchableOpacity>
             );
           })}
@@ -105,14 +126,14 @@ export function Sidebar() {
             onPress={() => router.push('/(tabs)/home' as any)}
             activeOpacity={0.7}
           >
-            <PlusIcon size={14} color={Colors.ink3} />
+            <PlusIcon size={12} color={Colors.sidebarLabel} />
             <Text style={s.addLangText}>Add language</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* ── User footer ── */}
-      <View style={s.footerWrap}>
+      {/* ── User row ── */}
+      <View style={s.userWrap}>
         <UserMenu
           name={displayName}
           email={user?.email ?? ''}
@@ -126,68 +147,103 @@ export function Sidebar() {
 // ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   sidebar: {
-    width:            256,
-    backgroundColor:  Colors.bgSidebar,
+    width:            220,
+    backgroundColor:  Colors.sidebarBg,
     borderRightWidth: 1,
-    borderRightColor: Colors.border,
+    borderRightColor: Colors.sidebarBorder,
     flexShrink:       0,
   },
   logoWrap: {
-    paddingHorizontal: 16,
-    paddingTop:        16,
+    paddingHorizontal: 12,
+    paddingTop:        14,
     paddingBottom:     8,
   },
+
+  searchWrap: { paddingHorizontal: 8, paddingBottom: 4 },
+  searchBar: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            6,
+    height:         30,
+    backgroundColor: Colors.sidebarInput,
+    borderWidth:    1,
+    borderColor:    Colors.sidebarInputBorder,
+    borderRadius:   6,
+    paddingHorizontal: 8,
+  },
+  searchInput: {
+    flex:       1,
+    fontFamily: 'Inter_400Regular',
+    fontSize:   12,
+    color:      Colors.sidebarLabel,
+    padding:    0,
+  },
+
   scroll: { flex: 1 },
 
   sectionLabel: {
-    fontFamily:        'Inter_600SemiBold',
+    fontFamily:        'Inter_500Medium',
     fontSize:          10,
-    color:             Colors.ink3,
-    letterSpacing:     0.8,
-    paddingHorizontal: 16,
-    paddingTop:        16,
-    paddingBottom:     6,
+    color:             Colors.sidebarLabel,
+    letterSpacing:     0.6,
+    paddingHorizontal: 12,
+    paddingTop:        14,
+    paddingBottom:     4,
   },
-  navGroup: { paddingHorizontal: 8, gap: 1 },
+  navGroup: { paddingHorizontal: 6, gap: 1 },
 
   navItem: {
     flexDirection:     'row',
     alignItems:        'center',
-    gap:               8,
-    height:            34,
+    gap:               7,
+    height:            30,
     borderRadius:      6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
-  navItemActive: { backgroundColor: Colors.bgHover },
-  navLabel:      { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink2, flex: 1 },
-  navLabelActive:{ fontFamily: 'Inter_500Medium',  fontSize: 14, color: Colors.ink  },
+  navItemActive: { backgroundColor: Colors.sidebarHover },
+  navLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize:   13,
+    color:      Colors.sidebarText,
+    flex:       1,
+  },
+  navLabelActive: {
+    fontFamily: 'Inter_500Medium',
+    color:      Colors.sidebarTextActive,
+  },
 
   langItem: {
     flexDirection:     'row',
     alignItems:        'center',
     gap:               8,
-    height:            34,
+    height:            28,
     borderRadius:      6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
-  langFlag:     { width: 20, height: 14, borderRadius: 3, alignItems: 'center', justifyContent: 'center' },
-  langFlagText: { fontSize: 11 },
-  langLabel:    { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1 },
-  langStreak:   { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.p },
+  langDot:  { width: 6, height: 6, borderRadius: 3 },
+  langLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize:   13,
+    color:      Colors.sidebarText,
+    flex:       1,
+  },
 
   addLangItem: {
     flexDirection:     'row',
     alignItems:        'center',
-    gap:               8,
-    height:            34,
+    gap:               7,
+    height:            28,
     borderRadius:      6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
-  addLangText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
+  addLangText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize:   13,
+    color:      Colors.sidebarLabel,
+  },
 
-  footerWrap: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    padding:        8,
+  userWrap: {
+    paddingHorizontal: 6,
+    paddingVertical:   8,
   },
 });

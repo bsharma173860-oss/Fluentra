@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ChevronLeftIcon } from '@/components/icons';
 import {
   setReadingResult,
   estimateBand,
@@ -648,11 +649,12 @@ export default function ReadingSessionScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <Text style={s.backArrow}>←</Text>
+          <ChevronLeftIcon size={13} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <View style={s.headerCenter}>
-          <Text style={s.headerTitle}>Reading</Text>
-          <Text style={s.headerSub}>{exam} · {difficulty} · {PASSAGE_TITLE}</Text>
+        <View style={s.breadcrumb}>
+          <Text style={s.breadcrumbRoot}>{exam} · Reading</Text>
+          <Text style={s.breadcrumbSep}>/</Text>
+          <Text style={s.breadcrumbCurrent}>{PASSAGE_TITLE}</Text>
         </View>
         <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
           <Text style={[s.timerText, isWarning && s.timerTextWarn]}>
@@ -770,34 +772,28 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, height: 48, gap: 10,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 32, height: 32,
-    borderRadius: 10,
+    width: 26, height: 26, borderRadius: 6,
     backgroundColor: Colors.bg2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 17, color: Colors.ink },
-  headerCenter: { flex: 1 },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
-  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+  breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
+  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
+  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
   timerBadge: {
-    paddingHorizontal: 10, paddingVertical: 5,
+    paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 99,
     backgroundColor: Colors.bg2,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.cardBorder,
   },
-  timerBadgeWarn: { backgroundColor: '#FFF3ED', borderColor: Colors.orange },
-  timerText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
+  timerBadgeWarn: { backgroundColor: Colors.orange_bg, borderColor: Colors.orange },
+  timerText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.textPrimary },
   timerTextWarn: { color: Colors.orange },
 
   tabRow: {

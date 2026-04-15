@@ -495,15 +495,16 @@ export default function LanguageDashboard() {
   return (
     <LanguageThemeProvider code={langCode}>
     <AppLayout>
-    <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+    <SafeAreaView style={s.safe} edges={['top']}>
       {/* ── Header ── */}
-      <View style={[s.header, { backgroundColor: theme.bg, borderBottomColor: theme.accentLight }]}>
+      <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <ChevronLeftIcon size={14} color={Colors.ink2} />
+          <ChevronLeftIcon size={14} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <View style={s.headerCenter}>
-          <Text style={s.headerFlag}>{theme.flag}</Text>
-          <Text style={s.headerTitle}>{langNative}</Text>
+        <View style={s.breadcrumb}>
+          <Text style={s.breadcrumbRoot}>Home</Text>
+          <Text style={s.breadcrumbSep}>/</Text>
+          <Text style={s.breadcrumbCurrent}>{langNative}</Text>
         </View>
         <View style={[s.streakPill, { backgroundColor: theme.accentLight }]}>
           <FlameIcon size={12} color={theme.accent} strokeWidth={1.5} />
@@ -512,7 +513,7 @@ export default function LanguageDashboard() {
       </View>
 
       {/* ── Tab bar ── */}
-      <View style={[s.tabBar, { backgroundColor: theme.bg, borderBottomColor: theme.accentLight }]}>
+      <View style={s.tabBar}>
         {tabs.map(({ key, label }) => (
           <TouchableOpacity
             key={key}
@@ -564,23 +565,24 @@ export default function LanguageDashboard() {
 
 // ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex: 1, backgroundColor: Colors.surface },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 14,
+    paddingHorizontal: 20, height: 48,
     backgroundColor: Colors.white,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-    gap: 12,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
+    gap: 10,
   },
   backBtn: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.bgHover,
+    width: 26, height: 26, borderRadius: 6,
+    backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerFlag:   { fontSize: 22 },
-  headerTitle:  { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 24, color: Colors.ink },
+  breadcrumb: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary },
+  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textMuted },
+  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 13, color: Colors.textPrimary },
 
   streakPill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -592,15 +594,15 @@ const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
     paddingHorizontal: 20,
   },
   tab: {
-    paddingVertical: 12, marginRight: 24,
+    paddingVertical: 11, marginRight: 24,
     position: 'relative', alignItems: 'center',
   },
-  tabText:       { fontFamily: 'Inter_400Regular',   fontSize: 14, color: Colors.ink3 },
-  tabTextActive: { fontFamily: 'Inter_600SemiBold',  fontSize: 14, color: Colors.ink  },
+  tabText:       { fontFamily: 'Inter_400Regular',  fontSize: 14, color: Colors.textSecondary },
+  tabTextActive: { fontFamily: 'Inter_500Medium',   fontSize: 14, color: Colors.textPrimary   },
   tabIndicator: {
     position: 'absolute', bottom: 0,
     left: 0, right: 0, height: 2,

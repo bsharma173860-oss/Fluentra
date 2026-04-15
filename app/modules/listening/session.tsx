@@ -15,6 +15,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ChevronLeftIcon } from '@/components/icons';
 import {
   setListeningResult,
   estimateListeningBand,
@@ -588,11 +589,12 @@ export default function ListeningSessionScreen() {
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <Text style={s.backArrow}>←</Text>
+          <ChevronLeftIcon size={13} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <View style={s.headerCenter}>
-          <Text style={s.headerTitle}>Listening</Text>
-          <Text style={s.headerSub}>{exam} · Section {section} · {mode === 'exam' ? 'Exam mode' : 'Practice mode'}</Text>
+        <View style={s.breadcrumb}>
+          <Text style={s.breadcrumbRoot}>{exam} · Listening</Text>
+          <Text style={s.breadcrumbSep}>/</Text>
+          <Text style={s.breadcrumbCurrent}>Section {section}</Text>
         </View>
         <View style={s.progressBadge}>
           <Text style={s.progressText}>{answeredCount}/{QUESTIONS.length}</Text>
@@ -695,27 +697,28 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 10,
+    paddingHorizontal: 16, height: 48,
     gap: 10,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 32, height: 32, borderRadius: 10,
+    width: 26, height: 26, borderRadius: 6,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 17, color: Colors.ink },
-  headerCenter: { flex: 1 },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
-  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
+  breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
+  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
+  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
   progressBadge: {
-    backgroundColor: Colors.p_soft,
+    backgroundColor: Colors.bg2,
     borderRadius: 99,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1, borderColor: Colors.cardBorder,
   },
-  progressText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.p },
+  progressText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.textSecondary },
 
   content: { padding: 16, gap: 16 },
 

@@ -125,59 +125,60 @@ function PlanCard(p: PlanCardProps) {
 const pc = StyleSheet.create({
   card: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 28,
+    borderColor: Colors.cardBorder,
+    padding: 24,
     flex: 1,
   },
   cardHighlight: {
     borderWidth: 2,
-    borderColor: Colors.p,
+    borderColor: Colors.textPrimary,
   },
   popularWrap: {
     alignSelf: 'center',
-    marginTop: -28,
-    marginBottom: 16,
+    marginTop: -24,
+    marginBottom: 14,
   },
   popular: {
-    backgroundColor: Colors.p,
+    backgroundColor: Colors.textPrimary,
     color: Colors.white,
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    paddingHorizontal: 14,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    paddingHorizontal: 12,
     paddingTop: 4,
     paddingBottom: 4,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
   },
   name: {
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    letterSpacing: 0.4,
+    fontSize: 11,
+    letterSpacing: 0.6,
     marginBottom: 12,
   },
   priceRow:   { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginBottom: 4 },
-  price:      { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 36, color: Colors.ink, lineHeight: 40 },
-  period:     { fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3, paddingBottom: 4 },
-  annual:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginBottom: 8 },
-  description:{ fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, marginBottom: 20, lineHeight: 18 },
+  price:      { fontFamily: 'Inter_700Bold', fontSize: 32, color: Colors.textPrimary, lineHeight: 36 },
+  period:     { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.textSecondary, paddingBottom: 4 },
+  annual:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted, marginBottom: 8 },
+  description:{ fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary, marginBottom: 20, lineHeight: 18 },
 
-  divider: { height: 1, backgroundColor: '#F2F0EB', marginBottom: 20 },
+  divider: { height: 1, backgroundColor: Colors.cardBorder, marginBottom: 20 },
 
   features:   { gap: 10, marginBottom: 24 },
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  featureText:{ fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 20 },
+  featureText:{ fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textPrimary, flex: 1, lineHeight: 20 },
 
   btn: {
-    height: 40, borderRadius: 8,
+    height: 38, borderRadius: 7,
     alignItems: 'center', justifyContent: 'center',
   },
   btnCurrent: { backgroundColor: Colors.bg2 },
-  btnPro:     { backgroundColor: Colors.p },
-  btnElite:   { backgroundColor: Colors.ink },
+  btnPro:     { backgroundColor: Colors.textPrimary },
+  btnElite:   { backgroundColor: Colors.textPrimary, opacity: 0.85 },
   btnText:    { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.white },
-  btnTextCurrent: { color: Colors.ink3 },
+  btnTextCurrent: { color: Colors.textSecondary },
 });
 
 // ── Screen ────────────────────────────────────────────────────────
@@ -244,7 +245,7 @@ export default function UpgradeScreen() {
           />
           <PlanCard
             name="Pro"
-            nameColor={Colors.p}
+            nameColor={Colors.textPrimary}
             price="$24"
             annual="or $20/mo billed annually"
             description="For serious exam preparation"
@@ -316,24 +317,24 @@ const s = StyleSheet.create({
   },
 
   backBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Colors.bgSidebar,
+    width: 28, height: 28, borderRadius: 6,
+    backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
 
-  header:   { alignItems: 'center', marginBottom: 40 },
-  title:    { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 32, color: Colors.ink, textAlign: 'center' },
-  subtitle: { fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3, marginTop: 8, textAlign: 'center' },
+  header:   { alignItems: 'center', marginBottom: 36 },
+  title:    { fontFamily: 'Inter_700Bold', fontSize: 28, color: Colors.textPrimary, textAlign: 'center' },
+  subtitle: { fontFamily: 'Inter_400Regular', fontSize: 15, color: Colors.textSecondary, marginTop: 8, textAlign: 'center' },
 
   plans:        { gap: 16 },
   plansDesktop: { flexDirection: 'row', alignItems: 'flex-start' },
 
   faqSection: { marginTop: 48 },
   faqTitle:   {
-    fontFamily: 'DMSerifDisplay_400Regular',
-    fontSize: 18,
-    color: Colors.ink,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: 20,
   },

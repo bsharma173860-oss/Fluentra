@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ChevronLeftIcon } from '@/components/icons';
 import { setSpeakingResult, buildMockResult, TranscriptMsg } from '@/lib/speakingStore';
 
 // ─────────────────────────────────────────────────────────────────
@@ -436,14 +437,16 @@ export default function SpeakingSessionScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <Text style={s.backArrow}>←</Text>
+          <ChevronLeftIcon size={13} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <View style={s.headerCenter}>
-          <Text style={s.headerTitle}>Speaking · {exam}</Text>
-          <View style={s.liveRow}>
-            <View style={s.liveDot} />
-            <Text style={s.liveText}>Live</Text>
-          </View>
+        <View style={s.breadcrumb}>
+          <Text style={s.breadcrumbRoot}>{exam} · Speaking</Text>
+          <Text style={s.breadcrumbSep}>/</Text>
+          <Text style={s.breadcrumbCurrent}>Live session</Text>
+        </View>
+        <View style={s.liveRow}>
+          <View style={s.liveDot} />
+          <Text style={s.liveText}>Live</Text>
         </View>
 
         {/* Camera placeholder */}
@@ -568,18 +571,19 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 10, gap: 10,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: 16, height: 48, gap: 10,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 32, height: 32, borderRadius: 10,
+    width: 26, height: 26, borderRadius: 6,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 17, color: Colors.ink },
-  headerCenter: { flex: 1, gap: 3 },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
+  breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
+  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
+  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   liveDot: {
     width: 8, height: 8, borderRadius: 4,
@@ -591,14 +595,14 @@ const s = StyleSheet.create({
     width: 52, height: 52, borderRadius: 12,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.cardBorder,
     overflow: 'hidden',
   },
   camIcon: { fontSize: 22 },
 
   phaseStrip: {
     backgroundColor: Colors.white,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
     paddingVertical: 8, paddingHorizontal: 14,
     flexDirection: 'row',
   },

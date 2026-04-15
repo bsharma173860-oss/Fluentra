@@ -223,11 +223,12 @@ export default function WritingTask1Screen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <ChevronLeftIcon size={14} color={Colors.ink2} />
+          <ChevronLeftIcon size={13} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <View style={s.headerCenter}>
-          <Text style={s.headerTitle}>Task 1</Text>
-          <Text style={s.headerSub}>Graph description · {MIN_WORDS}+ words</Text>
+        <View style={s.breadcrumb}>
+          <Text style={s.breadcrumbRoot}>{EXAM} · Writing</Text>
+          <Text style={s.breadcrumbSep}>/</Text>
+          <Text style={s.breadcrumbCurrent}>Task 1</Text>
         </View>
         <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
           <Text style={[s.timerText, isWarning && s.timerTextWarn]}>
@@ -307,26 +308,27 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 10, gap: 12,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: 16, height: 48, gap: 10,
+    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
     backgroundColor: Colors.white,
   },
   backBtn: {
-    width: 32, height: 32, borderRadius: 10,
+    width: 26, height: 26, borderRadius: 6,
     backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerCenter: { flex: 1 },
-  headerTitle:  { fontFamily: 'Inter_700Bold',    fontSize: 16, color: Colors.ink },
-  headerSub:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+  breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
+  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
+  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
 
   timerBadge: {
-    paddingHorizontal: 12, paddingVertical: 6,
+    paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 99, backgroundColor: Colors.bg2,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.cardBorder,
   },
   timerBadgeWarn: { backgroundColor: Colors.orange_bg, borderColor: Colors.orange },
-  timerText:      { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
+  timerText:      { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.textPrimary },
   timerTextWarn:  { color: Colors.orange },
 
   topicBar: {
