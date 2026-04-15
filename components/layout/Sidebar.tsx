@@ -12,6 +12,7 @@ import {
   HomeIcon, TrophyIcon, BookIcon, ChartIcon, GearIcon,
   PlusIcon, ChevronRightIcon, type IconProps,
 } from '@/components/icons';
+import { UserMenu } from '@/components/layout/UserMenu';
 import type { UserLanguage } from '@/lib/supabase';
 
 // ── Nav items ─────────────────────────────────────────────────────
@@ -129,20 +130,11 @@ export function Sidebar() {
 
       {/* ── User footer ── */}
       <View style={s.footerWrap}>
-        <TouchableOpacity
-          style={s.userRow}
-          onPress={() => router.push('/(tabs)/settings' as any)}
-          activeOpacity={0.8}
-        >
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{initial}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={s.userName} numberOfLines={1}>{displayName}</Text>
-            <Text style={s.userPlan}>Free</Text>
-          </View>
-          <GearIcon size={16} color={Colors.ink3} />
-        </TouchableOpacity>
+        <UserMenu
+          name={displayName}
+          email={user?.email ?? ''}
+          plan={(profile as any)?.subscription_tier ?? 'free'}
+        />
       </View>
     </View>
   );
@@ -215,22 +207,4 @@ const s = StyleSheet.create({
     borderTopColor: Colors.border,
     padding:        8,
   },
-  userRow: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    gap:              10,
-    height:           44,
-    borderRadius:     8,
-    paddingHorizontal: 8,
-    paddingVertical:  4,
-  },
-  avatar: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.p,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
-  userName:   { fontFamily: 'Inter_500Medium',  fontSize: 13, color: Colors.ink  },
-  userPlan:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
 });
