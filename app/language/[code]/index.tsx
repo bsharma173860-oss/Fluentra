@@ -9,6 +9,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Colors } from '@/constants/colors';
 import { LANGUAGE_EXAMS, type ExamProfile } from '@/constants/examProfiles';
 import { getLangNames } from '@/constants/languages';
+import { getTheme } from '@/constants/languageThemes';
+import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { useAuth } from '@/lib/authContext';
 import { supabase, type UserLanguage } from '@/lib/supabase';
 import {
@@ -20,21 +22,6 @@ import {
   LockIcon, CheckIcon, FlameIcon,
 } from '@/components/icons';
 import { getDifficulty, DIFFICULTY_COLOR, DIFFICULTY_BG } from '@/constants/dailyContent';
-
-// ── Language metadata ─────────────────────────────────────────────
-const LANG_META: Record<string, { color: string; trackColor: string }> = {
-  en: { color: Colors.p,      trackColor: Colors.p_soft    },
-  es: { color: Colors.orange, trackColor: Colors.orange_bg },
-  fr: { color: Colors.green,  trackColor: Colors.green_bg  },
-  de: { color: Colors.gold,   trackColor: Colors.gold_bg   },
-  pt: { color: Colors.orange, trackColor: Colors.orange_bg },
-  zh: { color: Colors.danger, trackColor: Colors.danger_bg },
-  ja: { color: Colors.danger, trackColor: Colors.danger_bg },
-  ar: { color: Colors.green,  trackColor: Colors.green_bg  },
-};
-function langColor(code: string) {
-  return LANG_META[code] ?? { color: Colors.p, trackColor: Colors.p_soft };
-}
 
 // ── Practice card config ──────────────────────────────────────────
 type PracticeCard = {
@@ -444,7 +431,8 @@ const ex = StyleSheet.create({
 export default function LanguageDashboard() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const langCode  = code ?? 'en';
-  const { color: accentColor } = langColor(langCode);
+  const theme     = getTheme(langCode);
+  const accentColor = theme.accent;
 
   const { user, profile } = useAuth();
   const [langRecord,  setLangRecord]  = useState<UserLanguage | null>(null);
@@ -487,11 +475,15 @@ export default function LanguageDashboard() {
     if (card.pro) {
       Alert.alert('Pro Feature', 'Reading is available with Fluentra Pro.', [
         { text: 'Not now', style: 'cancel' },
-        { text: 'Upgrade', onPress: () => {} },
+        { text: 'Upgrade', onPress: () => router.push('/upgrade' as any) },
       ]);
       return;
     }
-    router.push(card.route as any);
+    const primaryExam = examProfiles[0]?.id ?? 'ielts';
+    router.push({
+      pathname: card.route as any,
+      params: { languageCode: langCode, examType: primaryExam },
+    });
   }
 
   const tabs: { key: Tab; label: string }[] = [
@@ -501,25 +493,26 @@ export default function LanguageDashboard() {
   ];
 
   return (
+    <LanguageThemeProvider code={langCode}>
     <AppLayout>
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <SafeAreaView style={[s.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       {/* ── Header ── */}
-      <View style={s.header}>
+      <View style={[s.header, { backgroundColor: theme.bg, borderBottomColor: theme.accentLight }]}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
           <ChevronLeftIcon size={14} color={Colors.ink2} />
         </TouchableOpacity>
         <View style={s.headerCenter}>
-          <Text style={s.headerFlag}>{names.flag}</Text>
+          <Text style={s.headerFlag}>{theme.flag}</Text>
           <Text style={s.headerTitle}>{langNative}</Text>
         </View>
-        <View style={[s.streakPill, { backgroundColor: Colors.p_soft }]}>
-          <FlameIcon size={12} color={Colors.p} strokeWidth={1.5} />
-          <Text style={[s.streakPillText, { color: Colors.p }]}>Day {streak}</Text>
+        <View style={[s.streakPill, { backgroundColor: theme.accentLight }]}>
+          <FlameIcon size={12} color={theme.accent} strokeWidth={1.5} />
+          <Text style={[s.streakPillText, { color: theme.accent }]}>Day {streak}</Text>
         </View>
       </View>
 
       {/* ── Tab bar ── */}
-      <View style={s.tabBar}>
+      <View style={[s.tabBar, { backgroundColor: theme.bg, borderBottomColor: theme.accentLight }]}>
         {tabs.map(({ key, label }) => (
           <TouchableOpacity
             key={key}
@@ -527,8 +520,8 @@ export default function LanguageDashboard() {
             onPress={() => setActiveTab(key)}
             activeOpacity={0.75}
           >
-            <Text style={[s.tabText, activeTab === key && s.tabTextActive]}>{label}</Text>
-            {activeTab === key && <View style={[s.tabIndicator, { backgroundColor: accentColor }]} />}
+            <Text style={[s.tabText, activeTab === key && { color: theme.accent, fontFamily: 'Inter_600SemiBold' }]}>{label}</Text>
+            {activeTab === key && <View style={[s.tabIndicator, { backgroundColor: theme.accent }]} />}
           </TouchableOpacity>
         ))}
       </View>
@@ -565,6 +558,7 @@ export default function LanguageDashboard() {
       </ScrollView>
     </SafeAreaView>
     </AppLayout>
+    </LanguageThemeProvider>
   );
 }
 

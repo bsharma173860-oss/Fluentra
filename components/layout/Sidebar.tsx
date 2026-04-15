@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAuth } from '@/lib/authContext';
-import { supabase } from '@/lib/supabase';
-import { getLangNames } from '@/constants/languages';
 import { FluentraLogo } from '@/components/FluentraLogo';
 import {
   HomeIcon, TrophyIcon, BookIcon, ChartIcon, GearIcon,
   PlusIcon, ChevronRightIcon, type IconProps,
 } from '@/components/icons';
 import { UserMenu } from '@/components/layout/UserMenu';
-import type { UserLanguage } from '@/lib/supabase';
+import { useUserLanguages } from '@/hooks/useUserLanguages';
+import { getTheme } from '@/constants/languageThemes';
 
 // ── Nav items ─────────────────────────────────────────────────────
 type NavItem = {
@@ -31,29 +30,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Settings', route: '/(tabs)/settings',  pathSegment: '/settings', Icon: GearIcon   },
 ];
 
-const LANG_FLAG_BG: Record<string, string> = {
-  en: '#E8EDFF', es: '#FFF0E5', fr: '#E5F5EC',
-  de: '#FFFBE5', pt: '#E5F5EC', zh: '#FFE5E5',
-  ja: '#FFE5F5', ko: '#E5EEFF', ar: '#E5F5F0', it: '#FFF3E5',
-};
-
 // ── Sidebar ───────────────────────────────────────────────────────
 export function Sidebar() {
   const pathname = usePathname();
   const router   = useRouter();
   const { profile, user } = useAuth();
-
-  const [languages, setLanguages] = useState<UserLanguage[]>([]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from('user_languages').select('*').eq('user_id', user.id)
-      .then(({ data }) => { if (data) setLanguages(data as UserLanguage[]); });
-  }, [user?.id]);
+  const { languages } = useUserLanguages();
 
   const displayName = profile?.name ?? user?.email?.split('@')[0] ?? 'You';
-  const initial     = displayName[0]?.toUpperCase() ?? '?';
 
   function isActive(segment: string) {
     return pathname.startsWith(segment);
@@ -95,24 +79,23 @@ export function Sidebar() {
         <Text style={[s.sectionLabel, { marginTop: 16 }]}>LANGUAGES</Text>
         <View style={s.navGroup}>
           {languages.map(lang => {
-            const names  = getLangNames(lang.language_code);
-            const flagBg = LANG_FLAG_BG[lang.language_code] ?? Colors.bg2;
+            const theme  = getTheme(lang.language_code);
             const route  = `/language/${lang.language_code}`;
             const active = pathname.startsWith(route);
             return (
               <TouchableOpacity
                 key={lang.id}
-                style={[s.langItem, active && s.navItemActive]}
+                style={[s.langItem, active && { backgroundColor: theme.accentLight }]}
                 onPress={() => router.push(route as any)}
                 activeOpacity={0.7}
               >
-                <View style={[s.langFlag, { backgroundColor: flagBg }]}>
-                  <Text style={s.langFlagText}>{names.flag}</Text>
+                <View style={[s.langFlag, { backgroundColor: theme.bg }]}>
+                  <Text style={s.langFlagText}>{theme.flag}</Text>
                 </View>
-                <Text style={[s.langLabel, active && s.navLabelActive]} numberOfLines={1}>
-                  {names.native}
+                <Text style={[s.langLabel, active && { color: theme.accentDark, fontFamily: 'Inter_500Medium' }]} numberOfLines={1}>
+                  {theme.native}
                 </Text>
-                <Text style={s.langStreak}>{lang.fluency_percent}%</Text>
+                <Text style={[s.langStreak, { color: theme.accent }]}>{lang.fluency_percent}%</Text>
               </TouchableOpacity>
             );
           })}

@@ -7,6 +7,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { getLangNames } from '@/constants/languages';
+import { getTheme } from '@/constants/languageThemes';
+import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 // ─── Dimensions ───────────────────────────────────────────────────────────────
@@ -16,9 +18,6 @@ const CARD_PAD = 16;
 const CHART_W = W - H_PAD * 2 - CARD_PAD * 2;
 const CHART_H = 160;
 const PAD = { top: 16, bottom: 36, left: 28, right: 12 };
-
-// ─── Static data ──────────────────────────────────────────────────────────────
-const LANGUAGES = ['en', 'es', 'fr'];
 
 const LANG_STATS: Record<string, { avgBand: number; sessions: number; bestScore: number; streak: number }> = {
   en: { avgBand: 7.0, sessions: 24, bestScore: 8.0, streak: 23 },
@@ -93,7 +92,7 @@ const ALL_SESSIONS: Session[] = [
 ];
 
 // ─── Line chart ───────────────────────────────────────────────────────────────
-function LineChart({ data }: { data: { label: string; score: number }[] }) {
+function LineChart({ data, lineColor }: { data: { label: string; score: number }[]; lineColor: string }) {
   const minY = 4.0;
   const maxY = 9.0;
   const range = maxY - minY;
@@ -126,11 +125,11 @@ function LineChart({ data }: { data: { label: string; score: number }[] }) {
           </React.Fragment>
         );
       })}
-      <Path d={areaD} fill={Colors.p} fillOpacity={0.08} />
-      <Path d={pathD} fill="none" stroke={Colors.p} strokeWidth={2.5} strokeLinecap="round" />
+      <Path d={areaD} fill={lineColor} fillOpacity={0.08} />
+      <Path d={pathD} fill="none" stroke={lineColor} strokeWidth={2.5} strokeLinecap="round" />
       {pts.map((p, i) => (
         <React.Fragment key={i}>
-          <Circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5} fill={Colors.white} stroke={Colors.p} strokeWidth={2.5} />
+          <Circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={5} fill={Colors.white} stroke={lineColor} strokeWidth={2.5} />
           {(i === 0 || i === pts.length - 1 || pts.length <= 5) && (
             <SvgText x={p.x.toFixed(1)} y={(CHART_H - 8).toFixed(1)} fontSize={9} fill={Colors.ink3} textAnchor="middle">
               {p.label.replace('Mar ', 'M').replace('Apr ', 'A').replace('Feb ', 'F')}
@@ -147,14 +146,26 @@ const PERIOD_TABS = ['7d', '30d', '90d'];
 
 export default function ProgressScreen() {
   const { lang: initialLang } = useLocalSearchParams<{ lang?: string }>();
-  const [lang, setLang] = useState(initialLang ?? 'en');
-  const [period, setPeriod] = useState('30d');
+  const { languages } = useUserLanguages();
 
-  const stats = LANG_STATS[lang] ?? LANG_STATS.en;
+  const availableCodes = languages.length > 0
+    ? languages.map(l => l.language_code)
+    : ['en', 'es', 'fr'];
+
+  const [lang, setLang] = useState(initialLang ?? availableCodes[0] ?? 'en');
+  const [period, setPeriod] = useState('30d');
+  const [examFilter, setExamFilter] = useState('all');
+
+  const theme   = getTheme(lang);
+  const stats   = LANG_STATS[lang] ?? LANG_STATS.en;
   const modules = MODULE_DATA[lang] ?? MODULE_DATA.en;
-  const exams = EXAM_DATA[lang] ?? [];
+  const allExams = EXAM_DATA[lang] ?? [];
+  const exams   = examFilter === 'all' ? allExams : allExams.filter(e => e.name.toLowerCase().includes(examFilter.toLowerCase()));
   const sessions = ALL_SESSIONS.filter(s => s.lang === lang);
   const chartData = CHART_DATA[lang] ?? CHART_DATA.en;
+
+  // Exam filter pills derived from available exams for current language
+  const examPills = ['all', ...allExams.map(e => e.name.split(' ')[0])];
 
   return (
     <AppLayout>
@@ -164,21 +175,21 @@ export default function ProgressScreen() {
 
         {/* ── Language selector ── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.pillScroll} contentContainerStyle={s.pillRow}>
-          {LANGUAGES.map(code => {
-            const names = getLangNames(code);
+          {availableCodes.map(code => {
+            const t = getTheme(code);
             const active = lang === code;
             return (
               <TouchableOpacity
                 key={code}
-                style={[s.pill, active && s.pillActive]}
-                onPress={() => setLang(code)}
+                style={[s.pill, active && { backgroundColor: t.accent, borderColor: t.accent }]}
+                onPress={() => { setLang(code); setExamFilter('all'); }}
                 activeOpacity={0.75}
               >
-                <Text style={s.pillFlag}>{names.flag}</Text>
+                <Text style={s.pillFlag}>{t.flag}</Text>
                 <View style={s.pillTextBlock}>
-                  <Text style={[s.pillNative, active && s.pillNativeActive]}>{names.native}</Text>
-                  {names.english !== names.native && (
-                    <Text style={[s.pillEnglish, active && s.pillEnglishActive]}>{names.english}</Text>
+                  <Text style={[s.pillNative, active && s.pillNativeActive]}>{t.native}</Text>
+                  {t.native !== t.name && (
+                    <Text style={[s.pillEnglish, active && s.pillEnglishActive]}>{t.name}</Text>
                   )}
                 </View>
               </TouchableOpacity>
@@ -188,9 +199,9 @@ export default function ProgressScreen() {
 
         {/* ── Overall stats ── */}
         <View style={s.statsGrid}>
-          <View style={[s.statCard, { backgroundColor: Colors.p_soft }]}>
+          <View style={[s.statCard, { backgroundColor: theme.accentLight }]}>
             <Text style={s.statLabel}>AVG BAND SCORE</Text>
-            <Text style={[s.statNum, { color: Colors.p }]}>{stats.avgBand.toFixed(1)}</Text>
+            <Text style={[s.statNum, { color: theme.accent }]}>{stats.avgBand.toFixed(1)}</Text>
           </View>
           <View style={[s.statCard, { backgroundColor: Colors.bg2 }]}>
             <Text style={s.statLabel}>SESSIONS</Text>
@@ -206,6 +217,27 @@ export default function ProgressScreen() {
           </View>
         </View>
 
+        {/* ── By exam filter pills ── */}
+        {allExams.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8 }}>
+            {examPills.map(pill => {
+              const active = examFilter === pill;
+              return (
+                <TouchableOpacity
+                  key={pill}
+                  style={[s.examPill, active && { backgroundColor: theme.accent, borderColor: theme.accent }]}
+                  onPress={() => setExamFilter(pill)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[s.examPillText, active && { color: Colors.white }]}>
+                    {pill === 'all' ? 'All' : pill}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+
         {/* ── Band score chart ── */}
         <View style={s.chartCard}>
           <View style={s.chartHeader}>
@@ -218,7 +250,7 @@ export default function ProgressScreen() {
               ))}
             </View>
           </View>
-          <LineChart data={chartData} />
+          <LineChart data={chartData} lineColor={theme.accent} />
         </View>
 
         {/* ── Module scores ── */}
@@ -268,7 +300,7 @@ export default function ProgressScreen() {
               </View>
               <TouchableOpacity
                 style={[s.practiceBtn, { borderColor: exam.color + '55' }]}
-                onPress={() => {}}
+                onPress={() => router.push('/(tabs)/exams' as any)}
                 activeOpacity={0.75}
               >
                 <Text style={[s.practiceBtnText, { color: exam.color }]}>Practice →</Text>
@@ -364,6 +396,13 @@ const s = StyleSheet.create({
   moduleBarTrack: { height: 5, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
   moduleBarFill: { height: '100%', borderRadius: 99 },
   moduleScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 22 },
+
+  examPill: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 20, backgroundColor: Colors.white,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  examPillText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
 
   examList: { gap: 12 },
   examCard: {
