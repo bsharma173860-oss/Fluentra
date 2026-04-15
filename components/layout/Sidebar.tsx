@@ -130,8 +130,8 @@ export function Sidebar() {
       {/* ── User footer ── */}
       <View style={s.footerWrap}>
         <TouchableOpacity
-          style={[s.userRow, { flex: 1 }]}
-          onPress={() => router.push('/(tabs)/profile' as any)}
+          style={s.userRow}
+          onPress={() => router.push('/(tabs)/settings' as any)}
           activeOpacity={0.8}
         >
           <View style={s.avatar}>
@@ -139,15 +139,9 @@ export function Sidebar() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.userName} numberOfLines={1}>{displayName}</Text>
-            <Text style={s.userPlan}>Free plan</Text>
+            <Text style={s.userPlan}>Free</Text>
           </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[s.settingsBtn, isActive('/settings') && s.navItemActive]}
-          onPress={() => router.push('/(tabs)/settings' as any)}
-          activeOpacity={0.7}
-        >
-          <GearIcon size={16} color={isActive('/settings') ? Colors.ink : Colors.ink3} />
+          <GearIcon size={16} color={Colors.ink3} />
         </TouchableOpacity>
       </View>
     </View>
@@ -217,31 +211,26 @@ const s = StyleSheet.create({
   addLangText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
 
   footerWrap: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    borderTopWidth:  1,
-    borderTopColor:  Colors.border,
-    marginTop:       4,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    padding:        8,
   },
   userRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           10,
-    padding:       12,
+    flexDirection:    'row',
+    alignItems:       'center',
+    gap:              10,
+    height:           44,
+    borderRadius:     8,
+    paddingHorizontal: 8,
+    paddingVertical:  4,
   },
   avatar: {
     width: 28, height: 28, borderRadius: 14,
     backgroundColor: Colors.p,
     alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
   avatarText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
   userName:   { fontFamily: 'Inter_500Medium',  fontSize: 13, color: Colors.ink  },
   userPlan:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
-  settingsBtn: {
-    width: 40, height: 52,
-    alignItems:      'center',
-    justifyContent:  'center',
-    borderLeftWidth: 1,
-    borderLeftColor: Colors.border,
-  },
 });

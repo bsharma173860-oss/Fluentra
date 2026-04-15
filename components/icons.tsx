@@ -285,3 +285,22 @@ export function HelpCircleIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+      <Line x1="12" y1="18" x2="12.01" y2="18" />
+    </Svg>
+  );
+}
+
+export function ExternalLinkIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+      <Polyline points="15 3 21 3 21 9" />
+      <Line x1="10" y1="14" x2="21" y2="3" />
+    </Svg>
+  );
+}

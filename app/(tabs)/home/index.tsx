@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet,
   TouchableOpacity, Modal, Pressable, Alert,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,17 +11,12 @@ import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
 import { getLangNames, LANG_NAMES } from '@/constants/languages';
-import { ChevronRightIcon, PlusIcon, XIcon, BellIcon } from '@/components/icons';
+import { FlameIcon, PlusIcon, XIcon } from '@/components/icons';
 import { FluentraLogo } from '@/components/FluentraLogo';
 import { AppLayout } from '@/components/layout/AppLayout';
-import type { UserLanguage } from '@/lib/supabase';
+import type { UserLanguage, AppSession } from '@/lib/supabase';
 
-// ── Language accent colors ────────────────────────────────────────
-const LANG_COLOR: Record<string, string> = {
-  en: Colors.p,     es: Colors.orange,  fr: Colors.green,
-  de: Colors.gold,  pt: Colors.green,   zh: Colors.danger,
-  ja: Colors.p,     ko: Colors.orange,  ar: Colors.gold,   it: Colors.orange,
-};
+// ── Constants ─────────────────────────────────────────────────────
 const LANG_FLAG_BG: Record<string, string> = {
   en: '#E8EDFF', es: '#FFF0E5', fr: '#E5F5EC',
   de: '#FFFBE5', pt: '#E5F5EC', zh: '#FFE5E5',
@@ -33,48 +29,90 @@ const SAMPLE_LANGUAGES: UserLanguage[] = [
   { id: 's3', user_id: '', language_code: 'fr', language_name_en: 'French',   language_name_native: 'Français', fluency_percent: 30, exams: [], created_at: '' },
 ];
 
-// ── Language row card ─────────────────────────────────────────────
-function LanguageRow({ lang }: { lang: UserLanguage }) {
-  const code   = lang.language_code;
-  const color  = LANG_COLOR[code]   ?? Colors.p;
-  const flagBg = LANG_FLAG_BG[code] ?? Colors.p_soft;
-  const names  = getLangNames(code);
-  const exams  = LANGUAGE_EXAMS[code] ?? [];
+function fluencyToLevel(pct: number): string {
+  if (pct >= 95) return 'C2';
+  if (pct >= 80) return 'C1';
+  if (pct >= 60) return 'B2';
+  if (pct >= 40) return 'B1';
+  if (pct >= 20) return 'A2';
+  return 'A1';
+}
+
+const MODULE_COLORS: Record<string, string> = {
+  writing:   Colors.p,
+  reading:   Colors.blue,
+  listening: Colors.gold,
+  speaking:  Colors.green,
+};
+
+// ── Language card ─────────────────────────────────────────────────
+function LanguageCard({
+  lang, cardWidth,
+}: {
+  lang: UserLanguage; cardWidth: string | number;
+}) {
+  const code       = lang.language_code;
+  const names      = getLangNames(code);
+  const exams      = LANGUAGE_EXAMS[code] ?? [];
+  const flagBg     = LANG_FLAG_BG[code]   ?? Colors.p_soft;
+  const streakDays = Math.round(lang.fluency_percent / 2.5);
+  const level      = fluencyToLevel(lang.fluency_percent);
 
   return (
     <TouchableOpacity
-      style={c.langRow}
+      style={[c.card, { width: cardWidth as any }]}
       onPress={() => router.push(`/language/${code}` as any)}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       {/* Flag */}
       <View style={[c.flagBadge, { backgroundColor: flagBg }]}>
         <Text style={c.flagEmoji}>{names.flag}</Text>
       </View>
 
-      {/* Names + badges + mini streak */}
-      <View style={c.langMeta}>
-        <View style={c.langNameRow}>
-          <Text style={c.langNative}>{names.native}</Text>
-          <Text style={c.langEn}>{names.english}</Text>
-        </View>
-        <View style={c.langBottomRow}>
-          {exams.slice(0, 2).map(e => (
-            <View key={e.id} style={[c.examBadge, { backgroundColor: e.bg }]}>
-              <Text style={[c.examBadgeText, { color: e.color }]}>{e.id.toUpperCase()}</Text>
-            </View>
-          ))}
-          <View style={c.streakMini}>
-            <View style={c.streakTrack}>
-              <View style={[c.streakFill, { width: `${lang.fluency_percent}%` as any, backgroundColor: color }]} />
-            </View>
-            <Text style={c.streakDay}>Day {Math.round(lang.fluency_percent / 2.5)}</Text>
+      {/* Names */}
+      <View style={{ flex: 1, marginTop: 12 }}>
+        <Text style={c.cardNative}>{names.native}</Text>
+        <Text style={c.cardEn}>{names.english}</Text>
+
+        {/* Exam badges */}
+        {exams.length > 0 && (
+          <View style={c.examRow}>
+            {exams.slice(0, 2).map(e => (
+              <View key={e.id} style={[c.examBadge, { backgroundColor: e.bg }]}>
+                <Text style={[c.examBadgeText, { color: e.color }]}>{e.id.toUpperCase()}</Text>
+              </View>
+            ))}
           </View>
-        </View>
+        )}
       </View>
 
-      {/* Chevron */}
-      <ChevronRightIcon size={16} color={Colors.borderStrong} />
+      {/* Bottom row */}
+      <View style={c.cardBottom}>
+        <View style={c.streakRow}>
+          <FlameIcon size={12} color={streakDays > 0 ? Colors.p : Colors.ink3} />
+          <Text style={[c.streakText, streakDays === 0 && c.streakTextGray]}>
+            {streakDays > 0 ? `Day ${streakDays}` : 'Start streak'}
+          </Text>
+        </View>
+        <View style={c.levelBadge}>
+          <Text style={c.levelText}>{level}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ── Add language card ─────────────────────────────────────────────
+function AddLanguageCard({ cardWidth, onPress }: { cardWidth: string | number; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      style={[c.addCard, { width: cardWidth as any }]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <PlusIcon size={20} color={Colors.ink3} />
+      <Text style={c.addCardTitle}>Add a language</Text>
+      <Text style={c.addCardSub}>+1 new language per year</Text>
     </TouchableOpacity>
   );
 }
@@ -90,7 +128,6 @@ function AddLanguageModal({
   onAdded: (lang: UserLanguage) => void;
 }) {
   const [adding, setAdding] = useState<string | null>(null);
-
   const available = Object.entries(LANG_NAMES).filter(([code]) => !existingCodes.includes(code));
 
   const handleAdd = useCallback(async (code: string) => {
@@ -145,14 +182,66 @@ function AddLanguageModal({
   );
 }
 
+// ── Recent activity row ───────────────────────────────────────────
+function ActivityRow({ session }: { session: AppSession }) {
+  const color  = MODULE_COLORS[session.mode] ?? Colors.p;
+  const label  = session.mode.charAt(0).toUpperCase() + session.mode.slice(1);
+  const exam   = session.exam_type ?? 'IELTS';
+  const score  = session.overall_band;
+
+  const date = session.completed_at
+    ? (() => {
+        const d = new Date(session.completed_at);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+        return diffDays === 0 ? 'Today' : diffDays === 1 ? 'Yesterday' : `${diffDays}d ago`;
+      })()
+    : '';
+
+  return (
+    <View style={ar.row}>
+      <View style={[ar.icon, { backgroundColor: color + '22' }]}>
+        <Text style={[ar.iconText, { color }]}>{label[0]}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={ar.rowTitle}>{label} · {exam}</Text>
+        <Text style={ar.rowSub}>{date}{score ? ` · Band ${score.toFixed(1)}` : ''}</Text>
+      </View>
+      {score !== null && score !== undefined && (
+        <Text style={[ar.score, { color }]}>{score.toFixed(1)}</Text>
+      )}
+    </View>
+  );
+}
+
+const ar = StyleSheet.create({
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.white,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 16, paddingVertical: 12,
+    marginBottom: 8,
+  },
+  icon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
+  rowTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.ink },
+  rowSub:   { fontFamily: 'Inter_400Regular',  fontSize: 12, color: Colors.ink3, marginTop: 1 },
+  score:    { fontFamily: 'Inter_700Bold',     fontSize: 14 },
+});
+
 // ── Screen ────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const { width }    = useWindowDimensions();
   const { profile, user } = useAuth();
-  const displayName = profile?.name ?? '';
-  const initial     = displayName ? displayName[0].toUpperCase() : '?';
+  const displayName  = profile?.name ?? '';
+  const initial      = displayName ? displayName[0].toUpperCase() : '?';
 
-  const [languages, setLanguages] = useState<UserLanguage[]>(SAMPLE_LANGUAGES);
-  const [modalOpen, setModalOpen] = useState(false);
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
+  const isTablet  = Platform.OS === 'web' && width >= 640 && width < 1024;
+
+  const [languages, setLanguages]       = useState<UserLanguage[]>(SAMPLE_LANGUAGES);
+  const [recentSessions, setRecent]     = useState<AppSession[]>([]);
+  const [modalOpen, setModalOpen]       = useState(false);
 
   const handleAdded = useCallback((lang: UserLanguage) => {
     setLanguages(prev => [...prev, lang]);
@@ -164,52 +253,68 @@ export default function HomeScreen() {
       .then(({ data }) => { if (data && data.length > 0) setLanguages(data as UserLanguage[]); });
   }, [profile?.id]);
 
-  const hour     = new Date().getHours();
-  const timeOfDay = hour < 12 ? 'GOOD MORNING' : hour < 18 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false })
+      .limit(3)
+      .then(({ data }) => { if (data) setRecent(data as AppSession[]); });
+  }, [user?.id]);
+
+  const hour      = new Date().getHours();
+  const greeting  = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+  // Card width for grid
+  const numCols   = isDesktop ? 3 : isTablet ? 2 : 1;
+  const cardWidth = numCols === 3 ? '32%' : numCols === 2 ? '48.5%' : '100%';
 
   return (
     <AppLayout>
     <SafeAreaView style={c.safe} edges={['top']}>
-      {/* ── Top bar ── */}
-      <View style={c.topBar}>
+      {/* ── Top bar (mobile only) ── */}
+      <View style={[c.topBar, isDesktop && c.topBarHidden]}>
         <FluentraLogo iconSize={22} textSize={18} />
-        <View style={c.topRight}>
-          <TouchableOpacity style={c.iconBtn}>
-            <BellIcon size={18} color={Colors.ink2} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={c.avatar}
-            onPress={() => router.push('/(tabs)/profile' as any)}
-          >
-            <Text style={c.avatarText}>{initial}</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={c.avatar}
+          onPress={() => router.push('/(tabs)/settings' as any)}
+        >
+          <Text style={c.avatarText}>{initial}</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={c.scroll}>
         {/* ── Greeting ── */}
-        <View style={c.greeting}>
-          <Text style={c.greetingLabel}>{timeOfDay}</Text>
-          <Text style={c.greetingName}>{displayName || 'there'}.</Text>
+        <View style={c.greetingWrap}>
+          <Text style={c.greeting}>
+            {greeting}, {displayName || 'there'}.
+          </Text>
         </View>
 
-        {/* ── Languages section ── */}
+        {/* ── Languages grid ── */}
         <View style={c.section}>
-          <Text style={c.sectionLabel}>YOUR LANGUAGES</Text>
-          <View style={c.langList}>
+          <View style={[c.grid, numCols > 1 && c.gridWrap]}>
             {languages.map(lang => (
-              <LanguageRow key={lang.id} lang={lang} />
+              <LanguageCard key={lang.id} lang={lang} cardWidth={cardWidth} />
             ))}
-            <TouchableOpacity
-              style={c.addBtn}
-              onPress={() => setModalOpen(true)}
-              activeOpacity={0.75}
-            >
-              <PlusIcon size={14} color={Colors.ink3} />
-              <Text style={c.addBtnText}>Add a language</Text>
-            </TouchableOpacity>
+            <AddLanguageCard cardWidth={cardWidth} onPress={() => setModalOpen(true)} />
           </View>
         </View>
+
+        {/* ── Recent activity ── */}
+        {recentSessions.length > 0 && (
+          <View style={c.section}>
+            <Text style={c.sectionLabel}>RECENT ACTIVITY</Text>
+            {recentSessions.map(s => (
+              <ActivityRow key={s.id} session={s} />
+            ))}
+          </View>
+        )}
+
+        <View style={{ height: 48 }} />
       </ScrollView>
 
       <AddLanguageModal
@@ -236,14 +341,7 @@ const c = StyleSheet.create({
     backgroundColor: Colors.white,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  logo:       { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 20, color: Colors.ink },
-  logoAccent: { color: Colors.p },
-  topRight:   { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBtn:    {
-    width: 32, height: 32, borderRadius: 8,
-    backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  topBarHidden: { display: 'none' },
   avatar: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: Colors.p, alignItems: 'center', justifyContent: 'center',
@@ -251,61 +349,67 @@ const c = StyleSheet.create({
   avatarText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.white },
 
   // Greeting
-  greeting:      { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 8 },
-  greetingLabel: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 11,
-    color: Colors.ink3, letterSpacing: 0.8,
-    textTransform: 'uppercase', marginBottom: 6,
-  },
-  greetingName: {
-    fontFamily: 'DMSerifDisplay_400Regular', fontSize: 32, color: Colors.ink,
-  },
+  greetingWrap: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 24 },
+  greeting:     { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 28, color: Colors.ink },
 
   // Section
-  section:      { paddingHorizontal: 20, paddingTop: 20 },
+  section:      { paddingHorizontal: 20, marginBottom: 8 },
   sectionLabel: {
     fontFamily: 'Inter_600SemiBold', fontSize: 11,
     color: Colors.ink3, letterSpacing: 0.8,
     textTransform: 'uppercase', marginBottom: 12,
   },
-  langList: { gap: 8 },
 
-  // Language row
-  langRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
+  // Grid
+  grid:     { gap: 12 },
+  gridWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+
+  // Language card
+  card: {
     backgroundColor: Colors.white,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
-    paddingVertical: 14, paddingHorizontal: 16,
-    minHeight: 80,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 20,
+    minHeight: 160,
+    flexDirection: 'column',
   },
   flagBadge: {
-    width: 48, height: 32, borderRadius: 6,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    width: 40, height: 28, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center',
   },
-  flagEmoji: { fontSize: 22 },
+  flagEmoji:    { fontSize: 20 },
+  cardNative:   { fontFamily: 'Inter_600SemiBold', fontSize: 18, color: Colors.ink },
+  cardEn:       { fontFamily: 'Inter_400Regular',  fontSize: 13, color: Colors.ink3, marginTop: 2 },
 
-  langMeta:     { flex: 1, gap: 5 },
-  langNameRow:  { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  langNative:   { fontFamily: 'Inter_600SemiBold', fontSize: 17, color: Colors.ink },
-  langEn:       { fontFamily: 'Inter_400Regular',  fontSize: 13, color: Colors.ink3 },
+  examRow:      { flexDirection: 'row', gap: 4, marginTop: 8, flexWrap: 'wrap' },
+  examBadge:    { borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2 },
+  examBadgeText:{ fontFamily: 'Inter_600SemiBold', fontSize: 10 },
 
-  langBottomRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  examBadge:     { borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2 },
-  examBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 10 },
+  cardBottom:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
+  streakRow:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  streakText:  { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.p },
+  streakTextGray: { color: Colors.ink3, fontFamily: 'Inter_400Regular' },
+  levelBadge:  {
+    backgroundColor: Colors.bg2, borderRadius: 6,
+    paddingHorizontal: 7, paddingVertical: 2,
+  },
+  levelText:   { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: Colors.ink2 },
 
-  streakMini:  { flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 2 },
-  streakTrack: { width: 60, height: 3, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
-  streakFill:  { height: '100%', borderRadius: 99 },
-  streakDay:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
-
-  // Add button
-  addBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    height: 52, borderRadius: 12,
-    borderWidth: 1, borderStyle: 'dashed' as const, borderColor: Colors.borderStrong,
+  // Add card
+  addCard: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed' as const,
+    borderColor: Colors.borderStrong,
+    borderRadius: 12,
+    minHeight: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: 'transparent',
   },
-  addBtnText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.ink3 },
+  addCardTitle: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3 },
+  addCardSub:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink4 },
 });
 
 // ── Modal styles ──────────────────────────────────────────────────
@@ -321,9 +425,9 @@ const m = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, marginBottom: 12,
   },
-  title:   { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
-  closeBtn:{ width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center' },
-  langItem:{
+  title:    { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
+  closeBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center' },
+  langItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border,
   },

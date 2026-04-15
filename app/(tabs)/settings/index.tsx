@@ -1,34 +1,27 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Platform, useWindowDimensions, Linking, Alert,
+  ScrollView, Platform, useWindowDimensions, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { useAuth } from '@/lib/authContext';
 import {
-  PersonIcon, BellIcon, ChevronRightIcon,
-  GlobeIcon, SunIcon, TypeIcon, StarIcon,
-  LightningIcon, BookIcon, HelpCircleIcon, LogOutIcon,
+  PersonIcon, PhoneIcon, LightningIcon, BookIcon,
+  HelpCircleIcon, LogOutIcon, ChevronRightIcon, ExternalLinkIcon,
   type IconProps,
 } from '@/components/icons';
 import { AppLayout } from '@/components/layout/AppLayout';
 
-// ── Row type ──────────────────────────────────────────────────────
+// ── Row types ─────────────────────────────────────────────────────
+type RowRight = 'chevron' | 'external' | 'none';
 type Row = {
-  Icon:        (p: IconProps) => JSX.Element;
-  label:       string;
-  labelColor?: string;
-  value?:      string;
-  badge?:      { text: string };
-  onPress:     () => void;
-  showChevron: boolean;
-};
-
-type Section = {
-  title?: string;
-  rows:   Row[];
+  Icon:     (p: IconProps) => JSX.Element;
+  label:    string;
+  badge?:   string;
+  right:    RowRight;
+  onPress:  () => void;
 };
 
 // ── Single row ────────────────────────────────────────────────────
@@ -40,118 +33,72 @@ function SettingsRow({ row, isLast }: { row: Row; isLast: boolean }) {
       activeOpacity={0.65}
     >
       <row.Icon size={16} color={Colors.ink3} />
-      <Text style={[s.rowLabel, row.labelColor ? { color: row.labelColor } : null]}>
-        {row.label}
-      </Text>
+      <Text style={s.rowLabel}>{row.label}</Text>
       <View style={s.rowRight}>
         {row.badge && (
           <View style={s.badge}>
-            <Text style={s.badgeText}>{row.badge.text}</Text>
+            <Text style={s.badgeText}>{row.badge}</Text>
           </View>
         )}
-        {row.value && <Text style={s.rowValue}>{row.value}</Text>}
-        {row.showChevron && <ChevronRightIcon size={14} color={Colors.borderStrong} />}
+        {row.right === 'chevron'  && <ChevronRightIcon  size={14} color={Colors.borderStrong} />}
+        {row.right === 'external' && <ExternalLinkIcon  size={14} color={Colors.ink3} />}
       </View>
     </TouchableOpacity>
   );
 }
 
-// ── Section group ─────────────────────────────────────────────────
-function SettingsSection({ section }: { section: Section }) {
+// ── Section card ──────────────────────────────────────────────────
+function SettingsGroup({ rows }: { rows: Row[] }) {
   return (
-    <View style={s.sectionWrap}>
-      {section.title && <Text style={s.sectionLabel}>{section.title}</Text>}
-      <View style={s.group}>
-        {section.rows.map((row, i) => (
-          <SettingsRow key={row.label} row={row} isLast={i === section.rows.length - 1} />
-        ))}
-      </View>
+    <View style={s.group}>
+      {rows.map((row, i) => (
+        <SettingsRow key={row.label} row={row} isLast={i === rows.length - 1} />
+      ))}
     </View>
   );
 }
 
 // ── Screen ────────────────────────────────────────────────────────
 export default function SettingsScreen() {
-  const { width }    = useWindowDimensions();
-  const isDesktop    = Platform.OS === 'web' && width >= 768;
-  const { profile, user, signOut } = useAuth();
-
-  const displayName = profile?.name ?? user?.email?.split('@')[0] ?? 'You';
-  const email       = user?.email ?? '';
-  const initial     = displayName[0]?.toUpperCase() ?? '?';
+  const { width }  = useWindowDimensions();
+  const isDesktop  = Platform.OS === 'web' && width >= 768;
+  const { signOut } = useAuth();
 
   async function handleSignOut() {
     await signOut();
     router.replace('/(auth)/login');
   }
 
-  const SECTIONS: Section[] = [
+  const SECTION1: Row[] = [
     {
-      rows: [
-        {
-          Icon: PersonIcon, label: 'Account',
-          onPress: () => router.push('/(tabs)/profile' as any),
-          showChevron: true,
-        },
-        {
-          Icon: BellIcon, label: 'Notifications',
-          onPress: () => {},
-          showChevron: true,
-        },
-        {
-          Icon: GlobeIcon, label: 'Language & region',
-          value: 'English',
-          onPress: () => {},
-          showChevron: true,
-        },
-      ],
+      Icon: PersonIcon, label: 'Account', right: 'chevron',
+      onPress: () => router.push('/settings/account' as any),
+    },
+  ];
+
+  const SECTION2: Row[] = [
+    {
+      Icon: PhoneIcon, label: 'Get app', right: 'external',
+      onPress: () => Linking.openURL('https://apps.apple.com'),
     },
     {
-      title: 'APPEARANCE',
-      rows: [
-        {
-          Icon: SunIcon, label: 'Theme',
-          value: 'Light',
-          onPress: () => {},
-          showChevron: true,
-        },
-        {
-          Icon: TypeIcon, label: 'Font size',
-          value: 'Default',
-          onPress: () => {},
-          showChevron: true,
-        },
-      ],
+      Icon: LightningIcon, label: 'Upgrade plan', badge: 'Pro', right: 'chevron',
+      onPress: () => router.push('/upgrade' as any),
     },
     {
-      rows: [
-        {
-          Icon: StarIcon, label: 'Get app',
-          onPress: () => Linking.openURL('https://apps.apple.com'),
-          showChevron: true,
-        },
-        {
-          Icon: LightningIcon, label: 'Upgrade plan',
-          badge: { text: 'Pro' },
-          onPress: () => router.push('/upgrade' as any),
-          showChevron: false,
-        },
-        {
-          Icon: BookIcon, label: 'Learn more',
-          onPress: () => Linking.openURL('https://fluentra.app/learn'),
-          showChevron: true,
-        },
-        {
-          Icon: HelpCircleIcon, label: 'Get help',
-          onPress: () => Linking.openURL('https://fluentra.app/help'),
-          showChevron: true,
-        },
-        {
-          Icon: LogOutIcon, label: 'Log out',
-          onPress: handleSignOut,
-          showChevron: false,
-        },
-      ],
+      Icon: BookIcon, label: 'Learn more', right: 'external',
+      onPress: () => Linking.openURL('https://fluentra.app/learn'),
+    },
+    {
+      Icon: HelpCircleIcon, label: 'Get help', right: 'external',
+      onPress: () => Linking.openURL('https://fluentra.app/help'),
+    },
+  ];
+
+  const SECTION3: Row[] = [
+    {
+      Icon: LogOutIcon, label: 'Log out', right: 'none',
+      onPress: handleSignOut,
     },
   ];
 
@@ -160,31 +107,15 @@ export default function SettingsScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          s.content,
-          isDesktop && s.contentDesktop,
-        ]}
+        contentContainerStyle={[s.content, isDesktop && s.contentDesktop]}
       >
-        <Text style={s.pageTitle}>Settings</Text>
+        <Text style={s.title}>Settings</Text>
 
-        {/* ── User card ── */}
-        <View style={s.userCard}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{initial}</Text>
-          </View>
-          <View style={s.userInfo}>
-            <Text style={s.userName}>{displayName}</Text>
-            <Text style={s.userEmail}>{email}</Text>
-          </View>
-          <View style={s.planBadge}>
-            <Text style={s.planBadgeText}>Free plan</Text>
-          </View>
-        </View>
-
-        {/* ── Sections ── */}
-        {SECTIONS.map((section, i) => (
-          <SettingsSection key={i} section={section} />
-        ))}
+        <SettingsGroup rows={SECTION1} />
+        <View style={s.gap} />
+        <SettingsGroup rows={SECTION2} />
+        <View style={s.gap} />
+        <SettingsGroup rows={SECTION3} />
 
         <View style={{ height: 48 }} />
       </ScrollView>
@@ -196,67 +127,24 @@ export default function SettingsScreen() {
 // ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.bg },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 48,
-    gap: 0,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 32 },
   contentDesktop: {
-    maxWidth: 680,
-    width: '100%',
-    alignSelf: 'center',
+    maxWidth:         680,
+    width:            '100%',
+    alignSelf:        'center',
     paddingHorizontal: 32,
-    paddingTop: 40,
+    paddingTop:       40,
   },
 
-  pageTitle: {
-    fontFamily: 'DMSerifDisplay_400Regular',
-    fontSize: 24,
-    color: Colors.ink,
+  title: {
+    fontFamily:   'DMSerifDisplay_400Regular',
+    fontSize:     24,
+    color:        Colors.ink,
     marginBottom: 24,
   },
 
-  // User card
-  userCard: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    backgroundColor: Colors.white,
-    borderRadius:    12,
-    borderWidth:     1,
-    borderColor:     Colors.border,
-    padding:         20,
-    gap:             14,
-    marginBottom:    28,
-  },
-  avatar: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: Colors.p,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarText: { fontFamily: 'Inter_600SemiBold', fontSize: 18, color: Colors.white },
-  userInfo:   { flex: 1, gap: 3 },
-  userName:   { fontFamily: 'Inter_600SemiBold', fontSize: 17, color: Colors.ink },
-  userEmail:  { fontFamily: 'Inter_400Regular',  fontSize: 13, color: Colors.ink3 },
-  planBadge:  {
-    backgroundColor:  Colors.p_soft,
-    borderRadius:     20,
-    paddingHorizontal: 10,
-    paddingVertical:   3,
-  },
-  planBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.p },
+  gap: { height: 12 },
 
-  // Sections
-  sectionWrap:  { marginBottom: 20 },
-  sectionLabel: {
-    fontFamily:    'Inter_600SemiBold',
-    fontSize:      11,
-    color:         Colors.ink3,
-    letterSpacing: 0.6,
-    marginBottom:  8,
-    paddingLeft:   4,
-  },
   group: {
     backgroundColor: Colors.white,
     borderRadius:    12,
@@ -264,8 +152,6 @@ const s = StyleSheet.create({
     borderColor:     Colors.border,
     overflow:        'hidden',
   },
-
-  // Row
   row: {
     flexDirection:    'row',
     alignItems:       'center',
@@ -275,18 +161,12 @@ const s = StyleSheet.create({
     backgroundColor:  Colors.white,
   },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: '#F2F0EB' },
-  rowLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize:   14,
-    color:      Colors.ink,
-    flex:       1,
-  },
-  rowRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  rowValue: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
+  rowLabel:  { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink, flex: 1 },
+  rowRight:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   badge: {
-    backgroundColor:  Colors.p_soft,
-    borderRadius:     20,
+    backgroundColor:   Colors.p_soft,
+    borderRadius:      20,
     paddingHorizontal: 8,
     paddingVertical:   3,
   },
