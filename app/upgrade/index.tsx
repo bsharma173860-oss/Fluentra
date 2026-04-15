@@ -327,6 +327,7 @@ const s = StyleSheet.create({
   title:    { fontFamily: 'Inter_700Bold', fontSize: 28, color: Colors.textPrimary, textAlign: 'center' },
   subtitle: { fontFamily: 'Inter_400Regular', fontSize: 15, color: Colors.textSecondary, marginTop: 8, textAlign: 'center' },
 
+
   plans:        { gap: 16 },
   plansDesktop: { flexDirection: 'row', alignItems: 'flex-start' },
 

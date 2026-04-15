@@ -496,19 +496,25 @@ export default function LanguageDashboard() {
     <LanguageThemeProvider code={langCode}>
     <AppLayout>
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* ── Header ── */}
-      <View style={s.header}>
+      {/* ── Header band ── */}
+      <View style={[s.headerBand, { backgroundColor: theme.bg }]}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
           <ChevronLeftIcon size={14} color={Colors.textSecondary} />
         </TouchableOpacity>
-        <View style={s.breadcrumb}>
-          <Text style={s.breadcrumbRoot}>Home</Text>
-          <Text style={s.breadcrumbSep}>/</Text>
-          <Text style={s.breadcrumbCurrent}>{langNative}</Text>
-        </View>
-        <View style={[s.streakPill, { backgroundColor: theme.accentLight }]}>
-          <FlameIcon size={12} color={theme.accent} strokeWidth={1.5} />
-          <Text style={[s.streakPillText, { color: theme.accent }]}>Day {streak}</Text>
+        <View style={s.headerContent}>
+          <View style={s.headerLeft}>
+            <Text style={s.headerFlag}>{theme.flag}</Text>
+            <View>
+              <Text style={s.headerNative}>{langNative}</Text>
+              {theme.native !== theme.name && (
+                <Text style={s.headerEn}>{theme.name}</Text>
+              )}
+            </View>
+          </View>
+          <View style={[s.streakPill, { backgroundColor: theme.accentLight }]}>
+            <FlameIcon size={12} color={theme.accent} strokeWidth={1.5} />
+            <Text style={[s.streakPillText, { color: theme.accent }]}>Day {streak}</Text>
+          </View>
         </View>
       </View>
 
@@ -567,22 +573,28 @@ export default function LanguageDashboard() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.surface },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, height: 48,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
-    gap: 10,
+  // ── Header band (120px themed pastel) ──
+  headerBand: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingHorizontal: 20,
+    paddingTop:        16,
+    paddingBottom:     20,
   },
   backBtn: {
     width: 26, height: 26, borderRadius: 6,
-    backgroundColor: Colors.bg2,
+    backgroundColor: 'rgba(0,0,0,0.06)',
     alignItems: 'center', justifyContent: 'center',
+    marginBottom: 14,
+    alignSelf: 'flex-start' as const,
   },
-  breadcrumb: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary },
-  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textMuted },
-  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 13, color: Colors.textPrimary },
+  headerContent: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerFlag: { fontSize: 32 },
+  headerNative: { fontFamily: 'Inter_700Bold', fontSize: 24, color: Colors.textPrimary },
+  headerEn:     { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
 
   streakPill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -594,11 +606,11 @@ const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
     paddingHorizontal: 20,
   },
   tab: {
-    paddingVertical: 11, marginRight: 24,
+    paddingVertical: 12, marginRight: 24,
     position: 'relative', alignItems: 'center',
   },
   tabText:       { fontFamily: 'Inter_400Regular',  fontSize: 14, color: Colors.textSecondary },

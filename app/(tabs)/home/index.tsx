@@ -6,7 +6,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import Svg, { Defs, Pattern, Circle, Rect } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
@@ -29,21 +28,8 @@ function fluencyToLevel(pct: number): string {
   return 'A1';
 }
 
-// ── Card header with dot pattern ─────────────────────────────────
-function CardHeader({ bg, accent }: { bg: string; accent: string }) {
-  return (
-    <View style={{ height: 72, overflow: 'hidden' }}>
-      <Svg width="100%" height="72" style={{ position: 'absolute', top: 0, left: 0 }}>
-        <Defs>
-          <Pattern id={`dots-${accent}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-            <Circle cx="10" cy="10" r="1.5" fill={accent} opacity={0.12} />
-          </Pattern>
-        </Defs>
-        <Rect width="100%" height="72" fill={bg} />
-        <Rect width="100%" height="72" fill={`url(#dots-${accent})`} />
-      </Svg>
-    </View>
-  );
+function todayLabel(): string {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 // ── Language card ─────────────────────────────────────────────────
@@ -54,19 +40,32 @@ function LanguageCard({ lang }: { lang: UserLanguage }) {
   const streakDays = Math.round(lang.fluency_percent / 2.5);
   const level      = fluencyToLevel(lang.fluency_percent);
 
+  const [hovered, setHovered] = useState(false);
+
+  const cardStyle = [
+    c.card,
+    Platform.OS === 'web' && hovered && c.cardHovered,
+  ];
+
   return (
     <TouchableOpacity
-      style={c.card}
+      style={cardStyle}
       onPress={() => router.push(`/language/${code}` as any)}
-      activeOpacity={0.85}
+      activeOpacity={0.9}
+      {...(Platform.OS === 'web' ? {
+        onMouseEnter: () => setHovered(true),
+        onMouseLeave: () => setHovered(false),
+      } : {})}
     >
-      <CardHeader bg={theme.bg} accent={theme.accent} />
-
-      <View style={c.cardFlag}>
-        <Text style={c.cardFlagText}>{theme.flag}</Text>
+      {/* ── Card top: pastel bg + flag ── */}
+      <View style={[c.cardTop, { backgroundColor: theme.bg }]}>
+        <View style={c.flagWrap}>
+          <Text style={c.flagText}>{theme.flag}</Text>
+        </View>
       </View>
 
-      <View style={c.cardBody}>
+      {/* ── Card bottom ── */}
+      <View style={c.cardBottom}>
         <Text style={c.cardNative}>{theme.native}</Text>
         {theme.native !== theme.name && (
           <Text style={c.cardEn}>{theme.name}</Text>
@@ -75,27 +74,24 @@ function LanguageCard({ lang }: { lang: UserLanguage }) {
         {exams.length > 0 && (
           <View style={c.examRow}>
             {exams.slice(0, 2).map(e => (
-              <View key={e.id} style={[c.examBadge, { backgroundColor: theme.accentLight }]}>
-                <Text style={[c.examBadgeText, { color: theme.accentDark }]}>{e.id.toUpperCase()}</Text>
+              <View key={e.id} style={c.examBadge}>
+                <Text style={c.examBadgeText}>{e.id.toUpperCase()}</Text>
               </View>
             ))}
           </View>
         )}
 
-        <View style={c.cardBottom}>
+        <View style={c.divider} />
+
+        <View style={c.cardFooter}>
           <View style={c.streakRow}>
-            <FlameIcon size={12} color={streakDays > 0 ? theme.accent : Colors.ink3} />
-            <Text style={[c.streakText, { color: streakDays > 0 ? theme.accent : Colors.ink3 }]}>
-              {streakDays > 0 ? `Day ${streakDays}` : 'Start streak'}
+            <View style={[c.dot, { backgroundColor: theme.accent }]} />
+            <Text style={[c.streakText, { color: theme.accent }]}>
+              {streakDays > 0 ? `Day ${streakDays}` : 'Start'}
             </Text>
-            {streakDays > 0 && (
-              <View style={c.streakBarTrack}>
-                <View style={[c.streakBarFill, { width: `${Math.min(lang.fluency_percent, 100)}%` as any, backgroundColor: theme.accent }]} />
-              </View>
-            )}
           </View>
-          <View style={[c.levelBadge, { backgroundColor: theme.accentLight }]}>
-            <Text style={[c.levelText, { color: theme.accentDark }]}>{level}</Text>
+          <View style={c.levelBadge}>
+            <Text style={c.levelText}>{level}</Text>
           </View>
         </View>
       </View>
@@ -105,11 +101,19 @@ function LanguageCard({ lang }: { lang: UserLanguage }) {
 
 // ── Add language card ─────────────────────────────────────────────
 function AddCard({ onPress }: { onPress: () => void }) {
+  const [hovered, setHovered] = useState(false);
   return (
-    <TouchableOpacity style={c.addCard} onPress={onPress} activeOpacity={0.75}>
-      <PlusIcon size={20} color={Colors.ink3} />
+    <TouchableOpacity
+      style={[c.addCard, Platform.OS === 'web' && hovered && c.addCardHovered]}
+      onPress={onPress}
+      activeOpacity={0.75}
+      {...(Platform.OS === 'web' ? {
+        onMouseEnter: () => setHovered(true),
+        onMouseLeave: () => setHovered(false),
+      } : {})}
+    >
+      <PlusIcon size={20} color={Colors.textMuted} />
       <Text style={c.addCardTitle}>Add a language</Text>
-      <Text style={c.addCardSub}>+1 new language per year</Text>
     </TouchableOpacity>
   );
 }
@@ -182,13 +186,13 @@ function AddLanguageModal({
     return (
       <>
         <Text style={am.sectionLabel}>{title}</Text>
-        <View style={am.grid}>
+        <View style={am.list}>
           {codes.map(code => {
             const theme = LANGUAGE_THEMES[code]!;
             const done  = isAdded(code);
             const busy  = adding === code;
             return (
-              <View key={code} style={[am.langCard, { backgroundColor: theme.bg }]}>
+              <View key={code} style={am.langRow}>
                 <Text style={am.langFlag}>{theme.flag}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={am.langNative}>{theme.native}</Text>
@@ -196,12 +200,12 @@ function AddLanguageModal({
                 </View>
                 {done ? (
                   <View style={am.addedBadge}>
-                    <CheckIcon size={10} color="#0A8C5A" strokeWidth={2.5} />
+                    <CheckIcon size={10} color={Colors.green} strokeWidth={2.5} />
                     <Text style={am.addedText}>Added</Text>
                   </View>
                 ) : (
                   <TouchableOpacity
-                    style={[am.addBtn, { backgroundColor: theme.accent }]}
+                    style={am.addBtn}
                     onPress={() => handleAdd(code)}
                     disabled={busy}
                     activeOpacity={0.8}
@@ -221,44 +225,43 @@ function AddLanguageModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <Pressable style={am.overlay} onPress={handleClose}>
         <Pressable style={am.sheet} onPress={() => {}}>
-          {/* Toast */}
           {toast && (
             <View style={am.toast}>
               <Text style={am.toastText}>{toast}</Text>
             </View>
           )}
 
-          {/* Header */}
           <View style={am.header}>
             <View style={{ flex: 1 }}>
               <Text style={am.title}>Add a language</Text>
-              <Text style={am.subtitle}>Choose a language to start your learning journey</Text>
+              <Text style={am.subtitle}>Choose a language to start learning</Text>
             </View>
             <TouchableOpacity style={am.closeBtn} onPress={handleClose}>
-              <XIcon size={16} color={Colors.ink3} />
+              <XIcon size={16} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          {/* Search */}
           <View style={am.searchWrap}>
             <TextInput
               style={am.search}
               value={search}
               onChangeText={setSearch}
               placeholder="Search languages…"
-              placeholderTextColor={Colors.ink4}
+              placeholderTextColor={Colors.textMuted}
             />
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={am.scrollContent}>
             {renderSection(europeanFiltered, 'EUROPEAN')}
             {renderSection(asianFiltered,    'ASIAN & MIDDLE EASTERN')}
-            <View style={{ height: 24 }} />
+            <View style={{ height: 20 }} />
           </ScrollView>
 
-          <TouchableOpacity style={am.doneBtn} onPress={handleClose} activeOpacity={0.85}>
-            <Text style={am.doneBtnText}>Done</Text>
-          </TouchableOpacity>
+          <View style={am.footer}>
+            <TouchableOpacity style={am.doneBtn} onPress={handleClose} activeOpacity={0.85}>
+              <Text style={am.doneBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -286,10 +289,10 @@ export default function HomeScreen() {
   return (
     <AppLayout>
     <SafeAreaView style={c.safe} edges={['top']}>
-      {/* ── Top bar (mobile) ── */}
+      {/* ── Mobile top bar ── */}
       {!isDesktop && (
         <View style={c.topBar}>
-          <FluentraLogo iconSize={22} textSize={18} />
+          <FluentraLogo iconSize={28} textSize={18} />
           <TouchableOpacity style={c.avatar} onPress={() => router.push('/(tabs)/settings' as any)}>
             <Text style={c.avatarText}>{initial}</Text>
           </TouchableOpacity>
@@ -299,17 +302,19 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={c.scroll}>
         {/* Greeting */}
         <View style={c.greetingWrap}>
-          <Text style={c.greeting}>{greeting}, {displayName || 'there'}.</Text>
+          <Text style={c.greeting}>{greeting}{displayName ? `, ${displayName}` : ''}.</Text>
+          <Text style={c.greetingDate}>{todayLabel()}</Text>
         </View>
 
+        {/* Section label */}
+        <Text style={c.sectionLabel}>YOUR LANGUAGES</Text>
+
         {/* Language cards */}
-        <View style={c.section}>
-          <View style={[c.grid, isDesktop && c.gridDesktop]}>
-            {languages.map(lang => (
-              <LanguageCard key={lang.id} lang={lang} />
-            ))}
-            <AddCard onPress={() => setModalOpen(true)} />
-          </View>
+        <View style={[c.grid, isDesktop && c.gridDesktop]}>
+          {languages.map(lang => (
+            <LanguageCard key={lang.id} lang={lang} />
+          ))}
+          <AddCard onPress={() => setModalOpen(true)} />
         </View>
 
         <View style={{ height: 48 }} />
@@ -329,7 +334,7 @@ export default function HomeScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────
 const c = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.bg },
+  safe:   { flex: 1, backgroundColor: Colors.surface },
   scroll: { paddingBottom: 48 },
 
   topBar: {
@@ -338,116 +343,182 @@ const c = StyleSheet.create({
     backgroundColor: Colors.white,
     borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  avatar:     { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.p, alignItems: 'center', justifyContent: 'center' },
+  avatar:     { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.logoAccent, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.white },
 
-  greetingWrap: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 24 },
-  greeting:     { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 28, color: Colors.ink },
+  greetingWrap: { paddingHorizontal: 40, paddingTop: 32, paddingBottom: 24 },
+  greeting: {
+    fontFamily: 'Inter_700Bold',
+    fontSize:   28,
+    color:      Colors.textPrimary,
+    lineHeight: 34,
+  },
+  greetingDate: {
+    fontFamily: 'Inter_400Regular',
+    fontSize:   13,
+    color:      Colors.textMuted,
+    marginTop:  4,
+  },
 
-  section:      { paddingHorizontal: 20 },
-  grid:         { gap: 12 },
-  gridDesktop:  { flexDirection: 'row', flexWrap: 'wrap' },
+  sectionLabel: {
+    fontFamily:        'Inter_600SemiBold',
+    fontSize:          11,
+    color:             Colors.textMuted,
+    letterSpacing:     1,
+    textTransform:     'uppercase' as const,
+    paddingHorizontal: 40,
+    marginBottom:      12,
+  },
+
+  grid:        { paddingHorizontal: 40, gap: 16 },
+  gridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
 
   // Language card
   card: {
     backgroundColor: Colors.white,
-    borderRadius: 16, borderWidth: 1, borderColor: Colors.border,
-    overflow: 'hidden',
-    minHeight: 180,
+    borderRadius:    16,
+    borderWidth:     1,
+    borderColor:     Colors.cardBorder,
+    overflow:        'hidden',
+    minWidth:        200,
+    flex:            1,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer', transition: 'all 200ms ease' } as any : {}),
   },
-  cardFlag: {
-    position: 'absolute', top: 16, left: '50%' as any,
-    marginLeft: -20,
-    width: 40, height: 28, borderRadius: 6,
-    alignItems: 'center', justifyContent: 'center',
-    zIndex: 1,
+  cardHovered: {
+    borderColor: Colors.textPrimary,
+    ...(Platform.OS === 'web' ? {
+      transform: [{ translateY: -2 }],
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    } as any : {}),
   },
-  cardFlagText: { fontSize: 24 },
-  cardBody: { padding: 14, paddingTop: 12 },
-  cardNative: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink },
-  cardEn:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },
 
-  examRow:       { flexDirection: 'row', gap: 4, marginTop: 8, flexWrap: 'wrap' },
-  examBadge:     { borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2 },
-  examBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 10 },
+  cardTop: {
+    height:         100,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  flagWrap: {
+    width:           72,
+    height:          50,
+    borderRadius:    10,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    alignItems:      'center',
+    justifyContent:  'center',
+    ...(Platform.OS === 'web' ? {
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+    } as any : {
+      shadowColor: '#000', shadowOpacity: 0.12,
+      shadowOffset: { width: 0, height: 2 }, shadowRadius: 8,
+    }),
+  },
+  flagText: { fontSize: 28 },
 
-  cardBottom:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  streakRow:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  streakText:    { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
-  streakBarTrack:{ width: 40, height: 3, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
-  streakBarFill: { height: '100%', borderRadius: 99 },
-  levelBadge:    { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
-  levelText:     { fontFamily: 'Inter_700Bold', fontSize: 10 },
+  cardBottom:    { padding: 20 },
+  cardNative:    { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.textPrimary },
+  cardEn:        { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary, marginTop: 3 },
+
+  examRow:       { flexDirection: 'row', gap: 4, marginTop: 10, flexWrap: 'wrap' },
+  examBadge:     { backgroundColor: Colors.bg2, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3 },
+  examBadgeText: { fontFamily: 'Inter_500Medium', fontSize: 11, color: Colors.textSecondary },
+
+  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 12 },
+
+  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  streakRow:  { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  dot:        { width: 6, height: 6, borderRadius: 3 },
+  streakText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+
+  levelBadge: { backgroundColor: Colors.bg2, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3 },
+  levelText:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.textSecondary },
 
   // Add card
   addCard: {
-    borderWidth: 1.5, borderStyle: 'dashed' as const,
-    borderColor: Colors.borderStrong, borderRadius: 16,
-    minHeight: 180, alignItems: 'center', justifyContent: 'center',
-    gap: 8, backgroundColor: 'transparent',
+    borderWidth:  1,
+    borderStyle:  'dashed' as const,
+    borderColor:  Colors.border,
+    borderRadius: 16,
+    minHeight:    220,
+    minWidth:     200,
+    flex:         1,
+    alignItems:   'center',
+    justifyContent: 'center',
+    gap:          10,
+    backgroundColor: 'transparent',
+    ...(Platform.OS === 'web' ? { cursor: 'pointer', transition: 'border-color 200ms ease' } as any : {}),
   },
-  addCardTitle: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3 },
-  addCardSub:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink4 },
+  addCardHovered: {
+    borderColor: Colors.textPrimary,
+  },
+  addCardTitle: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.textMuted },
 });
 
 // ── Modal styles ──────────────────────────────────────────────────
 const am = StyleSheet.create({
-  overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center', padding: 20 },
   sheet: {
-    backgroundColor: Colors.white, borderRadius: 20,
-    width: '100%', maxWidth: 500,
-    maxHeight: '85%' as any, overflow: 'hidden',
+    backgroundColor: Colors.white,
+    borderRadius:    16,
+    width:           '100%',
+    maxWidth:        480,
+    maxHeight:       '85%' as any,
+    overflow:        'hidden',
+    borderWidth:     1,
+    borderColor:     Colors.border,
   },
 
   toast: {
     position: 'absolute', top: 12, alignSelf: 'center',
-    backgroundColor: Colors.ink, borderRadius: 20,
+    backgroundColor: Colors.textPrimary, borderRadius: 20,
     paddingHorizontal: 16, paddingVertical: 8, zIndex: 10,
   },
   toastText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.white },
 
-  header:   { flexDirection: 'row', alignItems: 'flex-start', padding: 24, paddingBottom: 16, gap: 12 },
-  title:    { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 18, color: Colors.ink, marginBottom: 4 },
-  subtitle: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
-  closeBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  header:   { flexDirection: 'row', alignItems: 'flex-start', padding: 24, paddingBottom: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  title:    { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.textPrimary, marginBottom: 3 },
+  subtitle: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary },
+  closeBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
 
-  searchWrap: { paddingHorizontal: 20, paddingBottom: 12 },
+  searchWrap: { paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   search: {
-    height: 40, borderRadius: 10,
+    height: 38, borderRadius: 8,
     borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.bg,
-    paddingHorizontal: 14,
-    fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 12,
+    fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textPrimary,
   },
 
-  scrollContent: { paddingHorizontal: 20 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 8 },
   sectionLabel: {
     fontFamily: 'Inter_600SemiBold', fontSize: 10,
-    color: Colors.ink3, letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 8, marginTop: 8,
+    color: Colors.textMuted, letterSpacing: 1,
+    textTransform: 'uppercase' as const,
+    marginBottom: 6, marginTop: 12,
   },
-  grid: { gap: 8, marginBottom: 4 },
+  list: { gap: 1 },
 
-  langCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    height: 64, borderRadius: 12,
-    borderWidth: 1, borderColor: Colors.border,
-    paddingHorizontal: 14,
+  langRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  langFlag:   { fontSize: 22, width: 32 },
-  langNative: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
-  langEn:     { fontFamily: 'Inter_400Regular',  fontSize: 11, color: Colors.ink3, marginTop: 1 },
+  langFlag:   { fontSize: 22, width: 30 },
+  langNative: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.textPrimary },
+  langEn:     { fontFamily: 'Inter_400Regular',  fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
 
-  addBtn:     { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
-  addBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: Colors.white },
+  addBtn: {
+    height: 28, paddingHorizontal: 14, borderRadius: 6,
+    backgroundColor: Colors.textPrimary,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  addBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.white },
 
-  addedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EDFAF4', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  addedText:  { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#0A8C5A' },
+  addedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.green_bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  addedText:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.green },
 
+  footer: { borderTopWidth: 1, borderTopColor: Colors.border, padding: 16 },
   doneBtn: {
-    margin: 20, marginTop: 8, height: 44, borderRadius: 10,
-    backgroundColor: Colors.p, alignItems: 'center', justifyContent: 'center',
+    height: 38, borderRadius: 8,
+    backgroundColor: Colors.textPrimary, alignItems: 'center', justifyContent: 'center',
   },
-  doneBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
+  doneBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
 });

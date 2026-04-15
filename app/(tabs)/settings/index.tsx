@@ -137,19 +137,19 @@ const s = StyleSheet.create({
   },
 
   title: {
-    fontFamily:   'Inter_600SemiBold',
-    fontSize:     22,
+    fontFamily:   'Inter_700Bold',
+    fontSize:     24,
     color:        Colors.textPrimary,
     marginBottom: 24,
   },
 
-  gap: { height: 8 },
+  gap: { height: 10 },
 
   group: {
-    backgroundColor: Colors.card,
-    borderRadius:    10,
+    backgroundColor: Colors.white,
+    borderRadius:    12,
     borderWidth:     1,
-    borderColor:     Colors.cardBorder,
+    borderColor:     Colors.border,
     overflow:        'hidden',
   },
   row: {
@@ -158,17 +158,17 @@ const s = StyleSheet.create({
     height:           44,
     paddingHorizontal: 16,
     gap:              12,
-    backgroundColor:  Colors.card,
+    backgroundColor:  Colors.white,
   },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.cardBorder },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   rowLabel:  { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.textPrimary, flex: 1 },
   rowRight:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   badge: {
-    backgroundColor:   Colors.accentBg,
+    backgroundColor:   Colors.bg2,
     borderRadius:      20,
     paddingHorizontal: 8,
     paddingVertical:   3,
   },
-  badgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.accent },
+  badgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.textSecondary },
 });

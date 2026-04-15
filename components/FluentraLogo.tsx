@@ -1,26 +1,31 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect, Path } from 'react-native-svg';
-import { Colors } from '@/constants/colors';
+import Svg, { Rect, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-// ── SVG icon (coral rounded square with 3 wave lines) ─────────────
-export function FluentraIcon({ size = 28 }: { size?: number }) {
+// ── SVG icon: gradient square with 3 wave lines ───────────────────
+export function FluentraIcon({ size = 32 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 28 28">
-      <Rect width="28" height="28" rx="8" fill="#D97757" />
+    <Svg width={size} height={size} viewBox="0 0 32 32">
+      <Defs>
+        <LinearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#5B4EFF" />
+          <Stop offset="1" stopColor="#7B6FFF" />
+        </LinearGradient>
+      </Defs>
+      <Rect width="32" height="32" rx="9" fill="url(#logoGrad)" />
       <Path
-        d="M7 9 Q14 6 21 9"
-        stroke="white" strokeWidth="2" fill="none"
-        strokeLinecap="round" opacity={1}
+        d="M8 10 Q16 7 24 10"
+        stroke="white" strokeWidth="2.2" fill="none"
+        strokeLinecap="round"
       />
       <Path
-        d="M7 14 Q14 11 21 14"
-        stroke="white" strokeWidth="2" fill="none"
+        d="M8 16 Q16 13 24 16"
+        stroke="white" strokeWidth="2.2" fill="none"
         strokeLinecap="round" opacity={0.7}
       />
       <Path
-        d="M7 19 Q14 16 21 19"
-        stroke="white" strokeWidth="2" fill="none"
+        d="M8 22 Q16 19 24 22"
+        stroke="white" strokeWidth="2.2" fill="none"
         strokeLinecap="round" opacity={0.4}
       />
     </Svg>
@@ -34,9 +39,9 @@ type LogoProps = {
   showIcon?: boolean;
 };
 
-export function FluentraLogo({ iconSize = 28, textSize = 22, showIcon = true }: LogoProps) {
+export function FluentraLogo({ iconSize = 32, textSize = 22, showIcon = true }: LogoProps) {
   return (
-    <View style={[l.row, { gap: Math.round(iconSize * 0.35) }]}>
+    <View style={[l.row, { gap: Math.round(iconSize * 0.3) }]}>
       {showIcon && <FluentraIcon size={iconSize} />}
       <Text style={[l.text, { fontSize: textSize }]}>
         Fluent<Text style={l.ra}>ra</Text>
@@ -49,8 +54,8 @@ const l = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   text: {
     fontFamily: 'DMSerifDisplay_400Regular',
-    color: Colors.ink,
+    color: '#000000',
     includeFontPadding: false,
   },
-  ra: { color: Colors.p },
+  ra: { color: '#5B4EFF' },
 });

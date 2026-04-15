@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
@@ -13,17 +13,6 @@ import {
 import { UserMenu } from '@/components/layout/UserMenu';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { getTheme } from '@/constants/languageThemes';
-
-// ── Search icon ───────────────────────────────────────────────────
-function SearchIcon({ size = 12, color = Colors.sidebarLabel }: IconProps) {
-  const { Svg, Circle, Line } = require('react-native-svg');
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="11" cy="11" r="8" stroke={color} strokeWidth="2" />
-      <Line x1="21" y1="21" x2="16.65" y2="16.65" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 // ── Nav items ─────────────────────────────────────────────────────
 type NavItem = {
@@ -58,20 +47,7 @@ export function Sidebar() {
     <View style={s.sidebar}>
       {/* ── Logo ── */}
       <View style={s.logoWrap}>
-        <FluentraLogo iconSize={22} textSize={18} />
-      </View>
-
-      {/* ── Search bar ── */}
-      <View style={s.searchWrap}>
-        <View style={s.searchBar}>
-          <SearchIcon size={12} color={Colors.sidebarLabel} />
-          <TextInput
-            style={s.searchInput}
-            placeholder="Search..."
-            placeholderTextColor={Colors.sidebarLabel}
-            editable={false}
-          />
-        </View>
+        <FluentraLogo iconSize={32} textSize={22} />
       </View>
 
       {/* ── Scrollable nav ── */}
@@ -80,8 +56,8 @@ export function Sidebar() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 8 }}
       >
-        {/* LEARN section */}
-        <Text style={s.sectionLabel}>LEARN</Text>
+        {/* NAVIGATE section */}
+        <Text style={s.sectionLabel}>NAVIGATE</Text>
         <View style={s.navGroup}>
           {NAV_ITEMS.map(({ label, route, pathSegment, Icon }) => {
             const active = isActive(pathSegment);
@@ -92,7 +68,10 @@ export function Sidebar() {
                 onPress={() => router.push(route as any)}
                 activeOpacity={0.7}
               >
-                <Icon size={14} color={active ? Colors.sidebarTextActive : Colors.sidebarText} />
+                <Icon
+                  size={15}
+                  color={active ? Colors.sidebarTextActive : Colors.sidebarLabel}
+                />
                 <Text style={[s.navLabel, active && s.navLabelActive]}>{label}</Text>
               </TouchableOpacity>
             );
@@ -100,7 +79,7 @@ export function Sidebar() {
         </View>
 
         {/* LANGUAGES section */}
-        <Text style={[s.sectionLabel, { marginTop: 16 }]}>LANGUAGES</Text>
+        <Text style={[s.sectionLabel, { marginTop: 20 }]}>LANGUAGES</Text>
         <View style={s.navGroup}>
           {languages.map(lang => {
             const theme  = getTheme(lang.language_code);
@@ -117,6 +96,7 @@ export function Sidebar() {
                 <Text style={[s.langLabel, active && s.navLabelActive]} numberOfLines={1}>
                   {theme.native}
                 </Text>
+                <Text style={s.langStreak}>{lang.fluency_percent}%</Text>
               </TouchableOpacity>
             );
           })}
@@ -132,8 +112,8 @@ export function Sidebar() {
         </View>
       </ScrollView>
 
-      {/* ── User row ── */}
-      <View style={s.userWrap}>
+      {/* ── User footer ── */}
+      <View style={s.footerWrap}>
         <UserMenu
           name={displayName}
           email={user?.email ?? ''}
@@ -147,60 +127,44 @@ export function Sidebar() {
 // ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   sidebar: {
-    width:            220,
+    width:            240,
     backgroundColor:  Colors.sidebarBg,
     borderRightWidth: 1,
     borderRightColor: Colors.sidebarBorder,
     flexShrink:       0,
   },
-  logoWrap: {
-    paddingHorizontal: 12,
-    paddingTop:        14,
-    paddingBottom:     8,
-  },
 
-  searchWrap: { paddingHorizontal: 8, paddingBottom: 4 },
-  searchBar: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            6,
-    height:         30,
-    backgroundColor: Colors.sidebarInput,
-    borderWidth:    1,
-    borderColor:    Colors.sidebarInputBorder,
-    borderRadius:   6,
-    paddingHorizontal: 8,
-  },
-  searchInput: {
-    flex:       1,
-    fontFamily: 'Inter_400Regular',
-    fontSize:   12,
-    color:      Colors.sidebarLabel,
-    padding:    0,
+  logoWrap: {
+    paddingHorizontal: 16,
+    paddingTop:        20,
+    paddingBottom:     16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.sidebarBorder,
   },
 
   scroll: { flex: 1 },
 
   sectionLabel: {
-    fontFamily:        'Inter_500Medium',
-    fontSize:          10,
+    fontFamily:        'Inter_600SemiBold',
+    fontSize:          11,
     color:             Colors.sidebarLabel,
-    letterSpacing:     0.6,
-    paddingHorizontal: 12,
-    paddingTop:        14,
-    paddingBottom:     4,
+    letterSpacing:     1,
+    textTransform:     'uppercase' as const,
+    paddingHorizontal: 16,
+    paddingTop:        20,
+    paddingBottom:     6,
   },
-  navGroup: { paddingHorizontal: 6, gap: 1 },
+  navGroup: { paddingHorizontal: 8, gap: 1 },
 
   navItem: {
     flexDirection:     'row',
     alignItems:        'center',
-    gap:               7,
-    height:            30,
+    gap:               8,
+    height:            32,
     borderRadius:      6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
-  navItemActive: { backgroundColor: Colors.sidebarHover },
+  navItemActive: { backgroundColor: Colors.sidebarActive },
   navLabel: {
     fontFamily: 'Inter_400Regular',
     fontSize:   13,
@@ -216,9 +180,9 @@ const s = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               8,
-    height:            28,
+    height:            32,
     borderRadius:      6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
   langDot:  { width: 6, height: 6, borderRadius: 3 },
   langLabel: {
@@ -227,14 +191,19 @@ const s = StyleSheet.create({
     color:      Colors.sidebarText,
     flex:       1,
   },
+  langStreak: {
+    fontFamily: 'Inter_400Regular',
+    fontSize:   11,
+    color:      Colors.sidebarLabel,
+  },
 
   addLangItem: {
     flexDirection:     'row',
     alignItems:        'center',
-    gap:               7,
-    height:            28,
+    gap:               8,
+    height:            32,
     borderRadius:      6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
   addLangText: {
     fontFamily: 'Inter_400Regular',
@@ -242,8 +211,9 @@ const s = StyleSheet.create({
     color:      Colors.sidebarLabel,
   },
 
-  userWrap: {
-    paddingHorizontal: 6,
-    paddingVertical:   8,
+  footerWrap: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.sidebarBorder,
+    padding:        8,
   },
 });

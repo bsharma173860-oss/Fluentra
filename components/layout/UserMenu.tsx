@@ -269,7 +269,7 @@ export function UserMenu({ name, email, plan }: UserMenuProps) {
         <Text style={t.name} numberOfLines={1}>{name}</Text>
         <Text style={t.plan}>{planLabel}</Text>
       </View>
-      {open ? <ChevronUpIcon size={12} color={Colors.sidebarLabel} /> : <ChevronRightIcon size={12} color={Colors.sidebarLabel} />}
+      {open ? <ChevronUpIcon size={12} color={Colors.textMuted} /> : <ChevronRightIcon size={12} color={Colors.textMuted} />}
     </TouchableOpacity>
   );
 
@@ -354,19 +354,19 @@ const t = StyleSheet.create({
     flexDirection:    'row',
     alignItems:       'center',
     gap:              8,
-    height:           32,
+    height:           36,
     borderRadius:     6,
     paddingHorizontal: 8,
   },
   avatar: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: Colors.accent,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: Colors.logoAccent,
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  avatarText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: Colors.white },
-  name:       { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.sidebarText },
-  plan:       { fontFamily: 'Inter_400Regular', fontSize: 10, color: Colors.sidebarLabel },
+  avatarText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: Colors.white },
+  name:       { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.textPrimary },
+  plan:       { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.textMuted },
 });
 
 // ── Bottom sheet styles ───────────────────────────────────────────

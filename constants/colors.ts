@@ -1,66 +1,70 @@
 export const Colors = {
-  // ── Legacy warm palette (keep for backward compat) ───────────────
-  p:       '#D97757',
-  pDark:   '#C96442',
-  p_soft:  '#FAF0EB',
+  // ── Legacy warm palette (keep for backward compat) ─────────────
+  p:       '#5B4EFF',
+  pDark:   '#4338CA',
+  p_soft:  '#EEF2FF',
 
-  ink:     '#09090B',
-  ink2:    '#57574E',
-  ink3:    '#71717A',
-  ink4:    '#A1A1AA',
+  ink:     '#000000',
+  ink2:    '#333333',
+  ink3:    '#666666',
+  ink4:    '#999999',
 
-  border:       '#E4E4E7',
-  borderStrong: '#D4D4D8',
+  border:       '#EAEAEA',
+  borderStrong: '#CCCCCC',
 
   bg:        '#FAFAFA',
-  bgSidebar: '#0F0F0F',
-  bg2:       '#F4F4F5',
-  bgHover:   '#F4F4F5',
+  bgSidebar: '#FFFFFF',
+  bg2:       '#F2F2F2',
+  bgHover:   '#FAFAFA',
 
   white: '#FFFFFF',
 
-  orange:     '#D97706',
-  orange_bg:  '#FEF3C7',
+  orange:     '#F59E0B',
+  orange_bg:  '#FFFBEB',
   gold:       '#8A6F3E',
-  gold_bg:    '#FAF7F0',
-  green:      '#16A34A',
-  green_bg:   '#DCFCE7',
-  blue:       '#5B6BA8',
-  blue_bg:    '#EEF0FA',
-  purple:     '#7B5EA7',
-  purple_bg:  '#F3EEF9',
+  gold_bg:    '#FEF9EC',
+  green:      '#10B981',
+  green_bg:   '#ECFDF5',
+  blue:       '#3B82F6',
+  blue_bg:    '#EFF6FF',
+  purple:     '#8B5CF6',
+  purple_bg:  '#F5F3FF',
 
   ielts:    '#5B4EFF',
   ielts_bg: '#EEF2FF',
 
-  danger:    '#DC2626',
+  danger:    '#EF4444',
   danger_bg: '#FEF2F2',
 
-  // ── Linear design system tokens ──────────────────────────────────
-  // Page & card surfaces
+  // ── Vercel/Stripe design tokens ─────────────────────────────────
+  // Surfaces
   surface:    '#FAFAFA',
   card:       '#FFFFFF',
-  cardBorder: '#E4E4E7',
+  cardBorder: '#EAEAEA',
 
   // Text
-  textPrimary:   '#09090B',
-  textSecondary: '#71717A',
-  textMuted:     '#A1A1AA',
+  textPrimary:   '#000000',
+  textSecondary: '#666666',
+  textMuted:     '#999999',
 
-  // Sidebar (dark)
-  sidebarBg:          '#0F0F0F',
-  sidebarBorder:      '#1F1F1F',
-  sidebarHover:       '#1A1A1A',
-  sidebarInput:       '#1A1A1A',
-  sidebarInputBorder: '#2A2A2A',
-  sidebarLabel:       '#3F3F46',
-  sidebarText:        '#A1A1AA',
-  sidebarTextActive:  '#FFFFFF',
+  // Sidebar (light)
+  sidebarBg:          '#FFFFFF',
+  sidebarBorder:      '#EAEAEA',
+  sidebarHover:       '#FAFAFA',
+  sidebarActive:      '#F2F2F2',
+  sidebarInput:       '#FAFAFA',
+  sidebarInputBorder: '#EAEAEA',
+  sidebarLabel:       '#999999',
+  sidebarText:        '#666666',
+  sidebarTextActive:  '#000000',
 
-  // Accent (purple)
-  accent:      '#5B4EFF',
-  accentBg:    '#EEF2FF',
-  accentHover: '#4338CA',
+  // Accent (Vercel blue)
+  accent:      '#0070F3',
+  accentBg:    '#EBF4FF',
+  accentHover: '#0060D1',
+
+  // Logo accent (purple for "ra")
+  logoAccent: '#5B4EFF',
 } as const;
 
 export type ColorKey = keyof typeof Colors;
