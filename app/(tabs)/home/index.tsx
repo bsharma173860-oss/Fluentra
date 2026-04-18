@@ -319,38 +319,61 @@ export default function HomeScreen() {
   const initial                = displayName ? displayName[0].toUpperCase() : '?';
   const isDesktop              = Platform.OS === 'web' && screenWidth >= 1024;
 
-  const [languages,  setLanguages]  = useState<UserLanguage[]>([]);
-  const [showModal,  setShowModal]  = useState(false);
+  const [languages,   setLanguages]  = useState<UserLanguage[]>([]);
+  const [showModal,   setShowModal]  = useState(false);
+  const [refreshKey,  setRefreshKey] = useState(0);
   const recentSessions = useRecentSessions();
 
-  // ── Fetch languages ──
+  // ── Fetch languages (verbose debug) ──
   const fetchLanguages = useCallback(async () => {
-    const { data: { user: u } } = await supabase.auth.getUser();
-    if (!u) return;
-    const { data, error } = await supabase
-      .from('user_languages')
-      .select('*')
-      .eq('user_id', u.id)
-      .order('sort_order', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: true });
-    console.log('[HomeScreen] fetchLanguages:', data?.length ?? 0, error?.message);
-    if (data) setLanguages(data as UserLanguage[]);
+    try {
+      console.log('=== FETCH LANGUAGES START ===');
+      const { data: { user: u }, error: authErr } = await supabase.auth.getUser();
+      console.log('User ID:', u?.id);
+      console.log('Auth error:', authErr);
+      if (!u) { console.log('NO USER — returning'); return; }
+
+      const { data, error } = await supabase
+        .from('user_languages')
+        .select('*')
+        .eq('user_id', u.id)
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true });
+
+      console.log('Raw data from Supabase:', JSON.stringify(data));
+      console.log('Supabase error:', error);
+      if (error) { console.error('Fetch error:', error); return; }
+
+      console.log('Setting languages:', data?.length, 'items');
+      setLanguages(data ?? []);
+    } catch (e) {
+      console.error('Unexpected fetchLanguages error:', e);
+    }
   }, []);
 
-  // Refetch on every screen focus (handles returning from language page)
+  // Mount
+  useEffect(() => { fetchLanguages(); }, [fetchLanguages]);
+
+  // Focus (handles returning from language page)
   useFocusEffect(
-    useCallback(() => { fetchLanguages(); }, [fetchLanguages])
+    useCallback(() => {
+      console.log('HOME FOCUSED — refetching');
+      fetchLanguages();
+    }, [fetchLanguages])
   );
 
-  // Realtime subscription for instant updates
+  // Realtime subscription
   useEffect(() => {
-    const channel = supabase
-      .channel('home-user-languages')
+    const sub = supabase
+      .channel('lang-changes-' + Date.now())
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'user_languages',
-      }, () => fetchLanguages())
+      }, (payload) => {
+        console.log('REALTIME EVENT:', payload);
+        fetchLanguages();
+      })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(sub); };
   }, [fetchLanguages]);
 
   // On first load, jump to the last language the user was in
@@ -397,9 +420,10 @@ export default function HomeScreen() {
 
         {/* ── Languages ── */}
         <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
-        <View style={s.grid}>
+        {console.log('Rendering', languages.length, 'language cards') as any}
+        <View key={refreshKey} style={s.grid}>
           {languages.map(lang => (
-            <LanguageCard key={lang.id} lang={lang} cardWidth={cardWidth} />
+            <LanguageCard key={lang.id ?? lang.language_code} lang={lang} cardWidth={cardWidth} />
           ))}
           <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
         </View>
@@ -424,7 +448,10 @@ export default function HomeScreen() {
         onClose={() => setShowModal(false)}
         existingCodes={languages.map(l => l.language_code)}
         totalCount={languages.length}
-        onLanguageAdded={fetchLanguages}
+        onLanguageAdded={async () => {
+          await fetchLanguages();
+          setRefreshKey(k => k + 1);
+        }}
       />
     </SafeAreaView>
     </AppLayout>
