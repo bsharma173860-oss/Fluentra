@@ -181,7 +181,7 @@ function LanguageCard({
 
   return (
     <TouchableOpacity
-      style={[c.card, { width: cardWidth }, hovered && c.cardHover] as any}
+      style={[s.card, { width: cardWidth }, hovered && s.cardHover] as any}
       onPress={() => router.push(`/language/${code}` as any)}
       activeOpacity={0.88}
       {...(Platform.OS === 'web' ? {
@@ -190,27 +190,27 @@ function LanguageCard({
       } : {})}
     >
       {/* ── Card top ── */}
-      <View style={[c.cardTop, { backgroundColor: theme.bg }]}>
+      <View style={[s.cardTop, { backgroundColor: theme.bg }]}>
         <DotPattern accent={theme.accent} />
-        <View style={c.flagWrap}>
+        <View style={s.flagWrap}>
           <FlagSVG code={code} width={60} height={40} />
         </View>
       </View>
 
       {/* ── Card body ── */}
-      <View style={c.cardBody}>
-        <Text style={c.cardNative}>{theme.native}</Text>
+      <View style={s.cardBody}>
+        <Text style={s.cardNative}>{theme.native}</Text>
         {theme.native !== theme.name && (
-          <Text style={c.cardEn}>{theme.name}</Text>
+          <Text style={s.cardEn}>{theme.name}</Text>
         )}
 
         {exams.length > 0 && (
-          <View style={c.examRow}>
+          <View style={s.examRow}>
             {exams.slice(0, 3).map(e => {
               const badge = EXAM_BADGE[e.id.toLowerCase()] ?? { bg: '#F2F2F2', color: '#666' };
               return (
-                <View key={e.id} style={[c.examBadge, { backgroundColor: badge.bg }]}>
-                  <Text style={[c.examBadgeText, { color: badge.color }]}>
+                <View key={e.id} style={[s.examBadge, { backgroundColor: badge.bg }]}>
+                  <Text style={[s.examBadgeText, { color: badge.color }]}>
                     {e.id.toUpperCase()}
                   </Text>
                 </View>
@@ -219,17 +219,17 @@ function LanguageCard({
           </View>
         )}
 
-        <View style={c.cardFooter}>
-          <View style={c.streakRow}>
-            <View style={[c.dot, { backgroundColor: streak > 0 ? theme.accent : '#CCC' }]} />
+        <View style={s.cardFooter}>
+          <View style={s.streakRow}>
+            <View style={[s.dot, { backgroundColor: streak > 0 ? theme.accent : '#CCC' }]} />
             <Text
-              style={[c.streakText, { color: streak > 0 ? theme.accent : '#BBB' }]}
+              style={[s.streakText, { color: streak > 0 ? theme.accent : '#BBB' }]}
             >
               {streak > 0 ? `Day ${streak}` : 'Start'}
             </Text>
           </View>
-          <View style={c.levelBadge}>
-            <Text style={c.levelText}>{level}</Text>
+          <View style={s.levelBadge}>
+            <Text style={s.levelText}>{level}</Text>
           </View>
         </View>
       </View>
@@ -243,7 +243,7 @@ function AddCard({ onPress, cardWidth }: { onPress: () => void; cardWidth: numbe
 
   return (
     <TouchableOpacity
-      style={[c.addCard, { width: cardWidth }, hovered && c.addCardHover]}
+      style={[s.addCard, { width: cardWidth }, hovered && s.addCardHover]}
       onPress={onPress}
       activeOpacity={0.75}
       {...(Platform.OS === 'web' ? {
@@ -251,11 +251,11 @@ function AddCard({ onPress, cardWidth }: { onPress: () => void; cardWidth: numbe
         onMouseLeave: () => setHovered(false),
       } : {})}
     >
-      <View style={[c.addCircle, hovered && c.addCircleHover]}>
+      <View style={[s.addCircle, hovered && s.addCircleHover]}>
         <PlusSVG color={hovered ? '#888' : '#CCC'} size={14} />
       </View>
-      <Text style={[c.addTitle, hovered && c.addTitleHover]}>Add a language</Text>
-      <Text style={[c.addSub, hovered && c.addSubHover]}>+1 new per year</Text>
+      <Text style={[s.addTitle, hovered && s.addTitleHover]}>Add a language</Text>
+      <Text style={[s.addSub, hovered && s.addSubHover]}>+1 new per year</Text>
     </TouchableOpacity>
   );
 }
@@ -274,7 +274,7 @@ function ActivityCard({ session }: { session: AppSession }) {
 
   return (
     <TouchableOpacity
-      style={[ac.card, hovered && ac.cardHover]}
+      style={[as.card, hovered && as.cardHover]}
       activeOpacity={0.85}
       onPress={() => router.push('/(tabs)/progress' as any)}
       {...(Platform.OS === 'web' ? {
@@ -282,15 +282,15 @@ function ActivityCard({ session }: { session: AppSession }) {
         onMouseLeave: () => setHovered(false),
       } : {})}
     >
-      <View style={[ac.iconBox, { backgroundColor: style.iconBg }]}>
+      <View style={[as.iconBox, { backgroundColor: style.iconBg }]}>
         <Icon color={style.iconColor} />
       </View>
-      <View style={ac.meta}>
-        <Text style={ac.title}>{title}</Text>
-        <Text style={ac.sub}>{sub}</Text>
+      <View style={as.meta}>
+        <Text style={as.title}>{title}</Text>
+        <Text style={as.sub}>{sub}</Text>
       </View>
       {session.overall_band != null && (
-        <Text style={[ac.score, { color: style.iconColor }]}>
+        <Text style={[as.score, { color: style.iconColor }]}>
           {session.overall_band.toFixed(1)}
         </Text>
       )}
