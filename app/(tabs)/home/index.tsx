@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet,
   TouchableOpacity, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import Svg, { Defs, Pattern, Circle, Rect, Path } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { useAuth } from '@/lib/authContext';
@@ -12,11 +13,10 @@ import { Storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
 import { getTheme } from '@/constants/languageThemes';
-import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { FlagSVG } from '@/components/flags';
 import { FluentraLogo } from '@/components/FluentraLogo';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { AddLanguagePopover } from '@/components/ui/AddLanguagePopover';
+import { AddLanguageModal } from '@/components/ui/AddLanguageModal';
 import type { UserLanguage, AppSession } from '@/lib/supabase';
 
 // ── SVG icons (no emoji) ──────────────────────────────────────────
@@ -319,9 +319,39 @@ export default function HomeScreen() {
   const initial                = displayName ? displayName[0].toUpperCase() : '?';
   const isDesktop              = Platform.OS === 'web' && screenWidth >= 1024;
 
-  const { languages, refetch } = useUserLanguages();
-  const recentSessions         = useRecentSessions();
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [languages,  setLanguages]  = useState<UserLanguage[]>([]);
+  const [showModal,  setShowModal]  = useState(false);
+  const recentSessions = useRecentSessions();
+
+  // ── Fetch languages ──
+  const fetchLanguages = useCallback(async () => {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    if (!u) return;
+    const { data, error } = await supabase
+      .from('user_languages')
+      .select('*')
+      .eq('user_id', u.id)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+    console.log('[HomeScreen] fetchLanguages:', data?.length ?? 0, error?.message);
+    if (data) setLanguages(data as UserLanguage[]);
+  }, []);
+
+  // Refetch on every screen focus (handles returning from language page)
+  useFocusEffect(
+    useCallback(() => { fetchLanguages(); }, [fetchLanguages])
+  );
+
+  // Realtime subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('home-user-languages')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'user_languages',
+      }, () => fetchLanguages())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchLanguages]);
 
   // On first load, jump to the last language the user was in
   useEffect(() => {
@@ -332,14 +362,13 @@ export default function HomeScreen() {
     });
   }, []);
 
-  // Compute card width based on available space
+  // Card sizing
   const horizPad  = isDesktop ? 36 * 2 : 20 * 2;
   const sidebarW  = isDesktop ? 240 : 0;
   const available = screenWidth - sidebarW - horizPad;
   const numCols   = available >= 900 ? 4 : available >= 580 ? 2 : 1;
   const cardWidth = Math.floor((available - 14 * (numCols - 1)) / numCols);
-
-  const pad = isDesktop ? 36 : 20;
+  const pad       = isDesktop ? 36 : 20;
 
   return (
     <AppLayout>
@@ -372,7 +401,7 @@ export default function HomeScreen() {
           {languages.map(lang => (
             <LanguageCard key={lang.id} lang={lang} cardWidth={cardWidth} />
           ))}
-          <AddCard onPress={() => setPopoverOpen(true)} cardWidth={cardWidth} />
+          <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
         </View>
 
         {/* ── Recent activity ── */}
@@ -390,13 +419,12 @@ export default function HomeScreen() {
         <View style={{ height: 48 }} />
       </ScrollView>
 
-      <AddLanguagePopover
-        visible={popoverOpen}
-        onClose={() => setPopoverOpen(false)}
+      <AddLanguageModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
         existingCodes={languages.map(l => l.language_code)}
-        onAdded={() => { refetch(); }}
-        placement="center"
         totalCount={languages.length}
+        onLanguageAdded={fetchLanguages}
       />
     </SafeAreaView>
     </AppLayout>

@@ -15,7 +15,7 @@ import {
 import { UserMenu } from '@/components/layout/UserMenu';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { getTheme } from '@/constants/languageThemes';
-import { AddLanguagePopover } from '@/components/ui/AddLanguagePopover';
+import { AddLanguageModal } from '@/components/ui/AddLanguageModal';
 import type { UserLanguage } from '@/lib/supabase';
 
 // ── Nav items ─────────────────────────────────────────────────────
@@ -258,14 +258,13 @@ export function Sidebar() {
         />
       </View>
 
-      {/* ── Add language popover ── */}
-      <AddLanguagePopover
+      {/* ── Add language modal ── */}
+      <AddLanguageModal
         visible={popoverOpen}
         onClose={() => setPopoverOpen(false)}
         existingCodes={orderedLangs.map(l => l.language_code)}
-        onAdded={() => { refetch(); }}
-        placement="sidebar"
         totalCount={orderedLangs.length}
+        onLanguageAdded={refetch}
       />
     </View>
   );
