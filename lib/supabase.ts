@@ -86,6 +86,7 @@ export type UserLanguage = {
   language_name_native: string | null;
   fluency_percent: number;
   exams: string[] | null;
+  sort_order: number | null;
   created_at: string;
 };
 

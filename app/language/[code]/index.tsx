@@ -16,6 +16,7 @@ import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { useAuth } from '@/lib/authContext';
 import { supabase, type UserLanguage } from '@/lib/supabase';
 import { hasPracticed, type PracticeModule } from '@/lib/practiceStore';
+import { Storage } from '@/lib/storage';
 import {
   ChevronLeftIcon, ChevronRightIcon,
   MicIcon, PenIcon, HeadphoneIcon, BookIcon, SpeakIcon,
@@ -721,6 +722,11 @@ export default function LanguageDashboard() {
       .eq('user_id', user.id).eq('language_code', langCode).single()
       .then(({ data }) => { if (data) setLangRecord(data); });
   }, [user?.id, langCode]);
+
+  // Save last active language so home screen can redirect back here
+  useEffect(() => {
+    Storage.set('lastActiveLanguage', langCode);
+  }, [langCode]);
 
   useFocusEffect(
     useCallback(() => {

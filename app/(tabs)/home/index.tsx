@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import Svg, { Defs, Pattern, Circle, Rect, Path } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { useAuth } from '@/lib/authContext';
+import { Storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
 import { getTheme, LANGUAGE_THEMES } from '@/constants/languageThemes';
@@ -508,6 +509,9 @@ const m = StyleSheet.create({
 });
 
 // ── HomeScreen ────────────────────────────────────────────────────
+// Module-level flag — redirect only once per JS session, not on every home visit
+let _didRedirectToLastLang = false;
+
 export default function HomeScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const { profile, user }      = useAuth();
@@ -520,6 +524,15 @@ export default function HomeScreen() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const handleAdded = useCallback((_lang: UserLanguage) => { refetch(); }, [refetch]);
+
+  // On first load, jump to the last language the user was in
+  useEffect(() => {
+    if (_didRedirectToLastLang) return;
+    _didRedirectToLastLang = true;
+    Storage.get('lastActiveLanguage').then(code => {
+      if (code) router.replace(`/language/${code}` as any);
+    });
+  }, []);
 
   // Compute card width based on available space
   const horizPad  = isDesktop ? 36 * 2 : 20 * 2;

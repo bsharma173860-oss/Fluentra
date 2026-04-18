@@ -14,7 +14,8 @@ export function useUserLanguages() {
       .from('user_languages')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at');
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
 
     setLanguages(data as UserLanguage[] ?? []);
     setLoading(false);
