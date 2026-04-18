@@ -328,7 +328,7 @@ export default function HomeScreen() {
       .from('user_languages')
       .select('*')
       .eq('user_id', user.id)
-      .order('sort_order', { ascending: true });
+      .order('created_at', { ascending: true });
     if (data) setLanguages([...data] as UserLanguage[]);
   }
 
