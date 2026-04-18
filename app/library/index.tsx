@@ -10,6 +10,7 @@ import { Colors } from '@/constants/colors';
 import { getAllLibraryItems, type LibraryItem } from '@/constants/dailyContent';
 import { BookIcon, HeadphoneIcon, PenIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 // ── Filter types ──────────────────────────────────────────────────
 type FilterTab = 'all' | 'reading' | 'listening' | 'writing';
@@ -205,13 +206,11 @@ export default function LibraryScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {filtered.length === 0 ? (
-            <View style={s.empty}>
-              <BookIcon size={36} color={Colors.borderStrong} />
-              <Text style={s.emptyTitle}>No results</Text>
-              <Text style={s.emptyText}>
-                {query ? `Nothing matched "${query}"` : 'Nothing here yet'}
-              </Text>
-            </View>
+            <EmptyState
+              icon="📚"
+              title="Nothing found"
+              subtitle={query ? `Nothing matched "${query}"` : 'Try a different search term'}
+            />
           ) : (
             <>
               {todayItems.length > 0 && (

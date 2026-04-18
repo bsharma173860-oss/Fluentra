@@ -24,6 +24,7 @@ import {
   LockIcon, CheckIcon, FlameIcon,
 } from '@/components/icons';
 import { getDifficulty, DIFFICULTY_COLOR, DIFFICULTY_BG } from '@/constants/dailyContent';
+import { getFoundation } from '@/constants/foundationContent';
 
 // ── Practice card config ──────────────────────────────────────────
 type PracticeCard = {
@@ -212,15 +213,16 @@ function PracticeCardItem({
 
 // Extra cards (tutor, library)
 function ExtraCardItem({
-  icon, title, desc, tag, theme, langCode, route,
+  icon, title, desc, tag, tagStyle = 'free', theme, langCode, route,
 }: {
-  icon:     React.ReactNode;
-  title:    string;
-  desc:     string;
-  tag?:     string;
-  theme:    LanguageTheme;
-  langCode: string;
-  route:    string;
+  icon:      React.ReactNode;
+  title:     string;
+  desc:      string;
+  tag?:      string;
+  tagStyle?: 'free' | 'optional';
+  theme:     LanguageTheme;
+  langCode:  string;
+  route:     string;
 }) {
   const [hovered, setHovered] = useState(false);
   const rtl = isRTL(langCode);
@@ -245,7 +247,10 @@ function ExtraCardItem({
         <Text style={pc.desc}>{desc}</Text>
         {tag && (
           <View style={pc.tags}>
-            <View style={pc.tagFree}><Text style={pc.tagFreeText}>{tag}</Text></View>
+            {tagStyle === 'optional'
+              ? <View style={pc.tagOptional}><Text style={pc.tagOptionalText}>{tag}</Text></View>
+              : <View style={pc.tagFree}><Text style={pc.tagFreeText}>{tag}</Text></View>
+            }
           </View>
         )}
       </View>
@@ -273,6 +278,8 @@ const pc = StyleSheet.create({
   tagText:  { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888' },
   tagFree:  { backgroundColor: '#F0FFF4', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 2 },
   tagFreeText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#16A34A' },
+  tagOptional: { backgroundColor: '#F4F4F0', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 2 },
+  tagOptionalText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888' },
   right:    { flexDirection: 'column', alignItems: 'flex-end', gap: 6 },
   donePill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F0FFF4', borderRadius: 6, paddingHorizontal: 9, paddingVertical: 3 },
   donePillText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#16A34A' },
@@ -305,6 +312,48 @@ function PracticeTab({
     <View style={pt.wrap}>
       <Text style={[pt.sectionTitle, rtl && pt.textRTL]}>{t(langCode, 'dailyPractice')}</Text>
       <Text style={[pt.sectionSub,   rtl && pt.textRTL]}>{t(langCode, 'oneSession')}</Text>
+
+      {(() => {
+        const foundation = getFoundation(langCode);
+        if (!foundation) return null;
+        return (
+          <TouchableOpacity
+            onPress={() => router.push(`/language/${langCode}/foundation` as any)}
+            style={[pt.foundationCard, {
+              backgroundColor: theme.accentLight,
+              borderColor: theme.accent + '30',
+            }]}
+            activeOpacity={0.85}
+          >
+            <View style={pt.foundIconBox}>
+              <Text style={pt.foundIconText}>
+                {foundation.sections[0]?.icon || '📖'}
+              </Text>
+            </View>
+
+            <View style={pt.foundBody}>
+              <Text style={pt.foundTitle}>Foundation</Text>
+              <Text style={pt.foundSub}>Scripts · Vocabulary · Grammar</Text>
+              <View style={pt.foundSections}>
+                {foundation.sections.slice(0, 3).map(s => (
+                  <View key={s.id} style={pt.foundTag}>
+                    <Text style={pt.foundTagText}>
+                      {s.title.split('·')[0].trim()}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={pt.foundRight}>
+              <View style={pt.optionalBadge}>
+                <Text style={pt.optionalText}>Optional</Text>
+              </View>
+              <Text style={pt.foundArrow}>›</Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })()}
 
       {PRACTICE_CARDS.map(card => (
         <PracticeCardItem
@@ -402,6 +451,36 @@ const pt = StyleSheet.create({
   levelBadge: { borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center', gap: 4 },
   levelValue: { fontFamily: 'Inter_700Bold', fontSize: 24 },
   levelLabel: { fontFamily: 'Inter_400Regular', fontSize: 10, color: '#999' },
+
+  // Foundation card
+  foundationCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  foundIconBox: {
+    width: 44, height: 44,
+    borderRadius: 12,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  foundIconText:  { fontSize: 22 },
+  foundBody:      { flex: 1 },
+  foundTitle:     { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000', marginBottom: 2 },
+  foundSub:       { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#888', marginBottom: 8 },
+  foundSections:  { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
+  foundTag:       { backgroundColor: 'white', borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
+  foundTagText:   { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#666' },
+  foundRight:     { alignItems: 'flex-end', gap: 6 },
+  optionalBadge:  { backgroundColor: '#F4F4F0', borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
+  optionalText:   { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888' },
+  foundArrow:     { fontSize: 18, color: '#CCC' },
 });
 
 // ── Dashboard tab ─────────────────────────────────────────────────
@@ -694,6 +773,9 @@ const ex = StyleSheet.create({
   secondaryBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 });
 
+// ── Non-Latin script languages that support romanization toggle ────
+const NON_LATIN_LANGS = new Set(['ja', 'zh', 'ar', 'ko', 'hi', 'ru', 'fa']);
+
 // ── Main screen ───────────────────────────────────────────────────
 export default function LanguageDashboard() {
   const { code }   = useLocalSearchParams<{ code: string }>();
@@ -707,7 +789,22 @@ export default function LanguageDashboard() {
   const [practiced,   setPracticed]   = useState<Record<PracticeModule, boolean>>({
     speaking: false, writing: false, listening: false, reading: false,
   });
-  const [activeTab, setActiveTab] = useState<Tab>('practice');
+  const [activeTab,  setActiveTab]  = useState<Tab>('practice');
+  const [showRoman,  setShowRoman]  = useState(true);
+
+  // Load romanization preference for this language
+  useEffect(() => {
+    if (!NON_LATIN_LANGS.has(langCode)) return;
+    Storage.get(`romanization_${langCode}`).then(val => {
+      if (val !== null) setShowRoman(val === 'true');
+    });
+  }, [langCode]);
+
+  function toggleRoman() {
+    const next = !showRoman;
+    setShowRoman(next);
+    Storage.set(`romanization_${langCode}`, String(next));
+  }
 
   const streak        = profile?.streak_count ?? 32;
   const remaining     = Math.max(0, STREAK_TARGET - streak);
@@ -803,9 +900,22 @@ export default function LanguageDashboard() {
               )}
             </View>
           </View>
-          <View style={[s.streakPill, { backgroundColor: theme.accentLight }]}>
-            <FlameIcon size={12} color={theme.accent} strokeWidth={1.5} />
-            <Text style={[s.streakPillText, { color: theme.accent }]}>Day {streak}</Text>
+          <View style={s.headerRight}>
+            {NON_LATIN_LANGS.has(langCode) && (
+              <TouchableOpacity
+                style={[s.romanToggle, showRoman && { backgroundColor: theme.accentLight, borderColor: theme.accent }]}
+                onPress={toggleRoman}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.romanToggleText, showRoman && { color: theme.accent }]}>
+                  {showRoman ? 'ABC on' : 'ABC off'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            <View style={[s.streakPill, { backgroundColor: theme.accentLight }]}>
+              <FlameIcon size={12} color={theme.accent} strokeWidth={1.5} />
+              <Text style={[s.streakPillText, { color: theme.accent }]}>Day {streak}</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -890,6 +1000,15 @@ const s = StyleSheet.create({
   headerFlag:    { fontSize: 32 },
   headerNative:  { fontFamily: 'Inter_700Bold', fontSize: 24, color: Colors.textPrimary },
   headerEn:      { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+
+  romanToggle: {
+    paddingHorizontal: 9, paddingVertical: 4,
+    borderRadius: 6, borderWidth: 1,
+    borderColor: '#E0E0E0', backgroundColor: '#F4F4F4',
+  },
+  romanToggleText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#999' },
 
   streakPill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,

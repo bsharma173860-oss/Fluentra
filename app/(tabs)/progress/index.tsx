@@ -10,6 +10,7 @@ import { getLangNames } from '@/constants/languages';
 import { getTheme } from '@/constants/languageThemes';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 // ─── Dimensions ───────────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get('window');
@@ -312,9 +313,11 @@ export default function ProgressScreen() {
         {/* ── Recent sessions ── */}
         <Text style={s.sectionTitle}>Recent sessions</Text>
         {sessions.length === 0 ? (
-          <View style={s.emptyCard}>
-            <Text style={s.emptyText}>No sessions for this language yet.</Text>
-          </View>
+          <EmptyState
+            icon="📊"
+            title="No sessions yet"
+            subtitle="Complete your first practice session to see your progress"
+          />
         ) : (
           <View style={s.sessionList}>
             {sessions.map((session, i) => (

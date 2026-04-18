@@ -93,6 +93,14 @@ export default function SettingsScreen() {
       Icon: HelpCircleIcon, label: 'Get help', right: 'external',
       onPress: () => Linking.openURL('https://fluentra.app/help'),
     },
+    {
+      Icon: BookIcon, label: 'Privacy Policy', right: 'chevron',
+      onPress: () => router.push('/privacy' as any),
+    },
+    {
+      Icon: BookIcon, label: 'Terms of Service', right: 'chevron',
+      onPress: () => router.push('/terms' as any),
+    },
   ];
 
   const SECTION3: Row[] = [

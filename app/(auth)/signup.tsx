@@ -176,6 +176,14 @@ export default function SignupScreen() {
             }
           </TouchableOpacity>
 
+          {/* ── Consent ── */}
+          <Text style={s.consent}>
+            By creating an account you agree to our{' '}
+            <Text style={s.consentLink} onPress={() => router.push('/terms' as any)}>Terms of Service</Text>
+            {' '}and{' '}
+            <Text style={s.consentLink} onPress={() => router.push('/privacy' as any)}>Privacy Policy</Text>.
+          </Text>
+
           {/* ── Footer ── */}
           <View style={s.footer}>
             <Text style={s.footerText}>Already have an account? </Text>
@@ -264,6 +272,8 @@ const s = StyleSheet.create({
   btnDisabled:   { opacity: 0.5 },
   createBtnText: { fontFamily: 'Inter_500Medium', fontSize: 15, color: Colors.white },
 
+  consent:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, textAlign: 'center', lineHeight: 18, marginBottom: 16 },
+  consentLink: { fontFamily: 'Inter_500Medium', fontSize: 12, color: Colors.p },
   footer:     { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   footerText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
   footerLink: { fontFamily: 'Inter_500Medium',  fontSize: 13, color: Colors.p },

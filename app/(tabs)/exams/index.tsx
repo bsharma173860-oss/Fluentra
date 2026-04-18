@@ -7,6 +7,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { getLangNames } from '@/constants/languages';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const { width: W } = Dimensions.get('window');
 const H_PAD = 20;
@@ -354,9 +355,11 @@ export default function ExamsScreen() {
         )}
 
         {pastExams.length === 0 && (
-          <View style={s.emptyHistory}>
-            <Text style={s.emptyHistoryText}>No past exam results yet. Register for the monthly exam to compete.</Text>
-          </View>
+          <EmptyState
+            icon="🎯"
+            title="No exams yet"
+            subtitle="Build a 40-day streak to unlock monthly exams"
+          />
         )}
 
         <View style={{ height: 24 }} />

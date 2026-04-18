@@ -1,27 +1,41 @@
 {
   "expo": {
-    "name": "fluentra",
+    "name": "Fluentra",
     "slug": "fluentra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F9F8F5"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.fluentra.app",
+      "supportsTablet": true,
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Fluentra needs microphone access for speaking practice",
+        "NSCameraUsageDescription": "Fluentra uses camera for face detection during speaking",
+        "NSUserNotificationsUsageDescription": "Get daily streak reminders to keep your learning on track"
+      }
     },
     "android": {
+      "package": "com.fluentra.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#5B4EFF"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +47,11 @@
       "expo-font",
       "expo-secure-store",
       "expo-apple-authentication"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
   }
 }

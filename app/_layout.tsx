@@ -1,3 +1,12 @@
+// Sentry — install: npx expo install @sentry/react-native
+// Then uncomment the import and wrap below.
+// import * as Sentry from '@sentry/react-native';
+// Sentry.init({
+//   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+//   environment: process.env.NODE_ENV ?? 'production',
+//   tracesSampleRate: 0.2,
+// });
+
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -138,16 +147,25 @@ function RootLayoutInner() {
         <Stack.Screen name="(tabs)"   options={{ animation: 'none' }} />
         <Stack.Screen name="upgrade"  options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="library"  options={{ animation: 'none' }} />
+        <Stack.Screen name="language/[code]/foundation" options={{ headerShown: false }} />
+        <Stack.Screen name="language/[code]/lesson"     options={{ headerShown: false }} />
+        <Stack.Screen name="privacy"                    options={{ headerShown: false }} />
+        <Stack.Screen name="terms"                      options={{ headerShown: false }} />
+        <Stack.Screen name="settings/account"           options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </>
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <AuthProvider>
       <RootLayoutInner />
     </AuthProvider>
   );
 }
+
+// When Sentry is installed, replace the line below with:
+// export default Sentry.wrap(RootLayout);
+export default RootLayout;

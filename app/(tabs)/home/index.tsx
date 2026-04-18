@@ -17,6 +17,8 @@ import { FluentraLogo } from '@/components/FluentraLogo';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AddLanguageModal } from '@/components/ui/AddLanguageModal';
 import { Analytics } from '@/lib/analytics';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SkeletonLanguageCard } from '@/components/ui/Skeleton';
 import type { UserLanguage, AppSession } from '@/lib/supabase';
 
 // ── SVG icons (no emoji) ──────────────────────────────────────────
@@ -443,6 +445,7 @@ export default function HomeScreen() {
   const isDesktop              = Platform.OS === 'web' && screenWidth >= 1024;
 
   const [languages,    setLanguages]    = useState<UserLanguage[]>([]);
+  const [loadingLangs, setLoadingLangs] = useState(true);
   const [showModal,    setShowModal]    = useState(false);
   const [adding,       setAdding]       = useState('');
   // Web drag state (by language_code)
@@ -454,14 +457,28 @@ export default function HomeScreen() {
 
   // ── Fetch ──────────────────────────────────────────────────────
   async function fetchLanguages() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase
-      .from('user_languages')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true });
-    if (data) setLanguages([...data] as UserLanguage[]);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoadingLangs(false); return; }
+
+      const { data, error } = await supabase
+        .from('user_languages')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Fetch error:', error);
+        setLoadingLangs(false);
+        return;
+      }
+
+      setLanguages(data || []);
+    } catch (err) {
+      console.error('Fetch languages:', err);
+    } finally {
+      setLoadingLangs(false);
+    }
   }
 
   // Mount
@@ -493,57 +510,63 @@ export default function HomeScreen() {
     return () => { document.head.removeChild(style); };
   }, []);
 
-  // ── Add language (runs in home scope so setLanguages always works) ──
+  // ── Add language ──────────────────────────────────────────────
   async function addLanguage(lang: { code: string; native: string; english: string }) {
-    if (adding) return;
-    setAdding(lang.code);
-
     try {
+      setAdding(lang.code);
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setAdding(''); return; }
 
-      // Duplicate guard
-      const { data: existing } = await supabase
-        .from('user_languages').select('id')
-        .eq('user_id', user.id).eq('language_code', lang.code).maybeSingle();
-      if (existing) { setAdding(''); return; }
+      if (!user) {
+        setAdding('');
+        return;
+      }
 
-      const { error } = await supabase.from('user_languages').insert({
-        user_id:              user.id,
-        language_code:        lang.code,
-        language_name_en:     lang.english,
-        language_name_native: lang.native,
-        fluency_percent:      0,
-        exams:                [],
-        sort_order:           languages.length,
-      });
-
-      if (!error) {
-        Analytics.languageAdded({
-          languageCode: lang.code,
-          languageName: lang.english,
-          totalLanguages: languages.length + 1,
-        });
-        // Optimistic update — card appears immediately
-        setLanguages(prev => [...prev, {
-          id:                   '',
+      const { error } = await supabase
+        .from('user_languages')
+        .insert({
           user_id:              user.id,
           language_code:        lang.code,
           language_name_en:     lang.english,
           language_name_native: lang.native,
           fluency_percent:      0,
-          exams:                [],
-          sort_order:           languages.length,
-          created_at:           new Date().toISOString(),
-        } as UserLanguage]);
-        // Then sync real DB row (gets the actual id, etc.)
-        await fetchLanguages();
-      } else {
-        console.error('[addLanguage] insert error:', error.message);
+          streak_count:         0,
+          exam_unlocked:        false,
+        });
+
+      if (error) {
+        console.error('Insert error:', error);
+        setAdding('');
+        return;
       }
-    } catch (e: any) {
-      console.error('[addLanguage] unexpected:', e?.message ?? e);
-    } finally {
+
+      Analytics.languageAdded({
+        languageCode:   lang.code,
+        languageName:   lang.english,
+        totalLanguages: languages.length + 1,
+      });
+
+      // Immediately add to local state
+      setLanguages(prev => [...prev, {
+        id:                   Date.now().toString(),
+        user_id:              user.id,
+        language_code:        lang.code,
+        language_name_en:     lang.english,
+        language_name_native: lang.native,
+        fluency_percent:      0,
+        streak_count:         0,
+        exam_unlocked:        false,
+        created_at:           new Date().toISOString(),
+      } as unknown as UserLanguage]);
+
+      setAdding('');
+      setShowModal(false);
+
+      // Also refetch from DB
+      setTimeout(() => fetchLanguages(), 500);
+
+    } catch (err) {
+      console.error('Add language:', err);
       setAdding('');
     }
   }
@@ -650,35 +673,46 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <View
-          style={s.grid}
-          {...(Platform.OS !== 'web' && selectedIndex !== null ? {
-            // Tapping the grid background exits reorder mode
-          } : {})}
-        >
-          {languages.map((lang, index) => (
-            <LanguageCard
-              key={lang.id || lang.language_code}
-              lang={lang}
-              cardWidth={cardWidth}
-              index={index}
-              draggedId={draggedId}
-              dragOverId={dragOverId}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              onLongPress={() => handleLongPress(index)}
-              isSelected={selectedIndex === index}
-              canMoveUp={index > 0}
-              canMoveDown={index < languages.length - 1}
-              onMoveUp={() => handleMoveUp(index)}
-              onMoveDown={() => handleMoveDown(index)}
-            />
-          ))}
-          <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
-        </View>
+        {loadingLangs ? (
+          <View style={s.grid}>
+            {[0, 1, 2].map(i => (
+              <SkeletonLanguageCard key={i} width={cardWidth} />
+            ))}
+          </View>
+        ) : languages.length === 0 ? (
+          <EmptyState
+            icon="🌍"
+            title="Add your first language"
+            subtitle="Choose a language to start learning and preparing for exams"
+            actionLabel="Add a language"
+            onAction={() => setShowModal(true)}
+          />
+        ) : (
+          <View style={s.grid}>
+            {languages.map((lang, index) => (
+              <LanguageCard
+                key={lang.id || lang.language_code}
+                lang={lang}
+                cardWidth={cardWidth}
+                index={index}
+                draggedId={draggedId}
+                dragOverId={dragOverId}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                onLongPress={() => handleLongPress(index)}
+                isSelected={selectedIndex === index}
+                canMoveUp={index > 0}
+                canMoveDown={index < languages.length - 1}
+                onMoveUp={() => handleMoveUp(index)}
+                onMoveDown={() => handleMoveDown(index)}
+              />
+            ))}
+            <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
+          </View>
+        )}
 
         {/* ── Recent activity ── */}
         {recentSessions.length > 0 && (
