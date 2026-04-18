@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Platform, useWindowDimensions, Alert,
@@ -9,6 +9,8 @@ import Svg, { Polyline } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { ChevronLeftIcon, CheckIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Analytics } from '@/lib/analytics';
+import { useAuth } from '@/lib/authContext';
 
 // ── Check icon with custom color ──────────────────────────────────
 function Check({ color }: { color: string }) {
@@ -204,6 +206,14 @@ function comingSoon() {
 export default function UpgradeScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    Analytics.upgradePrompted({
+      trigger: 'upgrade_page',
+      currentPlan: (profile as any)?.subscription_tier ?? 'free',
+    });
+  }, []);
 
   return (
     <AppLayout>

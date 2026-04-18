@@ -16,6 +16,7 @@ import { FlagSVG } from '@/components/flags';
 import { FluentraLogo } from '@/components/FluentraLogo';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AddLanguageModal } from '@/components/ui/AddLanguageModal';
+import { Analytics } from '@/lib/analytics';
 import type { UserLanguage, AppSession } from '@/lib/supabase';
 
 // ── SVG icons (no emoji) ──────────────────────────────────────────
@@ -55,6 +56,22 @@ function PlusSVG({ color, size = 14 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function ChevronUpSVG({ color = '#FFF' }: { color?: string }) {
+  return (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <Path d="M18 15L12 9L6 15" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function ChevronDownSVG({ color = '#FFF' }: { color?: string }) {
+  return (
+    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <Path d="M6 9L12 15L18 9" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -158,37 +175,45 @@ function DotPattern({ accent }: { accent: string }) {
   );
 }
 
-// ── Language card ─────────────────────────────────────────────────
-function LanguageCard({
-  lang, cardWidth,
-}: { lang: UserLanguage; cardWidth: number }) {
-  const code    = lang.language_code;
-  const theme   = getTheme(code);
-  const exams   = LANGUAGE_EXAMS[code] ?? [];
-  const streak  = Math.round(lang.fluency_percent / 2.5);
-  const level   = fluencyToLevel(lang.fluency_percent);
-
-  const [hovered, setHovered] = useState(false);
+// ── Language card inner content (shared between web/mobile) ──────
+function LangCardContent({
+  lang, hovered,
+}: { lang: UserLanguage; hovered: boolean }) {
+  const code   = lang.language_code;
+  const theme  = getTheme(code);
+  const exams  = LANGUAGE_EXAMS[code] ?? [];
+  const streak = Math.round(lang.fluency_percent / 2.5);
+  const level  = fluencyToLevel(lang.fluency_percent);
 
   return (
-    <TouchableOpacity
-      style={[s.card, { width: cardWidth }, hovered && s.cardHover] as any}
-      onPress={() => router.push(`/language/${code}` as any)}
-      activeOpacity={0.88}
-      {...(Platform.OS === 'web' ? {
-        onMouseEnter: () => setHovered(true),
-        onMouseLeave: () => setHovered(false),
-      } : {})}
-    >
-      {/* ── Card top ── */}
+    <>
       <View style={[s.cardTop, { backgroundColor: theme.bg }]}>
         <DotPattern accent={theme.accent} />
+
+        {/* Drag handle (web only) — CSS shows it on parent hover */}
+        {Platform.OS === 'web' && (
+          <div className="drag-handle" style={{
+            position: 'absolute', top: 10, right: 10,
+            padding: 4, borderRadius: 4,
+            backgroundColor: 'rgba(0,0,0,0.20)',
+            cursor: 'grab',
+          } as any}>
+            <svg width="10" height="14" viewBox="0 0 10 14">
+              <circle cx="2" cy="2"  r="1.5" fill="#FFF" />
+              <circle cx="8" cy="2"  r="1.5" fill="#FFF" />
+              <circle cx="2" cy="7"  r="1.5" fill="#FFF" />
+              <circle cx="8" cy="7"  r="1.5" fill="#FFF" />
+              <circle cx="2" cy="12" r="1.5" fill="#FFF" />
+              <circle cx="8" cy="12" r="1.5" fill="#FFF" />
+            </svg>
+          </div>
+        )}
+
         <View style={s.flagWrap}>
           <FlagSVG code={code} width={60} height={40} />
         </View>
       </View>
 
-      {/* ── Card body ── */}
       <View style={s.cardBody}>
         <Text style={s.cardNative}>{theme.native}</Text>
         {theme.native !== theme.name && (
@@ -213,9 +238,7 @@ function LanguageCard({
         <View style={s.cardFooter}>
           <View style={s.streakRow}>
             <View style={[s.dot, { backgroundColor: streak > 0 ? theme.accent : '#CCC' }]} />
-            <Text
-              style={[s.streakText, { color: streak > 0 ? theme.accent : '#BBB' }]}
-            >
+            <Text style={[s.streakText, { color: streak > 0 ? theme.accent : '#BBB' }]}>
               {streak > 0 ? `Day ${streak}` : 'Start'}
             </Text>
           </View>
@@ -224,7 +247,111 @@ function LanguageCard({
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </>
+  );
+}
+
+// ── Language card ─────────────────────────────────────────────────
+function LanguageCard({
+  lang, cardWidth, index,
+  draggedId, dragOverId,
+  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
+  onLongPress, isSelected, canMoveUp, canMoveDown, onMoveUp, onMoveDown,
+}: {
+  lang:        UserLanguage;
+  cardWidth:   number;
+  index:       number;
+  draggedId:   string | null;
+  dragOverId:  string | null;
+  onDragStart: (code: string) => void;
+  onDragOver:  (e: any, code: string) => void;
+  onDragLeave: () => void;
+  onDrop:      (code: string) => void;
+  onDragEnd:   () => void;
+  onLongPress: () => void;
+  isSelected:  boolean;
+  canMoveUp:   boolean;
+  canMoveDown: boolean;
+  onMoveUp:    () => void;
+  onMoveDown:  () => void;
+}) {
+  const code      = lang.language_code;
+  const isDragging = draggedId === code;
+  const isDragOver = dragOverId === code && draggedId !== code;
+  const [hovered, setHovered] = useState(false);
+
+  // ── Web: native <div> with HTML5 drag API ──────────────────────
+  if (Platform.OS === 'web') {
+    return (
+      <div
+        draggable
+        onClick={() => router.push(`/language/${code}` as any)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onDragStart={(e: any) => {
+          onDragStart(code);
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragOver={(e: any) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          onDragOver(e, code);
+        }}
+        onDragLeave={onDragLeave}
+        onDrop={(e: any) => {
+          e.preventDefault();
+          onDrop(code);
+        }}
+        onDragEnd={onDragEnd}
+        style={{
+          width:         cardWidth,
+          opacity:       isDragging ? 0.4 : 1,
+          outline:       isDragOver ? '2px solid #5B4EFF' : 'none',
+          outlineOffset: '2px',
+          borderRadius:  16,
+          cursor:        'grab',
+          transition:    'opacity 0.15s, outline 0.15s',
+          flexShrink:    0,
+        } as any}
+      >
+        <View style={[s.card, hovered && !isDragging && s.cardHover]}>
+          <LangCardContent lang={lang} hovered={hovered} />
+        </View>
+      </div>
+    );
+  }
+
+  // ── Mobile: TouchableOpacity + long-press arrows ───────────────
+  return (
+    <View style={{ width: cardWidth, position: 'relative' }}>
+      <TouchableOpacity
+        style={[s.card, isSelected && s.cardSelected]}
+        onPress={() => { if (!isSelected) router.push(`/language/${code}` as any); }}
+        onLongPress={onLongPress}
+        activeOpacity={0.88}
+      >
+        <LangCardContent lang={lang} hovered={false} />
+      </TouchableOpacity>
+
+      {isSelected && (
+        <View style={s.arrowOverlay} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[s.arrowBtn, !canMoveUp && s.arrowBtnDisabled]}
+            onPress={canMoveUp ? onMoveUp : undefined}
+            activeOpacity={0.7}
+          >
+            <ChevronUpSVG color={canMoveUp ? '#FFF' : 'rgba(255,255,255,0.3)'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.arrowBtn, !canMoveDown && s.arrowBtnDisabled]}
+            onPress={canMoveDown ? onMoveDown : undefined}
+            activeOpacity={0.7}
+          >
+            <ChevronDownSVG color={canMoveDown ? '#FFF' : 'rgba(255,255,255,0.3)'} />
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -315,10 +442,15 @@ export default function HomeScreen() {
   const initial                = displayName ? displayName[0].toUpperCase() : '?';
   const isDesktop              = Platform.OS === 'web' && screenWidth >= 1024;
 
-  const [languages,  setLanguages] = useState<UserLanguage[]>([]);
-  const [showModal,  setShowModal] = useState(false);
-  const [adding,     setAdding]    = useState('');
-  const recentSessions             = useRecentSessions();
+  const [languages,    setLanguages]    = useState<UserLanguage[]>([]);
+  const [showModal,    setShowModal]    = useState(false);
+  const [adding,       setAdding]       = useState('');
+  // Web drag state (by language_code)
+  const [draggedId,    setDraggedId]    = useState<string | null>(null);
+  const [dragOverId,   setDragOverId]   = useState<string | null>(null);
+  // Mobile reorder state
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const recentSessions                     = useRecentSessions();
 
   // ── Fetch ──────────────────────────────────────────────────────
   async function fetchLanguages() {
@@ -348,6 +480,19 @@ export default function HomeScreen() {
     return () => { supabase.removeChannel(sub); };
   }, []);
 
+  // Inject CSS for drag-handle hover effect (web only)
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const style = document.createElement('style');
+    style.textContent = `
+      .drag-handle { opacity: 0; }
+      div[draggable]:hover .drag-handle { opacity: 1 !important; }
+      div[draggable]:active { cursor: grabbing !important; }
+    `;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
   // ── Add language (runs in home scope so setLanguages always works) ──
   async function addLanguage(lang: { code: string; native: string; english: string }) {
     if (adding) return;
@@ -374,6 +519,11 @@ export default function HomeScreen() {
       });
 
       if (!error) {
+        Analytics.languageAdded({
+          languageCode: lang.code,
+          languageName: lang.english,
+          totalLanguages: languages.length + 1,
+        });
         // Optimistic update — card appears immediately
         setLanguages(prev => [...prev, {
           id:                   '',
@@ -396,6 +546,66 @@ export default function HomeScreen() {
     } finally {
       setAdding('');
     }
+  }
+
+  // ── Reorder ────────────────────────────────────────────────────
+  async function reorderLanguages(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return;
+    const newOrder = [...languages];
+    const [moved] = newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, moved);
+    setLanguages(newOrder);
+    try {
+      await Promise.all(
+        newOrder.map((lang, idx) =>
+          supabase.from('user_languages').update({ sort_order: idx }).eq('id', lang.id)
+        )
+      );
+    } catch (e) {
+      console.error('[reorderLanguages] failed:', e);
+      fetchLanguages(); // rollback to server state
+    }
+  }
+
+  // ── Web drag handlers (id-based) ──
+  function handleDragStart(code: string) { setDraggedId(code); }
+
+  function handleDragOver(_e: any, code: string) {
+    if (code !== draggedId) setDragOverId(code);
+  }
+
+  function handleDragLeave() { setDragOverId(null); }
+
+  async function handleDrop(code: string) {
+    if (draggedId && draggedId !== code) {
+      const from = languages.findIndex(l => l.language_code === draggedId);
+      const to   = languages.findIndex(l => l.language_code === code);
+      await reorderLanguages(from, to);
+    }
+    setDraggedId(null);
+    setDragOverId(null);
+  }
+
+  function handleDragEnd() {
+    setDraggedId(null);
+    setDragOverId(null);
+  }
+
+  // ── Mobile reorder handlers ──
+  function handleLongPress(index: number) {
+    setSelectedIndex(prev => prev === index ? null : index);
+  }
+
+  async function handleMoveUp(index: number) {
+    if (index <= 0) return;
+    await reorderLanguages(index, index - 1);
+    setSelectedIndex(index - 1);
+  }
+
+  async function handleMoveDown(index: number) {
+    if (index >= languages.length - 1) return;
+    await reorderLanguages(index, index + 1);
+    setSelectedIndex(index + 1);
   }
 
   // Card sizing
@@ -432,10 +642,40 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Languages ── */}
-        <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
-        <View style={s.grid}>
-          {languages.map(lang => (
-            <LanguageCard key={lang.id || lang.language_code} lang={lang} cardWidth={cardWidth} />
+        <View style={s.sectionRow}>
+          <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
+          {Platform.OS !== 'web' && selectedIndex !== null && (
+            <TouchableOpacity onPress={() => setSelectedIndex(null)} activeOpacity={0.7}>
+              <Text style={s.doneBtn}>Done</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <View
+          style={s.grid}
+          {...(Platform.OS !== 'web' && selectedIndex !== null ? {
+            // Tapping the grid background exits reorder mode
+          } : {})}
+        >
+          {languages.map((lang, index) => (
+            <LanguageCard
+              key={lang.id || lang.language_code}
+              lang={lang}
+              cardWidth={cardWidth}
+              index={index}
+              draggedId={draggedId}
+              dragOverId={dragOverId}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+              onLongPress={() => handleLongPress(index)}
+              isSelected={selectedIndex === index}
+              canMoveUp={index > 0}
+              canMoveDown={index < languages.length - 1}
+              onMoveUp={() => handleMoveUp(index)}
+              onMoveDown={() => handleMoveDown(index)}
+            />
           ))}
           <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
         </View>
@@ -443,7 +683,7 @@ export default function HomeScreen() {
         {/* ── Recent activity ── */}
         {recentSessions.length > 0 && (
           <View style={{ marginTop: 32 }}>
-            <Text style={s.sectionLabel}>RECENT ACTIVITY</Text>
+            <Text style={[s.sectionLabel, { marginBottom: 14 }]}>RECENT ACTIVITY</Text>
             <View style={s.activityGrid}>
               {recentSessions.map(sess => (
                 <ActivityCard key={sess.id} session={sess} />
@@ -502,7 +742,6 @@ const s = StyleSheet.create({
     color:         '#999999',
     letterSpacing: 0.8,
     textTransform: 'uppercase' as const,
-    marginBottom:  14,
   },
 
   grid: {
@@ -515,6 +754,19 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     flexWrap:      'wrap',
     gap:           10,
+  },
+
+  // Section header row (label + Done button)
+  sectionRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    marginBottom:   14,
+  },
+  doneBtn: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize:   13,
+    color:      '#5B4EFF',
   },
 
   // Language card
@@ -536,6 +788,10 @@ const s = StyleSheet.create({
       boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
     } as any : {}),
   },
+  cardSelected: {
+    borderColor: '#5B4EFF',
+    borderWidth:  2,
+  },
 
   cardTop: {
     height:         96,
@@ -543,6 +799,30 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     overflow:       'hidden',
   },
+
+  // Mobile reorder arrow overlay
+  arrowOverlay: {
+    position:       'absolute',
+    top:            0,
+    right:          0,
+    bottom:         0,
+    width:          44,
+    justifyContent: 'space-around',
+    alignItems:     'center',
+    backgroundColor:'rgba(91,78,255,0.85)',
+    borderTopRightRadius:    16,
+    borderBottomRightRadius: 16,
+    paddingVertical: 12,
+  },
+  arrowBtn: {
+    width:          32,
+    height:         32,
+    borderRadius:   16,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  arrowBtnDisabled: { opacity: 0.35 },
+
   flagWrap: {
     borderRadius: 8,
     overflow:     'hidden',

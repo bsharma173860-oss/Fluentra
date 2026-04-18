@@ -15,6 +15,7 @@ import type { Session } from '@supabase/supabase-js';
 import { Colors } from '@/constants/colors';
 import { AuthProvider } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
+import { initAnalytics, identifyUser } from '@/lib/analytics';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,6 +58,11 @@ function RootLayoutInner() {
     Inter_700Bold,
   });
 
+  // Initialize PostHog once on mount
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   // Hide splash once fonts are ready
   useEffect(() => {
     if (fontsLoaded || fontError) SplashScreen.hideAsync();
@@ -75,11 +81,23 @@ function RootLayoutInner() {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       clearTimeout(timer);
       setSession(s ?? null);
+      if (s?.user) {
+        identifyUser(s.user.id, {
+          email: s.user.email,
+          createdAt: s.user.created_at,
+        });
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       clearTimeout(timer);
       setSession(s ?? null);
+      if (s?.user) {
+        identifyUser(s.user.id, {
+          email: s.user.email,
+          createdAt: s.user.created_at,
+        });
+      }
     });
 
     return () => {

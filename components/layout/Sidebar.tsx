@@ -48,77 +48,98 @@ function DragHandle({ color = Colors.sidebarLabel }: { color?: string }) {
   );
 }
 
-// ── Save reordered sort_order to Supabase ─────────────────────────
-async function saveSortOrder(languages: UserLanguage[]) {
-  const updates = languages.map((l, i) => ({
-    id: l.id,
-    user_id: l.user_id,
-    sort_order: i,
-  }));
-  await supabase.from('user_languages').upsert(updates, { onConflict: 'id' });
-}
-
-// ── Language row with drag (web only) ────────────────────────────
+// ── Language row with drag ────────────────────────────────────────
 function LangRow({
-  lang,
-  isActive,
-  onPress,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  isDragging,
-  isDropTarget,
+  lang, isActive, onPress,
+  draggedCode, dragOverCode,
+  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
 }: {
-  lang:         UserLanguage;
-  isActive:     boolean;
-  onPress:      () => void;
-  onDragStart:  () => void;
-  onDragOver:   (e: any) => void;
-  onDrop:       () => void;
-  isDragging:   boolean;
-  isDropTarget: boolean;
+  lang:        UserLanguage;
+  isActive:    boolean;
+  onPress:     () => void;
+  draggedCode: string | null;
+  dragOverCode: string | null;
+  onDragStart: (code: string) => void;
+  onDragOver:  (e: any, code: string) => void;
+  onDragLeave: () => void;
+  onDrop:      (code: string) => void;
+  onDragEnd:   () => void;
 }) {
-  const theme = getTheme(lang.language_code);
+  const theme      = getTheme(lang.language_code);
+  const code       = lang.language_code;
+  const isDragging = draggedCode === code;
+  const isDragOver = dragOverCode === code && draggedCode !== code;
 
-  const dragProps = Platform.OS === 'web' ? {
-    draggable: true,
-    onDragStart,
-    onDragOver,
-    onDrop,
-    onDragEnd: () => { /* handled by parent */ },
-  } as any : {};
-
-  return (
-    <View>
-      {/* Drop indicator line above */}
-      {isDropTarget && <View style={s.dropLine} />}
-      <TouchableOpacity
-        style={[
-          s.langItem,
-          isActive && { backgroundColor: theme.accentLight },
-          isDragging && s.langItemDragging,
-        ]}
-        onPress={onPress}
-        activeOpacity={0.7}
-        {...dragProps}
+  if (Platform.OS === 'web') {
+    return (
+      <div
+        draggable
+        onClick={onPress}
+        onDragStart={(e: any) => {
+          onDragStart(code);
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragOver={(e: any) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          onDragOver(e, code);
+        }}
+        onDragLeave={onDragLeave}
+        onDrop={(e: any) => {
+          e.preventDefault();
+          onDrop(code);
+        }}
+        onDragEnd={onDragEnd}
+        style={{
+          opacity:     isDragging ? 0.4 : 1,
+          borderLeft:  isDragOver ? '2px solid #5B4EFF' : '2px solid transparent',
+          cursor:      'grab',
+          borderRadius: 6,
+          transition:  'opacity 0.15s, border-left 0.1s',
+        } as any}
       >
-        {Platform.OS === 'web' && (
+        <View
+          style={[
+            s.langItem,
+            isActive && { backgroundColor: theme.accentLight },
+          ]}
+        >
           <View style={s.dragHandle} {...{ title: 'Drag to reorder' } as any}>
             <DragHandle color={isActive ? theme.accent : Colors.sidebarLabel} />
           </View>
-        )}
-        <View style={[s.langDot, { backgroundColor: theme.accent }]} />
-        <Text
-          style={[s.langLabel, isActive && { color: theme.accent, fontFamily: 'Inter_500Medium' }]}
-          numberOfLines={1}
-        >
-          {theme.native}
-        </Text>
-        <Text style={[s.langStreak, isActive && { color: theme.accent }]}>
-          {lang.fluency_percent}%
-        </Text>
-      </TouchableOpacity>
-    </View>
+          <View style={[s.langDot, { backgroundColor: theme.accent }]} />
+          <Text
+            style={[s.langLabel, isActive && { color: theme.accent, fontFamily: 'Inter_500Medium' }]}
+            numberOfLines={1}
+          >
+            {theme.native}
+          </Text>
+          <Text style={[s.langStreak, isActive && { color: theme.accent }]}>
+            {lang.fluency_percent}%
+          </Text>
+        </View>
+      </div>
+    );
+  }
+
+  // Mobile — plain TouchableOpacity (no drag)
+  return (
+    <TouchableOpacity
+      style={[s.langItem, isActive && { backgroundColor: theme.accentLight }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[s.langDot, { backgroundColor: theme.accent }]} />
+      <Text
+        style={[s.langLabel, isActive && { color: theme.accent, fontFamily: 'Inter_500Medium' }]}
+        numberOfLines={1}
+      >
+        {theme.native}
+      </Text>
+      <Text style={[s.langStreak, isActive && { color: theme.accent }]}>
+        {lang.fluency_percent}%
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -129,11 +150,11 @@ export function Sidebar() {
   const { profile, user } = useAuth();
   const { languages, refetch } = useUserLanguages();
 
-  const [orderedLangs, setOrderedLangs] = useState<UserLanguage[]>([]);
-  const [dragIndex,    setDragIndex]    = useState<number | null>(null);
-  const [dropIndex,    setDropIndex]    = useState<number | null>(null);
-  const [popoverOpen,  setPopoverOpen]  = useState(false);
-  const [adding,       setAdding]       = useState('');
+  const [orderedLangs,  setOrderedLangs]  = useState<UserLanguage[]>([]);
+  const [draggedCode,   setDraggedCode]   = useState<string | null>(null);
+  const [dragOverCode,  setDragOverCode]  = useState<string | null>(null);
+  const [popoverOpen,   setPopoverOpen]   = useState(false);
+  const [adding,        setAdding]        = useState('');
 
   // Keep orderedLangs in sync with hook data (unless user is mid-drag)
   const prevLangsRef = useRef<string>('');
@@ -162,14 +183,43 @@ export function Sidebar() {
     }
   }
 
-  // ── Drag handlers ──
-  function handleDragStart(index: number) {
-    setDragIndex(index);
+  // ── Drag handlers (code-based) ──
+  function handleDragStart(code: string) { setDraggedCode(code); }
+
+  function handleDragOver(_e: any, code: string) {
+    if (code !== draggedCode) setDragOverCode(code);
   }
 
-  function handleDragOver(e: any, index: number) {
-    e.preventDefault?.();
-    if (index !== dragIndex) setDropIndex(index);
+  function handleDragLeave() { setDragOverCode(null); }
+
+  async function handleDrop(code: string) {
+    if (draggedCode && draggedCode !== code) {
+      const from = orderedLangs.findIndex(l => l.language_code === draggedCode);
+      const to   = orderedLangs.findIndex(l => l.language_code === code);
+      if (from !== -1 && to !== -1) {
+        const reordered = [...orderedLangs];
+        const [moved] = reordered.splice(from, 1);
+        reordered.splice(to, 0, moved);
+        setOrderedLangs(reordered);
+        try {
+          await Promise.all(
+            reordered.map((l, i) =>
+              supabase.from('user_languages').update({ sort_order: i }).eq('id', l.id)
+            )
+          );
+        } catch (e) {
+          console.error('[Sidebar reorder]', e);
+          refetch();
+        }
+      }
+    }
+    setDraggedCode(null);
+    setDragOverCode(null);
+  }
+
+  function handleDragEnd() {
+    setDraggedCode(null);
+    setDragOverCode(null);
   }
 
   async function addLanguage(lang: { code: string; native: string; english: string }) {
@@ -192,21 +242,6 @@ export function Sidebar() {
     } finally {
       setAdding('');
     }
-  }
-
-  async function handleDrop(index: number) {
-    if (dragIndex === null || dragIndex === index) {
-      setDragIndex(null);
-      setDropIndex(null);
-      return;
-    }
-    const reordered = [...orderedLangs];
-    const [moved] = reordered.splice(dragIndex, 1);
-    reordered.splice(index, 0, moved);
-    setOrderedLangs(reordered);
-    setDragIndex(null);
-    setDropIndex(null);
-    await saveSortOrder(reordered);
   }
 
   return (
@@ -247,17 +282,19 @@ export function Sidebar() {
         {/* LANGUAGES section */}
         <Text style={[s.sectionLabel, { marginTop: 20 }]}>LANGUAGES</Text>
         <View style={s.navGroup}>
-          {orderedLangs.map((lang, index) => (
+          {orderedLangs.map((lang) => (
             <LangRow
               key={lang.id}
               lang={lang}
               isActive={activeCode === lang.language_code}
               onPress={() => navigateToLang(lang.language_code)}
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={() => handleDrop(index)}
-              isDragging={dragIndex === index}
-              isDropTarget={dropIndex === index && dragIndex !== index}
+              draggedCode={draggedCode}
+              dragOverCode={dragOverCode}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
             />
           ))}
 
@@ -353,18 +390,11 @@ const s = StyleSheet.create({
     borderRadius:      6,
     paddingHorizontal: 8,
   },
-  langItemDragging: { opacity: 0.4 },
   dragHandle: {
     width: 16,
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'grab' as any,
-  },
-  dropLine: {
-    height:          2,
-    backgroundColor: Colors.p,
-    borderRadius:    1,
-    marginHorizontal: 8,
   },
   langDot:  { width: 6, height: 6, borderRadius: 3 },
   langLabel: {

@@ -16,6 +16,7 @@ import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { useAuth } from '@/lib/authContext';
 import { supabase, type UserLanguage } from '@/lib/supabase';
 import { hasPracticed, type PracticeModule } from '@/lib/practiceStore';
+import { Analytics } from '@/lib/analytics';
 import { Storage } from '@/lib/storage';
 import {
   ChevronLeftIcon, ChevronRightIcon,
@@ -712,6 +713,26 @@ export default function LanguageDashboard() {
   const remaining     = Math.max(0, STREAK_TARGET - streak);
   const examsUnlocked = streak >= STREAK_TARGET;
   const examProfiles  = (LANGUAGE_EXAMS[langCode] ?? []) as ExamProfile[];
+
+  // Track streak milestones when the page loads with a milestone streak value
+  useEffect(() => {
+    const milestones = [7, 14, 30, 40] as const;
+    if (milestones.includes(streak as any)) {
+      Analytics.streakMilestone({
+        languageCode: langCode,
+        streakDays:   streak,
+        milestone:    streak as 7 | 14 | 30 | 40,
+      });
+    }
+    if (examsUnlocked) {
+      const primaryExam = examProfiles[0]?.id ?? 'ielts';
+      Analytics.examUnlocked({
+        languageCode: langCode,
+        examType:     primaryExam,
+        streakDays:   streak,
+      });
+    }
+  }, [streak, langCode]);
 
   const names      = getLangNames(langCode);
   const langNative = langRecord?.language_name_native ?? names.native;

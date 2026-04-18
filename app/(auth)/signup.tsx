@@ -10,6 +10,7 @@ import { Link, router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { supabase } from '@/lib/supabase';
 import { FluentraLogo } from '@/components/FluentraLogo';
+import { Analytics, identifyUser } from '@/lib/analytics';
 
 export default function SignupScreen() {
   const { width }  = useWindowDimensions();
@@ -47,6 +48,11 @@ export default function SignupScreen() {
     if (data.session === null && data.user !== null) {
       setSuccess('Check your email to confirm your account, then come back to sign in.');
       return;
+    }
+
+    if (data.user) {
+      Analytics.userSignedUp({ method: 'email' });
+      identifyUser(data.user.id, { email: data.user.email, createdAt: data.user.created_at });
     }
 
     router.replace('/(auth)/onboarding');

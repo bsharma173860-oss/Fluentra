@@ -15,6 +15,7 @@ import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ChevronLeftIcon } from '@/components/icons';
 import { setSpeakingResult, buildMockResult, TranscriptMsg } from '@/lib/speakingStore';
+import { Analytics } from '@/lib/analytics';
 
 // ─────────────────────────────────────────────────────────────────
 // Script / conversation data
@@ -285,6 +286,16 @@ export default function SpeakingSessionScreen() {
   const startedAt    = useRef(Date.now());
   const { sleep, cancel, cancelRef } = useSleep();
 
+  // Track session start on mount
+  useEffect(() => {
+    Analytics.practiceSessionStarted({
+      module: 'speaking',
+      languageCode: 'en',
+      examType: exam,
+      mode: 'practice',
+    });
+  }, []);
+
   // Auto-scroll whenever items or typing changes
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -410,6 +421,12 @@ export default function SpeakingSessionScreen() {
     setEnding(true);
     setIsRecording(false);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
+    Analytics.practiceSessionCompleted({
+      module: 'speaking',
+      languageCode: 'en',
+      examType: exam,
+      durationSeconds: timeTaken,
+    });
     setTimeout(() => {
       const result = buildMockResult(exam, part, timeTaken, transcriptRef.current);
       setSpeakingResult(result);

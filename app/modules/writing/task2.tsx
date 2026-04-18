@@ -17,6 +17,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ChevronLeftIcon } from '@/components/icons';
 import { mockScore, setWritingResult } from '@/lib/writingStore';
 import { getTodaysTask2 } from '@/constants/dailyContent';
+import { Analytics } from '@/lib/analytics';
 
 const EXAM = 'IELTS';
 const MIN_WORDS = 250;
@@ -41,6 +42,16 @@ export default function WritingTask2Screen() {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
   const [submitting, setSubmitting] = useState(false);
   const startedAt = useRef(Date.now());
+
+  // Track session start on mount
+  useEffect(() => {
+    Analytics.practiceSessionStarted({
+      module: 'writing',
+      languageCode: 'en',
+      examType: EXAM,
+      mode: 'practice',
+    });
+  }, []);
 
   const wordCount = countWords(text);
   const isWarning = secondsLeft <= WARN_SECONDS;
@@ -81,6 +92,13 @@ export default function WritingTask2Screen() {
     setSubmitting(true);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
     const result = mockScore(text, 'task2', EXAM, PROMPT, timeTaken);
+    Analytics.practiceSessionCompleted({
+      module: 'writing',
+      languageCode: 'en',
+      examType: EXAM,
+      durationSeconds: timeTaken,
+      wordCount: countWords(text),
+    });
     setWritingResult(result);
     router.replace('/modules/writing/results' as any);
   }
