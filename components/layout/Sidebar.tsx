@@ -285,7 +285,7 @@ export function Sidebar() {
       <AddLanguageModal
         visible={popoverOpen}
         onClose={() => setPopoverOpen(false)}
-        addedCodes={orderedLangs.map(l => l.language_code)}
+        addedCodes={orderedLangs?.map(l => l.language_code) ?? []}
         addingCode={adding}
         onAdd={addLanguage}
       />

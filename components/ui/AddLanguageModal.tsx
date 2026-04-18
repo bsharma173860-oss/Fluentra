@@ -85,19 +85,16 @@ function CheckIcon() {
 export type AddLangEntry = LangEntry;
 
 type Props = {
-  visible:     boolean;
-  onClose:     () => void;
-  /** codes already in the user's list — these show "Added" */
-  addedCodes:  string[];
-  /** code currently being inserted (spinner state owned by parent) */
-  addingCode:  string;
-  /** parent's addLanguage function — owns all Supabase logic */
-  onAdd:       (lang: LangEntry) => Promise<void>;
+  visible:    boolean;
+  onClose:    () => void;
+  addedCodes?: string[];
+  addingCode?: string;
+  onAdd:      (lang: LangEntry) => Promise<void>;
 };
 
 // ── Component ─────────────────────────────────────────────────────
 export function AddLanguageModal({
-  visible, onClose, addedCodes, addingCode, onAdd,
+  visible, onClose, addedCodes = [], addingCode = '', onAdd,
 }: Props) {
   const [search, setSearch] = useState('');
 
@@ -120,7 +117,8 @@ export function AddLanguageModal({
     onClose();
   }
 
-  const totalAdded = addedCodes.length;
+  const safeAdded  = addedCodes ?? [];
+  const totalAdded = safeAdded.length;
 
   return (
     <Modal
@@ -202,7 +200,7 @@ export function AddLanguageModal({
                   <LangRow
                     key={lang.code}
                     lang={lang}
-                    added={addedCodes.includes(lang.code)}
+                    added={safeAdded.includes(lang.code)}
                     loading={addingCode === lang.code}
                     onAdd={() => onAdd(lang)}
                   />
