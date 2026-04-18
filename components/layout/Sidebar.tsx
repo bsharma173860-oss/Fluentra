@@ -15,6 +15,7 @@ import {
 import { UserMenu } from '@/components/layout/UserMenu';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { getTheme } from '@/constants/languageThemes';
+import { AddLanguagePopover } from '@/components/ui/AddLanguagePopover';
 import type { UserLanguage } from '@/lib/supabase';
 
 // ── Nav items ─────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ export function Sidebar() {
   const [orderedLangs, setOrderedLangs] = useState<UserLanguage[]>([]);
   const [dragIndex,    setDragIndex]    = useState<number | null>(null);
   const [dropIndex,    setDropIndex]    = useState<number | null>(null);
+  const [popoverOpen,  setPopoverOpen]  = useState(false);
 
   // Keep orderedLangs in sync with hook data (unless user is mid-drag)
   const prevLangsRef = useRef<string>('');
@@ -238,7 +240,7 @@ export function Sidebar() {
 
           <TouchableOpacity
             style={s.addLangItem}
-            onPress={() => router.push('/(tabs)/home' as any)}
+            onPress={() => setPopoverOpen(true)}
             activeOpacity={0.7}
           >
             <PlusIcon size={12} color={Colors.sidebarLabel} />
@@ -255,6 +257,16 @@ export function Sidebar() {
           plan={(profile as any)?.subscription_tier ?? 'free'}
         />
       </View>
+
+      {/* ── Add language popover ── */}
+      <AddLanguagePopover
+        visible={popoverOpen}
+        onClose={() => setPopoverOpen(false)}
+        existingCodes={orderedLangs.map(l => l.language_code)}
+        onAdded={() => { refetch(); }}
+        placement="sidebar"
+        totalCount={orderedLangs.length}
+      />
     </View>
   );
 }
