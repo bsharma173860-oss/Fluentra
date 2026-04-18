@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ChevronLeftIcon } from '@/components/icons';
+import { Analytics } from '@/lib/analytics';
 import {
   setReadingResult,
   estimateBand,
@@ -496,6 +497,14 @@ export default function ReadingSessionScreen() {
 
   useEffect(() => { answersRef.current = answers; }, [answers]);
 
+  useEffect(() => {
+    Analytics.practiceSessionStarted({
+      module: 'reading',
+      languageCode: 'en',
+      examType: exam,
+    });
+  }, []);
+
   const answeredCount = Object.keys(answers).length;
   const isWarning = secondsLeft <= WARN_SECONDS;
   const allAnswered = answeredCount === QUESTIONS.length;
@@ -533,6 +542,12 @@ export default function ReadingSessionScreen() {
       if (currentAnswers[q.number] === q.correctAnswer) correct++;
     });
     const band = estimateBand(correct, QUESTIONS.length);
+    Analytics.practiceSessionCompleted({
+      module: 'reading',
+      languageCode: 'en',
+      score: band,
+      durationSeconds: timeTaken,
+    });
     setReadingResult({
       exam,
       difficulty,

@@ -16,6 +16,7 @@ import { Audio } from 'expo-av';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ChevronLeftIcon } from '@/components/icons';
+import { Analytics } from '@/lib/analytics';
 import {
   setListeningResult,
   estimateListeningBand,
@@ -550,6 +551,14 @@ export default function ListeningSessionScreen() {
   const [submitting, setSubmitting] = useState(false);
   const startedAt = useRef(Date.now());
 
+  useEffect(() => {
+    Analytics.practiceSessionStarted({
+      module: 'listening',
+      languageCode: 'en',
+      examType: exam,
+    });
+  }, []);
+
   const setAnswer = useCallback((qNum: number, val: string) => {
     setAnswers(prev => ({ ...prev, [qNum]: val }));
   }, []);
@@ -567,6 +576,12 @@ export default function ListeningSessionScreen() {
       if (userAns === q.correctAnswer.toLowerCase()) correct++;
     });
     const band = estimateListeningBand(correct, QUESTIONS.length);
+    Analytics.practiceSessionCompleted({
+      module: 'listening',
+      languageCode: 'en',
+      score: band,
+      durationSeconds: timeTaken,
+    });
     setListeningResult({
       exam, section, mode,
       timeTakenSeconds: timeTaken,
