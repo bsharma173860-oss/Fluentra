@@ -133,6 +133,7 @@ export function Sidebar() {
   const [dragIndex,    setDragIndex]    = useState<number | null>(null);
   const [dropIndex,    setDropIndex]    = useState<number | null>(null);
   const [popoverOpen,  setPopoverOpen]  = useState(false);
+  const [adding,       setAdding]       = useState('');
 
   // Keep orderedLangs in sync with hook data (unless user is mid-drag)
   const prevLangsRef = useRef<string>('');
@@ -169,6 +170,28 @@ export function Sidebar() {
   function handleDragOver(e: any, index: number) {
     e.preventDefault?.();
     if (index !== dragIndex) setDropIndex(index);
+  }
+
+  async function addLanguage(lang: { code: string; native: string; english: string }) {
+    if (adding) return;
+    setAdding(lang.code);
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) { setAdding(''); return; }
+      const { data: existing } = await supabase
+        .from('user_languages').select('id')
+        .eq('user_id', u.id).eq('language_code', lang.code).maybeSingle();
+      if (existing) { setAdding(''); return; }
+      const { error } = await supabase.from('user_languages').insert({
+        user_id: u.id, language_code: lang.code,
+        language_name_en: lang.english, language_name_native: lang.native,
+        fluency_percent: 0, exams: [], sort_order: orderedLangs.length,
+      });
+      if (!error) refetch();
+      else console.error('[Sidebar addLanguage]', error.message);
+    } finally {
+      setAdding('');
+    }
   }
 
   async function handleDrop(index: number) {
@@ -262,9 +285,9 @@ export function Sidebar() {
       <AddLanguageModal
         visible={popoverOpen}
         onClose={() => setPopoverOpen(false)}
-        existingCodes={orderedLangs.map(l => l.language_code)}
-        totalCount={orderedLangs.length}
-        onLanguageAdded={refetch}
+        addedCodes={orderedLangs.map(l => l.language_code)}
+        addingCode={adding}
+        onAdd={addLanguage}
       />
     </View>
   );

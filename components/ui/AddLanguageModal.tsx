@@ -1,10 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   TextInput, ActivityIndicator, Modal, Platform,
 } from 'react-native';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
-import { supabase } from '@/lib/supabase';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { FlagSVG } from '@/components/flags';
 
 // ── Language data ─────────────────────────────────────────────────
@@ -83,25 +82,27 @@ function CheckIcon() {
 }
 
 // ── Props ─────────────────────────────────────────────────────────
+export type AddLangEntry = LangEntry;
+
 type Props = {
-  visible:        boolean;
-  onClose:        () => void;
-  existingCodes:  string[];
-  totalCount:     number;
-  onLanguageAdded: () => void;
+  visible:     boolean;
+  onClose:     () => void;
+  /** codes already in the user's list — these show "Added" */
+  addedCodes:  string[];
+  /** code currently being inserted (spinner state owned by parent) */
+  addingCode:  string;
+  /** parent's addLanguage function — owns all Supabase logic */
+  onAdd:       (lang: LangEntry) => Promise<void>;
 };
 
 // ── Component ─────────────────────────────────────────────────────
 export function AddLanguageModal({
-  visible, onClose, existingCodes, totalCount, onLanguageAdded,
+  visible, onClose, addedCodes, addingCode, onAdd,
 }: Props) {
-  const [search,     setSearch]     = useState('');
-  const [adding,     setAdding]     = useState('');
-  const [addedCodes, setAddedCodes] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
 
   const q = search.toLowerCase().trim();
 
-  // Filter regions — hide empty ones when searching
   const filteredRegions = LANGUAGES_BY_REGION.map(group => ({
     ...group,
     languages: group.languages.filter(l => {
@@ -114,66 +115,12 @@ export function AddLanguageModal({
     }),
   })).filter(g => g.languages.length > 0);
 
-  const isAdded  = useCallback((code: string) =>
-    existingCodes.includes(code) || addedCodes.includes(code), [existingCodes, addedCodes]);
-
-  async function addLanguage(lang: LangEntry) {
-    if (adding || isAdded(lang.code)) return;
-    setAdding(lang.code);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setAdding(''); return; }
-
-      // Duplicate guard
-      const { data: existing } = await supabase
-        .from('user_languages')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('language_code', lang.code)
-        .maybeSingle();
-
-      if (existing) {
-        setAddedCodes(prev => [...prev, lang.code]);
-        setAdding('');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('user_languages')
-        .insert({
-          user_id:              user.id,
-          language_code:        lang.code,
-          language_name_en:     lang.english,
-          language_name_native: lang.native,
-          fluency_percent:      0,
-          exams:                [],
-          sort_order:           totalCount + addedCodes.length,
-        });
-
-      if (error) {
-        console.error('[AddLanguageModal] insert error:', error.message);
-        setAdding('');
-        return;
-      }
-
-      setAddedCodes(prev => [...prev, lang.code]);
-      onLanguageAdded();
-    } catch (err: any) {
-      console.error('[AddLanguageModal] error:', err?.message ?? err);
-    } finally {
-      setAdding('');
-    }
-  }
-
   function handleClose() {
     setSearch('');
-    setAddedCodes([]);
     onClose();
   }
 
-  const sessionAddedCount = addedCodes.length;
-  const totalAdded = existingCodes.length + sessionAddedCount;
+  const totalAdded = addedCodes.length;
 
   return (
     <Modal
@@ -255,9 +202,9 @@ export function AddLanguageModal({
                   <LangRow
                     key={lang.code}
                     lang={lang}
-                    added={isAdded(lang.code)}
-                    loading={adding === lang.code}
-                    onAdd={() => addLanguage(lang)}
+                    added={addedCodes.includes(lang.code)}
+                    loading={addingCode === lang.code}
+                    onAdd={() => onAdd(lang)}
                   />
                 ))}
               </View>

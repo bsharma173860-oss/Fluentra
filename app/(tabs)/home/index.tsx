@@ -9,7 +9,6 @@ import { useFocusEffect } from 'expo-router';
 import Svg, { Defs, Pattern, Circle, Rect, Path } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { useAuth } from '@/lib/authContext';
-import { Storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
 import { getTheme } from '@/constants/languageThemes';
@@ -309,81 +308,95 @@ const ac = StyleSheet.create({
 
 
 // ── HomeScreen ────────────────────────────────────────────────────
-// Module-level flag — redirect only once per JS session, not on every home visit
-let _didRedirectToLastLang = false;
-
 export default function HomeScreen() {
   const { width: screenWidth } = useWindowDimensions();
-  const { profile, user }      = useAuth();
+  const { profile }            = useAuth();
   const displayName            = profile?.name ?? '';
   const initial                = displayName ? displayName[0].toUpperCase() : '?';
   const isDesktop              = Platform.OS === 'web' && screenWidth >= 1024;
 
-  const [languages,   setLanguages]  = useState<UserLanguage[]>([]);
-  const [showModal,   setShowModal]  = useState(false);
-  const [refreshKey,  setRefreshKey] = useState(0);
-  const recentSessions = useRecentSessions();
+  const [languages,  setLanguages] = useState<UserLanguage[]>([]);
+  const [showModal,  setShowModal] = useState(false);
+  const [adding,     setAdding]    = useState('');
+  const recentSessions             = useRecentSessions();
 
-  // ── Fetch languages (verbose debug) ──
-  const fetchLanguages = useCallback(async () => {
-    try {
-      console.log('=== FETCH LANGUAGES START ===');
-      const { data: { user: u }, error: authErr } = await supabase.auth.getUser();
-      console.log('User ID:', u?.id);
-      console.log('Auth error:', authErr);
-      if (!u) { console.log('NO USER — returning'); return; }
-
-      const { data, error } = await supabase
-        .from('user_languages')
-        .select('*')
-        .eq('user_id', u.id)
-        .order('sort_order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: true });
-
-      console.log('Raw data from Supabase:', JSON.stringify(data));
-      console.log('Supabase error:', error);
-      if (error) { console.error('Fetch error:', error); return; }
-
-      console.log('Setting languages:', data?.length, 'items');
-      setLanguages(data ?? []);
-    } catch (e) {
-      console.error('Unexpected fetchLanguages error:', e);
-    }
-  }, []);
+  // ── Fetch ──────────────────────────────────────────────────────
+  async function fetchLanguages() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_languages')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true });
+    if (data) setLanguages([...data] as UserLanguage[]);
+  }
 
   // Mount
-  useEffect(() => { fetchLanguages(); }, [fetchLanguages]);
+  useEffect(() => { fetchLanguages(); }, []);
 
-  // Focus (handles returning from language page)
-  useFocusEffect(
-    useCallback(() => {
-      console.log('HOME FOCUSED — refetching');
-      fetchLanguages();
-    }, [fetchLanguages])
-  );
+  // Every focus (navigating back to home re-triggers this)
+  useFocusEffect(useCallback(() => { fetchLanguages(); }, []));
 
-  // Realtime subscription
+  // Realtime — any DB change to user_languages updates the list instantly
   useEffect(() => {
     const sub = supabase
-      .channel('lang-changes-' + Date.now())
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'user_languages',
-      }, (payload) => {
-        console.log('REALTIME EVENT:', payload);
-        fetchLanguages();
-      })
+      .channel('home-langs-' + Date.now())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_languages' },
+        () => fetchLanguages())
       .subscribe();
     return () => { supabase.removeChannel(sub); };
-  }, [fetchLanguages]);
-
-  // On first load, jump to the last language the user was in
-  useEffect(() => {
-    if (_didRedirectToLastLang) return;
-    _didRedirectToLastLang = true;
-    Storage.get('lastActiveLanguage').then(code => {
-      if (code) router.replace(`/language/${code}` as any);
-    });
   }, []);
+
+  // ── Add language (runs in home scope so setLanguages always works) ──
+  async function addLanguage(lang: { code: string; native: string; english: string }) {
+    if (adding) return;
+    setAdding(lang.code);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setAdding(''); return; }
+
+      // Duplicate guard
+      const { data: existing } = await supabase
+        .from('user_languages').select('id')
+        .eq('user_id', user.id).eq('language_code', lang.code).maybeSingle();
+      if (existing) { setAdding(''); return; }
+
+      const { error } = await supabase.from('user_languages').insert({
+        user_id:              user.id,
+        language_code:        lang.code,
+        language_name_en:     lang.english,
+        language_name_native: lang.native,
+        fluency_percent:      0,
+        exams:                [],
+        sort_order:           languages.length,
+      });
+
+      if (!error) {
+        // Optimistic update — card appears immediately
+        setLanguages(prev => [...prev, {
+          id:                   '',
+          user_id:              user.id,
+          language_code:        lang.code,
+          language_name_en:     lang.english,
+          language_name_native: lang.native,
+          fluency_percent:      0,
+          exams:                [],
+          sort_order:           languages.length,
+          created_at:           new Date().toISOString(),
+        } as UserLanguage]);
+        // Then sync real DB row (gets the actual id, etc.)
+        await fetchLanguages();
+      } else {
+        console.error('[addLanguage] insert error:', error.message);
+      }
+    } catch (e: any) {
+      console.error('[addLanguage] unexpected:', e?.message ?? e);
+    } finally {
+      setAdding('');
+    }
+  }
 
   // Card sizing
   const horizPad  = isDesktop ? 36 * 2 : 20 * 2;
@@ -420,10 +433,9 @@ export default function HomeScreen() {
 
         {/* ── Languages ── */}
         <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
-        {console.log('Rendering', languages.length, 'language cards') as any}
-        <View key={refreshKey} style={s.grid}>
+        <View style={s.grid}>
           {languages.map(lang => (
-            <LanguageCard key={lang.id ?? lang.language_code} lang={lang} cardWidth={cardWidth} />
+            <LanguageCard key={lang.id || lang.language_code} lang={lang} cardWidth={cardWidth} />
           ))}
           <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
         </View>
@@ -446,12 +458,9 @@ export default function HomeScreen() {
       <AddLanguageModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        existingCodes={languages.map(l => l.language_code)}
-        totalCount={languages.length}
-        onLanguageAdded={async () => {
-          await fetchLanguages();
-          setRefreshKey(k => k + 1);
-        }}
+        addedCodes={languages.map(l => l.language_code)}
+        addingCode={adding}
+        onAdd={addLanguage}
       />
     </SafeAreaView>
     </AppLayout>
