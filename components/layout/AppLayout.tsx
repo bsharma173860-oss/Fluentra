@@ -18,7 +18,7 @@ export function AppLayout({ children }: Props) {
   return (
     <View style={{ flex: 1, flexDirection: 'row' }}>
       <Sidebar />
-      <View style={{ flex: 1, overflow: 'hidden' }}>
+      <View style={{ flex: 1 }}>
         {children}
       </View>
     </View>

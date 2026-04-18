@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   ScrollView, View, Text, StyleSheet,
-  TouchableOpacity, Modal, Pressable, Alert,
+  TouchableOpacity, Modal, Alert, ActivityIndicator,
   TextInput, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -275,7 +275,7 @@ function ActivityCard({ session }: { session: AppSession }) {
 
   return (
     <TouchableOpacity
-      style={[as.card, hovered && as.cardHover]}
+      style={[ac.card, hovered && ac.cardHover]}
       activeOpacity={0.85}
       onPress={() => router.push('/(tabs)/progress' as any)}
       {...(Platform.OS === 'web' ? {
@@ -283,15 +283,15 @@ function ActivityCard({ session }: { session: AppSession }) {
         onMouseLeave: () => setHovered(false),
       } : {})}
     >
-      <View style={[as.iconBox, { backgroundColor: style.iconBg }]}>
+      <View style={[ac.iconBox, { backgroundColor: style.iconBg }]}>
         <Icon color={style.iconColor} />
       </View>
-      <View style={as.meta}>
-        <Text style={as.title}>{title}</Text>
-        <Text style={as.sub}>{sub}</Text>
+      <View style={ac.meta}>
+        <Text style={ac.title}>{title}</Text>
+        <Text style={ac.sub}>{sub}</Text>
       </View>
       {session.overall_band != null && (
-        <Text style={[as.score, { color: style.iconColor }]}>
+        <Text style={[ac.score, { color: style.iconColor }]}>
           {session.overall_band.toFixed(1)}
         </Text>
       )}
@@ -317,8 +317,23 @@ const ac = StyleSheet.create({
 });
 
 // ── Add Language Modal ────────────────────────────────────────────
-const EUROPEAN_CODES = ['en', 'fr', 'es', 'de', 'it', 'pt', 'nl', 'ru', 'tr', 'fa'];
-const ASIAN_CODES    = ['zh', 'ja', 'ko', 'ar', 'hi'];
+const ALL_LANGUAGES = [
+  { code: 'en', native: 'English',   english: 'English'    },
+  { code: 'fr', native: 'Français',  english: 'French'     },
+  { code: 'es', native: 'Español',   english: 'Spanish'    },
+  { code: 'de', native: 'Deutsch',   english: 'German'     },
+  { code: 'it', native: 'Italiano',  english: 'Italian'    },
+  { code: 'pt', native: 'Português', english: 'Portuguese' },
+  { code: 'nl', native: 'Nederlands',english: 'Dutch'      },
+  { code: 'ru', native: 'Русский',   english: 'Russian'    },
+  { code: 'zh', native: '中文',       english: 'Chinese'    },
+  { code: 'ja', native: '日本語',     english: 'Japanese'   },
+  { code: 'ko', native: '한국어',     english: 'Korean'     },
+  { code: 'ar', native: 'العربية',   english: 'Arabic'     },
+  { code: 'hi', native: 'हिन्दी',    english: 'Hindi'      },
+  { code: 'tr', native: 'Türkçe',   english: 'Turkish'    },
+  { code: 'fa', native: 'فارسی',     english: 'Persian'    },
+];
 
 function AddLanguageModal({
   visible, existingCodes, userId, onClose, onAdded,
@@ -327,100 +342,70 @@ function AddLanguageModal({
   userId: string | undefined;
   onClose: () => void; onAdded: (lang: UserLanguage) => void;
 }) {
-  const [search, setSearch]   = useState('');
-  const [adding, setAdding]   = useState<string | null>(null);
-  const [added, setAdded]     = useState<string[]>([]);
-  const [toast, setToast]     = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [adding, setAdding] = useState('');
+  const [addedCodes, setAddedCodes] = useState<string[]>([]);
 
-  const allCodes = [...EUROPEAN_CODES, ...ASIAN_CODES];
-
-  const filtered = allCodes.filter(code => {
-    const theme = LANGUAGE_THEMES[code];
-    if (!theme) return false;
-    const q = search.toLowerCase();
-    return !q || theme.name.toLowerCase().includes(q) || theme.native.toLowerCase().includes(q);
+  const available = ALL_LANGUAGES.filter(lang => {
+    const alreadyHas = existingCodes.includes(lang.code) || addedCodes.includes(lang.code);
+    if (alreadyHas) return false;
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return lang.native.toLowerCase().includes(q) || lang.english.toLowerCase().includes(q);
   });
-  const europeanFiltered = filtered.filter(c => EUROPEAN_CODES.includes(c));
-  const asianFiltered    = filtered.filter(c => ASIAN_CODES.includes(c));
 
-  const isAdded = (code: string) => existingCodes.includes(code) || added.includes(code);
+  const justAdded = ALL_LANGUAGES.filter(lang => addedCodes.includes(lang.code));
 
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2000);
+  function handleClose() {
+    setSearch('');
+    setAddedCodes([]);
+    onClose();
   }
 
-  const handleAdd = useCallback(async (code: string) => {
+  async function addLanguage(lang: typeof ALL_LANGUAGES[0]) {
     if (!userId) { Alert.alert('Sign in required'); return; }
-    if (isAdded(code)) return;
-    setAdding(code);
-    const theme = LANGUAGE_THEMES[code]!;
-    const { data, error } = await supabase
-      .from('user_languages')
-      .insert({
-        user_id: userId, language_code: code,
-        language_name_en: theme.name, language_name_native: theme.native,
-        fluency_percent: 0, exams: [],
-      })
-      .select().single();
-    setAdding(null);
-    if (error) { Alert.alert('Error', error.message); return; }
-    setAdded(prev => [...prev, code]);
-    onAdded(data as UserLanguage);
-    showToast(`${theme.native} added`);
-  }, [userId, existingCodes, added]);
-
-  function handleClose() { setSearch(''); setAdded([]); onClose(); }
-
-  function renderSection(codes: string[], title: string) {
-    if (codes.length === 0) return null;
-    return (
-      <>
-        <Text style={m.sectionLabel}>{title}</Text>
-        {codes.map(code => {
-          const theme = LANGUAGE_THEMES[code]!;
-          const done  = isAdded(code);
-          const busy  = adding === code;
-          return (
-            <View key={code} style={m.row}>
-              <View style={m.flagBox}>
-                <FlagSVG code={code} width={42} height={28} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={m.native}>{theme.native}</Text>
-                <Text style={m.langEn}>{theme.name}</Text>
-              </View>
-              {done ? (
-                <View style={m.addedBadge}>
-                  <CheckIcon size={10} color="#0A8C5A" strokeWidth={2.5} />
-                  <Text style={m.addedText}>Added</Text>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={m.addBtn}
-                  onPress={() => handleAdd(code)}
-                  disabled={busy}
-                  activeOpacity={0.8}
-                >
-                  <Text style={m.addBtnText}>{busy ? '…' : 'Add'}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          );
-        })}
-      </>
-    );
+    setAdding(lang.code);
+    try {
+      const { data, error } = await supabase
+        .from('user_languages')
+        .insert({
+          user_id: userId,
+          language_code: lang.code,
+          language_name_en: lang.english,
+          language_name_native: lang.native,
+          fluency_percent: 0,
+          exams: [],
+          sort_order: existingCodes.length + addedCodes.length,
+        })
+        .select()
+        .single();
+      if (error) { Alert.alert('Error', error.message); return; }
+      setAddedCodes(prev => [...prev, lang.code]);
+      onAdded(data as UserLanguage);
+    } finally {
+      setAdding('');
+    }
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <Pressable style={m.overlay} onPress={handleClose}>
-        <Pressable style={m.sheet} onPress={() => {}}>
-          {toast && (
-            <View style={m.toast}>
-              <Text style={m.toastText}>{toast}</Text>
-            </View>
-          )}
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={handleClose}
+    >
+      <TouchableOpacity
+        style={m.overlay}
+        activeOpacity={1}
+        onPress={handleClose}
+      >
+        <TouchableOpacity
+          style={m.sheet}
+          activeOpacity={1}
+          onPress={() => {}}
+        >
+          <View style={m.handle} />
+
           <View style={m.header}>
             <View style={{ flex: 1 }}>
               <Text style={m.title}>Add a language</Text>
@@ -439,72 +424,151 @@ function AddLanguageModal({
               onChangeText={setSearch}
               placeholder="Search languages…"
               placeholderTextColor="#CCC"
+              autoCorrect={false}
+              autoCapitalize="none"
             />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={{ fontSize: 16, color: '#CCC', lineHeight: 18 }}>×</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={m.scrollBody}>
-            {renderSection(europeanFiltered, 'EUROPEAN')}
-            {renderSection(asianFiltered, 'ASIAN & MIDDLE EASTERN')}
-            <View style={{ height: 16 }} />
+          <ScrollView
+            style={{ maxHeight: 400 }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={m.scrollBody}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Languages available to add */}
+            {available.length === 0 && !search && (
+              <Text style={m.emptyText}>All languages added!</Text>
+            )}
+            {available.length === 0 && !!search && (
+              <Text style={m.emptyText}>No results for "{search}"</Text>
+            )}
+            {available.map(lang => (
+              <TouchableOpacity
+                key={lang.code}
+                style={m.row}
+                onPress={() => addLanguage(lang)}
+                activeOpacity={0.7}
+              >
+                <View style={m.flagBox}>
+                  <FlagSVG code={lang.code} width={42} height={28} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={m.native}>{lang.native}</Text>
+                  <Text style={m.langEn}>{lang.english}</Text>
+                </View>
+                {adding === lang.code ? (
+                  <ActivityIndicator size="small" color="#5B4EFF" />
+                ) : (
+                  <View style={m.addBadge}>
+                    <Text style={m.addBadgeText}>Add</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+
+            {/* Just-added confirmation rows */}
+            {justAdded.length > 0 && (
+              <>
+                <Text style={[m.sectionLabel, { marginTop: 16 }]}>ADDED</Text>
+                {justAdded.map(lang => (
+                  <View key={lang.code} style={m.row}>
+                    <View style={m.flagBox}>
+                      <FlagSVG code={lang.code} width={42} height={28} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={m.native}>{lang.native}</Text>
+                      <Text style={m.langEn}>{lang.english}</Text>
+                    </View>
+                    <View style={m.addedBadge}>
+                      <CheckIcon size={10} color="#0A8C5A" strokeWidth={2.5} />
+                      <Text style={m.addedText}>Added</Text>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+            <View style={{ height: 8 }} />
           </ScrollView>
 
-          <View style={m.footer}>
-            <TouchableOpacity style={m.doneBtn} onPress={handleClose} activeOpacity={0.85}>
-              <Text style={m.doneBtnText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
+          <TouchableOpacity style={m.doneBtn} onPress={handleClose} activeOpacity={0.85}>
+            <Text style={m.doneBtnText}>Done</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 }
 
 const m = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  overlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
   sheet: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#EAEAEA',
-    width: '100%', maxWidth: 480, maxHeight: '88%' as any, overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderWidth: 1, borderColor: '#EAEAEA',
+    paddingBottom: 24,
+    maxHeight: '88%' as any,
   },
-  toast: {
-    position: 'absolute', top: 12, alignSelf: 'center', zIndex: 10,
-    backgroundColor: '#000', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8,
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: '#DDD', alignSelf: 'center',
+    marginTop: 12, marginBottom: 4,
   },
-  toastText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: '#FFF' },
-  header: { flexDirection: 'row', alignItems: 'flex-start', padding: 22, gap: 12, borderBottomWidth: 1, borderBottomColor: '#EAEAEA' },
+  header: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14,
+    gap: 12, borderBottomWidth: 1, borderBottomColor: '#EAEAEA',
+  },
   title:    { fontFamily: 'Inter_700Bold', fontSize: 17, color: '#000', marginBottom: 3 },
   subtitle: { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#888' },
-  closeBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#F4F4F4', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  closeBtn: {
+    width: 28, height: 28, borderRadius: 6,
+    backgroundColor: '#F4F4F4', alignItems: 'center', justifyContent: 'center',
+    marginTop: 2,
+  },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 16, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: '#EAEAEA',
     backgroundColor: '#FAFAFA',
   },
-  searchInput: {
-    flex: 1, fontFamily: 'Inter_400Regular', fontSize: 13, color: '#000', padding: 0,
-  },
+  searchInput: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 13, color: '#000', padding: 0 },
   scrollBody: { paddingHorizontal: 16, paddingTop: 8 },
+  emptyText: {
+    fontFamily: 'Inter_400Regular', fontSize: 13, color: '#BBB',
+    textAlign: 'center', paddingVertical: 24,
+  },
   sectionLabel: {
     fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#BBB',
     textTransform: 'uppercase' as const, letterSpacing: 0.8,
-    marginTop: 14, marginBottom: 6,
+    marginBottom: 6,
   },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
+    paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
   },
-  flagBox: { borderRadius: 5, overflow: 'hidden', width: 42, height: 28 },
-  native:  { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
-  langEn:  { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginTop: 1 },
-  addBtn: {
+  flagBox:  { borderRadius: 5, overflow: 'hidden', width: 42, height: 28 },
+  native:   { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
+  langEn:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginTop: 1 },
+  addBadge: {
     height: 28, paddingHorizontal: 14, borderRadius: 6,
     backgroundColor: '#000', alignItems: 'center', justifyContent: 'center',
   },
-  addBtnText:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#FFF' },
-  addedBadge:  { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EDFAF4', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  addedText:   { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#0A8C5A' },
-  footer: { borderTopWidth: 1, borderTopColor: '#EAEAEA', padding: 14 },
-  doneBtn: { height: 38, borderRadius: 8, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
+  addBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#FFF' },
+  addedBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EDFAF4', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  addedText:    { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#0A8C5A' },
+  doneBtn: {
+    height: 44, borderRadius: 10, backgroundColor: '#000',
+    alignItems: 'center', justifyContent: 'center',
+    marginHorizontal: 16, marginTop: 12,
+  },
   doneBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#FFF' },
 });
 
