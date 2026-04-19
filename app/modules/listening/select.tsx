@@ -1,279 +1,243 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import {
-  MicIcon, GlobeIcon, BookIcon, HeadphoneIcon, RefreshIcon, TimerIcon, CheckIcon, type IconProps,
-} from '@/components/icons';
+import { ListeningSidebar } from '@/components/layout/ListeningSidebar';
+import { HeadphoneIcon } from '@/components/icons';
 
-type IC = React.ComponentType<IconProps>;
+const GREEN     = '#0A8C5A';
+const GREEN_BG  = '#EDFAF4';
+const GREEN_BDR = '#C0E8D4';
 
 type Exam = 'IELTS' | 'TOEFL' | 'DELF';
 type Section = '1' | '2' | '3' | '4';
-type Mode = 'practice' | 'exam';
 
-const EXAM_DESC: Record<Exam, string> = {
-  IELTS: 'Four sections, 40 questions, 30 minutes + 10 min transfer. Recordings played once.',
-  TOEFL: 'Conversations and lectures, 28–39 questions, ~41–57 minutes. No transcript provided.',
-  DELF: 'Three documents with comprehension tasks. Range of accents and registers tested.',
-};
+const SECTIONS: {
+  key: Section; label: string; questions: string; desc: string; tags: string[];
+}[] = [
+  {
+    key: '1', label: 'Section 1 — Social',
+    questions: '10 questions',
+    desc: 'Everyday social conversation between two speakers — booking, directions, queries.',
+    tags: ['IELTS', 'Form completion'],
+  },
+  {
+    key: '2', label: 'Section 2 — Monologue',
+    questions: '10 questions',
+    desc: 'General-topic monologue, e.g. a radio broadcast, tour guide, or announcement.',
+    tags: ['IELTS', 'Note completion'],
+  },
+  {
+    key: '3', label: 'Section 3 — Academic',
+    questions: '10 questions',
+    desc: 'Educational conversation between up to 4 people — tutorials, group projects.',
+    tags: ['IELTS', 'Multiple choice'],
+  },
+  {
+    key: '4', label: 'Section 4 — Lecture',
+    questions: '10 questions',
+    desc: 'Academic lecture — most challenging. Complex vocabulary and abstract concepts.',
+    tags: ['IELTS', 'Sentence completion'],
+  },
+];
 
-const SECTION_INFO: Record<Section, { title: string; desc: string; Icon: IC }> = {
-  '1': { Icon: MicIcon,       title: 'Section 1', desc: 'Social conversation between two speakers in an everyday context.' },
-  '2': { Icon: GlobeIcon,     title: 'Section 2', desc: 'Monologue on a general topic, e.g. a radio broadcast or announcement.' },
-  '3': { Icon: GlobeIcon,     title: 'Section 3', desc: 'Conversation between up to four people in an educational setting.' },
-  '4': { Icon: BookIcon,      title: 'Section 4', desc: 'Academic lecture — the most challenging section with complex vocabulary.' },
-};
+const Q_TYPES = [
+  'Multiple choice', 'Form completion', 'Note completion',
+  'Sentence completion', 'Matching', 'Map labelling',
+];
 
 export default function ListeningSelectScreen() {
-  const [exam, setExam]       = useState<Exam>('IELTS');
-  const [section, setSection] = useState<Section>('1');
-  const [mode, setMode]       = useState<Mode>('practice');
-  const sInfo = SECTION_INFO[section];
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+  const params    = useLocalSearchParams();
+  const langCode  = (params.languageCode ?? params.code ?? 'en') as string;
+  const [exam, setExam] = useState<Exam>('IELTS');
 
-  return (
+  function startSection(section: string) {
+    router.push({
+      pathname: '/modules/listening/session' as any,
+      params: { exam, section, languageCode: langCode, code: langCode },
+    });
+  }
+
+  const content = (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-            <Text style={s.backArrow}>←</Text>
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Listening</Text>
-          <View style={s.headerSpacer} />
+          {!isDesktop && (
+            <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+              <Text style={s.backArrow}>←</Text>
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text style={s.headerTitle}>Listening Practice</Text>
+            <Text style={s.headerSub}>Choose a section to practice</Text>
+          </View>
         </View>
 
-        {/* Exam pills */}
-        <Text style={s.sectionLabel}>Exam Format</Text>
-        <View style={s.pillRow}>
+        {/* ── Exam selector ── */}
+        <View style={s.examRow}>
           {(['IELTS', 'TOEFL', 'DELF'] as Exam[]).map(e => (
             <TouchableOpacity
               key={e}
-              style={[s.pill, exam === e && s.pillActive]}
+              style={[s.examPill, exam === e && s.examPillActive]}
               onPress={() => setExam(e)}
               activeOpacity={0.8}
             >
-              <Text style={[s.pillText, exam === e && s.pillTextActive]}>{e}</Text>
+              <Text style={[s.examPillText, exam === e && s.examPillTextActive]}>{e}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Exam description */}
-        <View style={s.descCard}>
-          <Text style={s.descTitle}>{exam} Listening</Text>
-          <Text style={s.descBody}>{EXAM_DESC[exam]}</Text>
-        </View>
-
-        {/* Section pills */}
-        <Text style={s.sectionLabel}>Section</Text>
-        <View style={s.pillRow}>
-          {(['1', '2', '3', '4'] as Section[]).map(sec => (
-            <TouchableOpacity
-              key={sec}
-              style={[s.pill, section === sec && s.pillActive]}
-              onPress={() => setSection(sec)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.pillText, section === sec && s.pillTextActive]}>
-                Section {sec}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Section info card */}
-        <View style={s.sectionCard}>
-          <View style={s.sectionCardIconWrap}>
-            <sInfo.Icon size={28} color={Colors.green} />
-          </View>
-          <View style={s.sectionCardText}>
-            <Text style={s.sectionCardTitle}>{sInfo.title}</Text>
-            <Text style={s.sectionCardDesc}>{sInfo.desc}</Text>
-          </View>
-        </View>
-
-        {/* Practice / Exam mode toggle */}
-        <Text style={s.sectionLabel}>Mode</Text>
-        <View style={s.modeRow}>
-          <TouchableOpacity
-            style={[s.modeCard, mode === 'practice' && s.modeCardActive]}
-            onPress={() => setMode('practice')}
-            activeOpacity={0.85}
-          >
-            <View style={s.modeTop}>
-              <RefreshIcon size={22} color={mode === 'practice' ? Colors.p : Colors.ink2} />
-              {mode === 'practice' && (
-                <View style={s.modeCheck}>
-                  <CheckIcon size={12} color={Colors.white} />
+        {/* ── 2×2 grid ── */}
+        <View style={s.grid}>
+          {SECTIONS.map(sec => (
+            <View key={sec.key} style={s.sectionCard}>
+              {/* Card top */}
+              <View style={s.cardTop}>
+                <View style={s.headCircle}>
+                  <HeadphoneIcon size={22} color={GREEN} />
                 </View>
-              )}
-            </View>
-            <Text style={[s.modeTitle, mode === 'practice' && s.modeTitleActive]}>Practice Mode</Text>
-            <Text style={s.modeSub}>Replay audio as many times as you need</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[s.modeCard, mode === 'exam' && s.modeCardActive]}
-            onPress={() => setMode('exam')}
-            activeOpacity={0.85}
-          >
-            <View style={s.modeTop}>
-              <TimerIcon size={22} color={mode === 'exam' ? Colors.p : Colors.ink2} />
-              {mode === 'exam' && (
-                <View style={s.modeCheck}>
-                  <CheckIcon size={12} color={Colors.white} />
+              </View>
+              {/* Card body */}
+              <View style={s.cardBody}>
+                <Text style={s.secLabel}>{sec.label}</Text>
+                <Text style={s.secQuestions}>{sec.questions}</Text>
+                <Text style={s.secDesc}>{sec.desc}</Text>
+                <View style={s.tagRow}>
+                  {sec.tags.map(t => (
+                    <View key={t} style={s.tag}><Text style={s.tagText}>{t}</Text></View>
+                  ))}
                 </View>
-              )}
-            </View>
-            <Text style={[s.modeTitle, mode === 'exam' && s.modeTitleActive]}>Exam Mode</Text>
-            <Text style={s.modeSub}>Audio plays once — real exam conditions</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tips */}
-        <View style={s.tipsCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-            <HeadphoneIcon size={16} color={Colors.ink} />
-            <Text style={s.tipsTitle}>Tips for higher scores</Text>
-          </View>
-          {[
-            'Read questions before the audio starts.',
-            'Write answers as you listen — don\'t wait.',
-            'Check spelling carefully; wrong spelling = wrong answer.',
-            'Up to TWO WORDS only unless otherwise stated.',
-          ].map((tip, i) => (
-            <View key={i} style={s.tipRow}>
-              <Text style={s.tipDot}>•</Text>
-              <Text style={s.tipText}>{tip}</Text>
+                <TouchableOpacity
+                  style={s.startBtn}
+                  onPress={() => startSection(sec.key)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={s.startBtnText}>Start →</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </View>
 
-        {/* CTA */}
+        {/* ── Full test card ── */}
         <TouchableOpacity
-          style={s.startBtn}
+          style={s.fullCard}
+          onPress={() => startSection('full')}
           activeOpacity={0.85}
-          onPress={() =>
-            router.push({
-              pathname: '/modules/listening/session' as any,
-              params: { exam, section, mode },
-            })
-          }
         >
-          <Text style={s.startBtnText}>Start Listening →</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={s.fullLabel}>Full Listening Test</Text>
+            <Text style={s.fullSub}>All 4 sections · 40 questions · 30 min</Text>
+          </View>
+          <View style={s.fullBtn}>
+            <Text style={s.fullBtnText}>Start Full Test →</Text>
+          </View>
         </TouchableOpacity>
 
-        <View style={{ height: 24 }} />
+        {/* ── Question types ── */}
+        <Text style={s.sectionLabel}>QUESTION TYPES YOU'LL PRACTICE</Text>
+        <View style={s.qTypesWrap}>
+          {Q_TYPES.map(qt => (
+            <View key={qt} style={s.qTypePill}>
+              <Text style={s.qTypePillText}>{qt}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
+
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <ListeningSidebar />
+        <View style={{ flex: 1 }}>{content}</View>
+      </View>
+    );
+  }
+
+  return content;
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingHorizontal: 20, paddingTop: 8, gap: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 18 },
 
-  header: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 2 },
   backBtn: {
-    width: 38, height: 38, borderRadius: 12,
-    backgroundColor: Colors.bg2,
+    width: 36, height: 36, borderRadius: 10, backgroundColor: Colors.bg2,
     alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 20, color: Colors.ink },
-  headerTitle: {
-    flex: 1, fontFamily: 'Inter_700Bold', fontSize: 20,
-    color: Colors.ink, textAlign: 'center',
+  backArrow:   { fontFamily: 'Inter_500Medium', fontSize: 18, color: Colors.ink },
+  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
+  headerSub:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#999', marginTop: 2 },
+
+  examRow: { flexDirection: 'row', gap: 8 },
+  examPill: {
+    paddingHorizontal: 18, paddingVertical: 8, borderRadius: 99,
+    backgroundColor: Colors.bg2, borderWidth: 1.5, borderColor: Colors.border,
   },
-  headerSpacer: { width: 38 },
+  examPillActive:     { backgroundColor: GREEN, borderColor: GREEN },
+  examPillText:       { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.ink2 },
+  examPillTextActive: { color: Colors.white },
 
-  sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
-
-  pillRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  pill: {
-    paddingHorizontal: 18, paddingVertical: 9,
-    borderRadius: 99,
-    backgroundColor: Colors.bg2,
-    borderWidth: 1.5, borderColor: Colors.border,
-  },
-  pillActive: { backgroundColor: Colors.p, borderColor: Colors.p },
-  pillText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink2 },
-  pillTextActive: { color: Colors.white },
-
-  descCard: {
-    backgroundColor: Colors.green_bg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#A8DFC4',
-    padding: 14,
-    gap: 6,
-    marginTop: -4,
-  },
-  descTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.green },
-  descBody: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, lineHeight: 20 },
-
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   sectionCard: {
+    width: '47.5%' as any,
     backgroundColor: Colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: -4,
+    borderRadius: 20, borderWidth: 1, borderColor: '#EAEAEA',
+    overflow: 'hidden', minHeight: 180,
   },
-  sectionCardIconWrap: { width: 36, alignItems: 'center' },
-  sectionCardText: { flex: 1, gap: 3 },
-  sectionCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
-  sectionCardDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, lineHeight: 19 },
-
-  modeRow: { flexDirection: 'row', gap: 12 },
-  modeCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    padding: 14,
-    gap: 6,
-  },
-  modeCardActive: { borderColor: Colors.p, backgroundColor: Colors.p_soft },
-  modeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  modeCheck: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: Colors.p,
+  cardTop: {
+    height: 80, backgroundColor: GREEN_BG,
     alignItems: 'center', justifyContent: 'center',
   },
-  modeTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
-  modeTitleActive: { color: Colors.p },
-  modeSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, lineHeight: 18 },
-
-  tipsCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    gap: 8,
+  headCircle: {
+    width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.white,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  tipsTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink, marginBottom: 2 },
-  tipRow: { flexDirection: 'row', gap: 8 },
-  tipDot: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.green, marginTop: 1 },
-  tipText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 19 },
-
+  cardBody:    { padding: 14, gap: 4 },
+  secLabel:    { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000' },
+  secQuestions:{ fontFamily: 'Inter_500Medium', fontSize: 12, color: GREEN },
+  secDesc:     { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#888', lineHeight: 16, marginTop: 2 },
+  tagRow:      { flexDirection: 'row', gap: 4, marginTop: 6, flexWrap: 'wrap' },
+  tag: { backgroundColor: GREEN_BG, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  tagText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: GREEN },
   startBtn: {
-    backgroundColor: Colors.p,
-    borderRadius: 16,
-    paddingVertical: 17,
-    alignItems: 'center',
+    backgroundColor: GREEN, borderRadius: 8,
+    paddingVertical: 8, alignItems: 'center', marginTop: 8,
   },
-  startBtnText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.white },
+  startBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.white },
+
+  fullCard: {
+    backgroundColor: GREEN, borderRadius: 20, padding: 24,
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+  },
+  fullLabel: { fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.white },
+  fullSub:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  fullBtn: { backgroundColor: '#000', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
+  fullBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.white },
+
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#BBB',
+    letterSpacing: 0.8, textTransform: 'uppercase' as const,
+  },
+  qTypesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  qTypePill: {
+    backgroundColor: Colors.white, borderRadius: 20,
+    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  qTypePillText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666' },
 });
