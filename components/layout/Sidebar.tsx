@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert,
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { FluentraLogo } from '@/components/FluentraLogo';
 import {
   HomeIcon, TrophyIcon, BookIcon, ChartIcon, GearIcon,
-  PlusIcon, type IconProps,
+  PlusIcon, XIcon, type IconProps,
 } from '@/components/icons';
 import { UserMenu } from '@/components/layout/UserMenu';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
@@ -50,31 +50,36 @@ function DragHandle({ color = Colors.sidebarLabel }: { color?: string }) {
 
 // ── Language row with drag ────────────────────────────────────────
 function LangRow({
-  lang, isActive, onPress,
+  lang, isActive, onPress, onRemove,
   draggedCode, dragOverCode,
   onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
 }: {
-  lang:        UserLanguage;
-  isActive:    boolean;
-  onPress:     () => void;
-  draggedCode: string | null;
+  lang:         UserLanguage;
+  isActive:     boolean;
+  onPress:      () => void;
+  onRemove:     () => void;
+  draggedCode:  string | null;
   dragOverCode: string | null;
-  onDragStart: (code: string) => void;
-  onDragOver:  (e: any, code: string) => void;
-  onDragLeave: () => void;
-  onDrop:      (code: string) => void;
-  onDragEnd:   () => void;
+  onDragStart:  (code: string) => void;
+  onDragOver:   (e: any, code: string) => void;
+  onDragLeave:  () => void;
+  onDrop:       (code: string) => void;
+  onDragEnd:    () => void;
 }) {
   const theme      = getTheme(lang.language_code);
   const code       = lang.language_code;
   const isDragging = draggedCode === code;
   const isDragOver = dragOverCode === code && draggedCode !== code;
+  const streak     = (lang as any).streak_count ?? Math.round(lang.fluency_percent / 2.5);
+  const [hovered, setHovered] = React.useState(false);
 
   if (Platform.OS === 'web') {
     return (
       <div
         draggable
         onClick={onPress}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         onDragStart={(e: any) => {
           onDragStart(code);
           e.dataTransfer.effectAllowed = 'move';
@@ -91,19 +96,14 @@ function LangRow({
         }}
         onDragEnd={onDragEnd}
         style={{
-          opacity:     isDragging ? 0.4 : 1,
-          borderLeft:  isDragOver ? '2px solid #5B4EFF' : '2px solid transparent',
-          cursor:      'grab',
+          opacity:      isDragging ? 0.4 : 1,
+          borderLeft:   isDragOver ? '2px solid #5B4EFF' : '2px solid transparent',
+          cursor:       'grab',
           borderRadius: 6,
-          transition:  'opacity 0.15s, border-left 0.1s',
+          transition:   'opacity 0.15s, border-left 0.1s',
         } as any}
       >
-        <View
-          style={[
-            s.langItem,
-            isActive && { backgroundColor: theme.accentLight },
-          ]}
-        >
+        <View style={[s.langItem, isActive && { backgroundColor: theme.accentLight }]}>
           <View style={s.dragHandle} {...{ title: 'Drag to reorder' } as any}>
             <DragHandle color={isActive ? theme.accent : Colors.sidebarLabel} />
           </View>
@@ -114,9 +114,18 @@ function LangRow({
           >
             {theme.native}
           </Text>
-          <Text style={[s.langStreak, isActive && { color: theme.accent }]}>
-            {lang.fluency_percent}%
-          </Text>
+          {hovered ? (
+            <TouchableOpacity
+              onPress={e => { (e as any).stopPropagation?.(); onRemove(); }}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <XIcon size={12} color={Colors.sidebarLabel} />
+            </TouchableOpacity>
+          ) : (
+            streak > 0
+              ? <Text style={[s.langStreak, isActive && { color: theme.accent }]}>{streak}</Text>
+              : null
+          )}
         </View>
       </div>
     );
@@ -136,9 +145,9 @@ function LangRow({
       >
         {theme.native}
       </Text>
-      <Text style={[s.langStreak, isActive && { color: theme.accent }]}>
-        {lang.fluency_percent}%
-      </Text>
+      {streak > 0 && (
+        <Text style={[s.langStreak, isActive && { color: theme.accent }]}>{streak}</Text>
+      )}
     </TouchableOpacity>
   );
 }
@@ -222,6 +231,26 @@ export function Sidebar() {
     setDragOverCode(null);
   }
 
+  async function handleRemoveLang(lang: UserLanguage) {
+    const theme = getTheme(lang.language_code);
+    Alert.alert(
+      `Remove ${theme.name}?`,
+      'This will delete your progress and streak for this language.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive',
+          onPress: async () => {
+            try {
+              await supabase.from('user_languages').delete().eq('id', lang.id);
+              refetch();
+            } catch (e) { console.error('[Sidebar removeLanguage]', e); }
+          },
+        },
+      ]
+    );
+  }
+
   async function addLanguage(lang: { code: string; native: string; english: string }) {
     if (adding) return;
     setAdding(lang.code);
@@ -288,6 +317,7 @@ export function Sidebar() {
               lang={lang}
               isActive={activeCode === lang.language_code}
               onPress={() => navigateToLang(lang.language_code)}
+              onRemove={() => handleRemoveLang(lang)}
               draggedCode={draggedCode}
               dragOverCode={dragOverCode}
               onDragStart={handleDragStart}

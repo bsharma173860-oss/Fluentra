@@ -9,6 +9,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import {
+  MicIcon, GlobeIcon, BookIcon, HeadphoneIcon, RefreshIcon, TimerIcon, CheckIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 type Exam = 'IELTS' | 'TOEFL' | 'DELF';
 type Section = '1' | '2' | '3' | '4';
@@ -20,17 +25,18 @@ const EXAM_DESC: Record<Exam, string> = {
   DELF: 'Three documents with comprehension tasks. Range of accents and registers tested.',
 };
 
-const SECTION_INFO: Record<Section, { title: string; desc: string; icon: string }> = {
-  '1': { icon: '💬', title: 'Section 1',  desc: 'Social conversation between two speakers in an everyday context.' },
-  '2': { icon: '🎙', title: 'Section 2',  desc: 'Monologue on a general topic, e.g. a radio broadcast or announcement.' },
-  '3': { icon: '🎓', title: 'Section 3',  desc: 'Conversation between up to four people in an educational setting.' },
-  '4': { icon: '📚', title: 'Section 4',  desc: 'Academic lecture — the most challenging section with complex vocabulary.' },
+const SECTION_INFO: Record<Section, { title: string; desc: string; Icon: IC }> = {
+  '1': { Icon: MicIcon,       title: 'Section 1', desc: 'Social conversation between two speakers in an everyday context.' },
+  '2': { Icon: GlobeIcon,     title: 'Section 2', desc: 'Monologue on a general topic, e.g. a radio broadcast or announcement.' },
+  '3': { Icon: GlobeIcon,     title: 'Section 3', desc: 'Conversation between up to four people in an educational setting.' },
+  '4': { Icon: BookIcon,      title: 'Section 4', desc: 'Academic lecture — the most challenging section with complex vocabulary.' },
 };
 
 export default function ListeningSelectScreen() {
   const [exam, setExam]       = useState<Exam>('IELTS');
   const [section, setSection] = useState<Section>('1');
   const [mode, setMode]       = useState<Mode>('practice');
+  const sInfo = SECTION_INFO[section];
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -85,10 +91,12 @@ export default function ListeningSelectScreen() {
 
         {/* Section info card */}
         <View style={s.sectionCard}>
-          <Text style={s.sectionCardIcon}>{SECTION_INFO[section].icon}</Text>
+          <View style={s.sectionCardIconWrap}>
+            <sInfo.Icon size={28} color={Colors.green} />
+          </View>
           <View style={s.sectionCardText}>
-            <Text style={s.sectionCardTitle}>{SECTION_INFO[section].title}</Text>
-            <Text style={s.sectionCardDesc}>{SECTION_INFO[section].desc}</Text>
+            <Text style={s.sectionCardTitle}>{sInfo.title}</Text>
+            <Text style={s.sectionCardDesc}>{sInfo.desc}</Text>
           </View>
         </View>
 
@@ -101,10 +109,10 @@ export default function ListeningSelectScreen() {
             activeOpacity={0.85}
           >
             <View style={s.modeTop}>
-              <Text style={s.modeIcon}>🔁</Text>
+              <RefreshIcon size={22} color={mode === 'practice' ? Colors.p : Colors.ink2} />
               {mode === 'practice' && (
                 <View style={s.modeCheck}>
-                  <Text style={s.modeCheckText}>✓</Text>
+                  <CheckIcon size={12} color={Colors.white} />
                 </View>
               )}
             </View>
@@ -118,10 +126,10 @@ export default function ListeningSelectScreen() {
             activeOpacity={0.85}
           >
             <View style={s.modeTop}>
-              <Text style={s.modeIcon}>⏱</Text>
+              <TimerIcon size={22} color={mode === 'exam' ? Colors.p : Colors.ink2} />
               {mode === 'exam' && (
                 <View style={s.modeCheck}>
-                  <Text style={s.modeCheckText}>✓</Text>
+                  <CheckIcon size={12} color={Colors.white} />
                 </View>
               )}
             </View>
@@ -132,7 +140,10 @@ export default function ListeningSelectScreen() {
 
         {/* Tips */}
         <View style={s.tipsCard}>
-          <Text style={s.tipsTitle}>🎧 Tips for higher scores</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            <HeadphoneIcon size={16} color={Colors.ink} />
+            <Text style={s.tipsTitle}>Tips for higher scores</Text>
+          </View>
           {[
             'Read questions before the audio starts.',
             'Write answers as you listen — don\'t wait.',
@@ -219,7 +230,7 @@ const s = StyleSheet.create({
     gap: 14,
     marginTop: -4,
   },
-  sectionCardIcon: { fontSize: 28 },
+  sectionCardIconWrap: { width: 36, alignItems: 'center' },
   sectionCardText: { flex: 1, gap: 3 },
   sectionCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
   sectionCardDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, lineHeight: 19 },
@@ -236,13 +247,11 @@ const s = StyleSheet.create({
   },
   modeCardActive: { borderColor: Colors.p, backgroundColor: Colors.p_soft },
   modeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  modeIcon: { fontSize: 22 },
   modeCheck: {
     width: 20, height: 20, borderRadius: 10,
     backgroundColor: Colors.p,
     alignItems: 'center', justifyContent: 'center',
   },
-  modeCheckText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: Colors.white },
   modeTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
   modeTitleActive: { color: Colors.p },
   modeSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, lineHeight: 18 },

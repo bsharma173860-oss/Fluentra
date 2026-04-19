@@ -15,7 +15,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeftIcon } from '@/components/icons';
+import { ChevronLeftIcon, LockIcon, TimerIcon, FileTextIcon, PhoneIcon } from '@/components/icons';
 import { Analytics } from '@/lib/analytics';
 import {
   setListeningResult,
@@ -275,7 +275,8 @@ function AudioPlayer({
         </View>
         {isExamMode && (
           <View style={ap.examBadge}>
-            <Text style={ap.examBadgeText}>⏱ Exam mode</Text>
+            <TimerIcon size={11} color={Colors.orange} />
+            <Text style={ap.examBadgeText}>Exam mode</Text>
           </View>
         )}
       </View>
@@ -327,8 +328,9 @@ function AudioPlayer({
       {/* Exam-mode lockout notice */}
       {isExamMode && hasPlayed && !isPlaying && (
         <View style={ap.examNotice}>
+          <LockIcon size={13} color={Colors.ink3} />
           <Text style={ap.examNoticeText}>
-            🔒 Audio has been played once — exam rules apply
+            Audio has been played once — exam rules apply
           </Text>
         </View>
       )}
@@ -397,6 +399,7 @@ const ap = StyleSheet.create({
   btnDisabled: { opacity: 0.3 },
   iconDisabled: { color: Colors.ink4 },
   examNotice: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: Colors.orange_bg,
     borderRadius: 10,
     padding: 10,
@@ -556,6 +559,7 @@ export default function ListeningSessionScreen() {
       module: 'listening',
       languageCode: 'en',
       examType: exam,
+      mode: 'practice',
     });
   }, []);
 
@@ -579,6 +583,7 @@ export default function ListeningSessionScreen() {
     Analytics.practiceSessionCompleted({
       module: 'listening',
       languageCode: 'en',
+      examType: exam,
       score: band,
       durationSeconds: timeTaken,
     });
@@ -623,7 +628,10 @@ export default function ListeningSessionScreen() {
 
         {/* Instructions box */}
         <View style={s.instrBox}>
-          <Text style={s.instrTitle}>📋 Instructions</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <FileTextIcon size={14} color={Colors.green} />
+            <Text style={s.instrTitle}>Instructions</Text>
+          </View>
           <Text style={s.instrText}>
             Listen to the recording and answer all 10 questions.{'\n'}
             Write <Text style={s.instrBold}>NO MORE THAN TWO WORDS</Text> for each answer unless stated otherwise.
@@ -635,7 +643,10 @@ export default function ListeningSessionScreen() {
           <Text style={s.sectionTitle}>Questions 1–5 · Form Completion</Text>
           <Text style={s.sectionInstr}>Complete the booking form. Write NO MORE THAN TWO WORDS for each answer.</Text>
           <View style={s.formCard}>
-            <Text style={s.formCardTitle}>📞 Restaurant Booking Form</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <PhoneIcon size={13} color={Colors.ink2} />
+              <Text style={s.formCardTitle}>Restaurant Booking Form</Text>
+            </View>
             {formQs.map(q => (
               <FormQuestion
                 key={q.number}
@@ -668,7 +679,10 @@ export default function ListeningSessionScreen() {
           <Text style={s.sectionTitle}>Questions 9–10 · Note Completion</Text>
           <Text style={s.sectionInstr}>Complete the notes. Write NO MORE THAN TWO WORDS.</Text>
           <View style={s.noteCard}>
-            <Text style={s.noteCardTitle}>🗒 Restaurant Notes</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <FileTextIcon size={13} color={Colors.ink2} />
+              <Text style={s.noteCardTitle}>Restaurant Notes</Text>
+            </View>
             {noteQs.map(q => (
               <FormQuestion
                 key={q.number}
@@ -761,7 +775,7 @@ const s = StyleSheet.create({
     padding: 16,
     gap: 14,
   },
-  formCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink2, marginBottom: 2 },
+  formCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink2 },
 
   card: {
     backgroundColor: Colors.white,
@@ -780,7 +794,7 @@ const s = StyleSheet.create({
     padding: 16,
     gap: 14,
   },
-  noteCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink2, marginBottom: 2 },
+  noteCardTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink2 },
 
   submitWrap: {
     padding: 14,

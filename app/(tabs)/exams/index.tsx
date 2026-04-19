@@ -8,6 +8,9 @@ import { Colors } from '@/constants/colors';
 import { getLangNames } from '@/constants/languages';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  TrophyIcon, CheckIcon, LockIcon, CalendarIcon,
+} from '@/components/icons';
 
 const { width: W } = Dimensions.get('window');
 const H_PAD = 20;
@@ -117,7 +120,7 @@ function Podium({ top3 }: { top3: LBEntry[] }) {
         const first = isFirst[idx];
         return (
           <View key={entry.rank} style={p.col}>
-            {first && <Text style={p.crown}>👑</Text>}
+            {first && <TrophyIcon size={22} color={GOLD} />}
             <View style={[p.avatar, first && p.avatarFirst, { borderColor: color }]}>
               <Text style={[p.initial, first && p.initialFirst]}>{entry.initial}</Text>
             </View>
@@ -137,7 +140,6 @@ function Podium({ top3 }: { top3: LBEntry[] }) {
 const p = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8, paddingBottom: 4 },
   col: { alignItems: 'center', flex: 1, gap: 4 },
-  crown: { fontSize: 22 },
   avatar: {
     width: 50, height: 50, borderRadius: 25,
     backgroundColor: Colors.bg2, borderWidth: 2.5,
@@ -259,9 +261,10 @@ export default function ExamsScreen() {
         <View style={s.monthlyCard}>
           <View style={s.monthlyTop}>
             <View style={[s.monthlyBadge, { backgroundColor: monthlyExam.examColor + '33' }]}>
-              <Text style={[s.monthlyBadgeText, { color: monthlyExam.examColor === Colors.p ? Colors.white : Colors.white }]}>
-                🏆 Monthly Exam
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <TrophyIcon size={14} color={Colors.white} />
+                <Text style={s.monthlyBadgeText}>Monthly Exam</Text>
+              </View>
             </View>
           </View>
           <Text style={s.monthlyTitle}>{monthlyExam.title}</Text>
@@ -278,7 +281,7 @@ export default function ExamsScreen() {
             </View>
             <View style={s.monthlyStatDiv} />
             <View style={s.monthlyStat}>
-              <Text style={s.monthlyStatNum}>📅</Text>
+              <CalendarIcon size={18} color={Colors.white} />
               <Text style={s.monthlyStatLabel}>{monthlyExam.date}</Text>
             </View>
           </View>
@@ -286,7 +289,10 @@ export default function ExamsScreen() {
           {EXAMS_UNLOCKED ? (
             <View style={s.monthlyUnlocked}>
               <View style={s.unlockedBadge}>
-                <Text style={s.unlockedText}>✓ Exam unlocked</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <CheckIcon size={14} color={Colors.green} />
+                  <Text style={s.unlockedText}>Exam unlocked</Text>
+                </View>
               </View>
               <TouchableOpacity style={s.registerBtn} onPress={handleRegister} activeOpacity={0.85}>
                 <Text style={s.registerBtnText}>Register for {monthlyExam.fee}</Text>
@@ -294,7 +300,7 @@ export default function ExamsScreen() {
             </View>
           ) : (
             <View style={s.lockedRow}>
-              <Text style={s.lockedIcon}>🔒</Text>
+              <LockIcon size={18} color="rgba(255,255,255,0.65)" />
               <Text style={s.lockedText}>{daysRemaining} more streak days to unlock</Text>
             </View>
           )}
@@ -356,7 +362,7 @@ export default function ExamsScreen() {
 
         {pastExams.length === 0 && (
           <EmptyState
-            icon="🎯"
+            iconComponent={<CheckIcon size={28} color={Colors.ink3} />}
             title="No exams yet"
             subtitle="Build a 40-day streak to unlock monthly exams"
           />
@@ -424,7 +430,6 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10,
     paddingVertical: 12, paddingHorizontal: 14,
   },
-  lockedIcon: { fontSize: 18 },
   lockedText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.65)' },
 
   lbCard: {

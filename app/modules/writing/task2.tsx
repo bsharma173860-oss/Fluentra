@@ -14,7 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeftIcon } from '@/components/icons';
+import { ChevronLeftIcon, PenIcon, RefreshIcon, CheckIcon, type IconProps } from '@/components/icons';
+type IC = React.ComponentType<IconProps>;
 import { mockScore, setWritingResult } from '@/lib/writingStore';
 import { getTodaysTask2 } from '@/constants/dailyContent';
 import { Analytics } from '@/lib/analytics';
@@ -183,13 +184,13 @@ export default function WritingTask2Screen() {
 
           {/* Writing tips */}
           <View style={s.tipsRow}>
-            {[
-              { icon: '📝', tip: 'State your position clearly in the introduction.' },
-              { icon: '🔀', tip: 'Discuss both views before giving your opinion.' },
-              { icon: '✅', tip: 'Use linking words: however, furthermore, in contrast.' },
-            ].map((t, i) => (
+            {([
+              { Icon: PenIcon as IC,     tip: 'State your position clearly in the introduction.' },
+              { Icon: RefreshIcon as IC, tip: 'Discuss both views before giving your opinion.' },
+              { Icon: CheckIcon as IC,   tip: 'Use linking words: however, furthermore, in contrast.' },
+            ] as { Icon: IC; tip: string }[]).map((t, i) => (
               <View key={i} style={s.tipChip}>
-                <Text style={s.tipIcon}>{t.icon}</Text>
+                <t.Icon size={16} color={Colors.ink3} />
                 <Text style={s.tipText}>{t.tip}</Text>
               </View>
             ))}
@@ -319,6 +320,5 @@ const s = StyleSheet.create({
     borderColor: Colors.border,
     padding: 12,
   },
-  tipIcon: { fontSize: 16, marginTop: 1 },
   tipText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 19 },
 });

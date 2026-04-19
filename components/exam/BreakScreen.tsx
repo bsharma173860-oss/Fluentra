@@ -2,16 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
+import { MicIcon, BookIcon, PenIcon, HeadphoneIcon, type IconProps } from '@/components/icons';
 
 const BREAK_SECONDS = __DEV__ ? 5 : 300; // 5 s in dev, 5 min in prod
 
 export type ModuleKey = 'listening' | 'reading' | 'writing' | 'speaking';
 
-const MODULE_META: Record<ModuleKey, { icon: string; color: string; label: string }> = {
-  listening: { icon: '🎧', color: Colors.green,  label: 'Listening' },
-  reading:   { icon: '📖', color: Colors.orange, label: 'Reading'   },
-  writing:   { icon: '✏️',  color: Colors.gold,   label: 'Writing'   },
-  speaking:  { icon: '🎙',  color: Colors.p,      label: 'Speaking'  },
+type IC = React.ComponentType<IconProps>;
+
+const MODULE_META: Record<ModuleKey, { Icon: IC; color: string; label: string }> = {
+  listening: { Icon: HeadphoneIcon, color: Colors.green,  label: 'Listening' },
+  reading:   { Icon: BookIcon,      color: Colors.orange, label: 'Reading'   },
+  writing:   { Icon: PenIcon,       color: Colors.gold,   label: 'Writing'   },
+  speaking:  { Icon: MicIcon,       color: Colors.p,      label: 'Speaking'  },
 };
 
 export type ModuleScore = {
@@ -86,7 +89,7 @@ export function BreakScreen({ justCompleted, nextModule, onComplete }: Props) {
         <View style={s.nextUpRow}>
           <Text style={s.nextUpGray}>Next up:</Text>
           <View style={[s.nextUpChip, { backgroundColor: nm.color + '28' }]}>
-            <Text style={s.nextUpIcon}>{nm.icon}</Text>
+            <nm.Icon size={15} color={nm.color} />
             <Text style={[s.nextUpLabel, { color: nm.color }]}>{nm.label}</Text>
           </View>
         </View>
@@ -96,7 +99,7 @@ export function BreakScreen({ justCompleted, nextModule, onComplete }: Props) {
       <View style={s.scoreCard}>
         <View style={s.scoreCardHeader}>
           <View style={[s.moduleIconWrap, { backgroundColor: cm.color + '28' }]}>
-            <Text style={s.moduleIcon}>{cm.icon}</Text>
+            <cm.Icon size={22} color={cm.color} />
           </View>
           <View>
             <Text style={s.completedLabel}>{cm.label} completed</Text>
@@ -160,7 +163,6 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
   },
-  nextUpIcon: { fontSize: 15 },
   nextUpLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
 
   scoreCard: {
@@ -172,7 +174,6 @@ const s = StyleSheet.create({
   },
   scoreCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   moduleIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  moduleIcon: { fontSize: 22 },
   completedLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
   encouragement: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
   scoreRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },

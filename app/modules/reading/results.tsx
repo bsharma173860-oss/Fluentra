@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { getReadingResult, clearReadingResult, ReadingResult } from '@/lib/readingStore';
+import { CheckIcon, HelpCircleIcon, TimerIcon, BookIcon } from '@/components/icons';
 
 // ── Band color helper ───────────────────────────────────────────
 function bandColor(b: number) {
@@ -29,7 +30,10 @@ function AnswerRow({ q, userAnswer }: { q: ReadingResult['questions'][0]; userAn
       {/* Question header */}
       <View style={ar.header}>
         <View style={[ar.statusDot, isCorrect ? ar.dotCorrect : ar.dotWrong]}>
-          <Text style={ar.statusIcon}>{isCorrect ? '✓' : '✗'}</Text>
+          {isCorrect
+            ? <CheckIcon size={12} color={Colors.white} />
+            : <Text style={ar.statusIcon}>✕</Text>
+          }
         </View>
         <View style={ar.qInfo}>
           <Text style={ar.qLabel}>{q.shortLabel}</Text>
@@ -55,7 +59,10 @@ function AnswerRow({ q, userAnswer }: { q: ReadingResult['questions'][0]; userAn
 
       {/* Explanation */}
       <View style={ar.explanation}>
-        <Text style={ar.explanationText}>💡 {q.explanation}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+          <HelpCircleIcon size={14} color={Colors.ink3} />
+          <Text style={[ar.explanationText, { flex: 1 }]}>{q.explanation}</Text>
+        </View>
       </View>
     </View>
   );
@@ -180,8 +187,14 @@ export default function ReadingResultsScreen() {
           <Text style={s.title}>Reading Results</Text>
           <View style={s.metaRow}>
             <Text style={s.metaChip}>{exam} · {difficulty}</Text>
-            <Text style={s.metaChip}>⏱ {mins}m {secs}s</Text>
-            <Text style={s.metaChip}>📖 {passageTitle}</Text>
+            <View style={s.metaChipRow}>
+              <TimerIcon size={12} color={Colors.ink3} />
+              <Text style={s.metaChip}>{mins}m {secs}s</Text>
+            </View>
+            <View style={s.metaChipRow}>
+              <BookIcon size={12} color={Colors.ink3} />
+              <Text style={s.metaChip}>{passageTitle}</Text>
+            </View>
           </View>
         </View>
 
@@ -287,6 +300,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
+  },
+  metaChipRow: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
+    backgroundColor: Colors.bg2,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 99, borderWidth: 1, borderColor: Colors.border,
   },
 
   scoreCard: {

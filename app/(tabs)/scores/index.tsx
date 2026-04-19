@@ -5,6 +5,11 @@ import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
 import { Card } from '@/components/ui/Card';
 import { ScoreBar } from '@/components/ui/ScoreBar';
+import {
+  MicIcon, PenIcon, HeadphoneIcon, BookIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 const { width: W } = Dimensions.get('window');
 const H_PAD = 20;
@@ -23,18 +28,18 @@ const LINE_DATA = [
 
 const PERIOD_TABS = ['7d', '30d', '90d'];
 
-const MODULE_CARDS = [
-  { icon: '🎙', title: 'Speaking', score: 7.0, change: +0.5, color: Colors.p, bg: Colors.p_soft },
-  { icon: '✏️', title: 'Writing', score: 6.5, change: -0.5, color: Colors.gold, bg: Colors.gold_bg },
-  { icon: '🎧', title: 'Listening', score: 7.5, change: +1.0, color: Colors.green, bg: Colors.green_bg },
-  { icon: '📖', title: 'Reading', score: 7.0, change: +0.5, color: Colors.orange, bg: Colors.orange_bg },
+const MODULE_CARDS: { Icon: IC; title: string; score: number; change: number; color: string; bg: string }[] = [
+  { Icon: MicIcon,       title: 'Speaking',  score: 7.0, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
+  { Icon: PenIcon,       title: 'Writing',   score: 6.5, change: -0.5, color: Colors.gold,   bg: Colors.gold_bg   },
+  { Icon: HeadphoneIcon, title: 'Listening', score: 7.5, change: +1.0, color: Colors.green,  bg: Colors.green_bg  },
+  { Icon: BookIcon,      title: 'Reading',   score: 7.0, change: +0.5, color: Colors.orange, bg: Colors.orange_bg },
 ];
 
-const RECENT_SESSIONS = [
-  { icon: '🎙', title: 'Speaking', subtitle: 'Parts 1+2', date: 'Today', score: 7.0, color: Colors.p },
-  { icon: '✏️', title: 'Writing', subtitle: 'Task 2', date: 'Yesterday', score: 6.5, color: Colors.gold },
-  { icon: '🎧', title: 'Listening', subtitle: 'Sections 1-4', date: 'Apr 10', score: 7.5, color: Colors.green },
-  { icon: '📖', title: 'Reading', subtitle: '3 Passages', date: 'Apr 9', score: 7.0, color: Colors.orange },
+const RECENT_SESSIONS: { Icon: IC; title: string; subtitle: string; date: string; score: number; color: string }[] = [
+  { Icon: MicIcon,       title: 'Speaking',  subtitle: 'Parts 1+2',   date: 'Today',     score: 7.0, color: Colors.p      },
+  { Icon: PenIcon,       title: 'Writing',   subtitle: 'Task 2',      date: 'Yesterday', score: 6.5, color: Colors.gold   },
+  { Icon: HeadphoneIcon, title: 'Listening', subtitle: 'Sections 1-4',date: 'Apr 10',    score: 7.5, color: Colors.green  },
+  { Icon: BookIcon,      title: 'Reading',   subtitle: '3 Passages',  date: 'Apr 9',     score: 7.0, color: Colors.orange },
 ];
 
 function LineChart({ data }: { data: { label: string; score: number }[] }) {
@@ -138,7 +143,7 @@ export default function ScoresScreen() {
             const up = m.change >= 0;
             return (
               <View key={m.title} style={[s.moduleCard, { width: gridCardW, backgroundColor: m.bg }]}>
-                <Text style={s.moduleIcon}>{m.icon}</Text>
+                <m.Icon size={26} color={m.color} />
                 <Text style={[s.moduleTitle, { color: m.color }]}>{m.title}</Text>
                 <Text style={[s.moduleScore, { color: m.color }]}>{m.score.toFixed(1)}</Text>
                 <Text style={[s.moduleDelta, { color: up ? Colors.green : Colors.danger }]}>
@@ -163,7 +168,7 @@ export default function ScoresScreen() {
           {RECENT_SESSIONS.map((session, i) => (
             <View key={i} style={s.sessionRow}>
               <View style={[s.sessionIconWrap, { backgroundColor: session.color + '22' }]}>
-                <Text style={s.sessionIcon}>{session.icon}</Text>
+                <session.Icon size={22} color={session.color} />
               </View>
               <View style={s.sessionInfo}>
                 <Text style={s.sessionTitle}>{session.title} · {session.subtitle}</Text>
@@ -200,7 +205,6 @@ const s = StyleSheet.create({
 
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   moduleCard: { borderRadius: 16, padding: 16, gap: 4 },
-  moduleIcon: { fontSize: 26 },
   moduleTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   moduleScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 36, lineHeight: 42 },
   moduleDelta: { fontFamily: 'Inter_500Medium', fontSize: 12 },
@@ -212,7 +216,6 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border, padding: 12,
   },
   sessionIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  sessionIcon: { fontSize: 22 },
   sessionInfo: { flex: 1 },
   sessionTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
   sessionDate: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },

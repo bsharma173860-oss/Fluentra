@@ -207,7 +207,7 @@ export default function LibraryScreen() {
         >
           {filtered.length === 0 ? (
             <EmptyState
-              icon="📚"
+              iconComponent={<SearchIcon size={28} color={Colors.ink3} />}
               title="Nothing found"
               subtitle={query ? `Nothing matched "${query}"` : 'Try a different search term'}
             />

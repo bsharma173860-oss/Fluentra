@@ -3,25 +3,19 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
 
 type Props = {
-  icon?:        string;
-  title:        string;
-  subtitle:     string;
-  actionLabel?: string;
-  onAction?:    () => void;
+  iconComponent?: React.ReactNode;
+  title:          string;
+  subtitle:       string;
+  actionLabel?:   string;
+  onAction?:      () => void;
 };
 
-export function EmptyState({ icon, title, subtitle, actionLabel, onAction }: Props) {
+export function EmptyState({ iconComponent, title, subtitle, actionLabel, onAction }: Props) {
   return (
     <View style={s.wrap}>
-      {icon ? (
-        <View style={s.iconCircle}>
-          <Text style={s.iconText}>{icon}</Text>
-        </View>
-      ) : (
-        <View style={s.iconCircle}>
-          <Text style={s.iconText}>✦</Text>
-        </View>
-      )}
+      <View style={s.iconCircle}>
+        {iconComponent ?? null}
+      </View>
       <Text style={s.title}>{title}</Text>
       <Text style={s.subtitle}>{subtitle}</Text>
       {actionLabel && onAction && (
@@ -45,7 +39,6 @@ const s = StyleSheet.create({
     backgroundColor: '#EAEAEA',
     alignItems: 'center', justifyContent: 'center',
   },
-  iconText:  { fontSize: 28 },
   title:     { fontFamily: 'Inter_600SemiBold', fontSize: 18, color: '#000', marginTop: 16, textAlign: 'center' },
   subtitle:  { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#999', marginTop: 8, textAlign: 'center', maxWidth: 260 },
   btn: {

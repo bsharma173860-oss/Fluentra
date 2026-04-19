@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { getListeningResult, clearListeningResult, ListeningResult } from '@/lib/listeningStore';
+import { CheckIcon, HelpCircleIcon, TimerIcon, RefreshIcon } from '@/components/icons';
 
 function bandColor(b: number) {
   if (b >= 7.0) return Colors.green;
@@ -31,7 +32,10 @@ function AnswerRow({ q, userAnswer }: {
     <View style={ar.wrap}>
       <View style={ar.header}>
         <View style={[ar.dot, isCorrect ? ar.dotOk : ar.dotBad]}>
-          <Text style={ar.dotIcon}>{isCorrect ? '✓' : '✗'}</Text>
+          {isCorrect
+            ? <CheckIcon size={12} color={Colors.white} />
+            : <Text style={ar.dotIcon}>✕</Text>
+          }
         </View>
         <View style={ar.info}>
           <Text style={ar.label}>{q.shortLabel} · {q.type === 'mcq' ? 'Multiple Choice' : q.type === 'form' ? 'Form Completion' : 'Note Completion'}</Text>
@@ -53,7 +57,10 @@ function AnswerRow({ q, userAnswer }: {
       </View>
 
       <View style={ar.explainBox}>
-        <Text style={ar.explainText}>💡 {q.explanation}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+          <HelpCircleIcon size={14} color={Colors.ink3} />
+          <Text style={[ar.explainText, { flex: 1 }]}>{q.explanation}</Text>
+        </View>
       </View>
     </View>
   );
@@ -162,8 +169,16 @@ export default function ListeningResultsScreen() {
           <Text style={s.title}>Listening Results</Text>
           <View style={s.metaRow}>
             <Text style={s.chip}>{exam} · Section {section}</Text>
-            <Text style={s.chip}>{mode === 'exam' ? '⏱ Exam mode' : '🔁 Practice mode'}</Text>
-            <Text style={s.chip}>⏱ {mins}m {secs}s</Text>
+            <View style={s.chipRow}>
+              {mode === 'exam'
+                ? <TimerIcon size={12} color={Colors.ink3} />
+                : <RefreshIcon size={12} color={Colors.ink3} />}
+              <Text style={s.chip}>{mode === 'exam' ? 'Exam mode' : 'Practice mode'}</Text>
+            </View>
+            <View style={s.chipRow}>
+              <TimerIcon size={12} color={Colors.ink3} />
+              <Text style={s.chip}>{mins}m {secs}s</Text>
+            </View>
           </View>
         </View>
 
@@ -254,6 +269,11 @@ const s = StyleSheet.create({
     fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3,
     backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 99, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
+  },
+  chipRow: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
+    backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 99, borderWidth: 1, borderColor: Colors.border,
   },
 
   scoreCard: {

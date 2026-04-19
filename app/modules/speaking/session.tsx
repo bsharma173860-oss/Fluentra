@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeftIcon } from '@/components/icons';
+import { ChevronLeftIcon, MicIcon, FileTextIcon, CameraIcon } from '@/components/icons';
 import { setSpeakingResult, buildMockResult, TranscriptMsg } from '@/lib/speakingStore';
 import { Analytics } from '@/lib/analytics';
 
@@ -128,7 +128,7 @@ function MicPulse({ active }: { active: boolean }) {
     <View style={mp.wrap}>
       <Animated.View style={[mp.ring, { transform: [{ scale }], opacity }]} />
       <View style={[mp.btn, active && mp.btnActive]}>
-        <Text style={mp.icon}>🎙</Text>
+        <MicIcon size={24} color={active ? Colors.white : Colors.ink2} />
       </View>
     </View>
   );
@@ -148,7 +148,6 @@ const mp = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.border,
   },
   btnActive: { backgroundColor: Colors.p, borderColor: Colors.p },
-  icon: { fontSize: 24 },
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -186,7 +185,10 @@ function CueCard() {
   return (
     <View style={cc.wrap}>
       <View style={cc.topBar}>
-        <Text style={cc.topBarText}>📋  Topic Card — Part 2</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <FileTextIcon size={13} color={Colors.white} />
+          <Text style={cc.topBarText}>Topic Card — Part 2</Text>
+        </View>
       </View>
       <View style={cc.body}>
         {CUE_CARD.map((line, i) => (
@@ -468,7 +470,7 @@ export default function SpeakingSessionScreen() {
 
         {/* Camera placeholder */}
         <View style={s.camWrap}>
-          <Text style={s.camIcon}>📷</Text>
+          <CameraIcon size={22} color={Colors.ink3} />
         </View>
       </View>
 
@@ -615,7 +617,6 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.cardBorder,
     overflow: 'hidden',
   },
-  camIcon: { fontSize: 22 },
 
   phaseStrip: {
     backgroundColor: Colors.white,

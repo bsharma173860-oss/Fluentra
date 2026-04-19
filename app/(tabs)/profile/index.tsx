@@ -5,6 +5,12 @@ import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/lib/authContext';
+import {
+  CheckIcon, ChartIcon, GlobeIcon, BellIcon, FileTextIcon, TrashIcon,
+  LightningIcon, CreditCardIcon, FlameIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 // Map ISO country codes to flag emoji
 function countryFlag(code?: string): string {
@@ -15,24 +21,24 @@ function countryFlag(code?: string): string {
 }
 
 // ─── Settings with value on the right ────────────────────────────────────────
-const EXAM_SETTINGS = [
-  { icon: '🎯', label: 'Target exam',        value: 'IELTS Academic' },
-  { icon: '📈', label: 'Target band score',  value: '8.0' },
-  { icon: '🌐', label: 'Native language',    value: 'Arabic' },
-  { icon: '🔔', label: 'Streak reminders',   value: 'Daily 8 pm' },
+const EXAM_SETTINGS: { Icon: IC; label: string; value: string }[] = [
+  { Icon: CheckIcon,  label: 'Target exam',       value: 'IELTS Academic' },
+  { Icon: ChartIcon,  label: 'Target band score', value: '8.0' },
+  { Icon: GlobeIcon,  label: 'Native language',   value: 'Arabic' },
+  { Icon: BellIcon,   label: 'Streak reminders',  value: 'Daily 8 pm' },
 ];
 
-const APP_SETTINGS = [
-  { icon: '📄', label: 'Privacy policy',     value: '', danger: false },
-  { icon: '📋', label: 'Terms of service',   value: '', danger: false },
-  { icon: '🗑',  label: 'Delete account',    value: '', danger: true  },
+const APP_SETTINGS: { Icon: IC; label: string; value: string; danger: boolean }[] = [
+  { Icon: FileTextIcon, label: 'Privacy policy',  value: '', danger: false },
+  { Icon: FileTextIcon, label: 'Terms of service',value: '', danger: false },
+  { Icon: TrashIcon,    label: 'Delete account',  value: '', danger: true  },
 ];
 
 // ─── Row component ────────────────────────────────────────────────────────────
 function SettingRow({
-  icon, label, value, danger = false, border = true, onPress,
+  Icon, label, value, danger = false, border = true, onPress,
 }: {
-  icon: string; label: string; value?: string;
+  Icon: IC; label: string; value?: string;
   danger?: boolean; border?: boolean; onPress?: () => void;
 }) {
   return (
@@ -41,7 +47,9 @@ function SettingRow({
       activeOpacity={0.7}
       onPress={onPress}
     >
-      <Text style={s.settingIcon}>{icon}</Text>
+      <View style={s.settingIconWrap}>
+        <Icon size={18} color={danger ? Colors.danger : Colors.ink2} />
+      </View>
       <Text style={[s.settingLabel, danger && { color: Colors.danger }]}>{label}</Text>
       <View style={s.settingRight}>
         {value ? <Text style={s.settingValue}>{value}</Text> : null}
@@ -108,7 +116,10 @@ export default function ProfileScreen() {
           {/* Stats row */}
           <View style={s.statsRow}>
             <View style={s.stat}>
-              <Text style={s.statNum}>🔥 {streakCount}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <FlameIcon size={14} color="#C04A06" />
+                <Text style={s.statNum}>{streakCount}</Text>
+              </View>
               <Text style={s.statLabel}>Day streak</Text>
             </View>
             <View style={s.statDivider} />
@@ -129,7 +140,7 @@ export default function ProfileScreen() {
           {/* Upgrade to Pro — highlighted purple row */}
           <TouchableOpacity style={s.upgradeRow} activeOpacity={0.88}>
             <View style={s.upgradeLeft}>
-              <Text style={s.upgradeIcon}>⚡</Text>
+              <LightningIcon size={20} color={Colors.p} />
               <View>
                 <Text style={s.upgradeLabel}>Upgrade to Pro</Text>
                 <Text style={s.upgradeSub}>Unlock reading, full exams & analytics</Text>
@@ -137,7 +148,7 @@ export default function ProfileScreen() {
             </View>
             <Text style={s.upgradeArrow}>›</Text>
           </TouchableOpacity>
-          <SettingRow icon="💳" label="Billing & receipts" value="" border={false} />
+          <SettingRow Icon={CreditCardIcon} label="Billing & receipts" value="" border={false} />
         </Card>
 
         {/* Exam & study settings */}
@@ -146,7 +157,7 @@ export default function ProfileScreen() {
           {EXAM_SETTINGS.map((item, i) => (
             <SettingRow
               key={item.label}
-              icon={item.icon}
+              Icon={item.Icon}
               label={item.label}
               value={item.value}
               border={i < EXAM_SETTINGS.length - 1}
@@ -160,7 +171,7 @@ export default function ProfileScreen() {
           {APP_SETTINGS.map((item, i) => (
             <SettingRow
               key={item.label}
-              icon={item.icon}
+              Icon={item.Icon}
               label={item.label}
               danger={item.danger}
               border={i < APP_SETTINGS.length - 1}
@@ -217,7 +228,6 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
   upgradeLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  upgradeIcon: { fontSize: 20 },
   upgradeLabel: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.p },
   upgradeSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.p, opacity: 0.75, marginTop: 2 },
   upgradeArrow: { fontFamily: 'Inter_400Regular', fontSize: 20, color: Colors.p },
@@ -226,7 +236,7 @@ const s = StyleSheet.create({
 
   settingRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15, gap: 12 },
   settingBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  settingIcon: { fontSize: 18, width: 24 },
+  settingIconWrap: { width: 24, alignItems: 'center' },
   settingLabel: { fontFamily: 'Inter_500Medium', fontSize: 15, color: Colors.ink, flex: 1 },
   settingRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   settingValue: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3 },

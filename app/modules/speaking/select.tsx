@@ -9,6 +9,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import {
+  MicIcon, BookIcon, GlobeIcon, FileTextIcon, ChartIcon, CheckIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 type Exam = 'IELTS' | 'TOEFL' | 'DELF';
 type Part = 'Part 1' | 'Part 2' | 'Part 3' | 'Full Test';
@@ -19,11 +24,11 @@ const EXAM_DESC: Record<Exam, string> = {
   DELF: 'Interactive oral exercise and expression of a point of view. B2: 20 min (prep) + 20 min (exam). Juried by two examiners.',
 };
 
-const PART_INFO: Record<Part, { icon: string; desc: string; duration: string }> = {
-  'Part 1':    { icon: '💬', desc: 'Introduction and interview on familiar topics: home, family, work, hobbies.', duration: '4–5 min' },
-  'Part 2':    { icon: '🗣', desc: 'Individual long turn. You speak for 1–2 min on a cue card topic after 1 min prep.', duration: '3–4 min' },
-  'Part 3':    { icon: '🎓', desc: 'Two-way discussion of abstract and complex topics linked to Part 2.', duration: '4–5 min' },
-  'Full Test': { icon: '📋', desc: 'Complete exam simulation — all three parts back to back with realistic timing.', duration: '11–14 min' },
+const PART_INFO: Record<Part, { Icon: IC; desc: string; duration: string }> = {
+  'Part 1':    { Icon: MicIcon,      desc: 'Introduction and interview on familiar topics: home, family, work, hobbies.', duration: '4–5 min' },
+  'Part 2':    { Icon: BookIcon,     desc: 'Individual long turn. You speak for 1–2 min on a cue card topic after 1 min prep.', duration: '3–4 min' },
+  'Part 3':    { Icon: GlobeIcon,    desc: 'Two-way discussion of abstract and complex topics linked to Part 2.', duration: '4–5 min' },
+  'Full Test': { Icon: FileTextIcon, desc: 'Complete exam simulation — all three parts back to back with realistic timing.', duration: '11–14 min' },
 };
 
 export default function SpeakingSelectScreen() {
@@ -80,10 +85,10 @@ export default function SpeakingSelectScreen() {
                 activeOpacity={0.85}
               >
                 <View style={s.partTop}>
-                  <Text style={s.partIcon}>{info.icon}</Text>
+                  <info.Icon size={22} color={selected ? Colors.p : Colors.ink2} />
                   {selected && (
                     <View style={s.partCheck}>
-                      <Text style={s.partCheckText}>✓</Text>
+                      <CheckIcon size={12} color={Colors.white} />
                     </View>
                   )}
                 </View>
@@ -97,7 +102,10 @@ export default function SpeakingSelectScreen() {
 
         {/* Scoring criteria */}
         <View style={s.criteriaCard}>
-          <Text style={s.criteriaTitle}>📊 Scoring Criteria</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            <ChartIcon size={16} color={Colors.ink} />
+            <Text style={s.criteriaTitle}>Scoring Criteria</Text>
+          </View>
           <View style={s.criteriaGrid}>
             {[
               { label: 'Fluency & Coherence', color: Colors.p },
@@ -114,7 +122,10 @@ export default function SpeakingSelectScreen() {
 
         {/* Tips */}
         <View style={s.tipsCard}>
-          <Text style={s.tipsTitle}>🎙 Tips for higher scores</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            <MicIcon size={16} color={Colors.ink} />
+            <Text style={s.tipsTitle}>Tips for higher scores</Text>
+          </View>
           {[
             'Speak at natural pace — don\'t rush or speak too slowly.',
             'Extend your answers with reasons and examples.',
@@ -204,13 +215,11 @@ const s = StyleSheet.create({
   },
   partCardActive: { borderColor: Colors.p, backgroundColor: Colors.p_soft },
   partTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  partIcon: { fontSize: 22 },
   partCheck: {
     width: 20, height: 20, borderRadius: 10,
     backgroundColor: Colors.p,
     alignItems: 'center', justifyContent: 'center',
   },
-  partCheckText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: Colors.white },
   partTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
   partTitleActive: { color: Colors.p },
   partDuration: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.p, marginTop: 1 },

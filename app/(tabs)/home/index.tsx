@@ -1,554 +1,138 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  ScrollView, View, Text, StyleSheet,
-  TouchableOpacity, Platform, useWindowDimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useFocusEffect } from 'expo-router';
-import Svg, { Defs, Pattern, Circle, Rect, Path } from 'react-native-svg';
-import { Colors } from '@/constants/colors';
-import { useAuth } from '@/lib/authContext';
-import { supabase } from '@/lib/supabase';
-import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
-import { getTheme } from '@/constants/languageThemes';
-import { FlagSVG } from '@/components/flags';
-import { FluentraLogo } from '@/components/FluentraLogo';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { AddLanguageModal } from '@/components/ui/AddLanguageModal';
-import { Analytics } from '@/lib/analytics';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { SkeletonLanguageCard } from '@/components/ui/Skeleton';
-import type { UserLanguage, AppSession } from '@/lib/supabase';
+  View, Text, ScrollView,
+  TouchableOpacity, Dimensions,
+  StyleSheet, TextInput, Modal,
+  Alert, Platform,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { router, useFocusEffect } from 'expo-router'
+import { supabase } from '@/lib/supabase'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { AddLanguageModal } from '@/components/ui/AddLanguageModal'
+import { FlagSVG } from '@/components/flags'
+import { SearchIcon, PlusIcon, FlameIcon, XIcon } from '@/components/icons'
 
-// ── SVG icons (no emoji) ──────────────────────────────────────────
-function MicSVG({ color }: { color: string }) {
-  return (
-    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <Rect x="9" y="2" width="6" height="12" rx="3" stroke={color} strokeWidth="1.8" />
-      <Path d="M5 10a7 7 0 0 0 14 0" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <Path d="M12 19v3M9 22h6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-    </Svg>
-  );
-}
-function PenSVG({ color }: { color: string }) {
-  return (
-    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <Path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-function HeadphoneSVG({ color }: { color: string }) {
-  return (
-    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <Path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <Path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v5zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v5z" stroke={color} strokeWidth="1.8" />
-    </Svg>
-  );
-}
-function BookSVG({ color }: { color: string }) {
-  return (
-    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-    </Svg>
-  );
-}
-function PlusSVG({ color, size = 14 }: { color: string; size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-    </Svg>
-  );
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const CARD_WIDTH = Platform.OS === 'web'
+  ? Math.min(420, SCREEN_WIDTH * 0.45)
+  : SCREEN_WIDTH * 0.65
+
+const LANGUAGE_THEMES: Record<string, { bg: string; accent: string; accentLight: string }> = {
+  en: { bg: '#F0EEFF', accent: '#5B4EFF', accentLight: '#EEEEFF' },
+  es: { bg: '#FFF0EE', accent: '#C04A06', accentLight: '#FFE5DE' },
+  fr: { bg: '#EEF4FF', accent: '#1558B0', accentLight: '#DDEEFF' },
+  de: { bg: '#F0F0F5', accent: '#4A5568', accentLight: '#E8E8F0' },
+  it: { bg: '#EEFAF0', accent: '#2D7A4F', accentLight: '#DDFAEB' },
+  pt: { bg: '#EDFAF5', accent: '#0A7A5C', accentLight: '#DDFAF0' },
+  zh: { bg: '#FFF3EE', accent: '#C84030', accentLight: '#FFE0DA' },
+  ja: { bg: '#FFF0F5', accent: '#C84070', accentLight: '#FFE0EC' },
+  ko: { bg: '#EDFAFA', accent: '#0A7A8C', accentLight: '#DDFAFA' },
+  ar: { bg: '#EDFAF4', accent: '#0A8C5A', accentLight: '#DDFAEE' },
+  hi: { bg: '#FFF8EE', accent: '#B07A10', accentLight: '#FFF0D6' },
+  ru: { bg: '#EEF2F8', accent: '#2B5BA8', accentLight: '#DDEAF8' },
+  tr: { bg: '#FFF0EE', accent: '#A82828', accentLight: '#FFE0DE' },
+  nl: { bg: '#FFF5EE', accent: '#C05A06', accentLight: '#FFE8D6' },
+  fa: { bg: '#F5EEFF', accent: '#6B4ECC', accentLight: '#EDE0FF' },
 }
 
-function ChevronUpSVG({ color = '#FFF' }: { color?: string }) {
-  return (
-    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <Path d="M18 15L12 9L6 15" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function ChevronDownSVG({ color = '#FFF' }: { color?: string }) {
-  return (
-    <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <Path d="M6 9L12 15L18 9" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-// ── Helpers ───────────────────────────────────────────────────────
-function fluencyToLevel(pct: number): string {
-  if (pct >= 95) return 'C2';
-  if (pct >= 80) return 'C1';
-  if (pct >= 60) return 'B2';
-  if (pct >= 40) return 'B1';
-  if (pct >= 20) return 'A2';
-  return 'A1';
-}
-
-function dayOfWeekStr(): string {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  }).toUpperCase();
-}
-
-function greetingText(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
-function formatActivityDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatDuration(start: string, end: string | null): string {
-  if (!end) return '';
-  const mins = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000);
-  if (mins < 1) return '';
-  return `${mins} min`;
-}
-
-// ── Exam badge color map ──────────────────────────────────────────
-const EXAM_BADGE: Record<string, { bg: string; color: string }> = {
-  ielts: { bg: '#EEEEFF', color: '#3C3489' },
-  toefl: { bg: '#EEF4FF', color: '#0A3D7A' },
-  dele:  { bg: '#FFF0EE', color: '#8A3200' },
-  delf:  { bg: '#EEF4FF', color: '#0A3D7A' },
-  dsh:   { bg: '#F0F0F5', color: '#2D3748' },
-  jlpt:  { bg: '#FFF0F5', color: '#8A1A44' },
-  topik: { bg: '#EDFAFA', color: '#065C6A' },
-};
-
-// ── Activity icon map ─────────────────────────────────────────────
-const ACTIVITY_STYLE: Record<string, { iconBg: string; iconColor: string; Icon: typeof MicSVG }> = {
-  speaking:  { iconBg: '#F0EEFF', iconColor: '#5B4EFF', Icon: MicSVG },
-  writing:   { iconBg: '#FEF9EC', iconColor: '#B07A10', Icon: PenSVG },
-  listening: { iconBg: '#EDFAF4', iconColor: '#0A8C5A', Icon: HeadphoneSVG },
-  reading:   { iconBg: '#FFF3ED', iconColor: '#C04A06', Icon: BookSVG },
-};
-
-// ── useRecentSessions ─────────────────────────────────────────────
-function useRecentSessions() {
-  const [sessions, setSessions] = useState<AppSession[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('completed_at', { ascending: false })
-        .limit(3);
-      if (data && data.length > 0) setSessions(data as AppSession[]);
-    })();
-  }, []);
-
-  return sessions;
-}
-
-// ── Dot pattern overlay ───────────────────────────────────────────
-function DotPattern({ accent }: { accent: string }) {
-  const id = `dp-${accent.replace('#', '')}`;
-  return (
-    <Svg
-      width="100%"
-      height="96"
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-    >
-      <Defs>
-        <Pattern id={id} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-          <Circle cx="10" cy="10" r="1.5" fill={accent} opacity="0.14" />
-        </Pattern>
-      </Defs>
-      <Rect width="100%" height="96" fill={`url(#${id})`} />
-    </Svg>
-  );
-}
-
-// ── Language card inner content (shared between web/mobile) ──────
-function LangCardContent({
-  lang, hovered,
-}: { lang: UserLanguage; hovered: boolean }) {
-  const code   = lang.language_code;
-  const theme  = getTheme(code);
-  const exams  = LANGUAGE_EXAMS[code] ?? [];
-  const streak = Math.round(lang.fluency_percent / 2.5);
-  const level  = fluencyToLevel(lang.fluency_percent);
-
-  return (
-    <>
-      <View style={[s.cardTop, { backgroundColor: theme.bg }]}>
-        <DotPattern accent={theme.accent} />
-
-        {/* Drag handle (web only) — CSS shows it on parent hover */}
-        {Platform.OS === 'web' && (
-          <div className="drag-handle" style={{
-            position: 'absolute', top: 10, right: 10,
-            padding: 4, borderRadius: 4,
-            backgroundColor: 'rgba(0,0,0,0.20)',
-            cursor: 'grab',
-          } as any}>
-            <svg width="10" height="14" viewBox="0 0 10 14">
-              <circle cx="2" cy="2"  r="1.5" fill="#FFF" />
-              <circle cx="8" cy="2"  r="1.5" fill="#FFF" />
-              <circle cx="2" cy="7"  r="1.5" fill="#FFF" />
-              <circle cx="8" cy="7"  r="1.5" fill="#FFF" />
-              <circle cx="2" cy="12" r="1.5" fill="#FFF" />
-              <circle cx="8" cy="12" r="1.5" fill="#FFF" />
-            </svg>
-          </div>
-        )}
-
-        <View style={s.flagWrap}>
-          <FlagSVG code={code} width={60} height={40} />
-        </View>
-      </View>
-
-      <View style={s.cardBody}>
-        <Text style={s.cardNative}>{theme.native}</Text>
-        {theme.native !== theme.name && (
-          <Text style={s.cardEn}>{theme.name}</Text>
-        )}
-
-        {exams.length > 0 && (
-          <View style={s.examRow}>
-            {exams.slice(0, 3).map(e => {
-              const badge = EXAM_BADGE[e.id.toLowerCase()] ?? { bg: '#F2F2F2', color: '#666' };
-              return (
-                <View key={e.id} style={[s.examBadge, { backgroundColor: badge.bg }]}>
-                  <Text style={[s.examBadgeText, { color: badge.color }]}>
-                    {e.id.toUpperCase()}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        <View style={s.cardFooter}>
-          <View style={s.streakRow}>
-            <View style={[s.dot, { backgroundColor: streak > 0 ? theme.accent : '#CCC' }]} />
-            <Text style={[s.streakText, { color: streak > 0 ? theme.accent : '#BBB' }]}>
-              {streak > 0 ? `Day ${streak}` : 'Start'}
-            </Text>
-          </View>
-          <View style={s.levelBadge}>
-            <Text style={s.levelText}>{level}</Text>
-          </View>
-        </View>
-      </View>
-    </>
-  );
-}
-
-// ── Language card ─────────────────────────────────────────────────
-function LanguageCard({
-  lang, cardWidth, index,
-  draggedId, dragOverId,
-  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
-  onLongPress, isSelected, canMoveUp, canMoveDown, onMoveUp, onMoveDown,
-}: {
-  lang:        UserLanguage;
-  cardWidth:   number;
-  index:       number;
-  draggedId:   string | null;
-  dragOverId:  string | null;
-  onDragStart: (code: string) => void;
-  onDragOver:  (e: any, code: string) => void;
-  onDragLeave: () => void;
-  onDrop:      (code: string) => void;
-  onDragEnd:   () => void;
-  onLongPress: () => void;
-  isSelected:  boolean;
-  canMoveUp:   boolean;
-  canMoveDown: boolean;
-  onMoveUp:    () => void;
-  onMoveDown:  () => void;
-}) {
-  const code      = lang.language_code;
-  const isDragging = draggedId === code;
-  const isDragOver = dragOverId === code && draggedId !== code;
-  const [hovered, setHovered] = useState(false);
-
-  // ── Web: native <div> with HTML5 drag API ──────────────────────
-  if (Platform.OS === 'web') {
-    return (
-      <div
-        draggable
-        onClick={() => router.push(`/language/${code}` as any)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onDragStart={(e: any) => {
-          onDragStart(code);
-          e.dataTransfer.effectAllowed = 'move';
-        }}
-        onDragOver={(e: any) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          onDragOver(e, code);
-        }}
-        onDragLeave={onDragLeave}
-        onDrop={(e: any) => {
-          e.preventDefault();
-          onDrop(code);
-        }}
-        onDragEnd={onDragEnd}
-        style={{
-          width:         cardWidth,
-          opacity:       isDragging ? 0.4 : 1,
-          outline:       isDragOver ? '2px solid #5B4EFF' : 'none',
-          outlineOffset: '2px',
-          borderRadius:  16,
-          cursor:        'grab',
-          transition:    'opacity 0.15s, outline 0.15s',
-          flexShrink:    0,
-        } as any}
-      >
-        <View style={[s.card, hovered && !isDragging && s.cardHover]}>
-          <LangCardContent lang={lang} hovered={hovered} />
-        </View>
-      </div>
-    );
+function getNativeName(code: string): string {
+  const names: Record<string, string> = {
+    en: 'English', es: 'Español', fr: 'Français', de: 'Deutsch',
+    it: 'Italiano', pt: 'Português', zh: '中文', ja: '日本語',
+    ko: '한국어', ar: 'العربية', hi: 'हिन्दी', ru: 'Русский',
+    tr: 'Türkçe', nl: 'Nederlands', fa: 'فارسی',
   }
-
-  // ── Mobile: TouchableOpacity + long-press arrows ───────────────
-  return (
-    <View style={{ width: cardWidth, position: 'relative' }}>
-      <TouchableOpacity
-        style={[s.card, isSelected && s.cardSelected]}
-        onPress={() => { if (!isSelected) router.push(`/language/${code}` as any); }}
-        onLongPress={onLongPress}
-        activeOpacity={0.88}
-      >
-        <LangCardContent lang={lang} hovered={false} />
-      </TouchableOpacity>
-
-      {isSelected && (
-        <View style={s.arrowOverlay} pointerEvents="box-none">
-          <TouchableOpacity
-            style={[s.arrowBtn, !canMoveUp && s.arrowBtnDisabled]}
-            onPress={canMoveUp ? onMoveUp : undefined}
-            activeOpacity={0.7}
-          >
-            <ChevronUpSVG color={canMoveUp ? '#FFF' : 'rgba(255,255,255,0.3)'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.arrowBtn, !canMoveDown && s.arrowBtnDisabled]}
-            onPress={canMoveDown ? onMoveDown : undefined}
-            activeOpacity={0.7}
-          >
-            <ChevronDownSVG color={canMoveDown ? '#FFF' : 'rgba(255,255,255,0.3)'} />
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
+  return names[code] || code
 }
 
-// ── Add language card ─────────────────────────────────────────────
-function AddCard({ onPress, cardWidth }: { onPress: () => void; cardWidth: number }) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <TouchableOpacity
-      style={[s.addCard, { width: cardWidth }, hovered && s.addCardHover]}
-      onPress={onPress}
-      activeOpacity={0.75}
-      {...(Platform.OS === 'web' ? {
-        onMouseEnter: () => setHovered(true),
-        onMouseLeave: () => setHovered(false),
-      } : {})}
-    >
-      <View style={[s.addCircle, hovered && s.addCircleHover]}>
-        <PlusSVG color={hovered ? '#888' : '#CCC'} size={14} />
-      </View>
-      <Text style={[s.addTitle, hovered && s.addTitleHover]}>Add a language</Text>
-      <Text style={[s.addSub, hovered && s.addSubHover]}>+1 new per year</Text>
-    </TouchableOpacity>
-  );
+function getEnglishName(code: string): string {
+  const names: Record<string, string> = {
+    en: 'English', es: 'Spanish', fr: 'French', de: 'German',
+    it: 'Italian', pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese',
+    ko: 'Korean', ar: 'Arabic', hi: 'Hindi', ru: 'Russian',
+    tr: 'Turkish', nl: 'Dutch', fa: 'Persian',
+  }
+  return names[code] || code
 }
 
-// ── Activity card ─────────────────────────────────────────────────
-function ActivityCard({ session }: { session: AppSession }) {
-  const style = ACTIVITY_STYLE[session.mode] ?? ACTIVITY_STYLE.speaking;
-  const theme = getTheme(session.language_code);
-  const { Icon } = style;
-  const [hovered, setHovered] = useState(false);
-
-  const title = `${session.mode.charAt(0).toUpperCase() + session.mode.slice(1)}${session.exam_type ? ` · ${session.exam_type.toUpperCase()}` : ''}`;
-  const dateStr = formatActivityDate(session.completed_at ?? session.started_at);
-  const dur     = formatDuration(session.started_at, session.completed_at);
-  const sub     = [theme.name, dateStr, dur].filter(Boolean).join(' · ');
-
-  return (
-    <TouchableOpacity
-      style={[ac.card, hovered && ac.cardHover]}
-      activeOpacity={0.85}
-      onPress={() => router.push('/(tabs)/progress' as any)}
-      {...(Platform.OS === 'web' ? {
-        onMouseEnter: () => setHovered(true),
-        onMouseLeave: () => setHovered(false),
-      } : {})}
-    >
-      <View style={[ac.iconBox, { backgroundColor: style.iconBg }]}>
-        <Icon color={style.iconColor} />
-      </View>
-      <View style={ac.meta}>
-        <Text style={ac.title}>{title}</Text>
-        <Text style={ac.sub}>{sub}</Text>
-      </View>
-      {session.overall_band != null && (
-        <Text style={[ac.score, { color: style.iconColor }]}>
-          {session.overall_band.toFixed(1)}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+function getExamBadges(code: string): string[] {
+  const exams: Record<string, string[]> = {
+    en: ['IELTS', 'TOEFL'], es: ['DELE'], fr: ['DELF'],
+    de: ['Goethe'], it: ['CILS'], pt: ['CELPE'], zh: ['HSK'],
+    ja: ['JLPT'], ko: ['TOPIK'], ru: ['TORFL'],
+  }
+  return exams[code] || []
 }
 
-const ac = StyleSheet.create({
-  card: {
-    flex: 1,
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.white,
-    borderRadius: 12, borderWidth: 1, borderColor: '#EAEAEA',
-    padding: 14,
-    ...(Platform.OS === 'web' ? { cursor: 'pointer' } as any : {}),
-  },
-  cardHover: { borderColor: '#999999' },
-  iconBox:   { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  meta:      { flex: 1 },
-  title:     { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#000000' },
-  sub:       { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999999', marginTop: 2 },
-  score:     { fontFamily: 'Inter_700Bold', fontSize: 15 },
-});
+function getTheme(code: string) {
+  return LANGUAGE_THEMES[code] || LANGUAGE_THEMES.en
+}
 
-
-// ── HomeScreen ────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { width: screenWidth } = useWindowDimensions();
-  const { profile }            = useAuth();
-  const displayName            = profile?.name ?? '';
-  const initial                = displayName ? displayName[0].toUpperCase() : '?';
-  const isDesktop              = Platform.OS === 'web' && screenWidth >= 1024;
+  const [languages, setLanguages]   = useState<any[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [showModal, setShowModal]   = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [adding, setAdding]         = useState('')
+  const [userName, setUserName]     = useState('there')
+  const scrollRef = useRef<ScrollView>(null)
 
-  const [languages,    setLanguages]    = useState<UserLanguage[]>([]);
-  const [loadingLangs, setLoadingLangs] = useState(true);
-  const [showModal,    setShowModal]    = useState(false);
-  const [adding,       setAdding]       = useState('');
-  // Web drag state (by language_code)
-  const [draggedId,    setDraggedId]    = useState<string | null>(null);
-  const [dragOverId,   setDragOverId]   = useState<string | null>(null);
-  // Mobile reorder state
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const recentSessions                     = useRecentSessions();
-
-  // ── Fetch ──────────────────────────────────────────────────────
   async function fetchLanguages() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoadingLangs(false); return; }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single()
+      if (profile?.name) setUserName(profile.name.split(' ')[0])
 
       const { data, error } = await supabase
         .from('user_languages')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
 
-      if (error) {
-        console.error('Fetch error:', error);
-        setLoadingLangs(false);
-        return;
+      if (error) { console.error('[home] fetch:', error); setLoading(false); return }
+
+      if (data) {
+        const sorted = [...data].sort((a, b) => {
+          if (a.language_code === 'en') return -1
+          if (b.language_code === 'en') return 1
+          return (b.streak_count || 0) - (a.streak_count || 0)
+        })
+        setLanguages(sorted)
       }
-
-      setLanguages(data || []);
-    } catch (err) {
-      console.error('Fetch languages:', err);
-    } finally {
-      setLoadingLangs(false);
+      setLoading(false)
+    } catch (e) {
+      console.error('[home] fetchLanguages:', e)
+      setLoading(false)
     }
   }
 
-  // Mount
-  useEffect(() => { fetchLanguages(); }, []);
+  useFocusEffect(useCallback(() => { fetchLanguages() }, []))
 
-  // Every focus (navigating back to home re-triggers this)
-  useFocusEffect(useCallback(() => { fetchLanguages(); }, []));
-
-  // Realtime — any DB change to user_languages updates the list instantly
   useEffect(() => {
-    const sub = supabase
-      .channel('home-langs-' + Date.now())
+    fetchLanguages()
+    const channel = supabase
+      .channel('home-' + Date.now())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_languages' },
         () => fetchLanguages())
-      .subscribe();
-    return () => { supabase.removeChannel(sub); };
-  }, []);
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
-  // Inject CSS for drag-handle hover effect (web only)
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const style = document.createElement('style');
-    style.textContent = `
-      .drag-handle { opacity: 0; }
-      div[draggable]:hover .drag-handle { opacity: 1 !important; }
-      div[draggable]:active { cursor: grabbing !important; }
-    `;
-    document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
-  }, []);
-
-  // ── Add language ──────────────────────────────────────────────
   async function addLanguage(lang: { code: string; native: string; english: string }) {
+    setAdding(lang.code)
     try {
-      setAdding(lang.code);
-
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        setAdding('');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('user_languages')
-        .insert({
-          user_id:              user.id,
-          language_code:        lang.code,
-          language_name_en:     lang.english,
-          language_name_native: lang.native,
-          fluency_percent:      0,
-          streak_count:         0,
-          exam_unlocked:        false,
-        });
-
-      if (error) {
-        console.error('Insert error:', error);
-        setAdding('');
-        return;
-      }
-
-      Analytics.languageAdded({
-        languageCode:   lang.code,
-        languageName:   lang.english,
-        totalLanguages: languages.length + 1,
-      });
-
-      // Immediately add to local state
-      setLanguages(prev => [...prev, {
-        id:                   Date.now().toString(),
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setAdding(''); return }
+      const { error } = await supabase.from('user_languages').insert({
         user_id:              user.id,
         language_code:        lang.code,
         language_name_en:     lang.english,
@@ -556,179 +140,299 @@ export default function HomeScreen() {
         fluency_percent:      0,
         streak_count:         0,
         exam_unlocked:        false,
-        created_at:           new Date().toISOString(),
-      } as unknown as UserLanguage]);
-
-      setAdding('');
-      setShowModal(false);
-
-      // Also refetch from DB
-      setTimeout(() => fetchLanguages(), 500);
-
-    } catch (err) {
-      console.error('Add language:', err);
-      setAdding('');
-    }
-  }
-
-  // ── Reorder ────────────────────────────────────────────────────
-  async function reorderLanguages(fromIndex: number, toIndex: number) {
-    if (fromIndex === toIndex) return;
-    const newOrder = [...languages];
-    const [moved] = newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, moved);
-    setLanguages(newOrder);
-    try {
-      await Promise.all(
-        newOrder.map((lang, idx) =>
-          supabase.from('user_languages').update({ sort_order: idx }).eq('id', lang.id)
-        )
-      );
+      })
+      if (!error) {
+        setLanguages(prev => [...prev, {
+          language_code:        lang.code,
+          language_name_en:     lang.english,
+          language_name_native: lang.native,
+          fluency_percent:      0,
+          streak_count:         0,
+        }])
+        setShowModal(false)
+      }
+      setAdding('')
+      setTimeout(() => fetchLanguages(), 500)
     } catch (e) {
-      console.error('[reorderLanguages] failed:', e);
-      fetchLanguages(); // rollback to server state
+      setAdding('')
     }
   }
 
-  // ── Web drag handlers (id-based) ──
-  function handleDragStart(code: string) { setDraggedId(code); }
-
-  function handleDragOver(_e: any, code: string) {
-    if (code !== draggedId) setDragOverId(code);
+  function removeLanguage(lang: any) {
+    Alert.alert(
+      `Remove ${getEnglishName(lang.language_code)}?`,
+      'This will delete your streak and progress for this language.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive',
+          onPress: async () => {
+            await supabase.from('user_languages').delete().eq('id', lang.id)
+            setLanguages(prev => prev.filter(l => l.id !== lang.id))
+          },
+        },
+      ]
+    )
   }
 
-  function handleDragLeave() { setDragOverId(null); }
-
-  async function handleDrop(code: string) {
-    if (draggedId && draggedId !== code) {
-      const from = languages.findIndex(l => l.language_code === draggedId);
-      const to   = languages.findIndex(l => l.language_code === code);
-      await reorderLanguages(from, to);
-    }
-    setDraggedId(null);
-    setDragOverId(null);
+  function getGreeting(): string {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 17) return 'Good afternoon'
+    return 'Good evening'
   }
 
-  function handleDragEnd() {
-    setDraggedId(null);
-    setDragOverId(null);
-  }
+  const filteredLanguages = searchText.trim() === ''
+    ? languages
+    : languages.filter(l =>
+        getEnglishName(l.language_code).toLowerCase().includes(searchText.toLowerCase()) ||
+        getNativeName(l.language_code).toLowerCase().includes(searchText.toLowerCase())
+      )
 
-  // ── Mobile reorder handlers ──
-  function handleLongPress(index: number) {
-    setSelectedIndex(prev => prev === index ? null : index);
-  }
-
-  async function handleMoveUp(index: number) {
-    if (index <= 0) return;
-    await reorderLanguages(index, index - 1);
-    setSelectedIndex(index - 1);
-  }
-
-  async function handleMoveDown(index: number) {
-    if (index >= languages.length - 1) return;
-    await reorderLanguages(index, index + 1);
-    setSelectedIndex(index + 1);
-  }
-
-  // Card sizing
-  const horizPad  = isDesktop ? 36 * 2 : 20 * 2;
-  const sidebarW  = isDesktop ? 240 : 0;
-  const available = screenWidth - sidebarW - horizPad;
-  const numCols   = available >= 900 ? 4 : available >= 580 ? 2 : 1;
-  const cardWidth = Math.floor((available - 14 * (numCols - 1)) / numCols);
-  const pad       = isDesktop ? 36 : 20;
+  const totalDots = filteredLanguages.length + 1
 
   return (
     <AppLayout>
-    <SafeAreaView style={s.safe} edges={['top']}>
-      {/* Mobile top bar */}
-      {!isDesktop && (
-        <View style={s.topBar}>
-          <FluentraLogo iconSize={28} textSize={17} />
-          <TouchableOpacity style={s.avatar} onPress={() => router.push('/(tabs)/settings' as any)}>
-            <Text style={s.avatarText}>{initial}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.scroll, { paddingHorizontal: pad }]}
-      >
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <Text style={s.dateLabel}>{dayOfWeekStr()}</Text>
-          <Text style={s.greeting}>
-            {greetingText()}{displayName ? `, ${displayName}` : ''}.
-          </Text>
-        </View>
-
-        {/* ── Languages ── */}
-        <View style={s.sectionRow}>
-          <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
-          {Platform.OS !== 'web' && selectedIndex !== null && (
-            <TouchableOpacity onPress={() => setSelectedIndex(null)} activeOpacity={0.7}>
-              <Text style={s.doneBtn}>Done</Text>
+          {/* ── Header ── */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>{getGreeting()}</Text>
+              <Text style={styles.name}>{userName}.</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.searchBtn}
+              onPress={() => setShowSearch(true)}
+            >
+              <SearchIcon size={16} color="#666" />
             </TouchableOpacity>
-          )}
-        </View>
-        {loadingLangs ? (
-          <View style={s.grid}>
-            {[0, 1, 2].map(i => (
-              <SkeletonLanguageCard key={i} width={cardWidth} />
-            ))}
           </View>
-        ) : languages.length === 0 ? (
-          <EmptyState
-            icon="🌍"
-            title="Add your first language"
-            subtitle="Choose a language to start learning and preparing for exams"
-            actionLabel="Add a language"
-            onAction={() => setShowModal(true)}
-          />
-        ) : (
-          <View style={s.grid}>
-            {languages.map((lang, index) => (
-              <LanguageCard
-                key={lang.id || lang.language_code}
-                lang={lang}
-                cardWidth={cardWidth}
-                index={index}
-                draggedId={draggedId}
-                dragOverId={dragOverId}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onDragEnd={handleDragEnd}
-                onLongPress={() => handleLongPress(index)}
-                isSelected={selectedIndex === index}
-                canMoveUp={index > 0}
-                canMoveDown={index < languages.length - 1}
-                onMoveUp={() => handleMoveUp(index)}
-                onMoveDown={() => handleMoveDown(index)}
-              />
-            ))}
-            <AddCard onPress={() => setShowModal(true)} cardWidth={cardWidth} />
-          </View>
-        )}
 
-        {/* ── Recent activity ── */}
-        {recentSessions.length > 0 && (
-          <View style={{ marginTop: 32 }}>
-            <Text style={[s.sectionLabel, { marginBottom: 14 }]}>RECENT ACTIVITY</Text>
-            <View style={s.activityGrid}>
-              {recentSessions.map(sess => (
-                <ActivityCard key={sess.id} session={sess} />
+          {/* ── Section label ── */}
+          <Text style={styles.sectionLabel}>YOUR LANGUAGES</Text>
+
+          {/* ── Language cards (horizontal scroll) ── */}
+          {loading ? (
+            <View style={styles.loadingRow}>
+              {[0, 1].map(i => (
+                <View key={i} style={[styles.skeletonCard, { width: CARD_WIDTH }]} />
               ))}
             </View>
+          ) : (
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CARD_WIDTH + 16}
+              decelerationRate="fast"
+              contentContainerStyle={styles.cardsContainer}
+              onScroll={e => {
+                const x = e.nativeEvent.contentOffset.x
+                setActiveIndex(Math.round(x / (CARD_WIDTH + 16)))
+              }}
+              scrollEventThrottle={16}
+            >
+              {filteredLanguages.map(lang => {
+                const t      = getTheme(lang.language_code)
+                const streak = lang.streak_count || 0
+                const badges = getExamBadges(lang.language_code)
+
+                return (
+                  <TouchableOpacity
+                    key={lang.id || lang.language_code}
+                    style={[styles.langCard, { width: CARD_WIDTH }]}
+                    onPress={() => router.push(`/language/${lang.language_code}` as any)}
+                    activeOpacity={0.95}
+                  >
+                    {/* Card top — themed bg + dot pattern + flag */}
+                    <View style={[styles.cardTop, { backgroundColor: t.bg }]}>
+                      <View style={styles.dotPattern}>
+                        {Array.from({ length: 30 }).map((_, i) => (
+                          <View key={i} style={[styles.dotPatternDot, { backgroundColor: t.accent }]} />
+                        ))}
+                      </View>
+                      <View style={styles.flagWrap}>
+                        <FlagSVG code={lang.language_code} width={100} height={67} />
+                      </View>
+                    </View>
+
+                    {/* Card body */}
+                    <View style={styles.cardBody}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.nativeName}>{getNativeName(lang.language_code)}</Text>
+                        <Text style={styles.englishName}>{getEnglishName(lang.language_code)}</Text>
+
+                        {/* Exam badges */}
+                        {badges.length > 0 && (
+                          <View style={styles.badgesRow}>
+                            {badges.slice(0, 3).map(b => (
+                              <View key={b} style={[styles.badge, { backgroundColor: t.accentLight }]}>
+                                <Text style={[styles.badgeText, { color: t.accent }]}>{b}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+
+                        {/* Streak row */}
+                        <View style={styles.streakRow}>
+                          <FlameIcon size={14} color={streak > 0 ? t.accent : '#CCC'} />
+                          <Text style={[styles.streakText, { color: streak > 0 ? t.accent : '#BBB' }]}>
+                            {streak > 0 ? `Day ${streak}` : 'Start streak'}
+                          </Text>
+                        </View>
+
+                        {/* Progress bar */}
+                        <View style={styles.progressBg}>
+                          <View style={[
+                            styles.progressFill,
+                            { width: `${Math.min((streak / 40) * 100, 100)}%` as any, backgroundColor: t.accent },
+                          ]} />
+                        </View>
+                        <Text style={styles.progressText}>{streak}/40 days to unlock exam</Text>
+
+                        {/* Level badge */}
+                        <View style={styles.levelBadge}>
+                          <Text style={styles.levelText}>
+                            {streak < 8 ? 'B1 — Intermediate'
+                              : streak < 21 ? 'B2 — Upper Intermediate'
+                              : streak < 36 ? 'C1 — Advanced'
+                              : 'C2 — Mastery'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Footer */}
+                      <View style={styles.cardFooter}>
+                        <Text style={styles.tapHint}>Tap to practice →</Text>
+                        <TouchableOpacity
+                          onPress={() => removeLanguage(lang)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Text style={styles.removeText}>Remove</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                )
+              })}
+
+              {/* Add card */}
+              <TouchableOpacity
+                style={[styles.addCard, { width: CARD_WIDTH }]}
+                onPress={() => setShowModal(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.addCircle}>
+                  <PlusIcon size={20} color="#CCC" />
+                </View>
+                <Text style={styles.addText}>Add a language</Text>
+                <Text style={styles.addSub}>+1 new per year</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+
+          {/* ── Dots indicator ── */}
+          {!loading && totalDots > 1 && (
+            <View style={styles.dotsRow}>
+              {Array.from({ length: totalDots }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dotBase,
+                    i === activeIndex
+                      ? [styles.dotActive, {
+                          backgroundColor: i < filteredLanguages.length
+                            ? getTheme(filteredLanguages[i].language_code).accent
+                            : '#5B4EFF',
+                        }]
+                      : styles.dotInactive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* ── Recent activity ── */}
+          <View style={styles.activitySection}>
+            <Text style={styles.sectionLabel}>RECENT ACTIVITY</Text>
+            <View style={styles.activityEmpty}>
+              <Text style={styles.activityEmptyText}>
+                Complete a session to see your activity here
+              </Text>
+            </View>
           </View>
-        )}
 
-        <View style={{ height: 48 }} />
-      </ScrollView>
+          <View style={{ height: 48 }} />
+        </ScrollView>
+      </SafeAreaView>
 
+      {/* ── Search modal ── */}
+      <Modal
+        visible={showSearch}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { setShowSearch(false); setSearchText('') }}
+      >
+        <View style={styles.searchOverlay}>
+          <SafeAreaView edges={['top']}>
+            <View style={styles.searchBar}>
+              <SearchIcon size={16} color="#BBB" />
+              <TextInput
+                autoFocus
+                style={styles.searchInput}
+                placeholder="Search languages..."
+                placeholderTextColor="#BBB"
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+              <TouchableOpacity
+                onPress={() => { setShowSearch(false); setSearchText('') }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <XIcon size={18} color="#999" />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+
+          <ScrollView style={styles.searchResults} keyboardShouldPersistTaps="handled">
+            {filteredLanguages.map(lang => (
+              <TouchableOpacity
+                key={lang.language_code}
+                style={styles.searchItem}
+                onPress={() => {
+                  setShowSearch(false)
+                  setSearchText('')
+                  router.push(`/language/${lang.language_code}` as any)
+                }}
+              >
+                <View style={styles.searchItemFlag}>
+                  <FlagSVG code={lang.language_code} width={32} height={22} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.searchItemNative}>{getNativeName(lang.language_code)}</Text>
+                  <Text style={styles.searchItemEn}>{getEnglishName(lang.language_code)}</Text>
+                </View>
+                {(lang.streak_count || 0) > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <FlameIcon size={12} color={getTheme(lang.language_code).accent} />
+                    <Text style={[styles.searchItemStreak, { color: getTheme(lang.language_code).accent }]}>
+                      {lang.streak_count}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+            {filteredLanguages.length === 0 && searchText.length > 0 && (
+              <Text style={styles.noResults}>No languages found</Text>
+            )}
+            <View style={{ height: 24 }} />
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ── Add language modal ── */}
       <AddLanguageModal
         visible={showModal}
         onClose={() => setShowModal(false)}
@@ -736,192 +440,151 @@ export default function HomeScreen() {
         addingCode={adding}
         onAdd={addLanguage}
       />
-    </SafeAreaView>
     </AppLayout>
-  );
+  )
 }
 
-// ── Styles ────────────────────────────────────────────────────────
-const s = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F7F7F5' },
-  scroll: { paddingTop: 32, paddingBottom: 48 },
+const styles = StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: '#F9F8F5' },
+  scroll: { paddingBottom: 32 },
 
-  topBar: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1, borderBottomColor: '#EAEAEA',
-  },
-  avatar:     { width: 32, height: 32, borderRadius: 16, backgroundColor: '#5B4EFF', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#FFF' },
-
-  header: { marginBottom: 28 },
-  dateLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize:   11,
-    color:      '#BBBBBB',
-    letterSpacing: 0.8,
-    marginBottom: 6,
+  // ── Header ────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
+    padding: 24, paddingBottom: 16,
   },
   greeting: {
-    fontFamily:    'Inter_700Bold',
-    fontSize:      28,
-    color:         '#000000',
-    letterSpacing: -0.5,
+    fontSize: 11, fontWeight: '600' as const, color: '#999',
+    letterSpacing: 0.8, textTransform: 'uppercase' as const, marginBottom: 4,
+  },
+  name: { fontSize: 26, fontWeight: '700' as const, color: '#000', letterSpacing: -0.5 },
+  searchBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#F4F4F0', alignItems: 'center', justifyContent: 'center',
   },
 
+  // ── Section label ─────────────────────────────────────────────
   sectionLabel: {
-    fontFamily:    'Inter_600SemiBold',
-    fontSize:      11,
-    color:         '#999999',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase' as const,
+    fontSize: 11, fontWeight: '600' as const, color: '#999',
+    letterSpacing: 0.8, textTransform: 'uppercase' as const,
+    paddingHorizontal: 24, marginBottom: 12,
   },
 
-  grid: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           14,
-  },
+  // ── Loading skeletons ─────────────────────────────────────────
+  loadingRow: { flexDirection: 'row', gap: 16, paddingHorizontal: 24 },
+  skeletonCard: { height: 420, borderRadius: 24, backgroundColor: '#EDECEA' },
 
-  activityGrid: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           10,
-  },
+  // ── Horizontal scroll ─────────────────────────────────────────
+  cardsContainer: { paddingLeft: 24, paddingRight: 60, gap: 16, paddingBottom: 4 },
 
-  // Section header row (label + Done button)
-  sectionRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    marginBottom:   14,
-  },
-  doneBtn: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize:   13,
-    color:      '#5B4EFF',
-  },
-
-  // Language card
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius:    16,
-    borderWidth:     1,
-    borderColor:     '#EAEAEA',
-    overflow:        'hidden',
-    ...(Platform.OS === 'web' ? {
-      cursor: 'pointer',
-      transition: 'all 150ms ease',
-    } as any : {}),
-  },
-  cardHover: {
-    borderColor: '#666666',
-    ...(Platform.OS === 'web' ? {
-      transform: [{ translateY: -2 }],
-      boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
-    } as any : {}),
-  },
-  cardSelected: {
-    borderColor: '#5B4EFF',
-    borderWidth:  2,
+  // ── Language card ─────────────────────────────────────────────
+  langCard: {
+    height: 420,
+    backgroundColor: '#FFF',
+    borderRadius: 24, borderWidth: 1, borderColor: '#EAEAEA',
+    overflow: 'hidden',
   },
 
   cardTop: {
-    height:         96,
-    alignItems:     'center',
-    justifyContent: 'center',
-    overflow:       'hidden',
+    height: 180,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', position: 'relative',
   },
-
-  // Mobile reorder arrow overlay
-  arrowOverlay: {
-    position:       'absolute',
-    top:            0,
-    right:          0,
-    bottom:         0,
-    width:          44,
-    justifyContent: 'space-around',
-    alignItems:     'center',
-    backgroundColor:'rgba(91,78,255,0.85)',
-    borderTopRightRadius:    16,
-    borderBottomRightRadius: 16,
-    paddingVertical: 12,
+  dotPattern: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    flexDirection: 'row', flexWrap: 'wrap',
+    padding: 16, gap: 14, opacity: 0.15,
   },
-  arrowBtn: {
-    width:          32,
-    height:         32,
-    borderRadius:   16,
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
-  arrowBtnDisabled: { opacity: 0.35 },
-
+  dotPatternDot: { width: 3, height: 3, borderRadius: 1.5 },
   flagWrap: {
-    borderRadius: 8,
-    overflow:     'hidden',
-    ...(Platform.OS === 'web' ? {
-      boxShadow: '0 3px 10px rgba(0,0,0,0.18)',
-    } as any : {
-      shadowColor: '#000', shadowOpacity: 0.18,
-      shadowOffset: { width: 0, height: 3 }, shadowRadius: 6,
-    }),
+    borderRadius: 12, overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 }, shadowRadius: 8,
+    elevation: 5,
   },
 
-  cardBody: { padding: 14, paddingTop: 14, paddingBottom: 16 },
-  cardNative: {
-    fontFamily: 'Inter_700Bold',
-    fontSize:   16,
-    color:      '#000000',
-  },
-  cardEn: {
-    fontFamily: 'Inter_400Regular',
-    fontSize:   11,
-    color:      '#999999',
-    marginTop:  1,
-  },
+  cardBody: { padding: 20, flex: 1, flexDirection: 'column' },
 
-  examRow:       { flexDirection: 'row', gap: 4, marginTop: 8, marginBottom: 12, flexWrap: 'wrap' },
-  examBadge:     { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  examBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 9 },
+  nativeName:  { fontSize: 22, fontWeight: '700' as const, color: '#000', marginBottom: 2 },
+  englishName: { fontSize: 13, color: '#999', marginBottom: 12 },
+
+  badgesRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 14 },
+  badge:     { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 5 },
+  badgeText: { fontSize: 11, fontWeight: '600' as const },
+
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  streakText: { fontSize: 13, fontWeight: '600' as const },
+
+  progressBg:   { height: 4, backgroundColor: '#F4F4F0', borderRadius: 2, overflow: 'hidden', marginBottom: 6 },
+  progressFill: { height: '100%' as any, borderRadius: 2 },
+  progressText: { fontSize: 11, color: '#BBB', marginBottom: 12 },
+
+  levelBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F4F4F0', borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  levelText: { fontSize: 11, fontWeight: '600' as const, color: '#666' },
 
   cardFooter: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     borderTopWidth: 1, borderTopColor: '#F4F4F4',
-    paddingTop: 10,
+    paddingTop: 12, marginTop: 'auto' as any,
   },
-  streakRow:  { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  dot:        { width: 7, height: 7, borderRadius: 3.5 },
-  streakText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
-  levelBadge: { backgroundColor: '#F4F4F4', borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  levelText:  { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888888' },
+  tapHint:    { fontSize: 12, color: '#BBB' },
+  removeText: { fontSize: 11, color: '#CCC' },
 
-  // Add card
+  // ── Add card ───────────────────────────────────────────────────
   addCard: {
-    borderWidth:  1.5,
-    borderStyle:  'dashed' as const,
-    borderColor:  '#DCDCDC',
-    borderRadius: 16,
-    minHeight:    208,
-    alignItems:   'center',
-    justifyContent: 'center',
-    gap:          7,
-    backgroundColor: 'transparent',
-    ...(Platform.OS === 'web' ? {
-      cursor: 'pointer',
-      transition: 'all 150ms ease',
-    } as any : {}),
+    height: 420,
+    borderWidth: 1.5, borderStyle: 'dashed' as const, borderColor: '#DCDCDC',
+    borderRadius: 24, backgroundColor: 'transparent',
+    alignItems: 'center', justifyContent: 'center', gap: 12,
   },
-  addCardHover: { borderColor: '#999999', backgroundColor: '#FAFAFA' },
   addCircle: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 48, height: 48, borderRadius: 24,
     borderWidth: 1.5, borderColor: '#DCDCDC',
     alignItems: 'center', justifyContent: 'center',
   },
-  addCircleHover: { borderColor: '#999' },
-  addTitle:       { fontFamily: 'Inter_500Medium', fontSize: 13, color: '#BBBBBB' },
-  addTitleHover:  { color: '#555' },
-  addSub:         { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#DDDDDD' },
-  addSubHover:    { color: '#AAA' },
-});
+  addText: { fontSize: 16, fontWeight: '500' as const, color: '#BBB' },
+  addSub:  { fontSize: 12, color: '#DDD' },
+
+  // ── Dots ───────────────────────────────────────────────────────
+  dotsRow: {
+    flexDirection: 'row', justifyContent: 'center',
+    alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 24,
+  },
+  dotBase:    { borderRadius: 4 },
+  dotActive:  { width: 8, height: 8 },
+  dotInactive: { width: 6, height: 6, backgroundColor: '#DDD' },
+
+  // ── Activity section ───────────────────────────────────────────
+  activitySection: { paddingHorizontal: 24 },
+  activityEmpty: {
+    backgroundColor: '#FFF', borderRadius: 12,
+    borderWidth: 1, borderColor: '#EAEAEA',
+    padding: 20, alignItems: 'center',
+  },
+  activityEmptyText: { fontSize: 13, color: '#BBB', textAlign: 'center' },
+
+  // ── Search modal ───────────────────────────────────────────────
+  searchOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  searchBar: {
+    backgroundColor: '#FFF',
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, height: 52,
+    borderBottomWidth: 1, borderBottomColor: '#EAEAEA',
+  },
+  searchInput: { flex: 1, fontSize: 15, color: '#000', padding: 0 },
+  searchResults:   { backgroundColor: '#FFF', maxHeight: 380 },
+  searchItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
+  },
+  searchItemFlag:   { borderRadius: 4, overflow: 'hidden' },
+  searchItemNative: { fontSize: 14, fontWeight: '600' as const, color: '#000' },
+  searchItemEn:     { fontSize: 11, color: '#999', marginTop: 2 },
+  searchItemStreak: { fontSize: 13, fontWeight: '600' as const },
+  noResults: { padding: 24, textAlign: 'center', color: '#BBB', fontSize: 14 },
+})

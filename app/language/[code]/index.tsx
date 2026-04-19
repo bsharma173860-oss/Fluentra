@@ -326,9 +326,7 @@ function PracticeTab({
             activeOpacity={0.85}
           >
             <View style={pt.foundIconBox}>
-              <Text style={pt.foundIconText}>
-                {foundation.sections[0]?.icon || '📖'}
-              </Text>
+              <BookIcon size={22} color={Colors.ink2} />
             </View>
 
             <View style={pt.foundBody}>
@@ -470,7 +468,6 @@ const pt = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  foundIconText:  { fontSize: 22 },
   foundBody:      { flex: 1 },
   foundTitle:     { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000', marginBottom: 2 },
   foundSub:       { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#888', marginBottom: 8 },

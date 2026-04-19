@@ -5,17 +5,23 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { getExamResult, overallBand, type FullExamResult, type ModuleKey } from '@/lib/examStore';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
+import {
+  HeadphoneIcon, BookIcon, PenIcon, MicIcon,
+  CheckIcon, CalendarIcon, TrophyIcon, HelpCircleIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 // ─────────────────────────────────────────────────────────────────
 // Config
 // ─────────────────────────────────────────────────────────────────
 const MODULE_META: Record<ModuleKey, {
-  icon: string; label: string; color: string; bg: string;
+  Icon: IC; label: string; color: string; bg: string;
 }> = {
-  listening: { icon: '🎧', label: 'Listening', color: Colors.green,  bg: Colors.green_bg  },
-  reading:   { icon: '📖', label: 'Reading',   color: Colors.orange, bg: Colors.orange_bg },
-  writing:   { icon: '✏️',  label: 'Writing',   color: Colors.gold,   bg: Colors.gold_bg   },
-  speaking:  { icon: '🎙',  label: 'Speaking',  color: Colors.p,      bg: Colors.p_soft    },
+  listening: { Icon: HeadphoneIcon, label: 'Listening', color: Colors.green,  bg: Colors.green_bg  },
+  reading:   { Icon: BookIcon,      label: 'Reading',   color: Colors.orange, bg: Colors.orange_bg },
+  writing:   { Icon: PenIcon,       label: 'Writing',   color: Colors.gold,   bg: Colors.gold_bg   },
+  speaking:  { Icon: MicIcon,       label: 'Speaking',  color: Colors.p,      bg: Colors.p_soft    },
 };
 
 const MODULE_ORDER: ModuleKey[] = ['listening', 'reading', 'writing', 'speaking'];
@@ -74,7 +80,7 @@ function FeedbackCard({
     >
       <View style={s.feedCardTop}>
         <View style={[s.feedIconWrap, { backgroundColor: meta.bg }]}>
-          <Text style={s.feedIcon}>{meta.icon}</Text>
+          <meta.Icon size={20} color={meta.color} />
         </View>
         <View style={s.feedCardMeta}>
           <Text style={[s.feedLabel, { color: meta.color }]}>{meta.label}</Text>
@@ -93,13 +99,19 @@ function FeedbackCard({
       {expanded && (
         <View style={s.feedBody}>
           <View style={s.feedSection}>
-            <Text style={s.feedSectionLabel}>✓ Strengths</Text>
+            <View style={s.feedSectionTitleRow}>
+              <CheckIcon size={12} color={Colors.green} />
+              <Text style={s.feedSectionLabel}>Strengths</Text>
+            </View>
             {fb.strengths.map(t => (
               <Text key={t} style={[s.feedItem, { color: Colors.green }]}>• {t}</Text>
             ))}
           </View>
           <View style={s.feedSection}>
-            <Text style={[s.feedSectionLabel, { color: Colors.orange }]}>⚑ Improvements</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <HelpCircleIcon size={13} color={Colors.orange} />
+              <Text style={[s.feedSectionLabel, { color: Colors.orange }]}>Improvements</Text>
+            </View>
             {fb.improvements.map(t => (
               <Text key={t} style={[s.feedItem, { color: Colors.ink2 }]}>• {t}</Text>
             ))}
@@ -156,7 +168,7 @@ export default function ExamResults() {
             const max = result.maxScores[key];
             return (
               <View key={key} style={[s.moduleCell, { backgroundColor: m.bg }]}>
-                <Text style={s.moduleCellIcon}>{m.icon}</Text>
+                <m.Icon size={20} color={m.color} />
                 <Text style={[s.moduleCellScore, { color: m.color }]}>{score}</Text>
                 <Text style={s.moduleCellMax}>/{max}</Text>
                 <Text style={[s.moduleCellLabel, { color: m.color }]}>{m.label}</Text>
@@ -181,7 +193,7 @@ export default function ExamResults() {
         <View style={s.whatsNextCard}>
           <Text style={s.whatsNextTitle}>What's next?</Text>
           <View style={s.whatsNextItem}>
-            <Text style={s.whatsNextIcon}>🎯</Text>
+            <View style={s.whatsNextIconWrap}><CheckIcon size={16} color={Colors.p} /></View>
             <Text style={s.whatsNextText}>
               Practice your weakest module:{' '}
               <Text style={{ color: MODULE_META[weakest].color, fontFamily: 'Inter_700Bold' }}>
@@ -190,11 +202,11 @@ export default function ExamResults() {
             </Text>
           </View>
           <View style={s.whatsNextItem}>
-            <Text style={s.whatsNextIcon}>📅</Text>
+            <View style={s.whatsNextIconWrap}><CalendarIcon size={16} color={Colors.ink3} /></View>
             <Text style={s.whatsNextText}>Next monthly exam: May 1, 2026</Text>
           </View>
           <View style={s.whatsNextItem}>
-            <Text style={s.whatsNextIcon}>🏆</Text>
+            <View style={s.whatsNextIconWrap}><TrophyIcon size={16} color={Colors.gold} /></View>
             <Text style={s.whatsNextText}>Your rank this week: #12</Text>
           </View>
         </View>
@@ -241,7 +253,6 @@ const s = StyleSheet.create({
 
   moduleRow: { flexDirection: 'row', gap: 8 },
   moduleCell: { flex: 1, borderRadius: 14, padding: 12, alignItems: 'center', gap: 2 },
-  moduleCellIcon: { fontSize: 20 },
   moduleCellScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 24 },
   moduleCellMax: { fontFamily: 'Inter_400Regular', fontSize: 10, color: Colors.ink3, marginTop: -4 },
   moduleCellLabel: { fontFamily: 'Inter_500Medium', fontSize: 10, marginTop: 2 },
@@ -259,7 +270,6 @@ const s = StyleSheet.create({
   },
   feedCardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   feedIconWrap: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  feedIcon: { fontSize: 20 },
   feedCardMeta: { flex: 1, gap: 5 },
   feedLabel: { fontFamily: 'Inter_700Bold', fontSize: 14 },
   feedBarWrap: {},
@@ -270,7 +280,8 @@ const s = StyleSheet.create({
   expandArrow: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, width: 16, textAlign: 'center' },
   feedBody: { marginTop: 14, gap: 12, borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: 14 },
   feedSection: { gap: 5 },
-  feedSectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.green, marginBottom: 2 },
+  feedSectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
+  feedSectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.green },
   feedItem: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
 
   whatsNextCard: {
@@ -279,7 +290,7 @@ const s = StyleSheet.create({
   },
   whatsNextTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
   whatsNextItem: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  whatsNextIcon: { fontSize: 18, width: 26 },
+  whatsNextIconWrap: { width: 24, alignItems: 'center', paddingTop: 2 },
   whatsNextText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink2, flex: 1 },
 
   primaryBtn: {

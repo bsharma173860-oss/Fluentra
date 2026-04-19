@@ -8,6 +8,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { BreakScreen, type ModuleScore, type ModuleKey } from '@/components/exam/BreakScreen';
 import { setExamResult } from '@/lib/examStore';
+import {
+  HeadphoneIcon, BookIcon, PenIcon, MicIcon, CheckIcon, type IconProps,
+} from '@/components/icons';
 
 // ─────────────────────────────────────────────────────────────────
 // State machine types
@@ -76,15 +79,17 @@ Explain why you decided to help.`;
 // ─────────────────────────────────────────────────────────────────
 // Header strip shared by all modules
 // ─────────────────────────────────────────────────────────────────
+type IC = React.ComponentType<IconProps>;
+
 function ModuleHeader({
-  icon, label, color, step, total,
+  Icon, label, color, step, total,
 }: {
-  icon: string; label: string; color: string; step: number; total: number;
+  Icon: IC; label: string; color: string; step: number; total: number;
 }) {
   return (
     <View style={mh.wrap}>
       <View style={[mh.iconWrap, { backgroundColor: color + '22' }]}>
-        <Text style={mh.icon}>{icon}</Text>
+        <Icon size={20} color={color} />
       </View>
       <View style={mh.text}>
         <Text style={[mh.label, { color }]}>{label}</Text>
@@ -109,7 +114,7 @@ const mh = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 20 },
+  icon: { /* replaced by icon component */ },
   text: { flex: 1 },
   label: { fontFamily: 'Inter_700Bold', fontSize: 16 },
   step: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 1 },
@@ -127,7 +132,7 @@ function ListeningModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
 
   return (
     <SafeAreaView style={mod.safe} edges={['bottom']}>
-      <ModuleHeader icon="🎧" label="Listening" color={Colors.green} step={1} total={4} />
+      <ModuleHeader Icon={HeadphoneIcon} label="Listening" color={Colors.green} step={1} total={4} />
 
       {/* Mock audio player */}
       <View style={mod.playerBar}>
@@ -203,7 +208,7 @@ function ReadingModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
 
   return (
     <SafeAreaView style={mod.safe} edges={['bottom']}>
-      <ModuleHeader icon="📖" label="Reading" color={Colors.orange} step={2} total={4} />
+      <ModuleHeader Icon={BookIcon} label="Reading" color={Colors.orange} step={2} total={4} />
 
       {/* View toggle */}
       <View style={mod.viewToggle}>
@@ -291,7 +296,7 @@ function WritingModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
 
   return (
     <SafeAreaView style={mod.safe} edges={['bottom']}>
-      <ModuleHeader icon="✏️" label="Writing" color={Colors.gold} step={3} total={4} />
+      <ModuleHeader Icon={PenIcon} label="Writing" color={Colors.gold} step={3} total={4} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -316,7 +321,7 @@ function WritingModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
             <View style={mod.wcRow}>
               <Text style={[mod.wcNum, { color: wcColor }]}>{wordCount}</Text>
               <Text style={mod.wcLabel}> / 150+ words</Text>
-              {isReady && <Text style={mod.wcCheck}> ✓</Text>}
+              {isReady && <CheckIcon size={14} color={Colors.green} />}
             </View>
           </View>
         </ScrollView>
@@ -383,7 +388,7 @@ function SpeakingModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
 
   return (
     <SafeAreaView style={mod.safe} edges={['bottom']}>
-      <ModuleHeader icon="🎙" label="Speaking" color={Colors.p} step={4} total={4} />
+      <ModuleHeader Icon={MicIcon} label="Speaking" color={Colors.p} step={4} total={4} />
       <ScrollView contentContainerStyle={[mod.content, { alignItems: 'center' }]}>
 
         {/* Topic card */}
@@ -405,7 +410,7 @@ function SpeakingModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
           <View style={sp.phaseWrap}>
             <View style={sp.micRing}>
               <View style={sp.micInner}>
-                <Text style={sp.micIcon}>🎙</Text>
+                <MicIcon size={28} color={Colors.white} />
               </View>
             </View>
             <Text style={[sp.phaseTimer, { color: Colors.danger }]}>{fmt(recordSecs)}</Text>
@@ -424,7 +429,7 @@ function SpeakingModule({ onSubmit }: { onSubmit: (s: ModuleScore) => void }) {
 
         {phase === 'done' && (
           <View style={sp.phaseWrap}>
-            <Text style={sp.doneCheck}>✓</Text>
+            <CheckIcon size={40} color={Colors.green} />
             <Text style={sp.doneLabel}>Recording complete</Text>
             <Text style={sp.doneTime}>{fmt(recordSecs)} recorded</Text>
           </View>
@@ -475,13 +480,11 @@ const sp = StyleSheet.create({
     backgroundColor: Colors.danger + '33',
     alignItems: 'center', justifyContent: 'center',
   },
-  micIcon: { fontSize: 32 },
   stopBtn: {
     marginTop: 8, paddingHorizontal: 24, paddingVertical: 10,
     borderRadius: 12, borderWidth: 1, borderColor: Colors.danger,
   },
   stopBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.danger },
-  doneCheck: { fontSize: 48 },
   doneLabel: { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.green },
   doneTime: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
 });
@@ -582,7 +585,6 @@ const mod = StyleSheet.create({
   },
   wcNum: { fontFamily: 'Inter_700Bold', fontSize: 14 },
   wcLabel: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
-  wcCheck: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.green },
 
   // Submit footer
   footer: {

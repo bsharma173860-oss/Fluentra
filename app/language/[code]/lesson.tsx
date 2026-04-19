@@ -11,7 +11,7 @@ import {
   getFoundation,
   type CharItem, type VocabItem, type GrammarItem,
 } from '@/constants/foundationContent';
-import { ChevronLeftIcon } from '@/components/icons';
+import { ChevronLeftIcon, TrophyIcon } from '@/components/icons';
 
 export default function LessonScreen() {
   const { code, sectionId } = useLocalSearchParams<{ code: string; sectionId: string }>();
@@ -165,7 +165,7 @@ export default function LessonScreen() {
         {isDone ? (
           // ── Completion screen
           <View style={s.doneWrap}>
-            <Text style={s.doneEmoji}>🎉</Text>
+            <TrophyIcon size={52} color={Colors.gold} />
             <Text style={s.doneTitle}>Section complete!</Text>
             <Text style={s.doneSub}>
               {known.filter(Boolean).length} of {totalCards} marked as known
@@ -332,7 +332,6 @@ const s = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 40, gap: 12,
   },
-  doneEmoji: { fontSize: 52 },
   doneTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: Colors.ink, textAlign: 'center' },
   doneSub:   { fontFamily: 'Inter_400Regular', fontSize: 15, color: Colors.textSecondary, textAlign: 'center' },
   doneBtn: {

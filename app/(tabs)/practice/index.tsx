@@ -7,6 +7,11 @@ import { Card } from '@/components/ui/Card';
 import { TimerChip } from '@/components/ui/TimerChip';
 import { ScoreBar } from '@/components/ui/ScoreBar';
 import { Button } from '@/components/ui/Button';
+import {
+  MicIcon, PenIcon, HeadphoneIcon, BookIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 const CATEGORIES = [
   { key: 'all', label: 'All' },
@@ -16,11 +21,11 @@ const CATEGORIES = [
   { key: 'reading', label: 'Reading' },
 ];
 
-const SESSIONS = [
+const SESSIONS: { key: string; type: string; Icon: IC; title: string; duration: number; score: number; maxScore: number; color: string; bg: string; date: string }[] = [
   {
     key: '1',
     type: 'speaking',
-    icon: '🎙',
+    Icon: MicIcon,
     title: 'IELTS Speaking Part 2',
     duration: 120,
     score: 7.5,
@@ -32,7 +37,7 @@ const SESSIONS = [
   {
     key: '2',
     type: 'writing',
-    icon: '✏️',
+    Icon: PenIcon,
     title: 'Task 1 – Graph Description',
     duration: 1200,
     score: 6.5,
@@ -44,7 +49,7 @@ const SESSIONS = [
   {
     key: '3',
     type: 'listening',
-    icon: '🎧',
+    Icon: HeadphoneIcon,
     title: 'Section 3 – Academic Discussion',
     duration: 600,
     score: 32,
@@ -56,7 +61,7 @@ const SESSIONS = [
   {
     key: '4',
     type: 'reading',
-    icon: '📖',
+    Icon: BookIcon,
     title: 'Passage 2 – Science',
     duration: 900,
     score: 11,
@@ -91,7 +96,7 @@ export default function PracticeScreen() {
           <Card style={styles.writingCard}>
             <View style={styles.writingLeft}>
               <View style={[styles.writingIconWrap, { backgroundColor: Colors.green_bg }]}>
-                <Text style={styles.writingIcon}>🎧</Text>
+                <HeadphoneIcon size={22} color={Colors.green} />
               </View>
               <View style={styles.writingInfo}>
                 <Text style={styles.writingTitle}>Listening Practice</Text>
@@ -112,7 +117,7 @@ export default function PracticeScreen() {
           <Card style={styles.writingCard}>
             <View style={styles.writingLeft}>
               <View style={styles.writingIconWrap}>
-                <Text style={styles.writingIcon}>✍️</Text>
+                <PenIcon size={22} color={Colors.gold} />
               </View>
               <View style={styles.writingInfo}>
                 <Text style={styles.writingTitle}>Writing Practice</Text>
@@ -156,7 +161,7 @@ export default function PracticeScreen() {
               <Card padding={14} style={styles.sessionCard}>
                 <View style={styles.sessionTop}>
                   <View style={[styles.sessionIconWrap, { backgroundColor: session.bg }]}>
-                    <Text style={styles.sessionIcon}>{session.icon}</Text>
+                    <session.Icon size={22} color={session.color} />
                   </View>
                   <View style={styles.sessionInfo}>
                     <Text style={styles.sessionTitle}>{session.title}</Text>
@@ -214,7 +219,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gold_bg,
     alignItems: 'center', justifyContent: 'center',
   },
-  writingIcon: { fontSize: 22 },
   writingInfo: { gap: 2 },
   writingTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
   writingSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
@@ -235,7 +239,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sessionIcon: { fontSize: 22 },
   sessionInfo: { flex: 1 },
   sessionTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
   sessionDate: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },

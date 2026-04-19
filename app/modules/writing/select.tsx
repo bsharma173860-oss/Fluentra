@@ -9,12 +9,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import {
+  ChartIcon, PenIcon, FileTextIcon, TimerIcon, HelpCircleIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 type Exam = 'IELTS' | 'TOEFL';
 
 type TaskOption = {
   key: 'task1' | 'task2' | 'full';
-  icon: string;
+  Icon: IC;
   title: string;
   subtitle: string;
   duration: string;
@@ -25,7 +30,7 @@ type TaskOption = {
 const TASKS: TaskOption[] = [
   {
     key: 'task1',
-    icon: '📊',
+    Icon: ChartIcon,
     title: 'Task 1',
     subtitle: 'Describe a graph, chart or diagram',
     duration: '20 min',
@@ -34,7 +39,7 @@ const TASKS: TaskOption[] = [
   },
   {
     key: 'task2',
-    icon: '✍️',
+    Icon: PenIcon,
     title: 'Task 2',
     subtitle: 'Argumentative essay',
     duration: '40 min',
@@ -43,7 +48,7 @@ const TASKS: TaskOption[] = [
   },
   {
     key: 'full',
-    icon: '📝',
+    Icon: FileTextIcon,
     title: 'Full Exam',
     subtitle: 'Task 1 + Task 2 back to back',
     duration: '60 min',
@@ -105,7 +110,7 @@ export default function WritingSelectScreen() {
               activeOpacity={0.85}
             >
               <View style={s.taskIconWrap}>
-                <Text style={s.taskIcon}>{task.icon}</Text>
+                <task.Icon size={26} color={Colors.gold} />
               </View>
 
               <View style={s.taskBody}>
@@ -120,10 +125,12 @@ export default function WritingSelectScreen() {
                 <Text style={s.taskSubtitle}>{task.subtitle}</Text>
                 <View style={s.taskMeta}>
                   <View style={s.metaChip}>
-                    <Text style={s.metaText}>⏱ {task.duration}</Text>
+                    <TimerIcon size={11} color={Colors.ink2} />
+                    <Text style={s.metaText}>{task.duration}</Text>
                   </View>
                   <View style={s.metaChip}>
-                    <Text style={s.metaText}>📝 {task.minWords}+ words</Text>
+                    <PenIcon size={11} color={Colors.ink2} />
+                    <Text style={s.metaText}>{task.minWords}+ words</Text>
                   </View>
                 </View>
               </View>
@@ -135,7 +142,10 @@ export default function WritingSelectScreen() {
 
         {/* Tips */}
         <View style={s.tipsCard}>
-          <Text style={s.tipsTitle}>💡 Tips for high scores</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            <HelpCircleIcon size={16} color={Colors.ink} />
+            <Text style={s.tipsTitle}>Tips for high scores</Text>
+          </View>
           {[
             'Plan for 2–3 minutes before writing.',
             'Use a variety of sentence structures.',
@@ -241,13 +251,13 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  taskIcon: { fontSize: 26 },
   taskBody: { flex: 1, gap: 4 },
   taskTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   taskTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
   taskSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, lineHeight: 18 },
   taskMeta: { flexDirection: 'row', gap: 6, marginTop: 2 },
   metaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,

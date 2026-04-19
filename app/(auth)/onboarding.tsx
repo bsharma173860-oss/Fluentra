@@ -16,6 +16,8 @@ import { Colors } from '@/constants/colors';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
+import { FlagSVG } from '@/components/flags';
+import { CheckIcon, LightningIcon } from '@/components/icons';
 
 const { width: W } = Dimensions.get('window');
 const H_PAD = 24;
@@ -25,7 +27,7 @@ type ExamOption = {
   key: string;
   label: string;
   subtitle: string;
-  emoji: string;
+  flagCode: string | null;
   color: string;
   bgColor: string;
   minScore: number;
@@ -34,11 +36,11 @@ type ExamOption = {
 };
 
 const EXAMS: ExamOption[] = [
-  { key: 'IELTS',   label: 'IELTS',    subtitle: 'Academic & General',        emoji: '🇬🇧', color: Colors.p,      bgColor: Colors.p_soft,   minScore: 4,  maxScore: 9,   step: 0.5 },
-  { key: 'TOEFL',   label: 'TOEFL',    subtitle: 'iBT Internet-Based Test',   emoji: '🇺🇸', color: Colors.green,  bgColor: Colors.green_bg, minScore: 40, maxScore: 120, step: 5   },
-  { key: 'DELF',    label: 'DELF B2',  subtitle: 'Diplôme Français',          emoji: '🇫🇷', color: Colors.gold,   bgColor: Colors.gold_bg,  minScore: 40, maxScore: 100, step: 5   },
-  { key: 'DELE',    label: 'DELE B2',  subtitle: 'Diploma de Español',        emoji: '🇪🇸', color: Colors.orange, bgColor: Colors.orange_bg,minScore: 40, maxScore: 100, step: 5   },
-  { key: 'FREE',    label: 'Free Chat','subtitle': 'No exam — just practice', emoji: '✨', color: Colors.p,      bgColor: Colors.p_soft,   minScore: 0,  maxScore: 100, step: 5   },
+  { key: 'IELTS',   label: 'IELTS',    subtitle: 'Academic & General',        flagCode: 'en', color: Colors.p,      bgColor: Colors.p_soft,   minScore: 4,  maxScore: 9,   step: 0.5 },
+  { key: 'TOEFL',   label: 'TOEFL',    subtitle: 'iBT Internet-Based Test',   flagCode: 'en', color: Colors.green,  bgColor: Colors.green_bg, minScore: 40, maxScore: 120, step: 5   },
+  { key: 'DELF',    label: 'DELF B2',  subtitle: 'Diplôme Français',          flagCode: 'fr', color: Colors.gold,   bgColor: Colors.gold_bg,  minScore: 40, maxScore: 100, step: 5   },
+  { key: 'DELE',    label: 'DELE B2',  subtitle: 'Diploma de Español',        flagCode: 'es', color: Colors.orange, bgColor: Colors.orange_bg,minScore: 40, maxScore: 100, step: 5   },
+  { key: 'FREE',    label: 'Free Chat',subtitle: 'No exam — just practice',   flagCode: null, color: Colors.p,      bgColor: Colors.p_soft,   minScore: 0,  maxScore: 100, step: 5   },
 ];
 
 // ── Draggable score slider ────────────────────────────────────
@@ -211,12 +213,16 @@ export default function OnboardingScreen() {
                         selected && { borderColor: opt.color, borderWidth: 2.5, backgroundColor: opt.bgColor },
                       ]}
                     >
-                      <Text style={s.examEmoji}>{opt.emoji}</Text>
+                      <View style={s.examFlagWrap}>
+                        {opt.flagCode
+                          ? <FlagSVG code={opt.flagCode} width={40} height={27} />
+                          : <LightningIcon size={26} color={opt.color} />}
+                      </View>
                       <Text style={[s.examLabel, selected && { color: opt.color }]}>{opt.label}</Text>
                       <Text style={s.examSub} numberOfLines={1}>{opt.subtitle}</Text>
                       {selected && (
                         <View style={[s.check, { backgroundColor: opt.color }]}>
-                          <Text style={s.checkMark}>✓</Text>
+                          <CheckIcon size={12} color={Colors.white} />
                         </View>
                       )}
                     </TouchableOpacity>
@@ -329,7 +335,7 @@ const s = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  examEmoji: { fontSize: 28 },
+  examFlagWrap: { height: 28, alignItems: 'center', justifyContent: 'center' },
   examLabel: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
   examSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
   check: {
@@ -337,7 +343,6 @@ const s = StyleSheet.create({
     width: 22, height: 22, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkMark: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
 
   // Lang input
   langInput: {

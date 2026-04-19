@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { getWritingResult, clearWritingResult, WritingResult } from '@/lib/writingStore';
+import { TimerIcon, PenIcon, CheckIcon, HelpCircleIcon } from '@/components/icons';
 
 // ── Score bar ────────────────────────────────────────────────────
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -45,10 +46,13 @@ const bar = StyleSheet.create({
 });
 
 // ── Section card ─────────────────────────────────────────────────
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
   return (
     <View style={sec.card}>
-      <Text style={sec.title}>{title}</Text>
+      {typeof title === 'string'
+        ? <Text style={sec.title}>{title}</Text>
+        : <View style={sec.titleRow}>{title}</View>
+      }
       {children}
     </View>
   );
@@ -64,6 +68,7 @@ const sec = StyleSheet.create({
     gap: 10,
   },
   title: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
 });
 
 // ── Main ─────────────────────────────────────────────────────────
@@ -108,8 +113,14 @@ export default function WritingResultsScreen() {
           <Text style={s.headerTitle}>Writing Results</Text>
           <View style={s.headerMeta}>
             <Text style={s.metaChip}>{exam} · {task === 'task1' ? 'Task 1' : 'Task 2'}</Text>
-            <Text style={s.metaChip}>⏱ {timeLabel}</Text>
-            <Text style={s.metaChip}>📝 {wordCount} words</Text>
+            <View style={s.metaChipRow}>
+              <TimerIcon size={12} color={Colors.ink3} />
+              <Text style={s.metaChip}>{timeLabel}</Text>
+            </View>
+            <View style={s.metaChipRow}>
+              <PenIcon size={12} color={Colors.ink3} />
+              <Text style={s.metaChip}>{wordCount} words</Text>
+            </View>
           </View>
         </View>
 
@@ -134,7 +145,7 @@ export default function WritingResultsScreen() {
         </SectionCard>
 
         {/* Strengths */}
-        <SectionCard title="✅ Strengths">
+        <SectionCard title={<><CheckIcon size={15} color={Colors.green} /><Text style={sec.title}>Strengths</Text></>}>
           {strengths.map((s, i) => (
             <View key={i} style={list.row}>
               <View style={list.dot} />
@@ -144,7 +155,7 @@ export default function WritingResultsScreen() {
         </SectionCard>
 
         {/* Improvements */}
-        <SectionCard title="🔶 Areas to Improve">
+        <SectionCard title={<><HelpCircleIcon size={15} color={Colors.orange} /><Text style={sec.title}>Areas to Improve</Text></>}>
           {improvements.map((imp, i) => (
             <View key={i} style={list.row}>
               <Text style={list.arrow}>›</Text>
@@ -154,7 +165,7 @@ export default function WritingResultsScreen() {
         </SectionCard>
 
         {/* Corrected sentences */}
-        <SectionCard title="✏️ Corrected Sentences">
+        <SectionCard title={<><PenIcon size={15} color={Colors.ink} /><Text style={sec.title}>Corrected Sentences</Text></>}>
           {correctedSentences.map((cs, i) => (
             <View key={i} style={cs_s.block}>
               <View style={cs_s.original}>
@@ -166,7 +177,10 @@ export default function WritingResultsScreen() {
                 <Text style={cs_s.correctedText}>{cs.corrected}</Text>
               </View>
               <View style={cs_s.reason}>
-                <Text style={cs_s.reasonText}>💡 {cs.reason}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+                  <HelpCircleIcon size={13} color={Colors.ink3} />
+                  <Text style={[cs_s.reasonText, { flex: 1 }]}>{cs.reason}</Text>
+                </View>
               </View>
             </View>
           ))}
@@ -249,6 +263,11 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
+  },
+  metaChipRow: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
+    backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 99, borderWidth: 1, borderColor: Colors.border,
   },
 
   bandCard: {

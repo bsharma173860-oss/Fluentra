@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { FlagSVG } from '@/components/flags';
+import { GlobeIcon } from '@/components/icons';
 
 // ── Language data ─────────────────────────────────────────────────
 type LangEntry = {
@@ -15,14 +16,12 @@ type LangEntry = {
 
 type RegionGroup = {
   region: string;
-  emoji:  string;
   languages: LangEntry[];
 };
 
 const LANGUAGES_BY_REGION: RegionGroup[] = [
   {
     region: 'European',
-    emoji:  '🌍',
     languages: [
       { code: 'en', native: 'English',    english: 'English'    },
       { code: 'fr', native: 'Français',   english: 'French'     },
@@ -36,7 +35,6 @@ const LANGUAGES_BY_REGION: RegionGroup[] = [
   },
   {
     region: 'Asian',
-    emoji:  '🌏',
     languages: [
       { code: 'zh', native: '中文',       english: 'Chinese'  },
       { code: 'ja', native: '日本語',     english: 'Japanese' },
@@ -46,7 +44,6 @@ const LANGUAGES_BY_REGION: RegionGroup[] = [
   },
   {
     region: 'Middle Eastern',
-    emoji:  '🌍',
     languages: [
       { code: 'ar', native: 'العربية', english: 'Arabic'  },
       { code: 'tr', native: 'Türkçe', english: 'Turkish' },
@@ -192,9 +189,10 @@ export function AddLanguageModal({
             {filteredRegions.map(group => (
               <View key={group.region}>
                 <View style={m.regionHeader}>
-                  <Text style={m.regionLabel}>
-                    {group.emoji} {group.region.toUpperCase()}
-                  </Text>
+                  <View style={m.regionLabel}>
+                    <GlobeIcon size={12} color="#888" />
+                    <Text style={m.regionLabelText}>{group.region.toUpperCase()}</Text>
+                  </View>
                 </View>
                 {group.languages.map(lang => (
                   <LangRow
@@ -375,6 +373,11 @@ const m = StyleSheet.create({
     paddingBottom:     6,
   },
   regionLabel: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 5,
+  },
+  regionLabelText: {
     fontFamily:    'Inter_700Bold',
     fontSize:      10,
     color:         '#BBB',

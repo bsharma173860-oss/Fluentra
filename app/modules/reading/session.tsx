@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeftIcon } from '@/components/icons';
+import { ChevronLeftIcon, FileTextIcon, HelpCircleIcon, LockIcon, CheckIcon } from '@/components/icons';
 import { Analytics } from '@/lib/analytics';
 import {
   setReadingResult,
@@ -265,7 +265,7 @@ function HeadingSelector({
                 ]}>
                   {h.label}
                 </Text>
-                {h.key === value && <Text style={hs.checkMark}>✓</Text>}
+                {h.key === value && <CheckIcon size={13} color={Colors.p} />}
               </TouchableOpacity>
             );
           })}
@@ -324,7 +324,6 @@ const hs = StyleSheet.create({
   optionText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink, flex: 1 },
   optionTextSelected: { fontFamily: 'Inter_600SemiBold', color: Colors.p },
   optionTextDisabled: { color: Colors.ink4 },
-  checkMark: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.p, marginLeft: 8 },
 });
 
 // MCQ question
@@ -502,6 +501,7 @@ export default function ReadingSessionScreen() {
       module: 'reading',
       languageCode: 'en',
       examType: exam,
+      mode: 'practice',
     });
   }, []);
 
@@ -545,6 +545,7 @@ export default function ReadingSessionScreen() {
     Analytics.practiceSessionCompleted({
       module: 'reading',
       languageCode: 'en',
+      examType: exam,
       score: band,
       durationSeconds: timeTaken,
     });
@@ -690,7 +691,7 @@ export default function ReadingSessionScreen() {
             <Text style={[s.tabText, activePassage === i && s.tabTextActive]}>{tab}</Text>
             {i > 0 && (
               <View style={s.lockBadge}>
-                <Text style={s.lockIcon}>🔒</Text>
+                <LockIcon size={10} color={Colors.ink3} />
               </View>
             )}
           </TouchableOpacity>
@@ -706,9 +707,16 @@ export default function ReadingSessionScreen() {
             onPress={() => setView(v)}
             activeOpacity={0.8}
           >
-            <Text style={[s.toggleText, view === v && s.toggleTextActive]}>
-              {v === 'passage' ? '📄 Passage' : v === 'questions' ? '❓ Questions' : '⬜ Split'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              {v === 'passage'
+                ? <FileTextIcon size={12} color={view === v ? Colors.p : Colors.ink3} />
+                : v === 'questions'
+                  ? <HelpCircleIcon size={12} color={view === v ? Colors.p : Colors.ink3} />
+                  : null}
+              <Text style={[s.toggleText, view === v && s.toggleTextActive]}>
+                {v === 'passage' ? 'Passage' : v === 'questions' ? 'Questions' : 'Split'}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -726,7 +734,7 @@ export default function ReadingSessionScreen() {
       {/* ── Main content ── */}
       {activePassage > 0 ? (
         <View style={s.lockedPassage}>
-          <Text style={s.lockedIcon}>🔒</Text>
+          <LockIcon size={28} color={Colors.ink3} />
           <Text style={s.lockedTitle}>Passage {activePassage + 1} is locked</Text>
           <Text style={s.lockedSub}>Upgrade to Pro to unlock all three passages.</Text>
         </View>
@@ -832,7 +840,6 @@ const s = StyleSheet.create({
   tabText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink3 },
   tabTextActive: { color: Colors.p, fontFamily: 'Inter_600SemiBold' },
   lockBadge: { marginLeft: 2 },
-  lockIcon: { fontSize: 10 },
 
   toggleRow: {
     flexDirection: 'row',
@@ -875,7 +882,6 @@ const s = StyleSheet.create({
     gap: 10,
     padding: 40,
   },
-  lockedIcon: { fontSize: 40 },
   lockedTitle: { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.ink, textAlign: 'center' },
   lockedSub: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3, textAlign: 'center' },
 

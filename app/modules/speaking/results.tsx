@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { getSpeakingResult, clearSpeakingResult, SpeakingResult } from '@/lib/speakingStore';
+import { TimerIcon, CheckIcon, HelpCircleIcon, PersonIcon, FileTextIcon } from '@/components/icons';
 
 // ── Score bar ────────────────────────────────────────────────────
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -64,10 +65,13 @@ const ec = StyleSheet.create({
 });
 
 // ── Card ─────────────────────────────────────────────────────────
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
   return (
     <View style={card.wrap}>
-      <Text style={card.title}>{title}</Text>
+      {typeof title === 'string'
+        ? <Text style={card.title}>{title}</Text>
+        : <View style={card.titleRow}>{title}</View>
+      }
       {children}
     </View>
   );
@@ -79,6 +83,7 @@ const card = StyleSheet.create({
     padding: 16, gap: 12,
   },
   title: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
 });
 
 // ── Main ─────────────────────────────────────────────────────────
@@ -126,7 +131,10 @@ export default function SpeakingResultsScreen() {
           <Text style={s.title}>Speaking Results</Text>
           <View style={s.metaRow}>
             <Text style={s.chip}>{exam} · {part}</Text>
-            <Text style={s.chip}>⏱ {mins}m {secs}s</Text>
+            <View style={s.chipRow}>
+              <TimerIcon size={12} color={Colors.ink3} />
+              <Text style={s.chip}>{mins}m {secs}s</Text>
+            </View>
           </View>
         </View>
 
@@ -151,7 +159,7 @@ export default function SpeakingResultsScreen() {
         </Card>
 
         {/* Strengths */}
-        <Card title="✅ Strengths">
+        <Card title={<><CheckIcon size={15} color={Colors.green} /><Text style={card.title}>Strengths</Text></>}>
           {strengths.map((str, i) => (
             <View key={i} style={s.listRow}>
               <View style={s.listDot} />
@@ -161,7 +169,7 @@ export default function SpeakingResultsScreen() {
         </Card>
 
         {/* Improvements */}
-        <Card title="🔶 Areas to Improve">
+        <Card title={<><HelpCircleIcon size={15} color={Colors.orange} /><Text style={card.title}>Areas to Improve</Text></>}>
           {improvements.map((imp, i) => (
             <View key={i} style={s.listRow}>
               <Text style={s.listArrow}>›</Text>
@@ -171,7 +179,7 @@ export default function SpeakingResultsScreen() {
         </Card>
 
         {/* Body language */}
-        <Card title="👁 Body Language">
+        <Card title={<><PersonIcon size={15} color={Colors.ink} /><Text style={card.title}>Body Language</Text></>}>
           <EyeContactBar pct={eyeContactPct} />
           <View style={s.confRow}>
             <Text style={s.confLabel}>Confidence</Text>
@@ -193,7 +201,7 @@ export default function SpeakingResultsScreen() {
         </Card>
 
         {/* Transcript */}
-        <Card title="📝 Session Transcript">
+        <Card title={<><FileTextIcon size={15} color={Colors.ink} /><Text style={card.title}>Session Transcript</Text></>}>
           {transcript.map((msg, i) => (
             <View key={i} style={[s.txRow, msg.role === 'user' && s.txRowUser]}>
               <View style={[s.txAvatar, msg.role === 'user' && s.txAvatarUser]}>
@@ -246,6 +254,11 @@ const s = StyleSheet.create({
     fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3,
     backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 99, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
+  },
+  chipRow: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
+    backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 99, borderWidth: 1, borderColor: Colors.border,
   },
 
   bandCard: {

@@ -6,12 +6,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
+import {
+  HeadphoneIcon, BookIcon, PenIcon, MicIcon, CheckIcon, TimerIcon, type IconProps,
+} from '@/components/icons';
 
-const MODULES = [
-  { icon: '🎧', label: 'Listening',  duration: '40 min', color: Colors.green,  bg: Colors.green_bg  },
-  { icon: '📖', label: 'Reading',    duration: '60 min', color: Colors.orange, bg: Colors.orange_bg },
-  { icon: '✏️',  label: 'Writing',   duration: '60 min', color: Colors.gold,   bg: Colors.gold_bg   },
-  { icon: '🎙',  label: 'Speaking',  duration: '14 min', color: Colors.p,      bg: Colors.p_soft    },
+type IC = React.ComponentType<IconProps>;
+
+const MODULES: { Icon: IC; label: string; duration: string; color: string; bg: string }[] = [
+  { Icon: HeadphoneIcon, label: 'Listening',  duration: '40 min', color: Colors.green,  bg: Colors.green_bg  },
+  { Icon: BookIcon,      label: 'Reading',    duration: '60 min', color: Colors.orange, bg: Colors.orange_bg },
+  { Icon: PenIcon,       label: 'Writing',    duration: '60 min', color: Colors.gold,   bg: Colors.gold_bg   },
+  { Icon: MicIcon,       label: 'Speaking',   duration: '14 min', color: Colors.p,      bg: Colors.p_soft    },
 ];
 
 const RULES = [
@@ -62,7 +67,7 @@ export default function ExamEntry() {
               <React.Fragment key={m.label}>
                 <View style={s.moduleRow}>
                   <View style={[s.moduleIconWrap, { backgroundColor: m.bg }]}>
-                    <Text style={s.moduleIcon}>{m.icon}</Text>
+                    <m.Icon size={18} color={m.color} />
                   </View>
                   <Text style={s.moduleName}>{m.label}</Text>
                   <Text style={[s.moduleDuration, { color: m.color }]}>{m.duration}</Text>
@@ -71,7 +76,8 @@ export default function ExamEntry() {
                   <View style={s.breakDivider}>
                     <View style={s.breakLine} />
                     <View style={s.breakChip}>
-                      <Text style={s.breakChipText}>☕ 5 min break</Text>
+                      <TimerIcon size={11} color={Colors.ink3} />
+                      <Text style={s.breakChipText}>5 min break</Text>
                     </View>
                     <View style={s.breakLine} />
                   </View>
@@ -86,7 +92,7 @@ export default function ExamEntry() {
           <Text style={s.rulesTitle}>Exam rules</Text>
           {RULES.map(rule => (
             <View key={rule} style={s.ruleRow}>
-              <Text style={s.ruleCheck}>✓</Text>
+              <CheckIcon size={16} color={Colors.green} />
               <Text style={s.ruleText}>{rule}</Text>
             </View>
           ))}
@@ -158,7 +164,7 @@ const s = StyleSheet.create({
     width: 38, height: 38, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
-  moduleIcon: { fontSize: 18 },
+  moduleIcon: { /* replaced by icon component */ },
   moduleName: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.ink },
   moduleDuration: { fontFamily: 'Inter_700Bold', fontSize: 13 },
 
@@ -170,6 +176,7 @@ const s = StyleSheet.create({
   breakChip: {
     backgroundColor: Colors.gold_bg, borderRadius: 20,
     paddingHorizontal: 10, paddingVertical: 3,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
   },
   breakChipText: { fontFamily: 'Inter_500Medium', fontSize: 10, color: Colors.gold },
 
@@ -179,7 +186,7 @@ const s = StyleSheet.create({
   },
   rulesTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
   ruleRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  ruleCheck: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.green, marginTop: 1 },
+  ruleCheck: { /* replaced by CheckIcon */ },
   ruleText: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink2 },
 
   bottomBar: {

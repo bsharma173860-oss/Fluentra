@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { FileTextIcon } from '@/components/icons';
 
 type Exam = 'IELTS' | 'TOEFL';
 type Difficulty = 'B1' | 'B2' | 'C1' | 'C2';
@@ -98,7 +99,10 @@ export default function ReadingSelectScreen() {
 
         {/* What to expect */}
         <View style={s.expectCard}>
-          <Text style={s.expectTitle}>📋 What to expect</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+            <FileTextIcon size={16} color={Colors.ink} />
+            <Text style={s.expectTitle}>What to expect</Text>
+          </View>
           {[
             '1 academic passage (approx. 700–900 words)',
             '13 questions across 3 types',

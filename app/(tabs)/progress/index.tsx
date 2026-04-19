@@ -11,6 +11,11 @@ import { getTheme } from '@/constants/languageThemes';
 import { useUserLanguages } from '@/hooks/useUserLanguages';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  MicIcon, PenIcon, HeadphoneIcon, BookIcon, FlameIcon, ChartIcon, CalendarIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 // ─── Dimensions ───────────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get('window');
@@ -44,25 +49,25 @@ const CHART_DATA: Record<string, { label: string; score: number }[]> = {
   ],
 };
 
-type ModuleRow = { icon: string; title: string; score: number; change: number; color: string; bg: string };
+type ModuleRow = { Icon: IC; title: string; score: number; change: number; color: string; bg: string };
 const MODULE_DATA: Record<string, ModuleRow[]> = {
   en: [
-    { icon: '🎙', title: 'Speaking',  score: 7.0, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
-    { icon: '✏️', title: 'Writing',   score: 6.5, change: -0.5, color: Colors.gold,   bg: Colors.gold_bg   },
-    { icon: '🎧', title: 'Listening', score: 7.5, change: +1.0, color: Colors.green,  bg: Colors.green_bg  },
-    { icon: '📖', title: 'Reading',   score: 7.0, change: +0.5, color: Colors.orange, bg: Colors.orange_bg },
+    { Icon: MicIcon,       title: 'Speaking',  score: 7.0, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
+    { Icon: PenIcon,       title: 'Writing',   score: 6.5, change: -0.5, color: Colors.gold,   bg: Colors.gold_bg   },
+    { Icon: HeadphoneIcon, title: 'Listening', score: 7.5, change: +1.0, color: Colors.green,  bg: Colors.green_bg  },
+    { Icon: BookIcon,      title: 'Reading',   score: 7.0, change: +0.5, color: Colors.orange, bg: Colors.orange_bg },
   ],
   es: [
-    { icon: '🎙', title: 'Speaking',  score: 5.5, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
-    { icon: '✏️', title: 'Writing',   score: 5.0, change: +0.0, color: Colors.gold,   bg: Colors.gold_bg   },
-    { icon: '🎧', title: 'Listening', score: 6.0, change: +0.5, color: Colors.green,  bg: Colors.green_bg  },
-    { icon: '📖', title: 'Reading',   score: 5.5, change: -0.5, color: Colors.orange, bg: Colors.orange_bg },
+    { Icon: MicIcon,       title: 'Speaking',  score: 5.5, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
+    { Icon: PenIcon,       title: 'Writing',   score: 5.0, change: +0.0, color: Colors.gold,   bg: Colors.gold_bg   },
+    { Icon: HeadphoneIcon, title: 'Listening', score: 6.0, change: +0.5, color: Colors.green,  bg: Colors.green_bg  },
+    { Icon: BookIcon,      title: 'Reading',   score: 5.5, change: -0.5, color: Colors.orange, bg: Colors.orange_bg },
   ],
   fr: [
-    { icon: '🎙', title: 'Speaking',  score: 4.5, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
-    { icon: '✏️', title: 'Writing',   score: 4.0, change: +0.5, color: Colors.gold,   bg: Colors.gold_bg   },
-    { icon: '🎧', title: 'Listening', score: 5.0, change: +0.5, color: Colors.green,  bg: Colors.green_bg  },
-    { icon: '📖', title: 'Reading',   score: 4.5, change: +0.0, color: Colors.orange, bg: Colors.orange_bg },
+    { Icon: MicIcon,       title: 'Speaking',  score: 4.5, change: +0.5, color: Colors.p,      bg: Colors.p_soft    },
+    { Icon: PenIcon,       title: 'Writing',   score: 4.0, change: +0.5, color: Colors.gold,   bg: Colors.gold_bg   },
+    { Icon: HeadphoneIcon, title: 'Listening', score: 5.0, change: +0.5, color: Colors.green,  bg: Colors.green_bg  },
+    { Icon: BookIcon,      title: 'Reading',   score: 4.5, change: +0.0, color: Colors.orange, bg: Colors.orange_bg },
   ],
 };
 
@@ -81,15 +86,15 @@ const EXAM_DATA: Record<string, ExamCard[]> = {
 };
 
 type Session = {
-  icon: string; module: string; exam: string; date: string;
+  Icon: IC; module: string; exam: string; date: string;
   duration: string; score: number; color: string; lang: string;
 };
 const ALL_SESSIONS: Session[] = [
-  { icon: '🎙', module: 'Speaking',  exam: 'IELTS', date: 'Today',     duration: '14 min', score: 7.0, color: Colors.p,      lang: 'en' },
-  { icon: '✏️', module: 'Writing',   exam: 'IELTS', date: 'Yesterday', duration: '38 min', score: 6.5, color: Colors.gold,   lang: 'en' },
-  { icon: '🎧', module: 'Listening', exam: 'IELTS', date: 'Apr 10',    duration: '40 min', score: 7.5, color: Colors.green,  lang: 'en' },
-  { icon: '📖', module: 'Reading',   exam: 'IELTS', date: 'Apr 9',     duration: '58 min', score: 7.0, color: Colors.orange, lang: 'en' },
-  { icon: '🎙', module: 'Speaking',  exam: 'DELE',  date: 'Apr 8',     duration: '12 min', score: 6.5, color: Colors.p,      lang: 'es' },
+  { Icon: MicIcon,       module: 'Speaking',  exam: 'IELTS', date: 'Today',     duration: '14 min', score: 7.0, color: Colors.p,      lang: 'en' },
+  { Icon: PenIcon,       module: 'Writing',   exam: 'IELTS', date: 'Yesterday', duration: '38 min', score: 6.5, color: Colors.gold,   lang: 'en' },
+  { Icon: HeadphoneIcon, module: 'Listening', exam: 'IELTS', date: 'Apr 10',    duration: '40 min', score: 7.5, color: Colors.green,  lang: 'en' },
+  { Icon: BookIcon,      module: 'Reading',   exam: 'IELTS', date: 'Apr 9',     duration: '58 min', score: 7.0, color: Colors.orange, lang: 'en' },
+  { Icon: MicIcon,       module: 'Speaking',  exam: 'DELE',  date: 'Apr 8',     duration: '12 min', score: 6.5, color: Colors.p,      lang: 'es' },
 ];
 
 // ─── Line chart ───────────────────────────────────────────────────────────────
@@ -214,7 +219,10 @@ export default function ProgressScreen() {
           </View>
           <View style={[s.statCard, { backgroundColor: Colors.orange_bg }]}>
             <Text style={s.statLabel}>STREAK</Text>
-            <Text style={[s.statNum, { color: Colors.orange }]}>🔥 {stats.streak}d</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <FlameIcon size={20} color={Colors.orange} />
+              <Text style={[s.statNum, { color: Colors.orange }]}>{stats.streak}d</Text>
+            </View>
           </View>
         </View>
 
@@ -264,7 +272,7 @@ export default function ProgressScreen() {
             return (
               <View key={m.title} style={[s.moduleRow, i < modules.length - 1 && s.moduleRowBorder]}>
                 <View style={[s.moduleIconWrap, { backgroundColor: m.bg }]}>
-                  <Text style={s.moduleIcon}>{m.icon}</Text>
+                  <m.Icon size={20} color={m.color} />
                 </View>
                 <View style={s.moduleMeta}>
                   <View style={s.moduleTitleRow}>
@@ -297,7 +305,10 @@ export default function ProgressScreen() {
                 <Text style={[s.examAvg, { color: exam.color }]}>{exam.avg.toFixed(1)}</Text>
               </View>
               <View style={s.examMeta}>
-                <Text style={s.examMetaText}>📅 {exam.sessions} sessions · Last {exam.lastDate}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <CalendarIcon size={13} color={Colors.ink3} />
+                  <Text style={s.examMetaText}>{exam.sessions} sessions · Last {exam.lastDate}</Text>
+                </View>
               </View>
               <TouchableOpacity
                 style={[s.practiceBtn, { borderColor: exam.color + '55' }]}
@@ -314,7 +325,7 @@ export default function ProgressScreen() {
         <Text style={s.sectionTitle}>Recent sessions</Text>
         {sessions.length === 0 ? (
           <EmptyState
-            icon="📊"
+            iconComponent={<ChartIcon size={28} color={Colors.ink3} />}
             title="No sessions yet"
             subtitle="Complete your first practice session to see your progress"
           />
@@ -323,7 +334,7 @@ export default function ProgressScreen() {
             {sessions.map((session, i) => (
               <View key={i} style={s.sessionRow}>
                 <View style={[s.sessionIconWrap, { backgroundColor: session.color + '22' }]}>
-                  <Text style={s.sessionIcon}>{session.icon}</Text>
+                  <session.Icon size={22} color={session.color} />
                 </View>
                 <View style={s.sessionInfo}>
                   <Text style={s.sessionTitle}>{session.module} · {session.exam}</Text>
@@ -391,7 +402,6 @@ const s = StyleSheet.create({
   moduleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   moduleRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   moduleIconWrap: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  moduleIcon: { fontSize: 20 },
   moduleMeta: { flex: 1, gap: 5 },
   moduleTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   moduleTitle: { fontFamily: 'Inter_700Bold', fontSize: 14 },
@@ -435,7 +445,6 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border, padding: 12,
   },
   sessionIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  sessionIcon: { fontSize: 22 },
   sessionInfo: { flex: 1 },
   sessionTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
   sessionMeta: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },

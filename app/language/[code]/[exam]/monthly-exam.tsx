@@ -6,6 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles';
+import {
+  CameraIcon, GlobeIcon, TimerIcon, CheckIcon, FlameIcon, TrophyIcon, type IconProps,
+} from '@/components/icons';
+
+type IC = React.ComponentType<IconProps>;
 
 const MOCK_TOP_3 = [
   { rank: 1, name: 'Sara A.',     score: 8.5, band: '8.5', initial: 'S' },
@@ -13,11 +18,19 @@ const MOCK_TOP_3 = [
   { rank: 3, name: 'Jana P.',     score: 7.5, band: '7.5', initial: 'J' },
 ];
 
-const EXAM_RULES = [
-  { icon: '📸', text: 'Face detection required throughout — no leaving the camera' },
-  { icon: '1️⃣',  text: 'One attempt only — results are final and cannot be retaken' },
-  { icon: '🌍',  text: 'Public results — your score appears on the leaderboard' },
-  { icon: '⏱',   text: 'Strictly timed — each module starts automatically' },
+function OneIcon() {
+  return (
+    <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.ink3, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 10, color: '#FFF' }}>1</Text>
+    </View>
+  );
+}
+
+const EXAM_RULES: { Icon: IC | (() => React.ReactElement); text: string }[] = [
+  { Icon: CameraIcon, text: 'Face detection required throughout — no leaving the camera' },
+  { Icon: OneIcon,    text: 'One attempt only — results are final and cannot be retaken' },
+  { Icon: GlobeIcon,  text: 'Public results — your score appears on the leaderboard' },
+  { Icon: TimerIcon,  text: 'Strictly timed — each module starts automatically' },
 ];
 
 export default function MonthlyExam() {
@@ -58,13 +71,14 @@ export default function MonthlyExam() {
 
           <View style={s.heroMeta}>
             <View style={s.metaChip}>
-              <Text style={s.metaChipText}>💰 $5 entry</Text>
+              <Text style={s.metaChipText}>$5 entry</Text>
             </View>
             <View style={s.metaChip}>
-              <Text style={s.metaChipText}>🧑‍🤝‍🧑 847 registered</Text>
+              <Text style={s.metaChipText}>847 registered</Text>
             </View>
             <View style={s.metaChip}>
-              <Text style={s.metaChipText}>⏱ Apr 26, 2026</Text>
+              <TimerIcon size={11} color="rgba(255,255,255,0.75)" />
+              <Text style={s.metaChipText}>Apr 26, 2026</Text>
             </View>
           </View>
         </View>
@@ -72,13 +86,13 @@ export default function MonthlyExam() {
         {/* Streak unlock status */}
         <View style={s.streakCard}>
           <View style={s.streakLeft}>
-            <View style={s.streakCheck}><Text style={s.streakCheckText}>✓</Text></View>
+            <View style={s.streakCheck}><CheckIcon size={14} color={Colors.white} /></View>
             <View>
               <Text style={s.streakTitle}>Streak requirement met</Text>
               <Text style={s.streakSub}>You have a 40+ day streak — exam is unlocked</Text>
             </View>
           </View>
-          <Text style={s.streakBadge}>🔥 40+</Text>
+          <View style={s.streakBadge}><FlameIcon size={16} color={Colors.orange} /><Text style={s.streakBadgeText}> 40+</Text></View>
         </View>
 
         {/* Leaderboard preview */}
@@ -89,7 +103,7 @@ export default function MonthlyExam() {
               const isFirst = p.rank === 1;
               return (
                 <View key={p.rank} style={[s.podiumItem, isFirst && s.podiumItemFirst]}>
-                  {isFirst && <Text style={s.crown}>👑</Text>}
+                  {isFirst && <TrophyIcon size={20} color={Colors.gold} />}
                   <View style={[s.podiumAvatar, isFirst && s.podiumAvatarFirst]}>
                     <Text style={[s.podiumInitial, isFirst && { fontSize: 20 }]}>{p.initial}</Text>
                   </View>
@@ -106,7 +120,7 @@ export default function MonthlyExam() {
           <Text style={s.rulesTitle}>Exam conditions</Text>
           {EXAM_RULES.map(rule => (
             <View key={rule.text} style={s.ruleRow}>
-              <Text style={s.ruleIcon}>{rule.icon}</Text>
+              <View style={s.ruleIconWrap}><rule.Icon size={18} color={Colors.ink2} /></View>
               <Text style={s.ruleText}>{rule.text}</Text>
             </View>
           ))}
@@ -167,6 +181,7 @@ const s = StyleSheet.create({
   heroSub: { fontFamily: 'Inter_400Regular', fontSize: 14, color: 'rgba(255,255,255,0.55)' },
   heroMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   metaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
   },
@@ -182,10 +197,10 @@ const s = StyleSheet.create({
     width: 30, height: 30, borderRadius: 15,
     backgroundColor: Colors.green, alignItems: 'center', justifyContent: 'center',
   },
-  streakCheckText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.white },
   streakTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.green },
   streakSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.green, opacity: 0.8, marginTop: 2 },
-  streakBadge: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.orange },
+  streakBadge: { flexDirection: 'row', alignItems: 'center' },
+  streakBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.orange },
 
   lbCard: {
     backgroundColor: Colors.white, borderRadius: 18,
@@ -215,7 +230,7 @@ const s = StyleSheet.create({
   },
   rulesTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
   ruleRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  ruleIcon: { fontSize: 18, width: 26 },
+  ruleIconWrap: { width: 26, alignItems: 'center', paddingTop: 2 },
   ruleText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink2, flex: 1 },
 
   bottomBar: {

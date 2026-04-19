@@ -304,3 +304,101 @@ export function ExternalLinkIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Polyline points="3 6 5 6 21 6" />
+      <Path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6" />
+      <Path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+    </Svg>
+  );
+}
+
+export function FileTextIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <Polyline points="14 2 14 8 20 8" />
+      <Line x1="16" y1="13" x2="8" y2="13" />
+      <Line x1="16" y1="17" x2="8" y2="17" />
+      <Line x1="10" y1="9" x2="8" y2="9" />
+    </Svg>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Circle cx="11" cy="11" r="8" />
+      <Line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </Svg>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <Line x1="16" y1="2" x2="16" y2="6" />
+      <Line x1="8"  y1="2" x2="8"  y2="6" />
+      <Line x1="3"  y1="10" x2="21" y2="10" />
+    </Svg>
+  );
+}
+
+export function AwardIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Circle cx="12" cy="8" r="6" />
+      <Path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+    </Svg>
+  );
+}
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Polyline points="23 4 23 10 17 10" />
+      <Polyline points="1 20 1 14 7 14" />
+      <Path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+    </Svg>
+  );
+}
+
+export function TimerIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Circle cx="12" cy="12" r="9" />
+      <Polyline points="12 6 12 12 16 14" />
+    </Svg>
+  );
+}
+
+export function CameraIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+      <Circle cx="12" cy="13" r="4" />
+    </Svg>
+  );
+}
+
+export function CreditCardIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+      <Line x1="1" y1="10" x2="23" y2="10" />
+    </Svg>
+  );
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <Circle cx="9" cy="7" r="4" />
+      <Path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+    </Svg>
+  );
+}
