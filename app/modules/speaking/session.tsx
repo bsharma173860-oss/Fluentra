@@ -1,30 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Animated,
-  Easing,
-  ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Animated, Easing, ActivityIndicator, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeftIcon, MicIcon, FileTextIcon, CameraIcon } from '@/components/icons';
-import { setSpeakingResult, buildMockResult, TranscriptMsg } from '@/lib/speakingStore';
+import { SpeakingSidebar } from '@/components/layout/SpeakingSidebar';
+import { MicIcon } from '@/components/icons';
+import { setSpeakingResult, buildMockResult, type TranscriptMsg } from '@/lib/speakingStore';
 import { Analytics } from '@/lib/analytics';
 
-// ─────────────────────────────────────────────────────────────────
-// Script / conversation data
-// ─────────────────────────────────────────────────────────────────
+const PURPLE    = '#5B4EFF';
+const PURPLE_BG = '#F0EEFF';
+const RED       = '#C04A06';
+const GREEN     = '#16A34A';
+
+// ── Script ────────────────────────────────────────────────────────
 const PART1_QS = [
   "Good morning. My name is Sarah and I'm your IELTS examiner today. Can you tell me your full name please?",
-  "Thank you. Now I'd like to ask you about your hometown. Can you describe the place where you grew up?",
-  "Interesting. Do you still live there now or have you moved somewhere else?",
-  "Now let's talk about your work or studies. What do you do currently?",
+  "Can you describe the place where you grew up?",
+  "Do you still live there now or have you moved somewhere else?",
+  "What do you do currently — are you working or studying?",
 ];
 
 const PART2_INTRO = "Now I'd like you to talk about a topic for 1–2 minutes. Here is your topic card. You'll have one minute to prepare.";
@@ -42,31 +39,71 @@ const CUE_CARD = [
 
 const PART3_QS = [
   "Do you think reading habits have changed in recent years? Why?",
-  "How important is it for children to develop reading habits early in life?",
+  "How important is it for children to develop reading habits early?",
 ];
 
-// Demo timers (real values: PREP=60, SPEAK=120)
-const PREP_SECONDS   = 15;
-const SPEAK_SECONDS  = 20;
-const TYPING_DELAY   = 1400; // ms to show typing indicator
+const PREP_SECONDS  = 15;
+const SPEAK_SECONDS = 20;
+const TYPING_DELAY  = 1200;
 
-// ─────────────────────────────────────────────────────────────────
-// Typing indicator
-// ─────────────────────────────────────────────────────────────────
-function TypingIndicator() {
-  const dots = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
+const TIPS: Record<string, string> = {
+  'Part 1':   'Give extended answers with reasons and examples — don\'t just say "yes" or "no".',
+  'Part 2':   'Use your 1-minute prep time to jot mental bullet points. Speak continuously.',
+  'Part 3':   'Show critical thinking — explore multiple perspectives and give examples.',
+  'Full Test':'Maintain consistent pace and vocabulary throughout all three parts.',
+};
+
+// ── Wave visualizer (recording animation) ─────────────────────────
+function WaveVisualizer({ active }: { active: boolean }) {
+  const bars = useRef([...Array(5)].map(() => new Animated.Value(0.25))).current;
+
+  useEffect(() => {
+    if (!active) {
+      bars.forEach(b => Animated.timing(b, { toValue: 0.25, duration: 200, useNativeDriver: true }).start());
+      return;
+    }
+    const heights = [0.6, 0.9, 1.0, 0.85, 0.55];
+    const anims = bars.map((bar, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 90),
+          Animated.timing(bar, { toValue: heights[i], duration: 380, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+          Animated.timing(bar, { toValue: 0.2, duration: 380, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+        ])
+      )
+    );
+    anims.forEach(a => a.start());
+    return () => anims.forEach(a => a.stop());
+  }, [active]);
+
+  return (
+    <View style={wv.row}>
+      {bars.map((bar, i) => (
+        <Animated.View
+          key={i}
+          style={[wv.bar, { transform: [{ scaleY: bar }] }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const wv = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 56, justifyContent: 'center' },
+  bar: { width: 7, height: 44, borderRadius: 4, backgroundColor: PURPLE },
+});
+
+// ── Typing indicator ──────────────────────────────────────────────
+function TypingDots() {
+  const dots = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
 
   useEffect(() => {
     const anims = dots.map((d, i) =>
       Animated.loop(
         Animated.sequence([
           Animated.delay(i * 160),
-          Animated.timing(d, { toValue: -6, duration: 280, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
-          Animated.timing(d, { toValue: 0,  duration: 280, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+          Animated.timing(d, { toValue: -5, duration: 260, useNativeDriver: true }),
+          Animated.timing(d, { toValue: 0,  duration: 260, useNativeDriver: true }),
           Animated.delay(200),
         ])
       )
@@ -76,165 +113,20 @@ function TypingIndicator() {
   }, []);
 
   return (
-    <View style={ty.bubble}>
+    <View style={td.row}>
       {dots.map((d, i) => (
-        <Animated.View key={i} style={[ty.dot, { transform: [{ translateY: d }] }]} />
+        <Animated.View key={i} style={[td.dot, { transform: [{ translateY: d }] }]} />
       ))}
     </View>
   );
 }
 
-const ty = StyleSheet.create({
-  bubble: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.bg2,
-    borderRadius: 16, borderBottomLeftRadius: 4,
-    paddingHorizontal: 16, paddingVertical: 14,
-    alignSelf: 'flex-start',
-  },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.ink4 },
+const td = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6 },
+  dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.ink4 },
 });
 
-// ─────────────────────────────────────────────────────────────────
-// Mic pulse button
-// ─────────────────────────────────────────────────────────────────
-function MicPulse({ active }: { active: boolean }) {
-  const scale   = useRef(new Animated.Value(1)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!active) {
-      scale.setValue(1);
-      opacity.setValue(0);
-      return;
-    }
-    const pulse = Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(scale,   { toValue: 1.55, duration: 900, useNativeDriver: true }),
-          Animated.timing(scale,   { toValue: 1,    duration: 900, useNativeDriver: true }),
-        ]),
-        Animated.sequence([
-          Animated.timing(opacity, { toValue: 0.35, duration: 900, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 0,    duration: 900, useNativeDriver: true }),
-        ]),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [active]);
-
-  return (
-    <View style={mp.wrap}>
-      <Animated.View style={[mp.ring, { transform: [{ scale }], opacity }]} />
-      <View style={[mp.btn, active && mp.btnActive]}>
-        <MicIcon size={24} color={active ? Colors.white : Colors.ink2} />
-      </View>
-    </View>
-  );
-}
-
-const mp = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', width: 72, height: 72 },
-  ring: {
-    position: 'absolute',
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: Colors.p,
-  },
-  btn: {
-    width: 58, height: 58, borderRadius: 29,
-    backgroundColor: Colors.bg2,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.border,
-  },
-  btnActive: { backgroundColor: Colors.p, borderColor: Colors.p },
-});
-
-// ─────────────────────────────────────────────────────────────────
-// Countdown timer (Part 2 prep / speaking)
-// ─────────────────────────────────────────────────────────────────
-function CountdownDisplay({ seconds, label, color }: { seconds: number; label: string; color: string }) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return (
-    <View style={cd.wrap}>
-      <Text style={cd.label}>{label}</Text>
-      <Text style={[cd.time, { color }]}>
-        {String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
-      </Text>
-    </View>
-  );
-}
-
-const cd = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.white,
-    borderRadius: 16, borderWidth: 1, borderColor: Colors.border,
-    paddingVertical: 16, paddingHorizontal: 24,
-    alignItems: 'center', gap: 4,
-    marginHorizontal: 16,
-  },
-  label: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink3 },
-  time:  { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 52, lineHeight: 58 },
-});
-
-// ─────────────────────────────────────────────────────────────────
-// Cue card
-// ─────────────────────────────────────────────────────────────────
-function CueCard() {
-  return (
-    <View style={cc.wrap}>
-      <View style={cc.topBar}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <FileTextIcon size={13} color={Colors.white} />
-          <Text style={cc.topBarText}>Topic Card — Part 2</Text>
-        </View>
-      </View>
-      <View style={cc.body}>
-        {CUE_CARD.map((line, i) => (
-          <Text key={i} style={[cc.line, i === 0 && cc.lineTitle]}>{line}</Text>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-const cc = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.white,
-    borderRadius: 14, borderWidth: 1.5, borderColor: Colors.p,
-    overflow: 'hidden', marginHorizontal: 16,
-  },
-  topBar: { backgroundColor: Colors.p, paddingVertical: 8, paddingHorizontal: 14 },
-  topBarText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
-  body: { padding: 14, gap: 4 },
-  line: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink, lineHeight: 21 },
-  lineTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, marginBottom: 4 },
-});
-
-// ─────────────────────────────────────────────────────────────────
-// Phase badge
-// ─────────────────────────────────────────────────────────────────
-function PhaseBadge({ label }: { label: string }) {
-  return (
-    <View style={pb.row}>
-      <View style={pb.badge}><Text style={pb.text}>{label}</Text></View>
-    </View>
-  );
-}
-const pb = StyleSheet.create({
-  row: { alignItems: 'center', paddingVertical: 6 },
-  badge: {
-    backgroundColor: Colors.p_soft,
-    borderRadius: 99, paddingHorizontal: 16, paddingVertical: 6,
-    borderWidth: 1, borderColor: '#C4BEFF',
-  },
-  text: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.p },
-});
-
-// ─────────────────────────────────────────────────────────────────
-// Sleep helper
-// ─────────────────────────────────────────────────────────────────
+// ── Sleep helper ──────────────────────────────────────────────────
 function useSleep() {
   const cancelRef = useRef(false);
   const timers    = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -255,72 +147,45 @@ function useSleep() {
   return { sleep, cancel, cancelRef };
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Content item types shown in the scroll area
-// ─────────────────────────────────────────────────────────────────
-type ContentItem =
-  | { kind: 'phase_badge'; label: string; id: string }
-  | { kind: 'examiner_msg'; text: string; id: string }
-  | { kind: 'user_turn'; text: string; id: string }
-  | { kind: 'cue_card'; id: string }
-  | { kind: 'countdown_prep'; id: string }
-  | { kind: 'countdown_speak'; id: string };
-
-// ─────────────────────────────────────────────────────────────────
-// Main screen
-// ─────────────────────────────────────────────────────────────────
+// ── Main screen ───────────────────────────────────────────────────
 export default function SpeakingSessionScreen() {
-  const params  = useLocalSearchParams<{ exam?: string; part?: string }>();
-  const exam    = params.exam ?? 'IELTS';
-  const part    = params.part ?? 'Full Test';
+  const { width }  = useWindowDimensions();
+  const isDesktop  = Platform.OS === 'web' && width >= 768;
+  const params     = useLocalSearchParams<{ exam?: string; part?: string }>();
+  const exam       = params.exam ?? 'IELTS';
+  const part       = params.part ?? 'Full Test';
 
-  const [items,       setItems]       = useState<ContentItem[]>([]);
-  const [showTyping,  setShowTyping]  = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [phaseBadge,  setPhaseBadge]  = useState('Part 1 of 3');
-  const [prepSecs,    setPrepSecs]    = useState(PREP_SECONDS);
-  const [speakSecs,   setSpeakSecs]   = useState(SPEAK_SECONDS);
-  const [countMode,   setCountMode]   = useState<'none' | 'prep' | 'speak'>('none');
-  const [ending,      setEnding]      = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState('Getting ready…');
+  const [partLabel,       setPartLabel]        = useState('Part 1 — Question 1/4');
+  const [currentTip,      setCurrentTip]       = useState(TIPS[part] ?? TIPS['Full Test']);
+  const [isRecording,     setIsRecording]      = useState(false);
+  const [showTyping,      setShowTyping]       = useState(false);
+  const [prepSecs,        setPrepSecs]         = useState(PREP_SECONDS);
+  const [speakSecs,       setSpeakSecs]        = useState(SPEAK_SECONDS);
+  const [countMode,       setCountMode]        = useState<'none' | 'prep' | 'speak'>('none');
+  const [transcriptLines, setTranscriptLines]  = useState<string[]>([]);
+  const [ending,          setEnding]           = useState(false);
+  const [userResponse,    setUserResponse]     = useState('');
 
-  const scrollRef    = useRef<ScrollView>(null);
   const transcriptRef = useRef<TranscriptMsg[]>([]);
-  const startedAt    = useRef(Date.now());
+  const startedAt     = useRef(Date.now());
   const { sleep, cancel, cancelRef } = useSleep();
 
-  // Track session start on mount
   useEffect(() => {
-    Analytics.practiceSessionStarted({
-      module: 'speaking',
-      languageCode: 'en',
-      examType: exam,
-      mode: 'practice',
-    });
+    Analytics.practiceSessionStarted({ module: 'speaking', languageCode: 'en', examType: exam, mode: 'practice' });
   }, []);
 
-  // Auto-scroll whenever items or typing changes
-  useEffect(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
-  }, [items, showTyping, countMode]);
-
-  // ── Helpers ──────────────────────────────────────────────────
-  function addItem(item: ContentItem) {
-    setItems(prev => [...prev, item]);
-  }
-
   function pushExaminer(text: string) {
-    const id = Math.random().toString(36).slice(2);
-    addItem({ kind: 'examiner_msg', text, id });
     transcriptRef.current.push({ role: 'examiner', text });
   }
 
   function pushUser(text: string) {
-    const id = Math.random().toString(36).slice(2);
-    addItem({ kind: 'user_turn', text, id });
     transcriptRef.current.push({ role: 'user', text });
+    setTranscriptLines(prev => [...prev, text]);
+    setUserResponse(text);
   }
 
-  async function showExaminer(text: string, preDelay = 600) {
+  async function showQuestion(text: string, label: string, tip?: string, preDelay = 600) {
     if (cancelRef.current) return;
     await sleep(preDelay);
     if (cancelRef.current) return;
@@ -328,107 +193,92 @@ export default function SpeakingSessionScreen() {
     await sleep(TYPING_DELAY);
     if (cancelRef.current) return;
     setShowTyping(false);
+    setCurrentQuestion(text);
+    setPartLabel(label);
+    if (tip) setCurrentTip(tip);
     pushExaminer(text);
   }
 
-  // ── Main script ───────────────────────────────────────────────
+  // ── Auto script ───────────────────────────────────────────────
   useEffect(() => {
     async function run() {
-      // ── Part 1 ──
-      addItem({ kind: 'phase_badge', label: 'Part 1 of 3 — Introduction', id: 'p1' });
-      setPhaseBadge('Part 1 of 3');
-
+      // Part 1
       for (let i = 0; i < PART1_QS.length; i++) {
         if (cancelRef.current) return;
-        await showExaminer(PART1_QS[i], i === 0 ? 400 : 800);
+        await showQuestion(
+          PART1_QS[i],
+          `Part 1 — Question ${i + 1}/${PART1_QS.length}`,
+          TIPS['Part 1'],
+          i === 0 ? 600 : 800
+        );
         if (cancelRef.current) return;
         setIsRecording(true);
+        setUserResponse('');
         await sleep(i < 2 ? 3500 : 5000);
         if (cancelRef.current) return;
         setIsRecording(false);
-        pushUser('Your response...');
-        await sleep(600);
+        pushUser('Your response…');
+        await sleep(500);
       }
 
-      // ── Part 2 ──
-      addItem({ kind: 'phase_badge', label: 'Part 2 of 3 — Individual Long Turn', id: 'p2' });
-      setPhaseBadge('Part 2 of 3');
-
-      await showExaminer(PART2_INTRO);
+      // Part 2
+      await showQuestion(PART2_INTRO, 'Part 2 — Cue Card', TIPS['Part 2']);
       if (cancelRef.current) return;
-      await sleep(500);
-      addItem({ kind: 'cue_card', id: 'cue' });
 
-      // Prep countdown
-      await sleep(600);
-      addItem({ kind: 'countdown_prep', id: 'prep' });
+      // Show cue card in question area
+      setCurrentQuestion(CUE_CARD.join('\n'));
+      setPartLabel('Part 2 — Preparation (1 min)');
+
       setCountMode('prep');
       let p = PREP_SECONDS;
-      while (p > 0 && !cancelRef.current) {
-        await sleep(1000);
-        p--;
-        setPrepSecs(p);
-      }
+      while (p > 0 && !cancelRef.current) { await sleep(1000); p--; setPrepSecs(p); }
       setCountMode('none');
       if (cancelRef.current) return;
 
-      await showExaminer(PART2_BEGIN, 300);
+      await showQuestion(PART2_BEGIN, 'Part 2 — Speaking (2 min)', TIPS['Part 2'], 300);
       if (cancelRef.current) return;
-
-      // Speaking countdown
-      await sleep(400);
-      addItem({ kind: 'countdown_speak', id: 'speak' });
       setCountMode('speak');
       setIsRecording(true);
+      setUserResponse('');
       let sp = SPEAK_SECONDS;
-      while (sp > 0 && !cancelRef.current) {
-        await sleep(1000);
-        sp--;
-        setSpeakSecs(sp);
-      }
+      while (sp > 0 && !cancelRef.current) { await sleep(1000); sp--; setSpeakSecs(sp); }
       setIsRecording(false);
       setCountMode('none');
       if (cancelRef.current) return;
-      pushUser('Your response...');
+      pushUser('Your response…');
 
-      // ── Part 3 ──
-      addItem({ kind: 'phase_badge', label: 'Part 3 of 3 — Two-way Discussion', id: 'p3' });
-      setPhaseBadge('Part 3 of 3');
-
+      // Part 3
       for (let i = 0; i < PART3_QS.length; i++) {
         if (cancelRef.current) return;
-        await showExaminer(PART3_QS[i]);
+        await showQuestion(
+          PART3_QS[i],
+          `Part 3 — Question ${i + 1}/${PART3_QS.length}`,
+          TIPS['Part 3']
+        );
         if (cancelRef.current) return;
         setIsRecording(true);
+        setUserResponse('');
         await sleep(5000);
         if (cancelRef.current) return;
         setIsRecording(false);
-        pushUser('Your response...');
-        await sleep(600);
+        pushUser('Your response…');
+        await sleep(500);
       }
 
-      // Wrap up
       if (!cancelRef.current) {
-        await showExaminer("That is the end of the speaking test. Thank you.");
+        await showQuestion('That is the end of the speaking test. Thank you very much.', 'Complete ✓');
       }
     }
-
     run();
     return () => { cancel(); };
   }, []);
 
-  // ── End session ────────────────────────────────────────────────
   const handleEnd = useCallback(() => {
     cancel();
     setEnding(true);
     setIsRecording(false);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
-    Analytics.practiceSessionCompleted({
-      module: 'speaking',
-      languageCode: 'en',
-      examType: exam,
-      durationSeconds: timeTaken,
-    });
+    Analytics.practiceSessionCompleted({ module: 'speaking', languageCode: 'en', examType: exam, durationSeconds: timeTaken });
     setTimeout(() => {
       const result = buildMockResult(exam, part, timeTaken, transcriptRef.current);
       setSpeakingResult(result);
@@ -436,247 +286,238 @@ export default function SpeakingSessionScreen() {
     }, 2000);
   }, [exam, part]);
 
-  // ── Render ─────────────────────────────────────────────────────
+  // ── Analysing overlay ─────────────────────────────────────────
   if (ending) {
     return (
-      <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-        <View style={s.analysing}>
-          <ActivityIndicator size="large" color={Colors.p} />
-          <Text style={s.analysingTitle}>Analysing your response…</Text>
-          <Text style={s.analysingText}>Generating detailed feedback</Text>
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={PURPLE} />
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.ink, marginTop: 20 }}>
+          Analysing your response…
+        </Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3, marginTop: 6 }}>
+          Generating detailed feedback
+        </Text>
       </SafeAreaView>
     );
   }
 
-  return (
-    <AppLayout>
-    <SafeAreaView style={s.safe} edges={['top']}>
+  const timerSecs  = countMode === 'prep' ? prepSecs : countMode === 'speak' ? speakSecs : null;
+  const timerLabel = countMode === 'prep' ? 'Prep time' : 'Speaking time';
+  const mm = timerSecs != null ? String(Math.floor(timerSecs / 60)).padStart(2, '0') : '';
+  const ss = timerSecs != null ? String(timerSecs % 60).padStart(2, '0') : '';
 
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-          <ChevronLeftIcon size={13} color={Colors.textSecondary} />
-        </TouchableOpacity>
-        <View style={s.breadcrumb}>
-          <Text style={s.breadcrumbRoot}>{exam} · Speaking</Text>
-          <Text style={s.breadcrumbSep}>/</Text>
-          <Text style={s.breadcrumbCurrent}>Live session</Text>
-        </View>
-        <View style={s.liveRow}>
-          <View style={s.liveDot} />
-          <Text style={s.liveText}>Live</Text>
-        </View>
+  // ── Left panel ────────────────────────────────────────────────
+  const leftPanel = (
+    <View style={s.leftPanel}>
 
-        {/* Camera placeholder */}
-        <View style={s.camWrap}>
-          <CameraIcon size={22} color={Colors.ink3} />
+      {/* Examiner avatar */}
+      <View style={s.examinerCard}>
+        <View style={s.avatarCircle}>
+          <Text style={s.avatarText}>AI</Text>
         </View>
+        <Text style={s.examinerTitle}>IELTS Examiner</Text>
       </View>
 
-      {/* Phase badge strip */}
-      <View style={s.phaseStrip}>
-        <View style={s.phasePill}>
-          <Text style={s.phaseText}>{phaseBadge}</Text>
-        </View>
-      </View>
-
-      {/* ── Transcript scroll ── */}
-      <ScrollView
-        ref={scrollRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={s.transcript}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {items.map(item => {
-          switch (item.kind) {
-            case 'phase_badge':
-              return (
-                <View key={item.id} style={s.phaseDivider}>
-                  <View style={s.phaseDivLine} />
-                  <Text style={s.phaseDivText}>{item.label}</Text>
-                  <View style={s.phaseDivLine} />
-                </View>
-              );
-
-            case 'examiner_msg':
-              return (
-                <View key={item.id} style={s.examinerRow}>
-                  <View style={s.examinerAvatar}><Text style={s.examinerAvatarText}>S</Text></View>
-                  <View style={s.examinerBubble}>
-                    <Text style={s.examinerText}>{item.text}</Text>
-                  </View>
-                </View>
-              );
-
-            case 'user_turn':
-              return (
-                <View key={item.id} style={s.userRow}>
-                  <View style={s.userBubble}>
-                    <Text style={s.userText}>{item.text}</Text>
-                  </View>
-                </View>
-              );
-
-            case 'cue_card':
-              return <CueCard key={item.id} />;
-
-            case 'countdown_prep':
-              return (
-                <CountdownDisplay
-                  key={item.id}
-                  seconds={prepSecs}
-                  label="Preparation time"
-                  color={Colors.gold}
-                />
-              );
-
-            case 'countdown_speak':
-              return (
-                <CountdownDisplay
-                  key={item.id}
-                  seconds={speakSecs}
-                  label="Speaking time"
-                  color={Colors.p}
-                />
-              );
-
-            default:
-              return null;
-          }
-        })}
-
-        {/* Typing indicator */}
-        {showTyping && (
-          <View style={s.examinerRow}>
-            <View style={s.examinerAvatar}><Text style={s.examinerAvatarText}>S</Text></View>
-            <TypingIndicator />
-          </View>
+      {/* Current question */}
+      <View style={s.questionCard}>
+        <Text style={s.questionLabel}>{partLabel.toUpperCase()}</Text>
+        {showTyping ? (
+          <TypingDots />
+        ) : (
+          <Text style={s.questionText}>{currentQuestion}</Text>
         )}
+      </View>
 
-        <View style={{ height: 16 }} />
-      </ScrollView>
+      {/* Tip */}
+      <View style={s.tipCard}>
+        <Text style={s.tipLabel}>TIP</Text>
+        <Text style={s.tipText}>{currentTip}</Text>
+      </View>
 
-      {/* ── Bottom bar ── */}
-      <View style={s.bottomBar}>
-        <MicPulse active={isRecording} />
-        <View style={s.bottomCenter}>
-          <Text style={s.bottomStatus}>
-            {isRecording ? 'Listening to you speak…' : 'Examiner is speaking…'}
+      {/* Timer */}
+      {timerSecs !== null && (
+        <View style={s.timerBox}>
+          <Text style={s.timerTime}>
+            {mm}:{ss}
           </Text>
-          <Text style={s.bottomHint}>
-            {isRecording ? 'Answer naturally and completely' : 'Please wait'}
-          </Text>
+          <Text style={s.timerLabel}>{timerLabel}</Text>
         </View>
-        <TouchableOpacity style={s.endBtn} onPress={handleEnd} activeOpacity={0.85}>
-          <Text style={s.endBtnText}>End</Text>
+      )}
+    </View>
+  );
+
+  // ── Right panel ───────────────────────────────────────────────
+  const rightPanel = (
+    <View style={s.rightPanel}>
+
+      {/* Visualizer */}
+      <View style={s.visualizerBox}>
+        {isRecording ? (
+          <>
+            <WaveVisualizer active={isRecording} />
+            <Text style={s.recordingText}>Recording…</Text>
+          </>
+        ) : (
+          <>
+            <MicIcon size={36} color="#CCC" />
+            <Text style={s.idleText}>Examiner is speaking</Text>
+          </>
+        )}
+      </View>
+
+      {/* Transcript box */}
+      <View style={s.transcriptBox}>
+        <Text style={s.transcriptLabel}>YOUR RESPONSE</Text>
+        {userResponse ? (
+          <Text style={s.transcriptText}>{userResponse}</Text>
+        ) : (
+          <Text style={s.transcriptPlaceholder}>Your words will appear here…</Text>
+        )}
+      </View>
+
+      {/* Control buttons */}
+      <View style={s.controls}>
+        <TouchableOpacity
+          style={s.skipBtn}
+          onPress={handleEnd}
+          activeOpacity={0.8}
+        >
+          <Text style={s.skipText}>Skip</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[s.micBtn, isRecording && s.micBtnRecording]}
+          onPress={() => setIsRecording(r => !r)}
+          activeOpacity={0.85}
+        >
+          <MicIcon size={16} color={Colors.white} />
+          <Text style={s.micBtnText}>
+            {isRecording ? 'Stop Recording' : 'Start Recording'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[s.nextBtn, !isRecording && s.nextBtnEnabled]}
+          activeOpacity={0.85}
+        >
+          <Text style={s.nextText}>Next</Text>
         </TouchableOpacity>
       </View>
 
+    </View>
+  );
+
+  // ── Desktop layout ─────────────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <SpeakingSidebar />
+        <View style={s.desktopLeft}>{leftPanel}</View>
+        <View style={s.desktopRight}>{rightPanel}</View>
+      </View>
+    );
+  }
+
+  // ── Mobile layout ──────────────────────────────────────────────
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {leftPanel}
+        <View style={{ height: 1, backgroundColor: '#EAEAEA' }} />
+        {rightPanel}
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </SafeAreaView>
-    </AppLayout>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-
-  analysing: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40,
+  desktopLeft: {
+    flex: 0, width: '38%' as any,
+    borderRightWidth: 1, borderRightColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
   },
-  analysingTitle: { fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.ink, textAlign: 'center' },
-  analysingText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3 },
+  desktopRight: { flex: 1, backgroundColor: Colors.bg },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, height: 48, gap: 10,
-    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
-    backgroundColor: Colors.white,
+  // ── Left panel ─────────────────────────────────────────────────
+  leftPanel: { padding: 24, gap: 14, flex: 1 },
+
+  examinerCard: {
+    backgroundColor: PURPLE_BG, borderRadius: 16, padding: 20,
+    alignItems: 'center', gap: 8,
   },
-  backBtn: {
-    width: 26, height: 26, borderRadius: 6,
-    backgroundColor: Colors.bg2,
+  avatarCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: PURPLE,
     alignItems: 'center', justifyContent: 'center',
   },
-  breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
-  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
-  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  liveDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: Colors.green,
-    shadowColor: Colors.green, shadowOpacity: 0.8, shadowRadius: 4,
-  },
-  liveText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.green },
-  camWrap: {
-    width: 52, height: 52, borderRadius: 12,
-    backgroundColor: Colors.bg2,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.cardBorder,
-    overflow: 'hidden',
-  },
+  avatarText:    { fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.white },
+  examinerTitle: { fontFamily: 'Inter_500Medium', fontSize: 12, color: PURPLE },
 
-  phaseStrip: {
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
-    paddingVertical: 8, paddingHorizontal: 14,
-    flexDirection: 'row',
+  questionCard: {
+    backgroundColor: '#F9F8F5', borderRadius: 12, padding: 16,
   },
-  phasePill: {
-    backgroundColor: Colors.p_soft,
-    borderRadius: 99, paddingHorizontal: 14, paddingVertical: 5,
-    borderWidth: 1, borderColor: '#C4BEFF',
+  questionLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888',
+    letterSpacing: 0.6, textTransform: 'uppercase' as const, marginBottom: 8,
   },
-  phaseText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.p },
+  questionText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: '#000', lineHeight: 26 },
 
-  transcript: { paddingTop: 12, paddingHorizontal: 14, gap: 10 },
+  tipCard: {
+    backgroundColor: '#EDFAF4', borderRadius: 8, padding: 10, gap: 3,
+  },
+  tipLabel: {
+    fontFamily: 'Inter_700Bold', fontSize: 10, color: '#16A34A',
+    textTransform: 'uppercase' as const, letterSpacing: 0.5,
+  },
+  tipText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#16A34A', lineHeight: 18 },
 
-  phaseDivider: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 4,
-  },
-  phaseDivLine: { flex: 1, height: 1, backgroundColor: Colors.border },
-  phaseDivText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: Colors.ink3 },
+  timerBox: { alignItems: 'center', marginTop: 4 },
+  timerTime: { fontFamily: 'Inter_700Bold', fontSize: 36, color: RED },
+  timerLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginTop: 2 },
 
-  examinerRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
-  examinerAvatar: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: Colors.p,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  examinerAvatarText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.white },
-  examinerBubble: {
-    backgroundColor: Colors.bg2,
-    borderRadius: 16, borderBottomLeftRadius: 4,
-    paddingHorizontal: 14, paddingVertical: 10,
-    flex: 1,
-  },
-  examinerText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink, lineHeight: 22 },
+  // ── Right panel ─────────────────────────────────────────────────
+  rightPanel: { padding: 24, gap: 14, flex: 1 },
 
-  userRow: { flexDirection: 'row', justifyContent: 'flex-end' },
-  userBubble: {
-    backgroundColor: Colors.p,
-    borderRadius: 16, borderBottomRightRadius: 4,
-    paddingHorizontal: 14, paddingVertical: 10,
-    maxWidth: '80%',
+  visualizerBox: {
+    backgroundColor: '#F9F8F5', borderRadius: 16, height: 160,
+    alignItems: 'center', justifyContent: 'center', gap: 10,
   },
-  userText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.white, lineHeight: 22 },
+  recordingText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: PURPLE },
+  idleText:      { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#BBB' },
 
-  bottomBar: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderTopWidth: 1, borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
-    gap: 14,
+  transcriptBox: {
+    backgroundColor: Colors.white, borderRadius: 12,
+    borderWidth: 1, borderColor: '#EAEAEA',
+    padding: 16, minHeight: 120,
   },
-  bottomCenter: { flex: 1, gap: 3 },
-  bottomStatus: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
-  bottomHint: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
-  endBtn: {
-    backgroundColor: Colors.danger,
-    borderRadius: 12, paddingHorizontal: 18, paddingVertical: 11,
+  transcriptLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#999',
+    textTransform: 'uppercase' as const, letterSpacing: 0.6, marginBottom: 8,
   },
-  endBtnText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.white },
+  transcriptText:       { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#000', lineHeight: 24 },
+  transcriptPlaceholder:{ fontFamily: 'Inter_400Regular', fontSize: 14, color: '#BBB', fontStyle: 'italic' },
+
+  controls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+
+  skipBtn: {
+    backgroundColor: '#F4F4F0', borderRadius: 10,
+    paddingVertical: 12, paddingHorizontal: 18,
+  },
+  skipText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: '#888' },
+
+  micBtn: {
+    flex: 1, backgroundColor: PURPLE, borderRadius: 50,
+    paddingVertical: 14, paddingHorizontal: 24,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+  micBtnRecording: { backgroundColor: RED },
+  micBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
+
+  nextBtn: {
+    backgroundColor: '#F4F4F0', borderRadius: 10,
+    paddingVertical: 12, paddingHorizontal: 18,
+  },
+  nextBtnEnabled: { backgroundColor: '#000' },
+  nextText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.white },
 });

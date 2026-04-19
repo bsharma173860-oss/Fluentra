@@ -1,93 +1,101 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { getSpeakingResult, clearSpeakingResult, SpeakingResult } from '@/lib/speakingStore';
-import { TimerIcon, CheckIcon, HelpCircleIcon, PersonIcon, FileTextIcon } from '@/components/icons';
+import { SpeakingSidebar } from '@/components/layout/SpeakingSidebar';
+import { getSpeakingResult, clearSpeakingResult, type SpeakingResult } from '@/lib/speakingStore';
 
-// ── Score bar ────────────────────────────────────────────────────
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const pct = (value / 9) * 100;
-  const color = value >= 7 ? Colors.green : value >= 5.5 ? Colors.p : Colors.orange;
-  return (
-    <View style={sb.row}>
-      <View style={sb.meta}>
-        <Text style={sb.label}>{label}</Text>
-        <Text style={[sb.val, { color }]}>{value.toFixed(1)}</Text>
-      </View>
-      <View style={sb.track}>
-        <View style={[sb.fill, { width: `${pct}%` as any, backgroundColor: color }]} />
-      </View>
-    </View>
-  );
-}
+const PURPLE     = '#5B4EFF';
+const PURPLE_BG  = '#F0EEFF';
+const GREEN      = '#16A34A';
+const ORANGE     = '#B07A10';
+const RED_MARK   = '#C04A06';
 
-const sb = StyleSheet.create({
-  row: { gap: 6 },
-  meta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
-  val: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  track: { height: 8, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 99 },
-});
-
-// ── Progress bar (for eye contact) ──────────────────────────────
-function EyeContactBar({ pct }: { pct: number }) {
-  const color = pct >= 70 ? Colors.green : pct >= 50 ? Colors.p : Colors.orange;
-  return (
-    <View style={ec.wrap}>
-      <View style={ec.meta}>
-        <Text style={ec.label}>Eye Contact</Text>
-        <Text style={[ec.val, { color }]}>{pct}%</Text>
-      </View>
-      <View style={ec.track}>
-        <View style={[ec.fill, { width: `${pct}%` as any, backgroundColor: color }]} />
-      </View>
-    </View>
-  );
-}
-
-const ec = StyleSheet.create({
-  wrap: { gap: 6 },
-  meta: { flexDirection: 'row', justifyContent: 'space-between' },
-  label: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
-  val: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  track: { height: 8, backgroundColor: Colors.bg2, borderRadius: 99, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 99 },
-});
-
-// ── Card ─────────────────────────────────────────────────────────
-function Card({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <View style={card.wrap}>
-      {typeof title === 'string'
-        ? <Text style={card.title}>{title}</Text>
-        : <View style={card.titleRow}>{title}</View>
-      }
-      {children}
-    </View>
-  );
-}
-const card = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.white,
-    borderRadius: 18, borderWidth: 1, borderColor: Colors.border,
-    padding: 16, gap: 12,
+// ── Mock per-criterion feedback ───────────────────────────────────
+const CRITERION_DETAILS: Record<string, {
+  feedback: string;
+  goodPhrase: string;
+  improvePhrases: { original: string; suggestion: string }[];
+}> = {
+  'Fluency & Coherence': {
+    feedback: 'You maintained a generally natural pace with some hesitation at complex ideas. Discourse markers were used effectively to connect ideas.',
+    goodPhrase: '"Furthermore, this shows that..." — excellent use of cohesive device',
+    improvePhrases: [
+      { original: '"Um… I think… it's, um, important"', suggestion: 'Replace "um" with a natural pause or "well, I believe…"' },
+    ],
   },
-  title: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  'Lexical Resource': {
+    feedback: 'A satisfactory range of vocabulary was demonstrated. Some topic-specific terms were used effectively, though repetition occurred in places.',
+    goodPhrase: '"prevalent", "substantial impact", "noteworthy trend" — strong word choices',
+    improvePhrases: [
+      { original: '"very good" × 3 times', suggestion: 'Vary: "exceptional", "remarkable", "outstanding"' },
+    ],
+  },
+  'Grammatical Range': {
+    feedback: 'A mix of simple and complex structures. Errors were rare and rarely impeded communication.',
+    goodPhrase: '"Although technology has advanced rapidly, many still prefer…" — complex clause used well',
+    improvePhrases: [
+      { original: '"I have went to many places"', suggestion: '"I have been to many places" — use past participle' },
+    ],
+  },
+  'Pronunciation': {
+    feedback: 'Generally clear delivery with natural stress patterns. Word stress errors occurred occasionally but did not significantly affect intelligibility.',
+    goodPhrase: 'Clear sentence stress and intonation on key ideas.',
+    improvePhrases: [
+      { original: '"de-VE-lop" → wrong stress', suggestion: '"de-vel-op" — stress the second syllable' },
+    ],
+  },
+};
+
+function scoreColor(v: number) {
+  if (v >= 7) return GREEN;
+  if (v >= 5.5) return ORANGE;
+  return RED_MARK;
+}
+
+// ── Highlighted phrase component ──────────────────────────────────
+function GreenPhrase({ text }: { text: string }) {
+  return (
+    <View style={hp.green}>
+      <Text style={hp.greenText}>{text}</Text>
+    </View>
+  );
+}
+
+function OrangePhrase({ original, suggestion }: { original: string; suggestion: string }) {
+  return (
+    <View style={hp.orangeBlock}>
+      <Text style={hp.orangeOriginal}>{original}</Text>
+      <Text style={hp.orangeSuggestion}>→ {suggestion}</Text>
+    </View>
+  );
+}
+
+const hp = StyleSheet.create({
+  green: {
+    backgroundColor: '#EDFAF4',
+    borderLeftWidth: 3, borderLeftColor: GREEN,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 4,
+  },
+  greenText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: GREEN, lineHeight: 20 },
+  orangeBlock: {
+    backgroundColor: '#FEF9EC',
+    borderLeftWidth: 3, borderLeftColor: ORANGE,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 4, gap: 3,
+  },
+  orangeOriginal:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#B07A10' },
+  orangeSuggestion: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, lineHeight: 18 },
 });
 
 // ── Main ─────────────────────────────────────────────────────────
 export default function SpeakingResultsScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+
   const [result, setResult] = useState<SpeakingResult | null>(null);
 
   useEffect(() => {
@@ -98,227 +106,247 @@ export default function SpeakingResultsScreen() {
 
   if (!result) {
     return (
-      <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-        <View style={s.empty}>
-          <Text style={s.emptyText}>No result found.</Text>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)/home' as any)}>
-            <Text style={s.emptyLink}>Go home</Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3 }}>No result found.</Text>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/home' as any)} style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: PURPLE }}>Go home</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
-  const {
-    exam, part, timeTakenSeconds,
-    bandScore, fluency, lexical, grammar, pronunciation,
-    strengths, improvements,
-    eyeContactPct, confidenceLevel,
-    transcript,
-  } = result;
+  const { exam, part, timeTakenSeconds, bandScore, fluency, lexical, grammar, pronunciation, transcript } = result;
 
-  const bandColor = bandScore >= 7 ? Colors.green : bandScore >= 5.5 ? Colors.p : Colors.orange;
   const mins = Math.floor(timeTakenSeconds / 60);
   const secs = timeTakenSeconds % 60;
 
-  return (
-    <AppLayout>
+  const CRITERIA = [
+    { key: 'Fluency & Coherence', label: 'Fluency',     short: 'Fluency',     value: fluency       },
+    { key: 'Lexical Resource',    label: 'Lexical',     short: 'Lexical',     value: lexical       },
+    { key: 'Grammatical Range',   label: 'Grammar',     short: 'Grammar',     value: grammar       },
+    { key: 'Pronunciation',       label: 'Pronunc.',    short: 'Pronunc.',    value: pronunciation },
+  ];
+
+  const mainContent = (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={s.header}>
-          <Text style={s.title}>Speaking Results</Text>
+          <Text style={s.headerTitle}>Speaking Results</Text>
           <View style={s.metaRow}>
-            <Text style={s.chip}>{exam} · {part}</Text>
-            <View style={s.chipRow}>
-              <TimerIcon size={12} color={Colors.ink3} />
-              <Text style={s.chip}>{mins}m {secs}s</Text>
-            </View>
+            <View style={s.metaChip}><Text style={s.metaChipText}>{exam}</Text></View>
+            <View style={s.metaChip}><Text style={s.metaChipText}>{part}</Text></View>
+            <View style={s.metaChip}><Text style={s.metaChipText}>{mins}m {secs}s</Text></View>
           </View>
         </View>
 
-        {/* Band score card */}
+        {/* ── Overall score card (purple) ── */}
         <View style={s.bandCard}>
-          <Text style={s.bandLabel}>Overall Band Score</Text>
-          <Text style={[s.bandScore, { color: bandColor }]}>{bandScore.toFixed(1)}</Text>
-          <Text style={s.bandDesc}>
-            {bandScore >= 8   ? 'Expert — near-native fluency' :
-             bandScore >= 7   ? 'Good — effective command of English' :
-             bandScore >= 6   ? 'Competent — generally effective' :
-                                'Modest — partial command'}
-          </Text>
+          <Text style={s.bandLabel}>SPEAKING SCORE</Text>
+          <View style={s.bandScoreRow}>
+            <Text style={s.bandScore}>{bandScore.toFixed(1)}</Text>
+            <Text style={s.bandDenom}>/9.0</Text>
+          </View>
+
+          <View style={s.bandDivider} />
+
+          <View style={s.criteriaRow}>
+            {CRITERIA.map(c => (
+              <View key={c.key} style={s.criteriaCell}>
+                <Text style={s.criteriaScore}>{c.value.toFixed(1)}</Text>
+                <Text style={s.criteriaLabel}>{c.short}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
-        {/* Score breakdown */}
-        <Card title="Score Breakdown">
-          <ScoreBar label="Fluency & Coherence"   value={fluency} />
-          <ScoreBar label="Lexical Resource"       value={lexical} />
-          <ScoreBar label="Grammatical Range"      value={grammar} />
-          <ScoreBar label="Pronunciation"          value={pronunciation} />
-        </Card>
+        {/* ── Per-criterion feedback ── */}
+        {CRITERIA.map(c => {
+          const detail = CRITERION_DETAILS[c.key];
+          if (!detail) return null;
+          return (
+            <View key={c.key} style={s.feedbackCard}>
+              <View style={s.feedbackHeader}>
+                <Text style={s.feedbackCriterion}>{c.key}</Text>
+                <View style={[s.scoreBadge, { backgroundColor: scoreColor(c.value) + '18' }]}>
+                  <Text style={[s.scoreBadgeText, { color: scoreColor(c.value) }]}>{c.value.toFixed(1)}</Text>
+                </View>
+              </View>
 
-        {/* Strengths */}
-        <Card title={<><CheckIcon size={15} color={Colors.green} /><Text style={card.title}>Strengths</Text></>}>
-          {strengths.map((str, i) => (
-            <View key={i} style={s.listRow}>
-              <View style={s.listDot} />
-              <Text style={s.listText}>{str}</Text>
+              <Text style={s.feedbackText}>{detail.feedback}</Text>
+
+              <GreenPhrase text={detail.goodPhrase} />
+
+              {detail.improvePhrases.map((imp, i) => (
+                <OrangePhrase key={i} original={imp.original} suggestion={imp.suggestion} />
+              ))}
             </View>
-          ))}
-        </Card>
+          );
+        })}
 
-        {/* Improvements */}
-        <Card title={<><HelpCircleIcon size={15} color={Colors.orange} /><Text style={card.title}>Areas to Improve</Text></>}>
-          {improvements.map((imp, i) => (
-            <View key={i} style={s.listRow}>
-              <Text style={s.listArrow}>›</Text>
-              <Text style={[s.listText, { color: Colors.orange }]}>{imp}</Text>
-            </View>
-          ))}
-        </Card>
-
-        {/* Body language */}
-        <Card title={<><PersonIcon size={15} color={Colors.ink} /><Text style={card.title}>Body Language</Text></>}>
-          <EyeContactBar pct={eyeContactPct} />
-          <View style={s.confRow}>
-            <Text style={s.confLabel}>Confidence</Text>
-            <View style={[
-              s.confBadge,
-              confidenceLevel === 'Excellent' ? s.badgeGreen :
-              confidenceLevel === 'Good'      ? s.badgeBlue  : s.badgeOrange
-            ]}>
-              <Text style={[
-                s.confBadgeText,
-                confidenceLevel === 'Excellent' ? s.badgeTextGreen :
-                confidenceLevel === 'Good'      ? s.badgeTextBlue  : s.badgeTextOrange
-              ]}>{confidenceLevel}</Text>
+        {/* ── Transcript ── */}
+        {transcript.length > 0 && (
+          <View style={s.feedbackCard}>
+            <Text style={s.feedbackCriterion}>Session Transcript</Text>
+            <View style={s.transcriptList}>
+              {transcript.map((msg, i) => (
+                <View key={i} style={[s.txRow, msg.role === 'user' && s.txRowUser]}>
+                  <View style={[s.txAvatar, msg.role === 'user' && s.txAvatarUser]}>
+                    <Text style={s.txAvatarText}>{msg.role === 'examiner' ? 'E' : 'Y'}</Text>
+                  </View>
+                  <View style={[s.txBubble, msg.role === 'user' && s.txBubbleUser]}>
+                    <Text style={[s.txText, msg.role === 'user' && s.txTextUser]}>{msg.text}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
           </View>
-          <Text style={s.bodyNote}>
-            * Body language analysis requires camera access. Enable camera permission for accurate feedback.
-          </Text>
-        </Card>
+        )}
 
-        {/* Transcript */}
-        <Card title={<><FileTextIcon size={15} color={Colors.ink} /><Text style={card.title}>Session Transcript</Text></>}>
-          {transcript.map((msg, i) => (
-            <View key={i} style={[s.txRow, msg.role === 'user' && s.txRowUser]}>
-              <View style={[s.txAvatar, msg.role === 'user' && s.txAvatarUser]}>
-                <Text style={s.txAvatarText}>{msg.role === 'examiner' ? 'E' : 'Y'}</Text>
-              </View>
-              <View style={[s.txBubble, msg.role === 'user' && s.txBubbleUser]}>
-                <Text style={[s.txText, msg.role === 'user' && s.txTextUser]}>{msg.text}</Text>
-              </View>
-            </View>
-          ))}
-        </Card>
+        {/* ── Next steps card ── */}
+        <View style={s.nextCard}>
+          <Text style={s.nextTitle}>Next Steps</Text>
+          <View style={s.nextRow}>
+            <View style={s.nextDot} />
+            <Text style={s.nextText}>Practice Part 2 for longer, structured responses</Text>
+          </View>
+          <View style={s.nextRow}>
+            <View style={s.nextDot} />
+            <Text style={s.nextText}>
+              Focus on: {
+                CRITERIA.slice().sort((a, b) => a.value - b.value)[0].key
+              } — your lowest scoring area
+            </Text>
+          </View>
+          <View style={s.nextRow}>
+            <View style={s.nextDot} />
+            <Text style={s.nextText}>Record yourself answering Part 1 questions for 5 minutes daily</Text>
+          </View>
+        </View>
 
-        {/* Actions */}
+        {/* ── Actions ── */}
         <View style={s.actions}>
           <TouchableOpacity
-            style={s.tryBtn}
+            style={s.primaryBtn}
             onPress={() => router.replace('/modules/speaking/select' as any)}
             activeOpacity={0.85}
           >
-            <Text style={s.tryText}>Try Again</Text>
+            <Text style={s.primaryBtnText}>Practice again</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={s.homeBtn}
+            style={s.secondaryBtn}
             onPress={() => router.replace('/(tabs)/home' as any)}
             activeOpacity={0.85}
           >
-            <Text style={s.homeBtnText}>Back to Home</Text>
+            <Text style={s.secondaryBtnText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
-    </AppLayout>
   );
+
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <SpeakingSidebar />
+        <View style={{ flex: 1 }}>{mainContent}</View>
+      </View>
+    );
+  }
+
+  return mainContent;
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
+  safe:   { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingHorizontal: 20, paddingTop: 20, gap: 14 },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  emptyText: { fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3 },
-  emptyLink: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.p },
-
-  header: { gap: 8 },
-  title: { fontFamily: 'Inter_700Bold', fontSize: 22, color: Colors.ink },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: {
-    fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3,
-    backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 99, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
-  },
-  chipRow: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
-    backgroundColor: Colors.bg2, paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 99, borderWidth: 1, borderColor: Colors.border,
-  },
-
-  bandCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20, borderWidth: 1, borderColor: Colors.border,
-    padding: 24, alignItems: 'center', gap: 6,
-  },
-  bandLabel: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink3 },
-  bandScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 52, lineHeight: 60 },
-  bandDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, textAlign: 'center' },
-
-  listRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  listDot: {
-    width: 6, height: 6, borderRadius: 3,
-    backgroundColor: Colors.green,
-    marginTop: 7, flexShrink: 0,
-  },
-  listArrow: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.orange, marginTop: -2 },
-  listText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 20 },
-
-  confRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  confLabel: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2 },
-  confBadge: { borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5 },
-  badgeGreen: { backgroundColor: Colors.green_bg },
-  badgeBlue:  { backgroundColor: Colors.p_soft },
-  badgeOrange:{ backgroundColor: Colors.orange_bg },
-  confBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 13 },
-  badgeTextGreen: { color: Colors.green },
-  badgeTextBlue:  { color: Colors.p },
-  badgeTextOrange:{ color: Colors.orange },
-  bodyNote: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink4, lineHeight: 16, marginTop: -4 },
-
-  txRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
-  txRowUser: { alignSelf: 'flex-end', flexDirection: 'row-reverse' },
-  txAvatar: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: Colors.p,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  txAvatarUser: { backgroundColor: Colors.ink4 },
-  txAvatarText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: Colors.white },
-  txBubble: {
-    backgroundColor: Colors.bg2,
-    borderRadius: 12, borderBottomLeftRadius: 4,
-    paddingHorizontal: 12, paddingVertical: 8, flex: 1,
-  },
-  txBubbleUser: {
-    backgroundColor: Colors.p_soft,
-    borderBottomLeftRadius: 14, borderBottomRightRadius: 4,
-  },
-  txText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink, lineHeight: 19 },
-  txTextUser: { color: Colors.p },
-
-  actions: { flexDirection: 'row', gap: 12, marginTop: 6 },
-  tryBtn: {
-    flex: 1, backgroundColor: Colors.bg2, borderRadius: 12,
-    paddingVertical: 15, alignItems: 'center',
+  header: { gap: 8, marginBottom: 2 },
+  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
+  metaRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  metaChip: {
+    backgroundColor: Colors.bg2, borderRadius: 99,
+    paddingHorizontal: 10, paddingVertical: 4,
     borderWidth: 1, borderColor: Colors.border,
   },
-  tryText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink },
-  homeBtn: { flex: 1, backgroundColor: Colors.p, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
-  homeBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
+  metaChipText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
+
+  // ── Purple band card ──────────────────────────────
+  bandCard: {
+    backgroundColor: PURPLE, borderRadius: 20, padding: 28,
+  },
+  bandLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10,
+    color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' as const,
+    letterSpacing: 0.8, marginBottom: 12,
+  },
+  bandScoreRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  bandScore: {
+    fontFamily: 'DMSerifDisplay_400Regular', fontSize: 52,
+    color: '#FFFFFF', lineHeight: 56,
+  },
+  bandDenom: {
+    fontFamily: 'Inter_400Regular', fontSize: 20,
+    color: 'rgba(255,255,255,0.4)', marginBottom: 6,
+  },
+  bandDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: 20 },
+
+  criteriaRow:  { flexDirection: 'row' },
+  criteriaCell: { flex: 1, alignItems: 'center', gap: 4 },
+  criteriaScore:{ fontFamily: 'Inter_700Bold', fontSize: 16, color: '#FFFFFF' },
+  criteriaLabel:{
+    fontFamily: 'Inter_400Regular', fontSize: 10,
+    color: 'rgba(255,255,255,0.6)', textAlign: 'center',
+  },
+
+  // ── Feedback cards ────────────────────────────────
+  feedbackCard: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 20, gap: 10,
+  },
+  feedbackHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  feedbackCriterion: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#000' },
+  scoreBadge:     { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  scoreBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 12 },
+  feedbackText:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#666', lineHeight: 24 },
+
+  // ── Transcript ────────────────────────────────────
+  transcriptList: { gap: 8 },
+  txRow:       { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
+  txRowUser:   { alignSelf: 'flex-end', flexDirection: 'row-reverse' },
+  txAvatar:    { width: 24, height: 24, borderRadius: 12, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  txAvatarUser:{ backgroundColor: Colors.ink4 },
+  txAvatarText:{ fontFamily: 'Inter_700Bold', fontSize: 10, color: Colors.white },
+  txBubble:    { backgroundColor: Colors.bg2, borderRadius: 12, borderBottomLeftRadius: 4, paddingHorizontal: 12, paddingVertical: 8, flex: 1 },
+  txBubbleUser:{ backgroundColor: PURPLE_BG, borderBottomLeftRadius: 12, borderBottomRightRadius: 4 },
+  txText:      { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink, lineHeight: 19 },
+  txTextUser:  { color: PURPLE },
+
+  // ── Next steps ────────────────────────────────────
+  nextCard: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 20, gap: 10,
+  },
+  nextTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000' },
+  nextRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  nextDot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: PURPLE, marginTop: 7, flexShrink: 0 },
+  nextText:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 20 },
+
+  // ── Actions ───────────────────────────────────────
+  actions:      { flexDirection: 'row', gap: 10 },
+  primaryBtn:   { flex: 1, backgroundColor: PURPLE, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  primaryBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
+  secondaryBtn: {
+    flex: 1, backgroundColor: Colors.white, borderRadius: 10,
+    paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  secondaryBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
 });
