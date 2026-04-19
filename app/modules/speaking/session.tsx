@@ -163,7 +163,7 @@ export default function SpeakingSessionScreen() {
   const [prepSecs,        setPrepSecs]         = useState(PREP_SECONDS);
   const [speakSecs,       setSpeakSecs]        = useState(SPEAK_SECONDS);
   const [countMode,       setCountMode]        = useState<'none' | 'prep' | 'speak'>('none');
-  const [transcriptLines, setTranscriptLines]  = useState<string[]>([]);
+  const [, setTranscriptLines]  = useState<string[]>([]);
   const [ending,          setEnding]           = useState(false);
   const [userResponse,    setUserResponse]     = useState('');
 
@@ -400,7 +400,7 @@ export default function SpeakingSessionScreen() {
           style={[s.nextBtn, !isRecording && s.nextBtnEnabled]}
           activeOpacity={0.85}
         >
-          <Text style={s.nextText}>Next</Text>
+          <Text style={[s.nextText, isRecording && s.nextTextDisabled]}>Next</Text>
         </TouchableOpacity>
       </View>
 
@@ -519,5 +519,6 @@ const s = StyleSheet.create({
     paddingVertical: 12, paddingHorizontal: 18,
   },
   nextBtnEnabled: { backgroundColor: '#000' },
-  nextText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.white },
+  nextText:         { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.white },
+  nextTextDisabled: { color: '#AAA' },
 });

@@ -25,7 +25,7 @@ const CRITERION_DETAILS: Record<string, {
     feedback: 'You maintained a generally natural pace with some hesitation at complex ideas. Discourse markers were used effectively to connect ideas.',
     goodPhrase: '"Furthermore, this shows that..." — excellent use of cohesive device',
     improvePhrases: [
-      { original: '"Um… I think… it's, um, important"', suggestion: 'Replace "um" with a natural pause or "well, I believe…"' },
+      { original: '"Um\u2026 I think\u2026 it\'s, um, important"', suggestion: 'Replace "um" with a natural pause or "well, I believe\u2026"' },
     ],
   },
   'Lexical Resource': {
