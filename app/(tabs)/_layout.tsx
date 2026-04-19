@@ -11,7 +11,7 @@ import {
 type TabItem = {
   name:  string;
   label: string;
-  Icon:  (p: IconProps) => JSX.Element;
+  Icon:  (p: IconProps) => React.JSX.Element;
 };
 
 const TABS: TabItem[] = [
@@ -45,7 +45,7 @@ export default function TabLayout() {
         headerShown:         false,
         tabBarShowLabel:     false,
         tabBarStyle,
-        sceneContainerStyle: { backgroundColor: Colors.bg },
+        ...({ sceneContainerStyle: { backgroundColor: Colors.bg } } as object),
       }}
     >
       {TABS.map(({ name, label, Icon }) => (

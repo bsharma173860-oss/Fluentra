@@ -23,7 +23,7 @@ type NavItem = {
   label:       string;
   route:       string;
   pathSegment: string;
-  Icon:        (p: IconProps) => JSX.Element;
+  Icon:        (p: IconProps) => React.JSX.Element;
 };
 
 const NAV_ITEMS: NavItem[] = [

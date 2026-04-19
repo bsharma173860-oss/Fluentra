@@ -17,7 +17,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 // ── Row types ─────────────────────────────────────────────────────
 type RowRight = 'chevron' | 'external' | 'none';
 type Row = {
-  Icon:     (p: IconProps) => JSX.Element;
+  Icon:     (p: IconProps) => React.JSX.Element;
   label:    string;
   badge?:   string;
   right:    RowRight;

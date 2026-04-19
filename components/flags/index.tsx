@@ -244,7 +244,7 @@ export function FlagFA({ width = 60, height = 40 }: FP) {
 }
 
 // ── Selector ─────────────────────────────────────────────────────
-const FLAG_MAP: Record<string, (p: FP) => JSX.Element> = {
+const FLAG_MAP: Record<string, (p: FP) => React.JSX.Element> = {
   en: (p) => <FlagEN {...p} />,
   es: (p) => <FlagES {...p} />,
   fr: (p) => <FlagFR {...p} />,
