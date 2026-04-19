@@ -1,70 +1,73 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  ScrollView, KeyboardAvoidingView, Platform, Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { ChevronLeftIcon, PenIcon, RefreshIcon, CheckIcon, type IconProps } from '@/components/icons';
-type IC = React.ComponentType<IconProps>;
+import { WritingSidebar } from '@/components/layout/WritingSidebar';
 import { mockScore, setWritingResult } from '@/lib/writingStore';
 import { getTodaysTask2 } from '@/constants/dailyContent';
 import { Analytics } from '@/lib/analytics';
 
-const EXAM = 'IELTS';
-const MIN_WORDS = 250;
-const TOTAL_SECONDS = 40 * 60; // 40 minutes
-const WARN_SECONDS = 5 * 60;   // last 5 minutes → orange
+const GOLD          = '#B07A10';
+const GOLD_BG       = '#FEF9EC';
+const RED           = '#C04A06';
+const GREEN         = '#16A34A';
+const EXAM          = 'IELTS';
+const MIN_WORDS     = 250;
+const TOTAL_SECONDS = 40 * 60;
+const WARN_SECONDS  = 5 * 60;
 
-function secondsToMMSS(s: number) {
+function toMMSS(s: number) {
   const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
 function countWords(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function wordColor(count: number) {
+  if (count >= MIN_WORDS) return GREEN;
+  if (count >= 150)       return GOLD;
+  return RED;
+}
+
 export default function WritingTask2Screen() {
-  const todaysTask2  = getTodaysTask2();
-  const PROMPT       = todaysTask2.prompt;
+  const { width }   = useWindowDimensions();
+  const isDesktop   = Platform.OS === 'web' && width >= 768;
+  const todaysTask2 = getTodaysTask2();
+  const PROMPT      = todaysTask2.prompt;
 
-  const [text, setText] = useState('');
+  const [text,        setText]       = useState('');
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
   const startedAt = useRef(Date.now());
+  const textRef   = useRef('');
 
-  // Track session start on mount
-  useEffect(() => {
-    Analytics.practiceSessionStarted({
-      module: 'writing',
-      languageCode: 'en',
-      examType: EXAM,
-      mode: 'practice',
-    });
-  }, []);
+  useEffect(() => { textRef.current = text; }, [text]);
 
   const wordCount = countWords(text);
   const isWarning = secondsLeft <= WARN_SECONDS;
-  const wordOk = wordCount >= MIN_WORDS;
+  const wordOk    = wordCount >= MIN_WORDS;
+  const wc        = wordColor(wordCount);
+  const barPct    = Math.min(wordCount / MIN_WORDS, 1);
 
-  // Countdown timer
+  useEffect(() => {
+    Analytics.practiceSessionStarted({
+      module: 'writing', languageCode: 'en', examType: EXAM, mode: 'practice',
+    });
+  }, []);
+
   useEffect(() => {
     const id = setInterval(() => {
       setSecondsLeft(s => {
         if (s <= 1) {
           clearInterval(id);
-          handleSubmit(true);
+          doSubmit();
           return 0;
         }
         return s - 1;
@@ -73,252 +76,249 @@ export default function WritingTask2Screen() {
     return () => clearInterval(id);
   }, []);
 
-  const handleSubmit = useCallback((forced = false) => {
-    if (submitting) return;
-    if (!forced && wordCount < MIN_WORDS) {
-      Alert.alert(
-        'Too short',
-        `You have ${wordCount} words. Task 2 requires at least ${MIN_WORDS} words. Submit anyway?`,
-        [
-          { text: 'Keep writing', style: 'cancel' },
-          { text: 'Submit anyway', style: 'destructive', onPress: () => doSubmit() },
-        ]
-      );
-      return;
-    }
-    doSubmit();
-  }, [submitting, wordCount, text]);
-
   function doSubmit() {
     setSubmitting(true);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
-    const result = mockScore(text, 'task2', EXAM, PROMPT, timeTaken);
+    const currentText = textRef.current;
+    const result = mockScore(currentText, 'task2', EXAM, PROMPT, timeTaken);
     Analytics.practiceSessionCompleted({
-      module: 'writing',
-      languageCode: 'en',
-      examType: EXAM,
-      durationSeconds: timeTaken,
-      wordCount: countWords(text),
+      module: 'writing', languageCode: 'en', examType: EXAM,
+      durationSeconds: timeTaken, wordCount: countWords(currentText),
     });
     setWritingResult(result);
     router.replace('/modules/writing/results' as any);
   }
 
+  const handleSubmit = useCallback(() => {
+    if (submitting) return;
+    if (wordCount < MIN_WORDS) {
+      Alert.alert(
+        'Too short',
+        `You have ${wordCount} words. Task 2 requires at least ${MIN_WORDS} words. Submit anyway?`,
+        [
+          { text: 'Keep writing', style: 'cancel' },
+          { text: 'Submit anyway', style: 'destructive', onPress: doSubmit },
+        ]
+      );
+      return;
+    }
+    doSubmit();
+  }, [submitting, wordCount]);
+
+  // ── Prompt panel content ───────────────────────────────────────
+  const promptPanel = (
+    <View style={s.promptPanel}>
+      {/* Top row: task badge + timer */}
+      <View style={s.promptTopRow}>
+        <View style={s.taskBadge}>
+          <Text style={s.taskBadgeText}>TASK 2</Text>
+        </View>
+        <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
+          <Text style={[s.timerText, isWarning && s.timerTextWarn]}>
+            {toMMSS(secondsLeft)}
+          </Text>
+        </View>
+      </View>
+      <Text style={s.examType}>IELTS Academic</Text>
+
+      {/* Prompt card */}
+      <View style={s.promptCard}>
+        <Text style={s.promptCardLabel}>WRITING TASK 2</Text>
+        <Text style={s.promptText}>{PROMPT}</Text>
+      </View>
+
+      {/* Instructions */}
+      <View style={s.instructionsBox}>
+        {[
+          'Write at least 250 words',
+          'Present a balanced argument',
+          'Use formal academic style',
+        ].map((inst, i) => (
+          <View key={i} style={s.instrRow}>
+            <View style={s.instrDot} />
+            <Text style={s.instrText}>{inst}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Text style={s.targetText}>Target: 250–300 words</Text>
+    </View>
+  );
+
+  // ── Editor panel content ───────────────────────────────────────
+  const editorPanel = (
+    <View style={s.editorPanel}>
+      {/* Top row */}
+      <View style={s.editorTopRow}>
+        <Text style={s.editorTitle}>Your response</Text>
+        <Text style={[s.wordCountText, { color: wc }]}>
+          {wordCount} / {MIN_WORDS} words
+        </Text>
+      </View>
+
+      {/* Editor */}
+      <TextInput
+        style={s.editor}
+        multiline
+        value={text}
+        onChangeText={setText}
+        placeholder="Begin your essay here..."
+        placeholderTextColor="#BBB"
+        textAlignVertical="top"
+        autoCorrect={false}
+        spellCheck={false}
+      />
+
+      {/* Word count bar */}
+      <View style={s.barTrack}>
+        <View style={[s.barFill, { width: `${barPct * 100}%` as any, backgroundColor: wc }]} />
+      </View>
+
+      {/* Submit */}
+      <TouchableOpacity
+        style={[s.submitBtn, wordOk ? s.submitBtnActive : s.submitBtnDisabled]}
+        onPress={handleSubmit}
+        disabled={submitting}
+        activeOpacity={0.85}
+      >
+        <Text style={[s.submitBtnText, !wordOk && s.submitBtnTextDisabled]}>
+          {submitting ? 'Scoring…' : wordOk ? 'Submit for grading →' : 'Submit'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // ── Desktop layout ─────────────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <WritingSidebar />
+        <View style={s.desktopPrompt}>{promptPanel}</View>
+        <View style={s.desktopEditor}>{editorPanel}</View>
+      </View>
+    );
+  }
+
+  // ── Mobile layout ──────────────────────────────────────────────
   return (
-    <AppLayout>
-    <SafeAreaView style={s.safe} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
       >
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-            <ChevronLeftIcon size={13} color={Colors.textSecondary} />
-          </TouchableOpacity>
-          <View style={s.breadcrumb}>
-            <Text style={s.breadcrumbRoot}>{EXAM} · Writing</Text>
-            <Text style={s.breadcrumbSep}>/</Text>
-            <Text style={s.breadcrumbCurrent}>Task 2</Text>
-          </View>
-          {/* Timer */}
-          <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
-            <Text style={[s.timerText, isWarning && s.timerTextWarn]}>
-              {secondsToMMSS(secondsLeft)}
-            </Text>
-          </View>
-        </View>
-
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={s.content}
+          contentContainerStyle={s.mobileContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Prompt card */}
-          <View style={s.promptCard}>
-            <Text style={s.promptLabel}>TASK 2 PROMPT · {todaysTask2.topic.toUpperCase()}</Text>
-            <Text style={s.promptText}>{PROMPT}</Text>
-          </View>
-
-          {/* Instructions */}
-          <View style={s.instructionsRow}>
-            <Text style={s.instruction}>Write at least <Text style={s.instructionBold}>{MIN_WORDS} words</Text></Text>
-            <Text style={s.instruction}>You have <Text style={s.instructionBold}>40 minutes</Text></Text>
-          </View>
-
-          {/* Writing area */}
-          <View style={s.editorWrap}>
-            <TextInput
-              style={s.editor}
-              multiline
-              value={text}
-              onChangeText={setText}
-              placeholder="Start writing your essay here…"
-              placeholderTextColor={Colors.ink4}
-              textAlignVertical="top"
-              autoCorrect={false}
-              spellCheck={false}
-            />
-
-            {/* Word counter + submit row */}
-            <View style={s.editorFooter}>
-              <View style={[s.wordBadge, wordOk ? s.wordBadgeOk : s.wordBadgeWarn]}>
-                <Text style={[s.wordCount, wordOk ? s.wordCountOk : s.wordCountWarn]}>
-                  {wordCount} / {MIN_WORDS} words
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[s.submitBtn, submitting && s.submitBtnDisabled]}
-                onPress={() => handleSubmit(false)}
-                disabled={submitting}
-                activeOpacity={0.85}
-              >
-                <Text style={s.submitBtnText}>
-                  {submitting ? 'Scoring…' : 'Submit →'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Writing tips */}
-          <View style={s.tipsRow}>
-            {([
-              { Icon: PenIcon as IC,     tip: 'State your position clearly in the introduction.' },
-              { Icon: RefreshIcon as IC, tip: 'Discuss both views before giving your opinion.' },
-              { Icon: CheckIcon as IC,   tip: 'Use linking words: however, furthermore, in contrast.' },
-            ] as { Icon: IC; tip: string }[]).map((t, i) => (
-              <View key={i} style={s.tipChip}>
-                <t.Icon size={16} color={Colors.ink3} />
-                <Text style={s.tipText}>{t.tip}</Text>
-              </View>
-            ))}
-          </View>
-
+          {promptPanel}
+          <View style={s.mobileDivider} />
+          {editorPanel}
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-    </AppLayout>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  // ── Desktop panels ─────────────────────
+  desktopPrompt: {
+    flex: 0, width: '42%' as any,
+    borderRightWidth: 1, borderRightColor: '#EAEAEA',
+    backgroundColor: '#FFFFFF',
+  },
+  desktopEditor: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
 
-  header: {
+  // ── Mobile ─────────────────────────────
+  mobileContent: { paddingBottom: 24 },
+  mobileDivider: { height: 1, backgroundColor: '#EAEAEA', marginVertical: 0 },
+
+  // ── Prompt panel ───────────────────────
+  promptPanel: {
+    padding: 24, gap: 0,
+    flex: 1,
+  },
+
+  promptTopRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, height: 48, gap: 10,
-    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
-    backgroundColor: Colors.white,
+    justifyContent: 'space-between', marginBottom: 4,
   },
-  backBtn: {
-    width: 26, height: 26, borderRadius: 6,
-    backgroundColor: Colors.bg2,
-    alignItems: 'center', justifyContent: 'center',
+  taskBadge: {
+    backgroundColor: '#FEF9EC', borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 4,
   },
-  breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
-  breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
-  breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
-
+  taskBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: GOLD },
   timerBadge: {
     paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 99, backgroundColor: Colors.bg2,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  timerBadgeWarn: { backgroundColor: Colors.orange_bg, borderColor: Colors.orange },
-  timerText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.textPrimary },
-  timerTextWarn: { color: Colors.orange },
+  timerBadgeWarn: { backgroundColor: '#FFF0EB', borderColor: RED },
+  timerText:     { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
+  timerTextWarn: { color: RED },
 
-  content: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
+  examType: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999', marginBottom: 16 },
 
   promptCard: {
-    backgroundColor: Colors.bg2,
-    borderRadius: 16,
-    padding: 16,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: '#F9F8F5', borderRadius: 12, padding: 16,
+    marginBottom: 14,
   },
-  promptLabel: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    letterSpacing: 1,
-    color: Colors.p,
-    textTransform: 'uppercase',
+  promptCardLabel: {
+    fontFamily: 'Inter_700Bold', fontSize: 11, color: GOLD,
+    textTransform: 'uppercase' as const, letterSpacing: 0.6, marginBottom: 8,
   },
   promptText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: Colors.ink,
-    lineHeight: 22,
+    fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000', lineHeight: 26,
   },
 
-  instructionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  instructionsBox: {
+    backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12, gap: 7,
   },
-  instruction: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  instructionBold: { fontFamily: 'Inter_600SemiBold', color: Colors.ink2 },
+  instrRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  instrDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: GOLD, flexShrink: 0 },
+  instrText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666' },
 
-  editorWrap: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
+  targetText: {
+    fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginTop: 10,
   },
+
+  // ── Editor panel ───────────────────────
+  editorPanel: {
+    padding: 24, flex: 1, gap: 0,
+  },
+
+  editorTopRow: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', marginBottom: 10,
+  },
+  editorTitle:  { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#000' },
+  wordCountText:{ fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+
   editor: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: Colors.ink,
-    lineHeight: 24,
-    minHeight: 320,
-    padding: 16,
-  },
-  editorFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAEAEA',
+    borderRadius: 12, padding: 16,
+    fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000',
+    lineHeight: 26, minHeight: 400,
+    flex: 1,
   },
 
-  wordBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 99,
-    borderWidth: 1,
+  barTrack: {
+    height: 3, backgroundColor: '#F0F0F0',
+    borderRadius: 2, overflow: 'hidden', marginTop: 8,
   },
-  wordBadgeOk: { backgroundColor: Colors.green_bg, borderColor: Colors.green },
-  wordBadgeWarn: { backgroundColor: '#FFF3ED', borderColor: Colors.orange },
-  wordCount: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
-  wordCountOk: { color: Colors.green },
-  wordCountWarn: { color: Colors.orange },
+  barFill: { height: '100%', borderRadius: 2 },
 
   submitBtn: {
-    backgroundColor: Colors.p,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 10, paddingVertical: 14,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 16,
   },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
-
-  tipsRow: { gap: 8 },
-  tipChip: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-  },
-  tipText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 19 },
+  submitBtnActive:   { backgroundColor: GOLD },
+  submitBtnDisabled: { backgroundColor: '#F4F4F0' },
+  submitBtnText:     { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
+  submitBtnTextDisabled: { color: '#BBB' },
 });

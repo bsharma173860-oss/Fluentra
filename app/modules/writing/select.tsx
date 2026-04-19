@@ -1,288 +1,238 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import {
-  ChartIcon, PenIcon, FileTextIcon, TimerIcon, HelpCircleIcon, type IconProps,
-} from '@/components/icons';
+import { WritingSidebar } from '@/components/layout/WritingSidebar';
+import { getTodaysTask2 } from '@/constants/dailyContent';
 
-type IC = React.ComponentType<IconProps>;
+const GOLD     = '#B07A10';
+const GOLD_BG  = '#FEF9EC';
+const GOLD_BDR = '#F0E4C0';
 
-type Exam = 'IELTS' | 'TOEFL';
-
-type TaskOption = {
-  key: 'task1' | 'task2' | 'full';
-  Icon: IC;
-  title: string;
-  subtitle: string;
-  duration: string;
-  minWords: number;
-  route: string;
-};
-
-const TASKS: TaskOption[] = [
+const TASKS = [
   {
-    key: 'task1',
-    Icon: ChartIcon,
-    title: 'Task 1',
-    subtitle: 'Describe a graph, chart or diagram',
-    duration: '20 min',
-    minWords: 150,
+    key: 'task1' as const,
+    label: 'Task 1 — Academic Writing',
+    desc: 'Describe a graph, chart, diagram or map. Min 150 words.',
+    pills: ['20 min recommended', '150+ words', 'Band 1-9'],
+    btnLabel: 'Start Task 1 →',
     route: '/modules/writing/task1',
   },
   {
-    key: 'task2',
-    Icon: PenIcon,
-    title: 'Task 2',
-    subtitle: 'Argumentative essay',
-    duration: '40 min',
-    minWords: 250,
+    key: 'task2' as const,
+    label: 'Task 2 — Academic Essay',
+    desc: 'Write an argumentative essay. Present both views or your opinion. Min 250 words.',
+    pills: ['40 min recommended', '250+ words', 'Band 1-9'],
+    btnLabel: 'Start Task 2 →',
     route: '/modules/writing/task2',
-  },
-  {
-    key: 'full',
-    Icon: FileTextIcon,
-    title: 'Full Exam',
-    subtitle: 'Task 1 + Task 2 back to back',
-    duration: '60 min',
-    minWords: 400,
-    route: '/modules/writing/task1',
   },
 ];
 
 export default function WritingSelectScreen() {
-  const [exam, setExam] = useState<Exam>('IELTS');
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+  const params    = useLocalSearchParams();
+  const langCode  = (params.languageCode ?? params.code ?? 'en') as string;
 
-  return (
+  const todaysTask2 = getTodaysTask2();
+
+  function startTask(route: string) {
+    router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode } });
+  }
+
+  const content = (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-            <Text style={s.backArrow}>←</Text>
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Writing</Text>
-          <View style={s.headerSpacer} />
-        </View>
-
-        {/* Exam pills */}
-        <View style={s.examRow}>
-          {(['IELTS', 'TOEFL'] as Exam[]).map(e => (
-            <TouchableOpacity
-              key={e}
-              style={[s.examPill, exam === e && s.examPillActive]}
-              onPress={() => setExam(e)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.examPillText, exam === e && s.examPillTextActive]}>{e}</Text>
+          {!isDesktop && (
+            <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+              <Text style={s.backArrow}>←</Text>
             </TouchableOpacity>
-          ))}
+          )}
+          <View>
+            <Text style={s.headerTitle}>Writing Practice</Text>
+            <Text style={s.headerSub}>Choose a task type to begin</Text>
+          </View>
         </View>
 
-        {/* Description */}
-        <View style={s.descBox}>
-          <Text style={s.descTitle}>
-            {exam === 'IELTS' ? 'IELTS Academic Writing' : 'TOEFL Integrated Writing'}
-          </Text>
-          <Text style={s.descBody}>
-            {exam === 'IELTS'
-              ? 'Two tasks: a graph description (150+ words, 20 min) followed by an argumentative essay (250+ words, 40 min). Scored on Task Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range.'
-              : 'Two tasks: an integrated task reading a passage and listening to a lecture (150–225 words, 20 min), followed by an academic discussion task (100+ words, 10 min).'}
-          </Text>
-        </View>
-
-        {/* Task cards */}
-        <Text style={s.sectionTitle}>Choose a task</Text>
+        {/* ── Task cards ── */}
         <View style={s.taskList}>
           {TASKS.map(task => (
-            <TouchableOpacity
-              key={task.key}
-              style={s.taskCard}
-              onPress={() => router.push(task.route as any)}
-              activeOpacity={0.85}
-            >
-              <View style={s.taskIconWrap}>
-                <task.Icon size={26} color={Colors.gold} />
+            <View key={task.key} style={s.taskCard}>
+
+              {/* Colored top strip */}
+              <View style={s.taskTop}>
+                <View style={s.taskTopIcon}>
+                  <Text style={s.taskTopIconText}>✍</Text>
+                </View>
+                <View style={s.taskTopDots}>
+                  {[0, 1, 2, 3].map(i => (
+                    <View key={i} style={[s.taskTopBar, { height: 14 + i * 6, opacity: 0.3 + i * 0.15 }]} />
+                  ))}
+                </View>
               </View>
 
+              {/* Card body */}
               <View style={s.taskBody}>
-                <View style={s.taskTitleRow}>
-                  <Text style={s.taskTitle}>{task.title}</Text>
-                  {task.key === 'full' && (
-                    <View style={s.popularBadge}>
-                      <Text style={s.popularText}>POPULAR</Text>
+                <Text style={s.taskLabel}>{task.label}</Text>
+                <Text style={s.taskDesc}>{task.desc}</Text>
+
+                <View style={s.pillRow}>
+                  {task.pills.map(p => (
+                    <View key={p} style={s.pill}>
+                      <Text style={s.pillText}>{p}</Text>
                     </View>
-                  )}
+                  ))}
                 </View>
-                <Text style={s.taskSubtitle}>{task.subtitle}</Text>
-                <View style={s.taskMeta}>
-                  <View style={s.metaChip}>
-                    <TimerIcon size={11} color={Colors.ink2} />
-                    <Text style={s.metaText}>{task.duration}</Text>
-                  </View>
-                  <View style={s.metaChip}>
-                    <PenIcon size={11} color={Colors.ink2} />
-                    <Text style={s.metaText}>{task.minWords}+ words</Text>
-                  </View>
-                </View>
+
+                <TouchableOpacity
+                  style={s.startBtn}
+                  onPress={() => startTask(task.route)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={s.startBtnText}>{task.btnLabel}</Text>
+                </TouchableOpacity>
               </View>
-
-              <Text style={s.taskArrow}>›</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Tips */}
-        <View style={s.tipsCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-            <HelpCircleIcon size={16} color={Colors.ink} />
-            <Text style={s.tipsTitle}>Tips for high scores</Text>
-          </View>
-          {[
-            'Plan for 2–3 minutes before writing.',
-            'Use a variety of sentence structures.',
-            'Check grammar and spelling in the last 2 minutes.',
-            task2Tips(exam),
-          ].map((tip, i) => (
-            <View key={i} style={s.tipRow}>
-              <Text style={s.tipDot}>•</Text>
-              <Text style={s.tipText}>{tip}</Text>
             </View>
           ))}
         </View>
 
-        <View style={{ height: 24 }} />
+        {/* ── Today's prompts ── */}
+        <Text style={s.sectionLabel}>TODAY'S PROMPTS</Text>
+        <View style={s.promptsList}>
+
+          <TouchableOpacity
+            style={s.promptCard}
+            onPress={() => startTask('/modules/writing/task2')}
+            activeOpacity={0.85}
+          >
+            <View style={[s.typeBadge, { backgroundColor: GOLD_BG }]}>
+              <Text style={[s.typeBadgeText, { color: GOLD }]}>T2</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.promptTopic}>{todaysTask2.topic}</Text>
+              <Text style={s.promptPreview} numberOfLines={2}>{todaysTask2.prompt}</Text>
+            </View>
+            <Text style={s.promptCta}>Use this prompt →</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={s.promptCard}
+            onPress={() => startTask('/modules/writing/task1')}
+            activeOpacity={0.85}
+          >
+            <View style={[s.typeBadge, { backgroundColor: '#EDFAF4' }]}>
+              <Text style={[s.typeBadgeText, { color: '#0A8C5A' }]}>T1</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.promptTopic}>Data Interpretation</Text>
+              <Text style={s.promptPreview} numberOfLines={2}>
+                The chart below shows the percentage of households in owned and rented accommodation between 1918 and 2011. Summarise the main features.
+              </Text>
+            </View>
+            <Text style={[s.promptCta, { color: '#0A8C5A' }]}>Use this prompt →</Text>
+          </TouchableOpacity>
+
+        </View>
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
-}
 
-function task2Tips(exam: Exam) {
-  return exam === 'IELTS'
-    ? 'Task 2 carries twice the weight of Task 1.'
-    : 'Reference specific points from the reading and lecture.';
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <WritingSidebar />
+        <View style={{ flex: 1 }}>{content}</View>
+      </View>
+    );
+  }
+
+  return content;
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingHorizontal: 20, paddingTop: 8, gap: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 20 },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingBottom: 4,
   },
   backBtn: {
-    width: 38, height: 38,
-    borderRadius: 12,
+    width: 36, height: 36, borderRadius: 10,
     backgroundColor: Colors.bg2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 20, color: Colors.ink },
-  headerTitle: {
-    flex: 1,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 20,
-    color: Colors.ink,
-    textAlign: 'center',
-  },
-  headerSpacer: { width: 38 },
+  backArrow:   { fontFamily: 'Inter_500Medium', fontSize: 18, color: Colors.ink },
+  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
+  headerSub:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#999', marginTop: 2 },
 
-  examRow: { flexDirection: 'row', gap: 10 },
-  examPill: {
-    paddingHorizontal: 20,
-    paddingVertical: 9,
-    borderRadius: 99,
-    backgroundColor: Colors.bg2,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  examPillActive: { backgroundColor: Colors.p, borderColor: Colors.p },
-  examPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink2 },
-  examPillTextActive: { color: Colors.white },
-
-  descBox: {
-    backgroundColor: Colors.gold_bg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0D080',
-    padding: 16,
-    gap: 6,
-  },
-  descTitle: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.gold },
-  descBody: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: Colors.ink2,
-    lineHeight: 20,
-  },
-
-  sectionTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 17,
-    color: Colors.ink,
-  },
-
-  taskList: { gap: 12 },
+  taskList: { gap: 16 },
   taskCard: {
     backgroundColor: Colors.white,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+    borderRadius: 20, borderWidth: 1, borderColor: '#EAEAEA',
+    overflow: 'hidden', minHeight: 200,
   },
-  taskIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: Colors.gold_bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  taskBody: { flex: 1, gap: 4 },
-  taskTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  taskTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.ink },
-  taskSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, lineHeight: 18 },
-  taskMeta: { flexDirection: 'row', gap: 6, marginTop: 2 },
-  metaChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: Colors.bg2,
-  },
-  metaText: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink2 },
-  popularBadge: {
-    backgroundColor: Colors.p,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  popularText: { fontFamily: 'Inter_700Bold', fontSize: 9, color: Colors.white, letterSpacing: 0.5 },
-  taskArrow: { fontFamily: 'Inter_400Regular', fontSize: 22, color: Colors.ink4 },
 
-  tipsCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    gap: 8,
+  taskTop: {
+    height: 100, backgroundColor: GOLD_BG,
+    flexDirection: 'row', alignItems: 'flex-end',
+    justifyContent: 'center', paddingBottom: 16, gap: 6,
   },
-  tipsTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink, marginBottom: 2 },
-  tipRow: { flexDirection: 'row', gap: 8 },
-  tipDot: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.gold, marginTop: 1 },
-  tipText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 19 },
+  taskTopIcon: {
+    position: 'absolute', top: 16, left: 20,
+  },
+  taskTopIconText: { fontSize: 28 },
+  taskTopDots: {
+    flexDirection: 'row', alignItems: 'flex-end', gap: 4,
+  },
+  taskTopBar: {
+    width: 8, backgroundColor: GOLD, borderRadius: 2,
+  },
+
+  taskBody: { padding: 20, gap: 0 },
+  taskLabel: { fontFamily: 'Inter_700Bold', fontSize: 18, color: '#000' },
+  taskDesc:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#888', marginTop: 6, lineHeight: 20 },
+
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 14 },
+  pill: {
+    backgroundColor: '#F4F4F0', borderRadius: 4,
+    paddingHorizontal: 10, paddingVertical: 2,
+  },
+  pillText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888' },
+
+  startBtn: {
+    backgroundColor: GOLD, borderRadius: 10,
+    paddingVertical: 12, alignItems: 'center',
+    marginTop: 16,
+  },
+  startBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
+
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#BBB',
+    letterSpacing: 0.8, textTransform: 'uppercase' as const,
+  },
+
+  promptsList: { gap: 10 },
+  promptCard: {
+    backgroundColor: Colors.white, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 14, gap: 8,
+  },
+  typeBadge: {
+    width: 28, height: 28, borderRadius: 6,
+    alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start',
+  },
+  typeBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
+  promptTopic:   { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
+  promptPreview: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999', lineHeight: 18, marginTop: 2 },
+  promptCta:     { fontFamily: 'Inter_500Medium', fontSize: 11, color: GOLD, marginTop: 4 },
 });
