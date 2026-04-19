@@ -111,7 +111,7 @@ export default function TutorScreen() {
   const isEmpty = messages.length === 0;
 
   return (
-    <AppLayout>
+    <AppLayout languageCode={langCode}>
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* ── Top bar ── */}
       <View style={s.topBar}>

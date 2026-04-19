@@ -17,7 +17,7 @@ export default function FoundationScreen() {
   const foundation = getFoundation(langCode);
 
   return (
-    <AppLayout>
+    <AppLayout languageCode={langCode}>
       <SafeAreaView style={s.safe} edges={['top']}>
         <ScrollView
           showsVerticalScrollIndicator={false}

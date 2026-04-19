@@ -41,7 +41,7 @@ export default function LessonScreen() {
 
   if (!data || !section) {
     return (
-      <AppLayout>
+      <AppLayout languageCode={langCode}>
         <SafeAreaView style={s.safe} edges={['top']}>
           <View style={s.empty}>
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
@@ -57,7 +57,7 @@ export default function LessonScreen() {
   // ── Chars / Tones — grid layout ──────────────────────────────
   if (primaryType === 'chars' || primaryType === 'tones') {
     return (
-      <AppLayout>
+      <AppLayout languageCode={langCode}>
         <SafeAreaView style={s.safe} edges={['top']}>
           <View style={s.headerRow}>
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
@@ -89,7 +89,7 @@ export default function LessonScreen() {
   // ── Grammar — list layout ─────────────────────────────────────
   if (primaryType === 'grammar') {
     return (
-      <AppLayout>
+      <AppLayout languageCode={langCode}>
         <SafeAreaView style={s.safe} edges={['top']}>
           <View style={s.headerRow}>
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
@@ -141,7 +141,7 @@ export default function LessonScreen() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout languageCode={langCode}>
       <SafeAreaView style={s.safe} edges={['top']}>
         {/* Header */}
         <View style={s.headerRow}>
