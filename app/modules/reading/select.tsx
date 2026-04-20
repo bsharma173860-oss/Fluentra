@@ -14,6 +14,11 @@ import { FileTextIcon } from '@/components/icons';
 type Exam = 'IELTS' | 'TOEFL';
 type Difficulty = 'B1' | 'B2' | 'C1' | 'C2';
 
+const EXAM_COLORS = {
+  IELTS: { bg: '#EEF4FF', active: '#1558B0', border: '#BFDBFE' },
+  TOEFL: { bg: '#F0FDF4', active: '#16A34A', border: '#BBF7D0' },
+} as const;
+
 // Free users get 1 session per day (same as writing/listening)
 const IS_PRO = true; // gate removed — UsageLimitBanner shown after session instead
 
@@ -54,16 +59,20 @@ export default function ReadingSelectScreen() {
         {/* Exam pills */}
         <Text style={s.sectionLabel}>Exam Format</Text>
         <View style={s.pillRow}>
-          {(['IELTS', 'TOEFL'] as Exam[]).map(e => (
-            <TouchableOpacity
-              key={e}
-              style={[s.pill, exam === e && s.pillActive]}
-              onPress={() => setExam(e)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.pillText, exam === e && s.pillTextActive]}>{e}</Text>
-            </TouchableOpacity>
-          ))}
+          {(['IELTS', 'TOEFL'] as Exam[]).map(e => {
+            const active = exam === e;
+            const ec = EXAM_COLORS[e];
+            return (
+              <TouchableOpacity
+                key={e}
+                style={[s.examPill, active && { backgroundColor: ec.bg, borderColor: ec.border }]}
+                onPress={() => setExam(e)}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.examPillText, { color: active ? ec.active : '#888', fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>{e}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Exam description */}
@@ -175,6 +184,11 @@ const s = StyleSheet.create({
   sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
 
   pillRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  examPill: {
+    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: Colors.white, borderWidth: 1, borderColor: '#EAEAEA',
+  },
+  examPillText: { fontSize: 13 },
   pill: {
     paddingHorizontal: 20,
     paddingVertical: 9,

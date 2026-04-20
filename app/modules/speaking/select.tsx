@@ -13,6 +13,12 @@ const PURPLE     = '#5B4EFF';
 const PURPLE_BG  = '#F0EEFF';
 const PURPLE_BDR = '#D8D0FF';
 
+const EXAM_COLORS = {
+  IELTS: { bg: '#EEF4FF', active: '#1558B0', border: '#BFDBFE' },
+  TOEFL: { bg: '#F0FDF4', active: '#16A34A', border: '#BBF7D0' },
+  DELF:  { bg: '#FFF7ED', active: '#C04A06', border: '#FED7AA' },
+} as const;
+
 type Part = 'Part 1' | 'Part 2' | 'Part 3' | 'Full Test';
 type Exam = 'IELTS' | 'TOEFL' | 'DELF';
 
@@ -93,16 +99,20 @@ export default function SpeakingSelectScreen() {
 
         {/* ── Exam selector ── */}
         <View style={s.examRow}>
-          {(['IELTS', 'TOEFL', 'DELF'] as Exam[]).map(e => (
-            <TouchableOpacity
-              key={e}
-              style={[s.examPill, exam === e && s.examPillActive]}
-              onPress={() => setExam(e)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.examPillText, exam === e && s.examPillTextActive]}>{e}</Text>
-            </TouchableOpacity>
-          ))}
+          {(['IELTS', 'TOEFL', 'DELF'] as Exam[]).map(e => {
+            const active = exam === e;
+            const ec = EXAM_COLORS[e];
+            return (
+              <TouchableOpacity
+                key={e}
+                style={[s.examPill, active && { backgroundColor: ec.bg, borderColor: ec.border }]}
+                onPress={() => setExam(e)}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.examPillText, { color: active ? ec.active : '#888', fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>{e}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* ── 2×2 part grid ── */}
@@ -197,13 +207,10 @@ const s = StyleSheet.create({
 
   examRow: { flexDirection: 'row', gap: 8 },
   examPill: {
-    paddingHorizontal: 18, paddingVertical: 8,
-    borderRadius: 99, backgroundColor: Colors.bg2,
-    borderWidth: 1.5, borderColor: Colors.border,
+    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: Colors.white, borderWidth: 1, borderColor: '#EAEAEA',
   },
-  examPillActive:     { backgroundColor: PURPLE, borderColor: PURPLE },
-  examPillText:       { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.ink2 },
-  examPillTextActive: { color: Colors.white },
+  examPillText: { fontSize: 13 },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   partCard: {

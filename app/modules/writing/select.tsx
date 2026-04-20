@@ -13,6 +13,14 @@ const GOLD     = '#B07A10';
 const GOLD_BG  = '#FEF9EC';
 const GOLD_BDR = '#F0E4C0';
 
+const EXAM_COLORS = {
+  IELTS: { bg: '#EEF4FF', active: '#1558B0', border: '#BFDBFE' },
+  TOEFL: { bg: '#F0FDF4', active: '#16A34A', border: '#BBF7D0' },
+  DELF:  { bg: '#FFF7ED', active: '#C04A06', border: '#FED7AA' },
+} as const;
+
+type Exam = 'IELTS' | 'TOEFL' | 'DELF';
+
 const TASKS = [
   {
     key: 'task1' as const,
@@ -37,11 +45,12 @@ export default function WritingSelectScreen() {
   const isDesktop = Platform.OS === 'web' && width >= 768;
   const params    = useLocalSearchParams();
   const langCode  = (params.languageCode ?? params.code ?? 'en') as string;
+  const [exam, setExam] = useState<Exam>('IELTS');
 
   const todaysTask2 = getTodaysTask2();
 
   function startTask(route: string) {
-    router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode } });
+    router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode, exam } });
   }
 
   const content = (
@@ -59,6 +68,24 @@ export default function WritingSelectScreen() {
             <Text style={s.headerTitle}>Writing Practice</Text>
             <Text style={s.headerSub}>Choose a task type to begin</Text>
           </View>
+        </View>
+
+        {/* ── Exam selector ── */}
+        <View style={s.examRow}>
+          {(['IELTS', 'TOEFL', 'DELF'] as Exam[]).map(e => {
+            const active = exam === e;
+            const ec = EXAM_COLORS[e];
+            return (
+              <TouchableOpacity
+                key={e}
+                style={[s.examPill, active && { backgroundColor: ec.bg, borderColor: ec.border }]}
+                onPress={() => setExam(e)}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.examPillText, { color: active ? ec.active : '#888', fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>{e}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* ── Task cards ── */}
@@ -174,6 +201,13 @@ const s = StyleSheet.create({
   backArrow:   { fontFamily: 'Inter_500Medium', fontSize: 18, color: Colors.ink },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
   headerSub:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#999', marginTop: 2 },
+
+  examRow: { flexDirection: 'row', gap: 8 },
+  examPill: {
+    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: Colors.white, borderWidth: 1, borderColor: '#EAEAEA',
+  },
+  examPillText: { fontSize: 13 },
 
   taskList: { gap: 16 },
   taskCard: {
