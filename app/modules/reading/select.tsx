@@ -1,64 +1,96 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
+import { ReadingSidebar } from '@/components/layout/ReadingSidebar';
 import { FileTextIcon } from '@/components/icons';
 
-type Exam = 'IELTS' | 'TOEFL';
-type Difficulty = 'B1' | 'B2' | 'C1' | 'C2';
+const ORANGE     = '#C04A06';
+const ORANGE_BG  = '#FFF7ED';
+const ORANGE_BDR = '#FED7AA';
 
 const EXAM_COLORS = {
   IELTS: { bg: '#EEF4FF', active: '#1558B0', border: '#BFDBFE' },
   TOEFL: { bg: '#F0FDF4', active: '#16A34A', border: '#BBF7D0' },
 } as const;
 
-// Free users get 1 session per day (same as writing/listening)
-const IS_PRO = true; // gate removed — UsageLimitBanner shown after session instead
+type Exam = 'IELTS' | 'TOEFL';
 
-const EXAM_DESC: Record<Exam, string> = {
-  IELTS: 'Three passages, 40 questions, 60 minutes. Matching headings, MCQ, True/False/Not Given.',
-  TOEFL: 'Three to four passages, 10 questions each, 54–72 minutes. Multiple-choice and drag-drop tasks.',
-};
+const DIFFICULTY_STYLES = {
+  Easy:   { bg: '#EDFAF4', color: '#16A34A' },
+  Medium: { bg: '#FEF9EC', color: '#B07A10' },
+  Hard:   { bg: '#FFF0EE', color: '#C04A06' },
+} as const;
 
-const DIFFICULTY_DESC: Record<Difficulty, string> = {
-  B1: 'Intermediate — straightforward vocabulary and clear main ideas.',
-  B2: 'Upper-intermediate — some inference required, varied question types.',
-  C1: 'Advanced — dense academic language, nuanced argument tracking.',
-  C2: 'Mastery — authentic academic texts, complex reasoning required.',
-};
+const PASSAGES: {
+  key: string; label: string; difficulty: keyof typeof DIFFICULTY_STYLES;
+  questions: string; desc: string; tags: string[];
+}[] = [
+  {
+    key: '1', label: 'Passage 1',
+    difficulty: 'Easy',
+    questions: '13 questions',
+    desc: 'Straightforward academic text. Clear main ideas and direct comprehension questions.',
+    tags: ['IELTS', 'Matching Headings'],
+  },
+  {
+    key: '2', label: 'Passage 2',
+    difficulty: 'Medium',
+    questions: '14 questions',
+    desc: 'Complex vocabulary and inference required. Mixed question types throughout.',
+    tags: ['IELTS', 'True / False / NG'],
+  },
+  {
+    key: '3', label: 'Passage 3',
+    difficulty: 'Hard',
+    questions: '13 questions',
+    desc: 'Dense academic language with abstract concepts. Most challenging question set.',
+    tags: ['IELTS', 'Summary Completion'],
+  },
+];
+
+const Q_TYPES = [
+  'True / False / Not Given', 'Matching Headings', 'Multiple Choice',
+  'Summary Completion', 'Short Answer', 'Sentence Completion',
+];
 
 export default function ReadingSelectScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+  const params    = useLocalSearchParams();
+  const langCode  = (params.languageCode ?? params.code ?? 'en') as string;
   const [exam, setExam] = useState<Exam>('IELTS');
-  const [difficulty, setDifficulty] = useState<Difficulty>('B2');
 
-  return (
+  function startPassage(passage: string) {
+    router.push({
+      pathname: '/modules/reading/session' as any,
+      params: { exam, passage, languageCode: langCode, code: langCode },
+    });
+  }
+
+  const content = (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <View style={s.header}>
-          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
-            <Text style={s.backArrow}>←</Text>
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Reading</Text>
-          <View style={s.headerSpacer} />
+          {!isDesktop && (
+            <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+              <Text style={s.backArrow}>←</Text>
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text style={s.headerTitle}>Reading Practice</Text>
+            <Text style={s.headerSub}>Choose a passage to practice</Text>
+          </View>
         </View>
 
-        {/* Free tier info (replaces old pro gate) */}
-        <View style={s.freeInfo}>
-          <Text style={s.freeInfoText}>1 free session per day · Detailed explanations included</Text>
-        </View>
-
-        {/* Exam pills */}
-        <Text style={s.sectionLabel}>Exam Format</Text>
-        <View style={s.pillRow}>
+        {/* ── Exam selector ── */}
+        <View style={s.examRow}>
           {(['IELTS', 'TOEFL'] as Exam[]).map(e => {
             const active = exam === e;
             const ec = EXAM_COLORS[e];
@@ -69,190 +101,169 @@ export default function ReadingSelectScreen() {
                 onPress={() => setExam(e)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.examPillText, { color: active ? ec.active : '#888', fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>{e}</Text>
+                <Text style={[s.examPillText, { color: active ? ec.active : '#888', fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>
+                  {e}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Exam description */}
-        <View style={s.descCard}>
-          <Text style={s.descTitle}>{exam} Academic Reading</Text>
-          <Text style={s.descBody}>{EXAM_DESC[exam]}</Text>
+        {/* ── Passage cards ── */}
+        <View style={s.cardList}>
+          {PASSAGES.map(p => {
+            const diff = DIFFICULTY_STYLES[p.difficulty];
+            return (
+              <View key={p.key} style={s.passageCard}>
+
+                {/* Card top */}
+                <View style={s.cardTop}>
+                  <View style={s.fileCircle}>
+                    <FileTextIcon size={22} color={ORANGE} />
+                  </View>
+                </View>
+
+                {/* Card body */}
+                <View style={s.cardBody}>
+                  <View style={s.cardTitleRow}>
+                    <Text style={s.cardLabel}>{p.label}</Text>
+                    <View style={[s.diffBadge, { backgroundColor: diff.bg }]}>
+                      <Text style={[s.diffText, { color: diff.color }]}>{p.difficulty}</Text>
+                    </View>
+                  </View>
+                  <Text style={s.cardQuestions}>{p.questions}</Text>
+                  <Text style={s.cardDesc}>{p.desc}</Text>
+                  <View style={s.tagRow}>
+                    {p.tags.map(t => (
+                      <View key={t} style={s.tag}><Text style={s.tagText}>{t}</Text></View>
+                    ))}
+                  </View>
+                  <TouchableOpacity
+                    style={s.startBtn}
+                    onPress={() => startPassage(p.key)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={s.startBtnText}>Start →</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })}
         </View>
 
-        {/* Difficulty pills */}
-        <Text style={s.sectionLabel}>Difficulty Level</Text>
-        <View style={s.pillRow}>
-          {(['B1', 'B2', 'C1', 'C2'] as Difficulty[]).map(d => (
-            <TouchableOpacity
-              key={d}
-              style={[s.pill, difficulty === d && s.pillActive]}
-              onPress={() => setDifficulty(d)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.pillText, difficulty === d && s.pillTextActive]}>{d}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Difficulty description */}
-        <View style={s.diffCard}>
-          <View style={s.diffRow}>
-            <View style={[s.diffBadge, { backgroundColor: Colors.p_soft }]}>
-              <Text style={[s.diffBadgeText, { color: Colors.p }]}>{difficulty}</Text>
-            </View>
-            <Text style={s.diffDesc}>{DIFFICULTY_DESC[difficulty]}</Text>
-          </View>
-        </View>
-
-        {/* What to expect */}
-        <View style={s.expectCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-            <FileTextIcon size={16} color={Colors.ink} />
-            <Text style={s.expectTitle}>What to expect</Text>
-          </View>
-          {[
-            '1 academic passage (approx. 700–900 words)',
-            '13 questions across 3 types',
-            '60-minute global timer',
-            'Detailed explanations on every answer',
-          ].map((item, i) => (
-            <View key={i} style={s.expectRow}>
-              <View style={s.expectDot} />
-              <Text style={s.expectText}>{item}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Start button */}
+        {/* ── Full Test card ── */}
         <TouchableOpacity
-          style={s.startBtn}
+          style={s.fullCard}
+          onPress={() => startPassage('full')}
           activeOpacity={0.85}
-          onPress={() =>
-            router.push({
-              pathname: '/modules/reading/session' as any,
-              params: { exam, difficulty },
-            })
-          }
         >
-          <Text style={s.startBtnText}>Start Reading Session →</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={s.fullLabel}>Full Reading Test</Text>
+            <Text style={s.fullSub}>All 3 passages · 40 questions · 60 min</Text>
+          </View>
+          <View style={s.fullBtn}>
+            <Text style={s.fullBtnText}>Start Full Test →</Text>
+          </View>
         </TouchableOpacity>
 
-        <View style={{ height: 24 }} />
+        {/* ── Question types ── */}
+        <Text style={s.sectionLabel}>QUESTION TYPES YOU'LL PRACTICE</Text>
+        <View style={s.qTypesWrap}>
+          {Q_TYPES.map(qt => (
+            <View key={qt} style={s.qTypePill}>
+              <Text style={s.qTypePillText}>{qt}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
+
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <ReadingSidebar />
+        <View style={{ flex: 1 }}>{content}</View>
+      </View>
+    );
+  }
+
+  return content;
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingHorizontal: 20, paddingTop: 8, gap: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, gap: 18 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 2 },
   backBtn: {
-    width: 38, height: 38,
-    borderRadius: 12,
+    width: 36, height: 36, borderRadius: 10,
     backgroundColor: Colors.bg2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  backArrow: { fontFamily: 'Inter_500Medium', fontSize: 20, color: Colors.ink },
-  headerTitle: {
-    flex: 1,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 20,
-    color: Colors.ink,
-    textAlign: 'center',
-  },
-  headerSpacer: { width: 38 },
+  backArrow:   { fontFamily: 'Inter_500Medium', fontSize: 18, color: Colors.ink },
+  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
+  headerSub:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#999', marginTop: 2 },
 
-  freeInfo: {
-    backgroundColor: Colors.blue_bg,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  freeInfoText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.blue, textAlign: 'center' },
-
-  sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink },
-
-  pillRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  examRow: { flexDirection: 'row', gap: 8 },
   examPill: {
     paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
     backgroundColor: Colors.white, borderWidth: 1, borderColor: '#EAEAEA',
   },
   examPillText: { fontSize: 13 },
-  pill: {
-    paddingHorizontal: 20,
-    paddingVertical: 9,
-    borderRadius: 99,
-    backgroundColor: Colors.bg2,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  pillActive: { backgroundColor: Colors.p, borderColor: Colors.p },
-  pillText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink2 },
-  pillTextActive: { color: Colors.white },
 
-  descCard: {
-    backgroundColor: Colors.orange_bg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0C88C',
-    padding: 14,
-    gap: 6,
-    marginTop: -4,
-  },
-  descTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.orange },
-  descBody: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, lineHeight: 20 },
-
-  diffCard: {
+  cardList: { gap: 12 },
+  passageCard: {
     backgroundColor: Colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 14,
-    marginTop: -4,
+    borderRadius: 20, borderWidth: 1, borderColor: '#EAEAEA',
+    overflow: 'hidden',
   },
-  diffRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  diffBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    flexShrink: 0,
+  cardTop: {
+    height: 80, backgroundColor: ORANGE_BG,
+    alignItems: 'center', justifyContent: 'center',
   },
-  diffBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  diffDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 20 },
-
-  expectCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    gap: 10,
+  fileCircle: {
+    width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.white,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  expectTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink, marginBottom: 2 },
-  expectRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  expectDot: {
-    width: 6, height: 6, borderRadius: 3,
-    backgroundColor: Colors.orange,
-    marginTop: 7, flexShrink: 0,
-  },
-  expectText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1, lineHeight: 20 },
-
+  cardBody:     { padding: 16, gap: 4 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
+  cardLabel:    { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#000' },
+  diffBadge:    { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  diffText:     { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
+  cardQuestions:{ fontFamily: 'Inter_500Medium', fontSize: 13, color: ORANGE },
+  cardDesc:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#888', lineHeight: 18, marginTop: 2 },
+  tagRow:  { flexDirection: 'row', gap: 4, marginTop: 6, flexWrap: 'wrap' },
+  tag:     { backgroundColor: ORANGE_BG, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  tagText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: ORANGE },
   startBtn: {
-    backgroundColor: Colors.p,
-    borderRadius: 16,
-    paddingVertical: 17,
-    alignItems: 'center',
+    backgroundColor: ORANGE, borderRadius: 8,
+    paddingVertical: 10, alignItems: 'center', marginTop: 10,
   },
-  startBtnText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: Colors.white },
+  startBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.white },
+
+  fullCard: {
+    backgroundColor: ORANGE_BG, borderRadius: 20, padding: 24,
+    borderWidth: 1, borderColor: ORANGE_BDR,
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+  },
+  fullLabel: { fontFamily: 'Inter_700Bold', fontSize: 20, color: ORANGE },
+  fullSub:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#888', marginTop: 4 },
+  fullBtn:   { backgroundColor: ORANGE, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16 },
+  fullBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.white },
+
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#BBB',
+    letterSpacing: 0.8, textTransform: 'uppercase' as const,
+  },
+  qTypesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  qTypePill: {
+    backgroundColor: Colors.white, borderRadius: 20,
+    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  qTypePillText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666' },
 });

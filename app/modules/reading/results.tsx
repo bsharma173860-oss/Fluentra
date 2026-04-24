@@ -1,146 +1,136 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { getReadingResult, clearReadingResult, ReadingResult } from '@/lib/readingStore';
-import { CheckIcon, HelpCircleIcon, TimerIcon, BookIcon } from '@/components/icons';
+import { ReadingSidebar } from '@/components/layout/ReadingSidebar';
+import { getReadingResult, clearReadingResult, type ReadingResult } from '@/lib/readingStore';
 
-// ── Band color helper ───────────────────────────────────────────
-function bandColor(b: number) {
-  if (b >= 7.0) return Colors.green;
-  if (b >= 5.5) return Colors.p;
-  return Colors.orange;
+const ORANGE     = '#C04A06';
+const ORANGE_BG  = '#FFF7ED';
+const ORANGE_BDR = '#FED7AA';
+const GREEN      = '#16A34A';
+const GREEN_BG   = '#EDFAF4';
+const RED_BG     = '#FFF0EE';
+const PURPLE     = '#5B4EFF';
+
+// ── Mock leaderboard ───────────────────────────────────────────────
+const MOCK_RANK  = 491;
+const MOCK_TOTAL = 26_000;
+const MOCK_TOP   = 1.9;
+
+function buildLeaderboard(userScore: number) {
+  return [
+    { rank: MOCK_RANK - 2, name: 'Priya S.',  score: userScore + 1, isUser: false },
+    { rank: MOCK_RANK - 1, name: 'Ahmed K.',  score: userScore + 1, isUser: false },
+    { rank: MOCK_RANK,     name: 'You',        score: userScore,     isUser: true  },
+    { rank: MOCK_RANK + 1, name: 'Maria L.',  score: Math.max(userScore - 1, 0), isUser: false },
+    { rank: MOCK_RANK + 2, name: 'James T.',  score: Math.max(userScore - 1, 0), isUser: false },
+  ];
 }
 
-// ── Answer row ──────────────────────────────────────────────────
-function AnswerRow({ q, userAnswer }: { q: ReadingResult['questions'][0]; userAnswer: string | undefined }) {
-  const isCorrect = userAnswer === q.correctAnswer;
-  const answered = userAnswer !== undefined;
+// ── Answer row ─────────────────────────────────────────────────────
+function AnswerRow({ q, userAnswer }: {
+  q: ReadingResult['questions'][0];
+  userAnswer: string | undefined;
+}) {
+  const isCorrect = (userAnswer ?? '') === q.correctAnswer;
+  const answered  = (userAnswer ?? '').length > 0;
 
   return (
-    <View style={ar.wrap}>
-      {/* Question header */}
-      <View style={ar.header}>
-        <View style={[ar.statusDot, isCorrect ? ar.dotCorrect : ar.dotWrong]}>
-          {isCorrect
-            ? <CheckIcon size={12} color={Colors.white} />
-            : <Text style={ar.statusIcon}>✕</Text>
-          }
+    <View style={[ar.wrap, isCorrect ? ar.wrapOk : ar.wrapBad]}>
+      <View style={ar.topRow}>
+        <View style={[ar.badge, isCorrect ? ar.badgeOk : ar.badgeBad]}>
+          <Text style={ar.badgeText}>{isCorrect ? '✓' : '✕'}</Text>
         </View>
-        <View style={ar.qInfo}>
-          <Text style={ar.qLabel}>{q.shortLabel}</Text>
-          <Text style={ar.qText} numberOfLines={3}>{q.text}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={ar.meta}>
+            {q.shortLabel} · {q.type === 'mcq' ? 'Multiple Choice' : q.type === 'tfng' ? 'True/False/NG' : 'Matching'}
+          </Text>
+          <Text style={ar.qText}>{q.text}</Text>
         </View>
       </View>
 
-      {/* Answer comparison */}
-      <View style={ar.answers}>
-        <View style={[ar.pill, answered && !isCorrect ? ar.pillWrong : ar.pillNeutral]}>
+      <View style={ar.answerRow}>
+        <View style={[ar.pill, !isCorrect && answered && ar.pillWrong]}>
           <Text style={ar.pillLabel}>Your answer</Text>
-          <Text style={[ar.pillValue, !answered && ar.pillValueEmpty]}>
-            {answered ? userAnswer : 'Not answered'}
+          <Text style={[ar.pillValue, !isCorrect && answered && { color: ORANGE }]}>
+            {answered ? userAnswer : '(blank)'}
           </Text>
         </View>
         {!isCorrect && (
-          <View style={[ar.pill, ar.pillCorrect]}>
-            <Text style={ar.pillLabel}>Correct answer</Text>
-            <Text style={ar.pillValue}>{q.correctAnswer}</Text>
+          <View style={ar.correctPill}>
+            <Text style={ar.pillLabel}>Correct</Text>
+            <Text style={[ar.pillValue, { color: GREEN }]}>{q.correctAnswer}</Text>
           </View>
         )}
       </View>
 
       {/* Explanation */}
       <View style={ar.explanation}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
-          <HelpCircleIcon size={14} color={Colors.ink3} />
-          <Text style={[ar.explanationText, { flex: 1 }]}>{q.explanation}</Text>
-        </View>
+        <Text style={ar.explanationText}>{q.explanation}</Text>
       </View>
     </View>
   );
 }
 
 const ar = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-    gap: 0,
+  wrap:    { borderRadius: 12, borderWidth: 1, overflow: 'hidden', marginBottom: 8 },
+  wrapOk:  { backgroundColor: GREEN_BG, borderColor: '#A8DFC4' },
+  wrapBad: { backgroundColor: RED_BG, borderColor: '#F0C8A0' },
+  topRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 12, paddingBottom: 8 },
+  badge: {
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    padding: 14,
-  },
-  statusDot: {
-    width: 26, height: 26, borderRadius: 13,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0, marginTop: 1,
-  },
-  dotCorrect: { backgroundColor: Colors.green },
-  dotWrong: { backgroundColor: Colors.danger },
-  statusIcon: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
-  qInfo: { flex: 1, gap: 3 },
-  qLabel: { fontFamily: 'Inter_700Bold', fontSize: 11, color: Colors.ink3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  qText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink, lineHeight: 19 },
-  answers: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingBottom: 12,
-    flexWrap: 'wrap',
-  },
-  pill: {
-    flex: 1,
-    minWidth: 100,
-    borderRadius: 10,
-    padding: 10,
-    gap: 3,
-  },
-  pillNeutral: { backgroundColor: Colors.green_bg },
-  pillWrong: { backgroundColor: '#FFF0F0' },
-  pillCorrect: { backgroundColor: Colors.green_bg },
-  pillLabel: { fontFamily: 'Inter_400Regular', fontSize: 10, color: Colors.ink3, textTransform: 'uppercase', letterSpacing: 0.4 },
-  pillValue: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
-  pillValueEmpty: { color: Colors.ink4, fontFamily: 'Inter_400Regular' },
-  explanation: {
-    backgroundColor: Colors.bg2,
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  explanationText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, lineHeight: 18 },
+  badgeOk:   { backgroundColor: GREEN },
+  badgeBad:  { backgroundColor: ORANGE },
+  badgeText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: Colors.white },
+  meta:      { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888', textTransform: 'uppercase' as const, letterSpacing: 0.4, marginBottom: 2 },
+  qText:     { fontFamily: 'Inter_500Medium', fontSize: 13, color: '#000', lineHeight: 18 },
+  answerRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 8, flexWrap: 'wrap' },
+  pill:       { flex: 1, minWidth: 80, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: 8, gap: 2 },
+  pillWrong:  { backgroundColor: 'rgba(255,255,255,0.8)' },
+  correctPill:{ flex: 1, minWidth: 80, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 8, padding: 8, gap: 2 },
+  pillLabel:  { fontFamily: 'Inter_400Regular', fontSize: 10, color: '#888', textTransform: 'uppercase' as const },
+  pillValue:  { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#000' },
+  explanation:{ backgroundColor: 'rgba(255,255,255,0.5)', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)' },
+  explanationText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666', lineHeight: 18 },
 });
 
-// ── Section divider ─────────────────────────────────────────────
-function SectionDivider({ label }: { label: string }) {
+// ── Question type performance bar ──────────────────────────────────
+function TypePerf({ label, correct, total }: { label: string; correct: number; total: number }) {
+  const ok  = correct === total;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
   return (
-    <View style={sd.wrap}>
-      <View style={sd.line} />
-      <Text style={sd.label}>{label}</Text>
-      <View style={sd.line} />
+    <View style={tp.row}>
+      <Text style={tp.label}>{label}</Text>
+      <View style={tp.barTrack}>
+        <View style={[tp.barFill, { width: `${pct}%` as any, backgroundColor: ok ? GREEN : ORANGE }]} />
+      </View>
+      <Text style={[tp.score, { color: ok ? GREEN : ORANGE }]}>{correct}/{total}</Text>
+      <Text style={tp.mark}>{ok ? '✓' : '✗'}</Text>
     </View>
   );
 }
-const sd = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  line: { flex: 1, height: 1, backgroundColor: Colors.border },
-  label: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.ink3 },
+
+const tp = StyleSheet.create({
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  label:    { fontFamily: 'Inter_500Medium', fontSize: 13, color: '#000', width: 150 },
+  barTrack: { flex: 1, height: 4, backgroundColor: '#F0F0F0', borderRadius: 2, overflow: 'hidden' },
+  barFill:  { height: '100%', borderRadius: 2 },
+  score:    { fontFamily: 'Inter_700Bold', fontSize: 13, width: 32, textAlign: 'right' },
+  mark:     { fontFamily: 'Inter_700Bold', fontSize: 13, width: 16, textAlign: 'center' },
 });
 
-// ── Main screen ─────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────
 export default function ReadingResultsScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+
   const [result, setResult] = useState<ReadingResult | null>(null);
 
   useEffect(() => {
@@ -151,13 +141,11 @@ export default function ReadingResultsScreen() {
 
   if (!result) {
     return (
-      <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-        <View style={s.empty}>
-          <Text style={s.emptyText}>No result found.</Text>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)/home' as any)}>
-            <Text style={s.emptyLink}>Go home</Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3 }}>No result found.</Text>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/home' as any)} style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: ORANGE }}>Go home</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -170,208 +158,240 @@ export default function ReadingResultsScreen() {
 
   const mins = Math.floor(timeTakenSeconds / 60);
   const secs = timeTakenSeconds % 60;
-  const pct = Math.round((correctCount / totalQuestions) * 100);
-  const bc = bandColor(bandEstimate);
 
   const matchingQs = questions.filter(q => q.type === 'matching');
-  const mcqQs = questions.filter(q => q.type === 'mcq');
-  const tfngQs = questions.filter(q => q.type === 'tfng');
+  const mcqQs      = questions.filter(q => q.type === 'mcq');
+  const tfngQs     = questions.filter(q => q.type === 'tfng');
 
-  return (
-    <AppLayout>
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+  function countCorrect(qs: typeof questions) {
+    return qs.filter(q => (answers[q.number] ?? '') === q.correctAnswer).length;
+  }
 
-        {/* Header */}
-        <View style={s.header}>
-          <Text style={s.title}>Reading Results</Text>
-          <View style={s.metaRow}>
-            <Text style={s.metaChip}>{exam} · {difficulty}</Text>
-            <View style={s.metaChipRow}>
-              <TimerIcon size={12} color={Colors.ink3} />
-              <Text style={s.metaChip}>{mins}m {secs}s</Text>
+  const matchingCorrect = countCorrect(matchingQs);
+  const mcqCorrect      = countCorrect(mcqQs);
+  const tfngCorrect     = countCorrect(tfngQs);
+
+  // Mock 3-passage breakdown (single passage session shows P1 only)
+  const p1 = correctCount;
+  const p2 = Math.max(0, correctCount - 1);
+  const p3 = Math.max(0, correctCount - 2);
+
+  const leaderboard = buildLeaderboard(correctCount);
+
+  const mainContent = (
+    <SafeAreaView style={st.safe} edges={['top']}>
+      <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ── Header ── */}
+        <View style={st.header}>
+          <Text style={st.headerTitle}>Reading Results</Text>
+          <View style={st.metaRow}>
+            <View style={st.metaChip}><Text style={st.metaChipText}>{exam}</Text></View>
+            <View style={st.metaChip}><Text style={st.metaChipText}>{difficulty}</Text></View>
+            <View style={st.metaChip}><Text style={st.metaChipText}>{mins}m {secs}s</Text></View>
+            <View style={st.metaChip}><Text style={st.metaChipText} numberOfLines={1}>{passageTitle}</Text></View>
+          </View>
+        </View>
+
+        {/* ── Score card ── */}
+        <View style={st.scoreCard}>
+          <Text style={st.scoreCardLabel}>READING SCORE</Text>
+          <View style={st.scoreRow}>
+            <Text style={st.scoreBig}>{correctCount}</Text>
+            <Text style={st.scoreDenom}>/{totalQuestions} correct</Text>
+          </View>
+
+          <View style={st.scoreDivider} />
+
+          {/* 3 passage scores */}
+          <View style={st.passagesRow}>
+            {[
+              { label: 'P1', val: p1, total: 13 },
+              { label: 'P2', val: p2, total: 14 },
+              { label: 'P3', val: p3, total: 13 },
+            ].map(ps => (
+              <View key={ps.label} style={st.passageCell}>
+                <Text style={st.passageVal}>{ps.val}/{ps.total}</Text>
+                <Text style={st.passageLbl}>{ps.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Performance breakdown ── */}
+        <View style={st.perfCard}>
+          <Text style={st.perfTitle}>Performance Breakdown</Text>
+          <TypePerf label="Matching Headings"  correct={matchingCorrect} total={matchingQs.length} />
+          <TypePerf label="Multiple Choice"     correct={mcqCorrect}      total={mcqQs.length}      />
+          <TypePerf label="True / False / NG"   correct={tfngCorrect}     total={tfngQs.length}     />
+
+          <View style={st.perfSummary}>
+            <View style={[st.perfBadge, { backgroundColor: GREEN_BG }]}>
+              <Text style={[st.perfBadgeText, { color: GREEN }]}>
+                Strong: {[
+                  matchingCorrect === matchingQs.length && 'Matching',
+                  mcqCorrect      === mcqQs.length      && 'Multiple Choice',
+                  tfngCorrect     === tfngQs.length     && 'True/False/NG',
+                ].filter(Boolean).join(', ') || '—'}
+              </Text>
             </View>
-            <View style={s.metaChipRow}>
-              <BookIcon size={12} color={Colors.ink3} />
-              <Text style={s.metaChip}>{passageTitle}</Text>
+            <View style={[st.perfBadge, { backgroundColor: RED_BG }]}>
+              <Text style={[st.perfBadgeText, { color: ORANGE }]}>
+                Needs work: {[
+                  matchingCorrect < matchingQs.length && 'Matching',
+                  mcqCorrect      < mcqQs.length      && 'Multiple Choice',
+                  tfngCorrect     < tfngQs.length     && 'True/False/NG',
+                ].filter(Boolean).join(', ') || '—'}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Score card */}
-        <View style={s.scoreCard}>
-          <View style={s.scoreLeft}>
-            <Text style={[s.scoreNumber, { color: bc }]}>
-              {correctCount}<Text style={s.scoreTotal}>/{totalQuestions}</Text>
-            </Text>
-            <Text style={s.scoreLabel}>Questions correct</Text>
-            <View style={[s.pctBadge, { backgroundColor: bc + '22', borderColor: bc }]}>
-              <Text style={[s.pctText, { color: bc }]}>{pct}%</Text>
+        {/* ── Leaderboard ── */}
+        <View style={st.leaderCard}>
+          <View style={st.leaderHeader}>
+            <View>
+              <Text style={st.leaderRank}>#{MOCK_RANK} out of {MOCK_TOTAL.toLocaleString()}</Text>
+              <Text style={st.leaderSub}>Top {MOCK_TOP}% of all readers this week</Text>
+            </View>
+            <View style={st.leaderBadge}>
+              <Text style={st.leaderBadgeText}>🏆 Top {MOCK_TOP}%</Text>
             </View>
           </View>
-          <View style={s.scoreDivider} />
-          <View style={s.scoreRight}>
-            <Text style={[s.bandNumber, { color: bc }]}>{bandEstimate.toFixed(1)}</Text>
-            <Text style={s.bandLabel}>Band estimate</Text>
-            <Text style={s.bandDesc}>
-              {bandEstimate >= 7.5 ? 'Excellent' :
-               bandEstimate >= 6.5 ? 'Good' :
-               bandEstimate >= 5.5 ? 'Competent' : 'Developing'}
-            </Text>
+
+          <View style={st.leaderTable}>
+            {leaderboard.map(row => (
+              <View key={row.rank} style={[st.leaderRow, row.isUser && st.leaderRowUser]}>
+                <Text style={[st.leaderRowRank, row.isUser && st.leaderRowRankUser]}>#{row.rank}</Text>
+                <Text style={[st.leaderRowName, row.isUser && st.leaderRowNameUser]}>{row.name}</Text>
+                <Text style={[st.leaderRowScore, row.isUser && st.leaderRowScoreUser]}>{row.score}/13</Text>
+              </View>
+            ))}
           </View>
+
+          <TouchableOpacity style={st.leaderCta} activeOpacity={0.8}>
+            <Text style={st.leaderCtaText}>View full leaderboard →</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Quick stats */}
-        <View style={s.statsRow}>
-          {[
-            { label: 'Correct', value: String(correctCount), color: Colors.green },
-            { label: 'Incorrect', value: String(totalQuestions - correctCount), color: Colors.danger },
-            { label: 'Time', value: `${mins}m`, color: Colors.p },
-          ].map(stat => (
-            <View key={stat.label} style={s.statCard}>
-              <Text style={[s.statValue, { color: stat.color }]}>{stat.value}</Text>
-              <Text style={s.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
-        </View>
+        {/* ── Answer review ── */}
+        <Text style={st.reviewTitle}>Answer Review</Text>
 
-        {/* Answer review */}
-        <Text style={s.reviewTitle}>Answer Review</Text>
+        <Text style={st.reviewGroup}>Matching Headings (Q1–5)</Text>
+        {matchingQs.map(q => <AnswerRow key={q.number} q={q} userAnswer={answers[q.number]} />)}
 
-        <SectionDivider label="Matching Headings  (Q1–5)" />
-        {matchingQs.map(q => (
-          <AnswerRow key={q.number} q={q} userAnswer={answers[q.number]} />
-        ))}
+        <Text style={st.reviewGroup}>Multiple Choice (Q6–9)</Text>
+        {mcqQs.map(q => <AnswerRow key={q.number} q={q} userAnswer={answers[q.number]} />)}
 
-        <SectionDivider label="Multiple Choice  (Q6–9)" />
-        {mcqQs.map(q => (
-          <AnswerRow key={q.number} q={q} userAnswer={answers[q.number]} />
-        ))}
+        <Text style={st.reviewGroup}>True / False / Not Given (Q10–13)</Text>
+        {tfngQs.map(q => <AnswerRow key={q.number} q={q} userAnswer={answers[q.number]} />)}
 
-        <SectionDivider label="True / False / Not Given  (Q10–13)" />
-        {tfngQs.map(q => (
-          <AnswerRow key={q.number} q={q} userAnswer={answers[q.number]} />
-        ))}
-
-        {/* Actions */}
-        <View style={s.actions}>
+        {/* ── Actions ── */}
+        <View style={st.actions}>
           <TouchableOpacity
-            style={s.tryAgainBtn}
+            style={st.primaryBtn}
             onPress={() => router.replace('/modules/reading/select' as any)}
             activeOpacity={0.85}
           >
-            <Text style={s.tryAgainText}>Try Again</Text>
+            <Text style={st.primaryBtnText}>Practice again</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={s.homeBtn}
+            style={st.secondaryBtn}
             onPress={() => router.replace('/(tabs)/home' as any)}
             activeOpacity={0.85}
           >
-            <Text style={s.homeBtnText}>Back to Home</Text>
+            <Text style={st.secondaryBtnText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
-    </AppLayout>
   );
+
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <ReadingSidebar />
+        <View style={{ flex: 1 }}>{mainContent}</View>
+      </View>
+    );
+  }
+
+  return mainContent;
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
+const st = StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingHorizontal: 20, paddingTop: 20, gap: 14 },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  emptyText: { fontFamily: 'Inter_400Regular', fontSize: 16, color: Colors.ink3 },
-  emptyLink: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.p },
+  header:       { gap: 8, marginBottom: 2 },
+  headerTitle:  { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
+  metaRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  metaChip:     { backgroundColor: Colors.bg2, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: Colors.border, maxWidth: 200 },
+  metaChipText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
 
-  header: { gap: 8 },
-  title: { fontFamily: 'Inter_700Bold', fontSize: 22, color: Colors.ink },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  metaChip: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: Colors.ink3,
-    backgroundColor: Colors.bg2,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
+  // ── Score card ──────────────────────────────────────
+  scoreCard:      { backgroundColor: ORANGE_BG, borderRadius: 20, borderWidth: 1, borderColor: ORANGE_BDR, padding: 28 },
+  scoreCardLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: ORANGE,
+    textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: 12,
   },
-  metaChipRow: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
-    backgroundColor: Colors.bg2,
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 99, borderWidth: 1, borderColor: Colors.border,
+  scoreRow:   { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  scoreBig:   { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 52, color: ORANGE, lineHeight: 56 },
+  scoreDenom: { fontFamily: 'Inter_400Regular', fontSize: 14, color: ORANGE, opacity: 0.5, marginBottom: 8 },
+  scoreDivider: { height: 1, backgroundColor: 'rgba(192,74,6,0.15)', marginVertical: 20 },
+
+  passagesRow:  { flexDirection: 'row' },
+  passageCell:  { flex: 1, alignItems: 'center', gap: 4 },
+  passageVal:   { fontFamily: 'Inter_700Bold', fontSize: 16, color: ORANGE },
+  passageLbl:   { fontFamily: 'Inter_400Regular', fontSize: 10, color: ORANGE, opacity: 0.6 },
+
+  // ── Performance card ────────────────────────────────
+  perfCard:    { backgroundColor: Colors.white, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, padding: 20, gap: 12 },
+  perfTitle:   { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#000' },
+  perfSummary: { gap: 6, marginTop: 4 },
+  perfBadge:   { borderRadius: 8, padding: 10 },
+  perfBadgeText: { fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 18 },
+
+  // ── Leaderboard ─────────────────────────────────────
+  leaderCard: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    borderWidth: 1, borderColor: Colors.border, padding: 20, gap: 14,
+  },
+  leaderHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  leaderRank:   { fontFamily: 'Inter_700Bold', fontSize: 18, color: '#000' },
+  leaderSub:    { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#888', marginTop: 3 },
+  leaderBadge:  { backgroundColor: '#FFF7ED', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  leaderBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: ORANGE },
+
+  leaderTable: { gap: 4 },
+  leaderRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8,
+  },
+  leaderRowUser:      { backgroundColor: '#F0EEFF' },
+  leaderRowRank:      { fontFamily: 'Inter_500Medium', fontSize: 13, color: '#888', width: 40 },
+  leaderRowRankUser:  { fontFamily: 'Inter_700Bold', color: PURPLE },
+  leaderRowName:      { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#666', flex: 1 },
+  leaderRowNameUser:  { fontFamily: 'Inter_700Bold', color: '#000' },
+  leaderRowScore:     { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#888' },
+  leaderRowScoreUser: { color: ORANGE },
+
+  leaderCta:     { alignItems: 'center', paddingTop: 4 },
+  leaderCtaText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: PURPLE },
+
+  // ── Answer review ────────────────────────────────────
+  reviewTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: '#000', marginTop: 2 },
+  reviewGroup: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#888',
+    textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4,
   },
 
-  scoreCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  scoreLeft: { flex: 1, alignItems: 'center', gap: 4 },
-  scoreNumber: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 64, lineHeight: 70 },
-  scoreTotal: { fontSize: 32, color: Colors.ink3 },
-  scoreLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  pctBadge: {
-    borderWidth: 1,
-    borderRadius: 99,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginTop: 4,
-  },
-  pctText: { fontFamily: 'Inter_700Bold', fontSize: 13 },
-  scoreDivider: {
-    width: 1, height: 80,
-    backgroundColor: Colors.border,
-    marginHorizontal: 16,
-  },
-  scoreRight: { flex: 1, alignItems: 'center', gap: 4 },
-  bandNumber: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 64, lineHeight: 70 },
-  bandLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-  bandDesc: { fontFamily: 'Inter_500Medium', fontSize: 13, color: Colors.ink2, marginTop: 4 },
-
-  statsRow: { flexDirection: 'row', gap: 10 },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 14,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: { fontFamily: 'Inter_700Bold', fontSize: 22 },
-  statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
-
-  reviewTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink, marginTop: 4 },
-
-  actions: { flexDirection: 'row', gap: 12, marginTop: 6 },
-  tryAgainBtn: {
-    flex: 1,
-    backgroundColor: Colors.bg2,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  tryAgainText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink },
-  homeBtn: {
-    flex: 1,
-    backgroundColor: Colors.p,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  homeBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
+  // ── Actions ─────────────────────────────────────────
+  actions:        { flexDirection: 'row', gap: 10 },
+  primaryBtn:     { flex: 1, backgroundColor: ORANGE, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  primaryBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
+  secondaryBtn:   { flex: 1, backgroundColor: Colors.white, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  secondaryBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
 });
