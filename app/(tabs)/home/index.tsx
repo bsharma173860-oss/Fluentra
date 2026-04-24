@@ -11,68 +11,28 @@ import { AddLanguageModal } from '@/components/ui/AddLanguageModal'
 import { FlagSVG } from '@/components/flags'
 import {
   SearchIcon, PlusIcon, FlameIcon, XIcon,
-  MicIcon, HeadphoneIcon, BookIcon, CheckIcon, ChevronRightIcon,
+  MicIcon, HeadphoneIcon, BookIcon, CheckIcon,
+  ChevronRightIcon, ArrowRightIcon,
 } from '@/components/icons'
+import { getTheme } from '@/constants/languageThemes'
+import { LANGUAGE_EXAMS } from '@/constants/examProfiles'
 
 // ─────────────────────────────────────────────────────────────────
-// Language themes (per-language accent palette)
+// Helpers
 // ─────────────────────────────────────────────────────────────────
-const LANGUAGE_THEMES: Record<string, { bg: string; accent: string; accentLight: string }> = {
-  en: { bg: '#F0EEFF', accent: '#5B4EFF', accentLight: '#EEEEFF' },
-  es: { bg: '#FFF0EE', accent: '#C04A06', accentLight: '#FFE5DE' },
-  fr: { bg: '#EEF4FF', accent: '#1558B0', accentLight: '#DDEEFF' },
-  de: { bg: '#FFF7E8', accent: '#A65A00', accentLight: '#FFEAC2' },
-  it: { bg: '#EEFAF0', accent: '#2D7A4F', accentLight: '#DDFAEB' },
-  pt: { bg: '#EDFAF5', accent: '#0A7A5C', accentLight: '#DDFAF0' },
-  zh: { bg: '#FFF3EE', accent: '#C84030', accentLight: '#FFE0DA' },
-  ja: { bg: '#FFF0F5', accent: '#C84070', accentLight: '#FFE0EC' },
-  ko: { bg: '#EDFAFA', accent: '#0A7A8C', accentLight: '#DDFAFA' },
-  ar: { bg: '#EDFAF4', accent: '#0A8C5A', accentLight: '#DDFAEE' },
-  hi: { bg: '#FFF8EE', accent: '#B07A10', accentLight: '#FFF0D6' },
-  ru: { bg: '#EEF2F8', accent: '#2B5BA8', accentLight: '#DDEAF8' },
-  tr: { bg: '#FFF0EE', accent: '#A82828', accentLight: '#FFE0DE' },
-  nl: { bg: '#FFF5EE', accent: '#C05A06', accentLight: '#FFE8D6' },
-  fa: { bg: '#F5EEFF', accent: '#6B4ECC', accentLight: '#EDE0FF' },
-}
-
-function getTheme(code: string) {
-  return LANGUAGE_THEMES[code] || LANGUAGE_THEMES.en
-}
-
-function getNativeName(code: string): string {
-  const n: Record<string, string> = {
-    en: 'English', es: 'Español', fr: 'Français', de: 'Deutsch',
-    it: 'Italiano', pt: 'Português', zh: '中文', ja: '日本語',
-    ko: '한국어', ar: 'العربية', hi: 'हिन्दी', ru: 'Русский',
-    tr: 'Türkçe', nl: 'Nederlands', fa: 'فارسی',
-  }
-  return n[code] || code
-}
-
-function getEnglishName(code: string): string {
-  const n: Record<string, string> = {
-    en: 'English', es: 'Spanish', fr: 'French', de: 'German',
-    it: 'Italian', pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese',
-    ko: 'Korean', ar: 'Arabic', hi: 'Hindi', ru: 'Russian',
-    tr: 'Turkish', nl: 'Dutch', fa: 'Persian',
-  }
-  return n[code] || code
-}
-
-function getExamBadges(code: string): string[] {
-  const e: Record<string, string[]> = {
-    en: ['IELTS', 'TOEFL'], es: ['DELE'], fr: ['DELF'],
-    de: ['Goethe'], it: ['CILS'], pt: ['CELPE'], zh: ['HSK'],
-    ja: ['JLPT'], ko: ['TOPIK'], ru: ['TORFL'],
-  }
-  return e[code] || []
-}
-
 function cefrFor(streak: number): string {
   if (streak < 8)  return 'B1'
   if (streak < 21) return 'B2'
   if (streak < 36) return 'C1'
   return 'C2'
+}
+
+/** Returns short badge labels for a language, e.g. ['DELE'] or ['IELTS', 'TOEFL'] */
+function getBadges(code: string): string[] {
+  const exams = LANGUAGE_EXAMS[code]
+  if (!exams || exams.length === 0) return []
+  // Return at most 2 short names (strip "Academic", "iBT", etc.)
+  return exams.slice(0, 2).map(e => e.name.split(' ')[0])
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -133,11 +93,10 @@ function getSession(code: string): SessionInfo {
   }
 }
 
-function StepIcon({ ic, done }: { ic: StepIc; done: boolean }) {
-  const color = done ? '#FFF' : '#999'
-  if (ic === 'mic')  return <MicIcon  size={13} color={color} />
-  if (ic === 'head') return <HeadphoneIcon size={13} color={color} />
-  return <BookIcon size={13} color={color} />
+function StepIcon({ ic }: { ic: StepIc }) {
+  if (ic === 'mic')  return <MicIcon      size={13} color="#999" />
+  if (ic === 'head') return <HeadphoneIcon size={13} color="#999" />
+  return                    <BookIcon      size={13} color="#999" />
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -154,8 +113,8 @@ function LangCardCollapsed({ lang, onTap }: { lang: any; onTap: () => void }) {
         <FlagSVG code={code} width={42} height={30} />
       </View>
       <View style={cc.info}>
-        <Text style={cc.native} numberOfLines={1}>{getNativeName(code)}</Text>
-        <Text style={cc.sub}>{getEnglishName(code)} · {cefrFor(streak)}</Text>
+        <Text style={cc.native} numberOfLines={1}>{t.native}</Text>
+        <Text style={cc.sub}>{t.name} · {cefrFor(streak)}</Text>
       </View>
       <View style={cc.streakRow}>
         <FlameIcon size={13} color={streak > 0 ? t.accent : '#CCC'} />
@@ -182,12 +141,16 @@ const cc = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────────
 // Expanded card
 // ─────────────────────────────────────────────────────────────────
-function LangCardExpanded({ lang, onClose, onRemove }: { lang: any; onClose: () => void; onRemove: () => void }) {
+function LangCardExpanded({
+  lang, onClose, onRemove,
+}: {
+  lang: any; onClose: () => void; onRemove: () => void
+}) {
   const code    = lang.language_code
   const t       = getTheme(code)
   const streak  = lang.streak_count || 0
   const session = getSession(code)
-  const badges  = getExamBadges(code)
+  const badges  = getBadges(code)
   const cefr    = cefrFor(streak)
 
   const [steps,     setSteps]     = useState<Step[]>(() => session.steps.map(s => ({ ...s })))
@@ -201,23 +164,21 @@ function LangCardExpanded({ lang, onClose, onRemove }: { lang: any; onClose: () 
   }
 
   return (
-    <View style={[ex.card, {
-      borderColor: t.accentLight,
-      shadowColor: t.accent,
-    }]}>
+    <View style={[ex.card, { borderColor: t.accentLight, shadowColor: t.accent }]}>
 
       {/* ── Header ── */}
       <View style={ex.header}>
         <View style={ex.flagSmall}>
           <FlagSVG code={code} width={32} height={22} />
         </View>
-        <Text style={ex.headerNative}>{getNativeName(code)}</Text>
-        <Text style={ex.headerEn}> · {getEnglishName(code)}</Text>
+        <Text style={ex.headerNative}>{t.native}</Text>
+        <Text style={ex.headerEn}> · {t.name}</Text>
         <View style={ex.headerStreak}>
           <FlameIcon size={14} color={t.accent} />
           <Text style={[ex.headerStreakNum, { color: t.accent }]}>{streak}</Text>
         </View>
         <TouchableOpacity onPress={onClose} style={ex.closeBtn} activeOpacity={0.7}>
+          {/* Chevron rotated 90° counter-clockwise = pointing up = collapse */}
           <View style={{ transform: [{ rotate: '-90deg' }] }}>
             <ChevronRightIcon size={14} color="#BBB" />
           </View>
@@ -226,12 +187,13 @@ function LangCardExpanded({ lang, onClose, onRemove }: { lang: any; onClose: () 
 
       {/* ── Today's session hero ── */}
       <View style={[ex.hero, { backgroundColor: t.bg }]}>
-        {/* Decorative dot grid */}
+        {/* Decorative 5×5 dot grid, top-right, opacity 0.12 */}
         <View style={ex.dotGrid} pointerEvents="none">
           {Array.from({ length: 25 }).map((_, i) => (
             <View key={i} style={[ex.dotItem, { backgroundColor: t.accent }]} />
           ))}
         </View>
+        {/* eyebrow: 10/700 uppercase, letterSpacing .16em = 1.6dp at 10px */}
         <Text style={[ex.heroEyebrow, { color: t.accent }]}>TODAY'S SESSION</Text>
         <Text style={ex.heroTitle}>{session.title}</Text>
         <Text style={ex.heroMeta}>{session.time} · {session.focus}</Text>
@@ -249,7 +211,7 @@ function LangCardExpanded({ lang, onClose, onRemove }: { lang: any; onClose: () 
             <View style={[ex.checkCircle, { backgroundColor: step.done ? t.accent : '#F4F4F0' }]}>
               {step.done
                 ? <CheckIcon size={12} color="#FFF" />
-                : <StepIcon ic={step.ic} done={false} />}
+                : <StepIcon ic={step.ic} />}
             </View>
             <Text style={[ex.checkLabel, step.done && ex.checkLabelDone]}>{step.label}</Text>
             <Text style={ex.checkMeta}>{step.meta}</Text>
@@ -257,17 +219,14 @@ function LangCardExpanded({ lang, onClose, onRemove }: { lang: any; onClose: () 
         ))}
       </View>
 
-      {/* ── Progress + CTA ── */}
+      {/* ── Session progress + CTA ── */}
       <View style={ex.ctaSection}>
         <View style={ex.progressRow}>
           <Text style={ex.progressLabel}>SESSION</Text>
           <Text style={ex.progressCount}>{doneCount}/{steps.length} steps</Text>
         </View>
         <View style={ex.progressTrack}>
-          <View style={[ex.progressFill, {
-            width: `${stepPct}%` as any,
-            backgroundColor: t.accent,
-          }]} />
+          <View style={[ex.progressFill, { width: `${stepPct}%` as any, backgroundColor: t.accent }]} />
         </View>
 
         <TouchableOpacity
@@ -275,9 +234,14 @@ function LangCardExpanded({ lang, onClose, onRemove }: { lang: any; onClose: () 
           onPress={() => setCompleted(c => !c)}
           activeOpacity={0.85}
         >
-          <Text style={[ex.continueBtnText, completed && { color: '#888' }]}>
-            {completed ? 'Session started →' : 'Continue →'}
-          </Text>
+          {completed ? (
+            <Text style={[ex.continueBtnText, { color: '#888' }]}>Session started →</Text>
+          ) : (
+            <View style={ex.continueBtnInner}>
+              <Text style={ex.continueBtnText}>Continue</Text>
+              <ArrowRightIcon size={14} color="#FFF" />
+            </View>
+          )}
         </TouchableOpacity>
 
         {/* Footer meta */}
@@ -306,7 +270,7 @@ const ex = StyleSheet.create({
     elevation: 4,
   },
 
-  // Header
+  // Header — padding 16 vertical / 20 horizontal, hairline bottom
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 20, paddingVertical: 16,
@@ -319,7 +283,7 @@ const ex = StyleSheet.create({
   headerStreakNum: { fontFamily: 'Inter_700Bold', fontSize: 14 },
   closeBtn:        { marginLeft: 8, padding: 4 },
 
-  // Hero
+  // Hero — padding 20 vertical / 22 horizontal
   hero: {
     paddingHorizontal: 22, paddingVertical: 20,
     position: 'relative', overflow: 'hidden',
@@ -330,9 +294,10 @@ const ex = StyleSheet.create({
     width: 80, gap: 6, opacity: 0.12,
   },
   dotItem:     { width: 3, height: 3, borderRadius: 1.5 },
+  // .16em at 10px = 1.6dp
   heroEyebrow: {
     fontFamily: 'Inter_700Bold', fontSize: 10,
-    textTransform: 'uppercase' as const, letterSpacing: 2.5, marginBottom: 6,
+    textTransform: 'uppercase' as const, letterSpacing: 1.6, marginBottom: 6,
   },
   heroTitle: {
     fontFamily: 'DMSerifDisplay_400Regular', fontSize: 26,
@@ -340,9 +305,12 @@ const ex = StyleSheet.create({
   },
   heroMeta: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666' },
 
-  // Checklist
-  checklist:     { paddingHorizontal: 22, paddingVertical: 16, gap: 10 },
-  checkRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  // Checklist — padding 16 vertical / 22 horizontal, gap 10
+  checklist: { paddingHorizontal: 22, paddingVertical: 16, gap: 10 },
+  // Each row: paddingVertical 6 per spec
+  checkRow:  {
+    flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6,
+  },
   checkCircle: {
     width: 26, height: 26, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -351,20 +319,26 @@ const ex = StyleSheet.create({
   checkLabelDone: { color: '#BBB', textDecorationLine: 'line-through' as const },
   checkMeta:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBB' },
 
-  // CTA section
+  // CTA section — padding 4 top / 22 horiz / 20 bottom
   ctaSection:    { paddingHorizontal: 22, paddingBottom: 20, paddingTop: 4 },
-  progressRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  progressLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#999', letterSpacing: 0.5 },
+  progressRow:   {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6,
+  },
+  // SESSION eyebrow: .05em at 11px ≈ 0.55dp
+  progressLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#999', letterSpacing: 0.55 },
   progressCount: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#666' },
   progressTrack: { height: 4, backgroundColor: '#F4F4F0', borderRadius: 99, overflow: 'hidden', marginBottom: 14 },
   progressFill:  { height: '100%' as any, borderRadius: 99 },
 
+  // Continue button: full-width, 14px padding all sides, 14px radius
   continueBtn: {
-    borderRadius: 14, paddingVertical: 14,
+    borderRadius: 14, padding: 14,
     alignItems: 'center', justifyContent: 'center',
   },
-  continueBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14.5, color: '#FFF' },
+  continueBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  continueBtnText:  { fontFamily: 'Inter_600SemiBold', fontSize: 14.5, color: '#FFF' },
 
+  // Footer meta — hairline top, 14px padding top
   footerRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginTop: 14, paddingTop: 14,
@@ -410,9 +384,7 @@ export default function HomeScreen() {
         })
         setLanguages(sorted)
         // Auto-expand the first language on first load
-        if (sorted.length > 0 && expandedCode === null) {
-          setExpandedCode(sorted[0].language_code)
-        }
+        setExpandedCode(prev => prev === null && sorted.length > 0 ? sorted[0].language_code : prev)
       }
       setLoading(false)
     } catch { setLoading(false) }
@@ -454,7 +426,7 @@ export default function HomeScreen() {
 
   function removeLanguage(lang: any) {
     Alert.alert(
-      `Remove ${getEnglishName(lang.language_code)}?`,
+      `Remove ${getTheme(lang.language_code).name}?`,
       'This will delete your streak and progress for this language.',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -479,10 +451,13 @@ export default function HomeScreen() {
 
   const filtered = searchText.trim() === ''
     ? languages
-    : languages.filter(l =>
-        getEnglishName(l.language_code).toLowerCase().includes(searchText.toLowerCase()) ||
-        getNativeName(l.language_code).toLowerCase().includes(searchText.toLowerCase())
-      )
+    : languages.filter(l => {
+        const t = getTheme(l.language_code)
+        return (
+          t.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          t.native.toLowerCase().includes(searchText.toLowerCase())
+        )
+      })
 
   return (
     <AppLayout>
@@ -492,6 +467,7 @@ export default function HomeScreen() {
           {/* ── Greeting ── */}
           <View style={s.header}>
             <View style={{ flex: 1 }}>
+              {/* .1em at 11px = 1.1dp */}
               <Text style={s.greeting}>{getGreeting()}</Text>
               <Text style={s.name}>{userName}.</Text>
             </View>
@@ -503,11 +479,7 @@ export default function HomeScreen() {
           {/* ── YOUR LANGUAGES row ── */}
           <View style={s.sectionRow}>
             <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
-            <TouchableOpacity
-              style={s.addBtn}
-              onPress={() => setShowModal(true)}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={s.addBtn} onPress={() => setShowModal(true)} activeOpacity={0.8}>
               <PlusIcon size={14} color="#666" />
               <Text style={s.addBtnText}>Add</Text>
             </TouchableOpacity>
@@ -589,36 +561,45 @@ export default function HomeScreen() {
                 value={searchText}
                 onChangeText={setSearchText}
               />
-              <TouchableOpacity onPress={() => { setShowSearch(false); setSearchText('') }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <TouchableOpacity
+                onPress={() => { setShowSearch(false); setSearchText('') }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
                 <XIcon size={18} color="#999" />
               </TouchableOpacity>
             </View>
           </SafeAreaView>
           <ScrollView style={s.searchResults} keyboardShouldPersistTaps="handled">
-            {filtered.map(lang => (
-              <TouchableOpacity
-                key={lang.language_code}
-                style={s.searchItem}
-                onPress={() => { setShowSearch(false); setSearchText(''); router.push(`/language/${lang.language_code}` as any) }}
-              >
-                <View style={{ borderRadius: 4, overflow: 'hidden' }}>
-                  <FlagSVG code={lang.language_code} width={32} height={22} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.searchItemNative}>{getNativeName(lang.language_code)}</Text>
-                  <Text style={s.searchItemEn}>{getEnglishName(lang.language_code)}</Text>
-                </View>
-                {(lang.streak_count || 0) > 0 && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <FlameIcon size={12} color={getTheme(lang.language_code).accent} />
-                    <Text style={[s.searchItemStreak, { color: getTheme(lang.language_code).accent }]}>
-                      {lang.streak_count}
-                    </Text>
+            {filtered.map(lang => {
+              const t = getTheme(lang.language_code)
+              return (
+                <TouchableOpacity
+                  key={lang.language_code}
+                  style={s.searchItem}
+                  onPress={() => {
+                    setShowSearch(false)
+                    setSearchText('')
+                    router.push(`/language/${lang.language_code}` as any)
+                  }}
+                >
+                  <View style={{ borderRadius: 4, overflow: 'hidden' }}>
+                    <FlagSVG code={lang.language_code} width={32} height={22} />
                   </View>
-                )}
-              </TouchableOpacity>
-            ))}
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.searchItemNative}>{t.native}</Text>
+                    <Text style={s.searchItemEn}>{t.name}</Text>
+                  </View>
+                  {(lang.streak_count || 0) > 0 && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <FlameIcon size={12} color={t.accent} />
+                      <Text style={[s.searchItemStreak, { color: t.accent }]}>
+                        {lang.streak_count}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )
+            })}
             {filtered.length === 0 && searchText.length > 0 && (
               <Text style={s.noResults}>No languages found</Text>
             )}
@@ -646,14 +627,15 @@ const s = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: '#F9F8F5' },
   scroll: { paddingBottom: 32 },
 
-  // Greeting
+  // Greeting block
   header: {
     flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
     paddingHorizontal: 22, paddingTop: 28, paddingBottom: 20,
   },
+  // .1em at 11px = 1.1dp letterSpacing
   greeting: {
     fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#999',
-    letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 4,
+    letterSpacing: 1.1, textTransform: 'uppercase' as const, marginBottom: 4,
   },
   name: {
     fontFamily: 'DMSerifDisplay_400Regular', fontSize: 34, color: '#000', lineHeight: 38,
@@ -663,24 +645,22 @@ const s = StyleSheet.create({
     backgroundColor: '#F4F4F0', alignItems: 'center', justifyContent: 'center',
   },
 
-  // Section row
+  // "YOUR LANGUAGES" + Add row
   sectionRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 22, marginBottom: 12,
   },
   sectionLabel: {
     fontFamily: 'Inter_700Bold', fontSize: 11, color: '#999',
-    letterSpacing: 1, textTransform: 'uppercase' as const,
+    letterSpacing: 1.1, textTransform: 'uppercase' as const,
   },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  addBtn:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
   addBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#666' },
 
-  // Card list
+  // Card stack — 10px gap per spec
   cardList: { paddingHorizontal: 22, gap: 10 },
 
-  skeleton: {
-    height: 72, borderRadius: 20, backgroundColor: '#EDECEA',
-  },
+  skeleton: { height: 72, borderRadius: 20, backgroundColor: '#EDECEA' },
 
   emptyCard: {
     borderWidth: 1.5, borderStyle: 'dashed' as const, borderColor: '#DCDCDC',
@@ -689,7 +669,7 @@ const s = StyleSheet.create({
   },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#CCC' },
 
-  // Promo card
+  // Weekly review promo card
   promoCard: {
     marginHorizontal: 22, marginTop: 24,
     backgroundColor: '#FFF', borderRadius: 16,
@@ -701,7 +681,7 @@ const s = StyleSheet.create({
     backgroundColor: '#F4F4F0', alignItems: 'center', justifyContent: 'center',
   },
   promoTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#000' },
-  promoSub:   { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginTop: 2 },
+  promoSub:   { fontFamily: 'Inter_400Regular',  fontSize: 11, color: '#999', marginTop: 2 },
 
   // Search modal
   searchOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
@@ -718,7 +698,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
   },
   searchItemNative: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
-  searchItemEn:     { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginTop: 2 },
+  searchItemEn:     { fontFamily: 'Inter_400Regular',  fontSize: 11, color: '#999', marginTop: 2 },
   searchItemStreak: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   noResults: { padding: 24, textAlign: 'center' as const, color: '#BBB', fontSize: 14 },
 })

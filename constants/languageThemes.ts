@@ -12,7 +12,7 @@ export const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
   en: { name: 'English',    native: 'English',    flag: '🇬🇧', bg: '#F0EEFF', accent: '#5B4EFF', accentLight: '#EEEEFF', accentDark: '#3C3489' },
   fr: { name: 'French',     native: 'Français',   flag: '🇫🇷', bg: '#EEF4FF', accent: '#1558B0', accentLight: '#DDEEFF', accentDark: '#0A3D7A' },
   es: { name: 'Spanish',    native: 'Español',    flag: '🇪🇸', bg: '#FFF0EE', accent: '#C04A06', accentLight: '#FFE5DE', accentDark: '#8A3200' },
-  de: { name: 'German',     native: 'Deutsch',    flag: '🇩🇪', bg: '#F0F0F5', accent: '#4A5568', accentLight: '#E8E8F0', accentDark: '#2D3748' },
+  de: { name: 'German',     native: 'Deutsch',    flag: '🇩🇪', bg: '#FFF7E8', accent: '#A65A00', accentLight: '#FFEAC2', accentDark: '#7A3F00' },
   it: { name: 'Italian',    native: 'Italiano',   flag: '🇮🇹', bg: '#EEFAF0', accent: '#2D7A4F', accentLight: '#DDFAEB', accentDark: '#1A5C38' },
   pt: { name: 'Portuguese', native: 'Português',  flag: '🇵🇹', bg: '#EDFAF5', accent: '#0A7A5C', accentLight: '#DDFAF0', accentDark: '#065C44' },
   nl: { name: 'Dutch',      native: 'Nederlands', flag: '🇳🇱', bg: '#FFF5EE', accent: '#C05A06', accentLight: '#FFE8D6', accentDark: '#8A3E00' },

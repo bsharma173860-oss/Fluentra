@@ -101,6 +101,15 @@ export function ArrowUpIcon(props: IconProps) {
   );
 }
 
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Svg {...p(props)}>
+      <Line x1="5" y1="12" x2="19" y2="12" />
+      <Polyline points="12 5 19 12 12 19" />
+    </Svg>
+  );
+}
+
 // ── Actions ───────────────────────────────────────────────────────
 
 export function PlusIcon(props: IconProps) {
