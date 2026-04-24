@@ -6,49 +6,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { getTheme } from '@/constants/languageThemes';
 import {
   MicIcon, PenIcon, HeadphoneIcon, BookIcon, FileTextIcon,
   TrophyIcon, MessageCircleIcon, FlameIcon, ChevronRightIcon,
   LockIcon, CheckIcon,
 } from '@/components/icons';
 
-// ── Theme map ──────────────────────────────────────────────────────
-const THEMES: Record<string, { bg: string; accent: string; accentLight: string }> = {
-  en: { bg: '#F0EEFF', accent: '#5B4EFF', accentLight: '#EEEEFF' },
-  es: { bg: '#FFF0EE', accent: '#C04A06', accentLight: '#FFE5DE' },
-  fr: { bg: '#EEF4FF', accent: '#1558B0', accentLight: '#DDEEFF' },
-  de: { bg: '#F0F0F5', accent: '#4A5568', accentLight: '#E8E8F0' },
-  it: { bg: '#EEFAF0', accent: '#2D7A4F', accentLight: '#DDFAEB' },
-  pt: { bg: '#EDFAF5', accent: '#0A7A5C', accentLight: '#DDFAF0' },
-  zh: { bg: '#FFF3EE', accent: '#C84030', accentLight: '#FFE0DA' },
-  ja: { bg: '#FFF0F5', accent: '#C84070', accentLight: '#FFE0EC' },
-  ko: { bg: '#EDFAFA', accent: '#0A7A8C', accentLight: '#DDFAFA' },
-  ar: { bg: '#EDFAF4', accent: '#0A8C5A', accentLight: '#DDFAEE' },
-  hi: { bg: '#FFF8EE', accent: '#B07A10', accentLight: '#FFF0D6' },
-  ru: { bg: '#EEF2F8', accent: '#2B5BA8', accentLight: '#DDEAF8' },
-  tr: { bg: '#FFF0EE', accent: '#A82828', accentLight: '#FFE0DE' },
-  nl: { bg: '#FFF5EE', accent: '#C05A06', accentLight: '#FFE8D6' },
-  fa: { bg: '#F5EEFF', accent: '#6B4ECC', accentLight: '#EDE0FF' },
-};
-
 const MODULE_COLORS: Record<string, string> = {
   speaking: '#5B4EFF',
   writing:  '#B07A10',
   listening:'#0A8C5A',
   reading:  '#C04A06',
-};
-
-const NATIVE_NAMES: Record<string, string> = {
-  en:'English', es:'Español', fr:'Français', de:'Deutsch',
-  it:'Italiano', pt:'Português', zh:'中文', ja:'日本語',
-  ko:'한국어', ar:'العربية', hi:'हिन्दी', ru:'Русский',
-  tr:'Türkçe', nl:'Nederlands', fa:'فارسی',
-};
-
-const FLAG_EMOJIS: Record<string, string> = {
-  en:'🇬🇧', es:'🇪🇸', fr:'🇫🇷', de:'🇩🇪', it:'🇮🇹',
-  pt:'🇵🇹', zh:'🇨🇳', ja:'🇯🇵', ko:'🇰🇷', ar:'🇸🇦',
-  hi:'🇮🇳', ru:'🇷🇺', tr:'🇹🇷', nl:'🇳🇱', fa:'🇮🇷',
 };
 
 // Module routes: practice modules go to existing select pages
@@ -65,7 +34,7 @@ type Tab = 'practice' | 'dashboard' | 'exams';
 export default function LanguagePage() {
   const params   = useLocalSearchParams();
   const code     = ((params.code ?? params.languageCode ?? 'en') as string);
-  const theme    = THEMES[code] ?? THEMES.en;
+  const theme    = getTheme(code);
   const { profile } = useAuth();
 
   const [activeTab,    setActiveTab]    = useState<Tab>('practice');
@@ -93,8 +62,8 @@ export default function LanguagePage() {
 
   const isPro  = profile?.subscription_tier === 'pro';
   const level  = streak < 8 ? 'B1' : streak < 21 ? 'B2' : streak < 36 ? 'C1' : 'C2';
-  const name   = NATIVE_NAMES[code] ?? code.toUpperCase();
-  const flag   = FLAG_EMOJIS[code]  ?? '🌍';
+  const name   = theme.native;
+  const flag   = theme.flag;
 
   function navigate(module: string) {
     const route = MODULE_ROUTES[module] ?? `/language/${code}/${module}`;

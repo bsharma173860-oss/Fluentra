@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, TextInput, Modal, Alert,
+  Platform, useWindowDimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useFocusEffect } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AddLanguageModal } from '@/components/ui/AddLanguageModal'
+import { WebDashboard } from '@/components/ui/WebDashboard'
 import { FlagSVG } from '@/components/flags'
 import {
   SearchIcon, PlusIcon, FlameIcon, XIcon,
@@ -354,6 +356,9 @@ const ex = StyleSheet.create({
 // Main home screen
 // ─────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const { width }  = useWindowDimensions()
+  const isDesktop  = Platform.OS === 'web' && width >= 768
+
   const [languages,    setLanguages]    = useState<any[]>([])
   const [loading,      setLoading]      = useState(true)
   const [showModal,    setShowModal]    = useState(false)
@@ -459,6 +464,29 @@ export default function HomeScreen() {
         )
       })
 
+  // ── Desktop: web dashboard ────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <AppLayout>
+        <WebDashboard
+          languages={languages}
+          userName={userName}
+          loading={loading}
+          onAddLanguage={() => setShowModal(true)}
+          onRemoveLanguage={removeLanguage}
+        />
+        <AddLanguageModal
+          visible={showModal}
+          onClose={() => setShowModal(false)}
+          addedCodes={languages.map(l => l.language_code)}
+          addingCode={adding}
+          onAdd={addLanguage}
+        />
+      </AppLayout>
+    )
+  }
+
+  // ── Mobile: V5 expandable card list ──────────────────────────
   return (
     <AppLayout>
       <SafeAreaView style={s.safe} edges={['top']}>
