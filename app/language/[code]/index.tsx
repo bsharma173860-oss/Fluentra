@@ -7,11 +7,13 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { getTheme } from '@/constants/languageThemes';
+import { getExamsForLanguage } from '@/constants/languageExams';
 import {
   MicIcon, PenIcon, HeadphoneIcon, BookIcon, FileTextIcon,
   TrophyIcon, MessageCircleIcon, FlameIcon, ChevronRightIcon,
   LockIcon, CheckIcon,
 } from '@/components/icons';
+import { getExamFormat } from '@/constants/examFormats';
 
 const MODULE_COLORS: Record<string, string> = {
   speaking: '#5B4EFF',
@@ -60,22 +62,76 @@ export default function LanguagePage() {
     }
   }
 
-  const isPro  = profile?.subscription_tier === 'pro';
-  const level  = streak < 8 ? 'B1' : streak < 21 ? 'B2' : streak < 36 ? 'C1' : 'C2';
-  const name   = theme.native;
-  const flag   = theme.flag;
+  const isPro       = profile?.subscription_tier === 'pro';
+  const level       = streak < 8 ? 'B1' : streak < 21 ? 'B2' : streak < 36 ? 'C1' : 'C2';
+  const name        = theme.native;
+  const flag        = theme.flag;
+  const primaryExam = getExamsForLanguage(code)[0];
+
+  // Get formats for the primary exam to derive dynamic descriptions
+  const listeningFmt = getExamFormat(primaryExam.id, 'listening');
+  const readingFmt   = getExamFormat(primaryExam.id, 'reading');
+  const writingFmt   = getExamFormat(primaryExam.id, 'writing');
+  const speakingFmt  = getExamFormat(primaryExam.id, 'speaking');
+  const hasSpeaking  = (speakingFmt?.parts?.length ?? 0) > 0;
 
   function navigate(module: string) {
     const route = MODULE_ROUTES[module] ?? `/language/${code}/${module}`;
     router.push({ pathname: route as any, params: { languageCode: code, code } });
   }
 
-  const PRACTICE_MODULES = [
-    { id: 'speaking',  title: 'Speaking',  desc: 'AI examiner · Parts 1–3',      Icon: MicIcon,       color: MODULE_COLORS.speaking,  time: '11–14 min', free: true  },
-    { id: 'writing',   title: 'Writing',   desc: 'Essay + Task 1 · AI graded',   Icon: PenIcon,       color: MODULE_COLORS.writing,   time: '60 min',    free: true  },
-    { id: 'listening', title: 'Listening', desc: '4 sections · Real audio',       Icon: HeadphoneIcon, color: MODULE_COLORS.listening, time: '40 min',    free: true  },
-    { id: 'reading',   title: 'Reading',   desc: '3 passages · 40 questions',     Icon: FileTextIcon,  color: MODULE_COLORS.reading,   time: '60 min',    free: false },
+  const ALL_MODULES = [
+    {
+      id: 'speaking',
+      title: 'Speaking',
+      desc: speakingFmt
+        ? `${speakingFmt.parts.length} parts · ${speakingFmt.totalTime ?? 'AI examiner'}`
+        : 'AI examiner · Parts 1–3',
+      Icon: MicIcon,
+      color: MODULE_COLORS.speaking,
+      time: speakingFmt?.totalTime ?? '11–14 min',
+      free: true,
+      hidden: !hasSpeaking,
+    },
+    {
+      id: 'writing',
+      title: 'Writing',
+      desc: writingFmt
+        ? `${writingFmt.tasks.length} task${writingFmt.tasks.length !== 1 ? 's' : ''} · AI graded`
+        : 'Essay + Task 1 · AI graded',
+      Icon: PenIcon,
+      color: MODULE_COLORS.writing,
+      time: writingFmt ? `${writingFmt.tasks.reduce((s, t) => s + t.timeMinutes, 0)} min` : '60 min',
+      free: true,
+      hidden: false,
+    },
+    {
+      id: 'listening',
+      title: 'Listening',
+      desc: listeningFmt
+        ? `${listeningFmt.sections.length} sections · ${listeningFmt.totalQuestions} questions`
+        : '4 sections · Real audio',
+      Icon: HeadphoneIcon,
+      color: MODULE_COLORS.listening,
+      time: listeningFmt ? `${listeningFmt.timeMinutes} min` : '40 min',
+      free: true,
+      hidden: false,
+    },
+    {
+      id: 'reading',
+      title: 'Reading',
+      desc: readingFmt
+        ? `${readingFmt.passages.length} passages · ${readingFmt.totalQuestions} questions`
+        : '3 passages · 40 questions',
+      Icon: FileTextIcon,
+      color: MODULE_COLORS.reading,
+      time: readingFmt ? `${readingFmt.timeMinutes} min` : '60 min',
+      free: false,
+      hidden: false,
+    },
   ];
+
+  const PRACTICE_MODULES = ALL_MODULES.filter(m => !m.hidden);
 
   const SKILLS = [
     { name: 'Speaking',  color: '#5B4EFF', score: 0 },
@@ -161,6 +217,9 @@ export default function LanguagePage() {
                     <Text style={s.modDesc}>{mod.desc}</Text>
                     <View style={s.modTags}>
                       <View style={s.modTag}><Text style={s.modTagText}>{mod.time}</Text></View>
+                      <View style={[s.modTag, { backgroundColor: primaryExam.bg }]}>
+                        <Text style={[s.modTagText, { color: primaryExam.color }]}>{primaryExam.name}</Text>
+                      </View>
                       {!mod.free && (
                         <View style={[s.modTag, { backgroundColor: '#FEF9EC' }]}>
                           <Text style={[s.modTagText, { color: '#B07A10' }]}>Pro</Text>

@@ -8,60 +8,25 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { ListeningSidebar } from '@/components/layout/ListeningSidebar';
 import { HeadphoneIcon } from '@/components/icons';
+import { getExamsForLanguage } from '@/constants/languageExams';
+import { getExamFormat } from '@/constants/examFormats';
 
-const GREEN     = '#0A8C5A';
-const GREEN_BG  = '#EDFAF4';
-const GREEN_BDR = '#C0E8D4';
-
-const EXAM_COLORS = {
-  IELTS: { bg: '#EEF4FF', active: '#1558B0', border: '#BFDBFE' },
-  TOEFL: { bg: '#F0FDF4', active: '#16A34A', border: '#BBF7D0' },
-  DELF:  { bg: '#FFF7ED', active: '#C04A06', border: '#FED7AA' },
-} as const;
-
-type Exam = 'IELTS' | 'TOEFL' | 'DELF';
-type Section = '1' | '2' | '3' | '4';
-
-const SECTIONS: {
-  key: Section; label: string; questions: string; desc: string; tags: string[];
-}[] = [
-  {
-    key: '1', label: 'Section 1 — Social',
-    questions: '10 questions',
-    desc: 'Everyday social conversation between two speakers — booking, directions, queries.',
-    tags: ['IELTS', 'Form completion'],
-  },
-  {
-    key: '2', label: 'Section 2 — Monologue',
-    questions: '10 questions',
-    desc: 'General-topic monologue, e.g. a radio broadcast, tour guide, or announcement.',
-    tags: ['IELTS', 'Note completion'],
-  },
-  {
-    key: '3', label: 'Section 3 — Academic',
-    questions: '10 questions',
-    desc: 'Educational conversation between up to 4 people — tutorials, group projects.',
-    tags: ['IELTS', 'Multiple choice'],
-  },
-  {
-    key: '4', label: 'Section 4 — Lecture',
-    questions: '10 questions',
-    desc: 'Academic lecture — most challenging. Complex vocabulary and abstract concepts.',
-    tags: ['IELTS', 'Sentence completion'],
-  },
-];
-
-const Q_TYPES = [
-  'Multiple choice', 'Form completion', 'Note completion',
-  'Sentence completion', 'Matching', 'Map labelling',
-];
+const GREEN    = '#0A8C5A';
+const GREEN_BG = '#EDFAF4';
 
 export default function ListeningSelectScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
   const params    = useLocalSearchParams();
   const langCode  = (params.languageCode ?? params.code ?? 'en') as string;
-  const [exam, setExam] = useState<Exam>('IELTS');
+  const exams     = getExamsForLanguage(langCode);
+  const [exam, setExam] = useState(exams[0].id);
+
+  const format   = getExamFormat(exam, 'listening');
+  const sections = format?.sections ?? [];
+
+  // Collect unique question types from sections for the pills
+  const questionTypes = Array.from(new Set(sections.map(s => s.type)));
 
   function startSection(section: string) {
     router.push({
@@ -81,86 +46,117 @@ export default function ListeningSelectScreen() {
               <Text style={s.backArrow}>←</Text>
             </TouchableOpacity>
           )}
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={s.headerTitle}>Listening Practice</Text>
-            <Text style={s.headerSub}>Choose a section to practice</Text>
+            <Text style={s.headerSub}>
+              {format
+                ? `${format.totalQuestions} questions · ${format.timeMinutes} min${format.scoreRange ? ` · ${format.scoreRange}` : ''}`
+                : 'Choose an exam and section'}
+            </Text>
           </View>
         </View>
 
         {/* ── Exam selector ── */}
         <View style={s.examRow}>
-          {(['IELTS', 'TOEFL', 'DELF'] as Exam[]).map(e => {
-            const active = exam === e;
-            const ec = EXAM_COLORS[e];
+          {exams.map(e => {
+            const active = exam === e.id;
             return (
               <TouchableOpacity
-                key={e}
-                style={[s.examPill, active && { backgroundColor: ec.bg, borderColor: ec.border }]}
-                onPress={() => setExam(e)}
+                key={e.id}
+                style={[s.examPill, active && { backgroundColor: e.bg, borderColor: e.border }]}
+                onPress={() => setExam(e.id)}
                 activeOpacity={0.8}
               >
-                <Text style={[s.examPillText, { color: active ? ec.active : '#888', fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular' }]}>{e}</Text>
+                <Text style={[s.examPillText, {
+                  color: active ? e.color : '#888',
+                  fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                }]}>{e.name}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* ── 2×2 grid ── */}
-        <View style={s.grid}>
-          {SECTIONS.map(sec => (
-            <View key={sec.key} style={s.sectionCard}>
-              {/* Card top */}
-              <View style={s.cardTop}>
-                <View style={s.headCircle}>
-                  <HeadphoneIcon size={22} color={GREEN} />
+        {/* ── Note banner ── */}
+        {format?.note ? (
+          <View style={s.noteBanner}>
+            <Text style={s.noteText}>{format.note}</Text>
+          </View>
+        ) : null}
+
+        {/* ── No format available ── */}
+        {!format ? (
+          <View style={s.emptyCard}>
+            <Text style={s.emptyText}>Format details coming soon for this exam.</Text>
+          </View>
+        ) : null}
+
+        {/* ── Section cards ── */}
+        {sections.length > 0 ? (
+          <View style={s.grid}>
+            {sections.map((sec, i) => (
+              <View key={sec.id} style={s.sectionCard}>
+                <View style={s.cardTop}>
+                  <View style={s.headCircle}>
+                    <HeadphoneIcon size={22} color={GREEN} />
+                  </View>
+                </View>
+                <View style={s.cardBody}>
+                  <Text style={s.secLabel}>{sec.name}</Text>
+                  <Text style={s.secQuestions}>{sec.questions} questions</Text>
+                  {sec.description ? (
+                    <Text style={s.secDesc}>{sec.description}</Text>
+                  ) : null}
+                  <Text style={s.secType}>{sec.type}</Text>
+                  {(sec.playsCount ?? 1) >= 2 ? (
+                    <View style={s.playsTwiceBadge}>
+                      <Text style={s.playsTwiceText}>Audio plays twice</Text>
+                    </View>
+                  ) : null}
+                  <TouchableOpacity
+                    style={s.startBtn}
+                    onPress={() => startSection(String(i + 1))}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={s.startBtnText}>Start →</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-              {/* Card body */}
-              <View style={s.cardBody}>
-                <Text style={s.secLabel}>{sec.label}</Text>
-                <Text style={s.secQuestions}>{sec.questions}</Text>
-                <Text style={s.secDesc}>{sec.desc}</Text>
-                <View style={s.tagRow}>
-                  {sec.tags.map(t => (
-                    <View key={t} style={s.tag}><Text style={s.tagText}>{t}</Text></View>
-                  ))}
-                </View>
-                <TouchableOpacity
-                  style={s.startBtn}
-                  onPress={() => startSection(sec.key)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={s.startBtnText}>Start →</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        ) : null}
 
         {/* ── Full test card ── */}
-        <TouchableOpacity
-          style={s.fullCard}
-          onPress={() => startSection('full')}
-          activeOpacity={0.85}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={s.fullLabel}>Full Listening Test</Text>
-            <Text style={s.fullSub}>All 4 sections · 40 questions · 30 min</Text>
-          </View>
-          <View style={s.fullBtn}>
-            <Text style={s.fullBtnText}>Start Full Test →</Text>
-          </View>
-        </TouchableOpacity>
+        {format ? (
+          <TouchableOpacity
+            style={s.fullCard}
+            onPress={() => startSection('full')}
+            activeOpacity={0.85}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={s.fullLabel}>Full Listening Test</Text>
+              <Text style={s.fullSub}>
+                All {sections.length} sections · {format.totalQuestions} questions · {format.timeMinutes} min
+              </Text>
+            </View>
+            <View style={s.fullBtn}>
+              <Text style={s.fullBtnText}>Start Full Test →</Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
 
         {/* ── Question types ── */}
-        <Text style={s.sectionLabel}>QUESTION TYPES YOU'LL PRACTICE</Text>
-        <View style={s.qTypesWrap}>
-          {Q_TYPES.map(qt => (
-            <View key={qt} style={s.qTypePill}>
-              <Text style={s.qTypePillText}>{qt}</Text>
+        {questionTypes.length > 0 ? (
+          <>
+            <Text style={s.sectionLabel}>QUESTION TYPES YOU'LL PRACTICE</Text>
+            <View style={s.qTypesWrap}>
+              {questionTypes.map(qt => (
+                <View key={qt} style={s.qTypePill}>
+                  <Text style={s.qTypePillText}>{qt}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          </>
+        ) : null}
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -192,19 +188,33 @@ const s = StyleSheet.create({
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, color: '#000' },
   headerSub:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#999', marginTop: 2 },
 
-  examRow: { flexDirection: 'row', gap: 8 },
+  examRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   examPill: {
     paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
     backgroundColor: Colors.white, borderWidth: 1, borderColor: '#EAEAEA',
   },
   examPillText: { fontSize: 13 },
 
+  noteBanner: {
+    backgroundColor: GREEN_BG, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderLeftWidth: 3, borderLeftColor: GREEN,
+  },
+  noteText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: GREEN },
+
+  emptyCard: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    borderWidth: 1, borderColor: '#EAEAEA',
+    padding: 24, alignItems: 'center',
+  },
+  emptyText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: '#888', textAlign: 'center' },
+
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   sectionCard: {
     width: '47.5%' as any,
     backgroundColor: Colors.white,
     borderRadius: 20, borderWidth: 1, borderColor: '#EAEAEA',
-    overflow: 'hidden', minHeight: 180,
+    overflow: 'hidden', minHeight: 160,
   },
   cardTop: {
     height: 80, backgroundColor: GREEN_BG,
@@ -215,16 +225,19 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  cardBody:    { padding: 14, gap: 4 },
-  secLabel:    { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000' },
-  secQuestions:{ fontFamily: 'Inter_500Medium', fontSize: 12, color: GREEN },
-  secDesc:     { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#888', lineHeight: 16, marginTop: 2 },
-  tagRow:      { flexDirection: 'row', gap: 4, marginTop: 6, flexWrap: 'wrap' },
-  tag: { backgroundColor: GREEN_BG, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  tagText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: GREEN },
+  cardBody:     { padding: 14, gap: 3 },
+  secLabel:     { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000' },
+  secQuestions: { fontFamily: 'Inter_500Medium', fontSize: 12, color: GREEN },
+  secDesc:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#888', lineHeight: 16, marginTop: 2 },
+  secType:      { fontFamily: 'Inter_400Regular', fontSize: 10, color: '#AAA' },
+  playsTwiceBadge: {
+    backgroundColor: '#EDFAF4', borderRadius: 4,
+    paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start', marginTop: 4,
+  },
+  playsTwiceText: { fontFamily: 'Inter_600SemiBold', fontSize: 9, color: GREEN },
   startBtn: {
     backgroundColor: GREEN, borderRadius: 8,
-    paddingVertical: 8, alignItems: 'center', marginTop: 8,
+    paddingVertical: 8, alignItems: 'center', marginTop: 10,
   },
   startBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.white },
 
@@ -234,7 +247,7 @@ const s = StyleSheet.create({
   },
   fullLabel: { fontFamily: 'Inter_700Bold', fontSize: 20, color: Colors.white },
   fullSub:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
-  fullBtn: { backgroundColor: '#000', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
+  fullBtn:   { backgroundColor: '#000', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
   fullBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: Colors.white },
 
   sectionLabel: {
