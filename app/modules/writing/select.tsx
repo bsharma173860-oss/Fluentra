@@ -34,7 +34,7 @@ export default function WritingSelectScreen() {
   const showTodaysPrompts = exam === 'ielts';
 
   function startTask(route: string) {
-    router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode, exam } });
+    router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode, exam, examId: exam } });
   }
 
   const content = (
