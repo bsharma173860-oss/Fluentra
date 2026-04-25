@@ -12,8 +12,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { mockScore, setWritingResult } from '@/lib/writingStore';
 import { getTodaysTask1, type Task1Chart } from '@/constants/dailyContent';
 import { ChevronLeftIcon } from '@/components/icons';
-
-const EXAM        = 'IELTS';
+import { useLocalSearchParams } from 'expo-router';
 const MIN_WORDS   = 150;
 const TOTAL_SEC   = 20 * 60;
 const WARN_SEC    = 5 * 60;
@@ -144,6 +143,9 @@ const ch = StyleSheet.create({
 export default function WritingTask1Screen() {
   const { width }       = useWindowDimensions();
   const isDesktop       = Platform.OS === 'web' && width >= 768;
+  const params          = useLocalSearchParams();
+  const examId          = ((params.examId ?? params.exam ?? 'ielts') as string);
+  const examName        = examId.toUpperCase().replace('_', ' ');
   const todaysChart     = getTodaysTask1();
 
   const [text,        setText]       = useState('');
@@ -180,7 +182,7 @@ export default function WritingTask1Screen() {
   function doSubmit() {
     setSubmitting(true);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
-    const result = mockScore(text, 'task1', EXAM, todaysChart.prompt, timeTaken);
+    const result = mockScore(text, 'task1', examName, todaysChart.prompt, timeTaken);
     setWritingResult(result);
     router.replace('/modules/writing/results' as any);
   }
@@ -226,7 +228,7 @@ export default function WritingTask1Screen() {
           <ChevronLeftIcon size={13} color={Colors.textSecondary} />
         </TouchableOpacity>
         <View style={s.breadcrumb}>
-          <Text style={s.breadcrumbRoot}>{EXAM} · Writing</Text>
+          <Text style={s.breadcrumbRoot}>{examName} · Writing</Text>
           <Text style={s.breadcrumbSep}>/</Text>
           <Text style={s.breadcrumbCurrent}>Task 1</Text>
         </View>

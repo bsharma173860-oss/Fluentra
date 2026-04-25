@@ -5,7 +5,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { WritingSidebar } from '@/components/layout/WritingSidebar';
 import { mockScore, setWritingResult } from '@/lib/writingStore';
@@ -16,7 +16,6 @@ const GOLD          = '#B07A10';
 const GOLD_BG       = '#FEF9EC';
 const RED           = '#C04A06';
 const GREEN         = '#16A34A';
-const EXAM          = 'IELTS';
 const MIN_WORDS     = 250;
 const TOTAL_SECONDS = 40 * 60;
 const WARN_SECONDS  = 5 * 60;
@@ -39,6 +38,9 @@ function wordColor(count: number) {
 export default function WritingTask2Screen() {
   const { width }   = useWindowDimensions();
   const isDesktop   = Platform.OS === 'web' && width >= 768;
+  const params      = useLocalSearchParams();
+  const examId      = ((params.examId ?? params.exam ?? 'ielts') as string);
+  const examName    = examId.toUpperCase().replace('_', ' ');
   const todaysTask2 = getTodaysTask2();
   const PROMPT      = todaysTask2.prompt;
 
@@ -58,7 +60,7 @@ export default function WritingTask2Screen() {
 
   useEffect(() => {
     Analytics.practiceSessionStarted({
-      module: 'writing', languageCode: 'en', examType: EXAM, mode: 'practice',
+      module: 'writing', languageCode: 'en', examType: examName, mode: 'practice',
     });
   }, []);
 
@@ -80,9 +82,9 @@ export default function WritingTask2Screen() {
     setSubmitting(true);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
     const currentText = textRef.current;
-    const result = mockScore(currentText, 'task2', EXAM, PROMPT, timeTaken);
+    const result = mockScore(currentText, 'task2', examName, PROMPT, timeTaken);
     Analytics.practiceSessionCompleted({
-      module: 'writing', languageCode: 'en', examType: EXAM,
+      module: 'writing', languageCode: 'en', examType: examName,
       durationSeconds: timeTaken, wordCount: countWords(currentText),
     });
     setWritingResult(result);
@@ -119,7 +121,7 @@ export default function WritingTask2Screen() {
           </Text>
         </View>
       </View>
-      <Text style={s.examType}>IELTS Academic</Text>
+      <Text style={s.examType}>{examName} · Writing Task 2</Text>
 
       {/* Prompt card */}
       <View style={s.promptCard}>

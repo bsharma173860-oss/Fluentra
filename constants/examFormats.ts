@@ -1131,6 +1131,442 @@ const EXAM_FORMATS = {
     } satisfies ReadingFormat,
   },
 
+  celpe: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Part 1', description: 'Oral interaction task', questions: 10, type: 'Multiple choice', playsCount: 2 },
+        { id: 'part2', name: 'Part 2', description: 'Extended listening', questions: 15, type: 'Short answer', playsCount: 2 },
+      ],
+      totalQuestions: 25, timeMinutes: 35, scoreRange: 'Pass/Fail',
+      note: 'Audio plays TWICE in this exam',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Text 1', wordCount: '400–600', questions: 10, difficulty: 'Medium', types: ['MCQ', 'Short answer'] },
+        { id: 'p2', name: 'Text 2', wordCount: '500–700', questions: 15, difficulty: 'Hard',   types: ['MCQ', 'Gap fill'] },
+      ],
+      totalQuestions: 25, timeMinutes: 60, scoreRange: 'Pass/Fail',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Writing Task', instruction: 'Write a formal text in Portuguese', minWords: 200, timeMinutes: 60, language: 'pt' },
+      ],
+      scoringCriteria: ['Content', 'Organization', 'Language Use'],
+      scoreRange: 'Pass/Fail',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Oral Task', duration: '8–10 min', description: 'Interactive speaking task' }],
+      scoreRange: 'Pass/Fail', totalTime: '8–10 min',
+    } satisfies SpeakingFormat,
+  },
+
+  caple: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Part 1', description: 'Short dialogues', questions: 10, type: 'MCQ', playsCount: 2 },
+      ],
+      totalQuestions: 10, timeMinutes: 25, scoreRange: 'A–F',
+      note: 'Audio plays TWICE in this exam',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'Text 1', questions: 10, difficulty: 'Medium', types: ['MCQ'] }],
+      totalQuestions: 10, timeMinutes: 40, scoreRange: 'A–F',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Writing', instruction: 'Write a formal letter or essay in Portuguese', minWords: 150, timeMinutes: 45, language: 'pt' },
+      ],
+      scoreRange: 'A–F',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Oral Exam', duration: '10–15 min', description: 'Conversation with examiner' }],
+      scoreRange: 'A–F',
+    } satisfies SpeakingFormat,
+  },
+
+  torfl: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Part 1', description: 'Short texts comprehension', questions: 15, type: 'MCQ', playsCount: 1 },
+        { id: 'part2', name: 'Part 2', description: 'Long text comprehension',   questions: 10, type: 'MCQ', playsCount: 1 },
+      ],
+      totalQuestions: 25, timeMinutes: 30, scoreRange: 'Pass/Fail',
+      note: 'Audio plays ONCE only',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Text 1', questions: 15, difficulty: 'Medium', types: ['MCQ', 'True/False'], language: 'ru' },
+        { id: 'p2', name: 'Text 2', questions: 15, difficulty: 'Hard',   types: ['MCQ'],               language: 'ru' },
+      ],
+      totalQuestions: 30, timeMinutes: 50, scoreRange: 'Pass/Fail',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Essay', instruction: 'Напишите эссе на заданную тему', minWords: 200, timeMinutes: 60, language: 'ru' },
+      ],
+      scoreRange: 'Pass/Fail',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [
+        { id: 'part1', name: 'Part 1', duration: '5 min',  description: 'Questions about familiar topics' },
+        { id: 'part2', name: 'Part 2', duration: '10 min', description: 'Discussion of a topic' },
+      ],
+      scoreRange: 'Pass/Fail',
+    } satisfies SpeakingFormat,
+  },
+
+  goethe: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Teil 1', description: 'Short conversations', questions: 10, type: 'MCQ',        playsCount: 1, language: 'de' },
+        { id: 'part2', name: 'Teil 2', description: 'Radio interview',     questions: 10, type: 'True/False', playsCount: 1, language: 'de' },
+        { id: 'part3', name: 'Teil 3', description: 'Discussion',          questions: 10, type: 'MCQ',        playsCount: 1, language: 'de' },
+      ],
+      totalQuestions: 30, timeMinutes: 40, scoreRange: '0–100',
+      note: 'Audio plays ONCE only',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Teil 1', questions: 10, difficulty: 'Medium', types: ['MCQ'],     language: 'de' },
+        { id: 'p2', name: 'Teil 2', questions: 10, difficulty: 'Medium', types: ['Matching'],language: 'de' },
+        { id: 'p3', name: 'Teil 3', questions: 10, difficulty: 'Hard',   types: ['Gap fill'],language: 'de' },
+      ],
+      totalQuestions: 30, timeMinutes: 65, scoreRange: '0–100',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Teil 1', instruction: 'Schreiben Sie einen formellen Brief', minWords: 150, timeMinutes: 30, language: 'de' },
+        { id: 'task2', name: 'Teil 2', instruction: 'Schreiben Sie einen Aufsatz',         minWords: 200, timeMinutes: 30, language: 'de' },
+      ],
+      scoreRange: '0–100',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [
+        { id: 'part1', name: 'Teil 1', duration: '2–3 min', description: 'Präsentation eines Themas' },
+        { id: 'part2', name: 'Teil 2', duration: '5–8 min', description: 'Diskussion mit Partner' },
+      ],
+      scoreRange: '0–100',
+    } satisfies SpeakingFormat,
+  },
+
+  testdaf: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Teil 1', description: 'Short announcements', questions: 10, type: 'True/False',  playsCount: 1, language: 'de' },
+        { id: 'part2', name: 'Teil 2', description: 'Radio interview',     questions: 10, type: 'MCQ',         playsCount: 1, language: 'de' },
+        { id: 'part3', name: 'Teil 3', description: 'Academic lecture',    questions: 10, type: 'Note taking',  playsCount: 1, language: 'de' },
+      ],
+      totalQuestions: 30, timeMinutes: 40, scoreRange: 'TDN 3–5',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Teil 1', questions: 10, difficulty: 'Medium', types: ['MCQ'],     language: 'de' },
+        { id: 'p2', name: 'Teil 2', questions: 10, difficulty: 'Hard',   types: ['Matching'],language: 'de' },
+        { id: 'p3', name: 'Teil 3', questions: 10, difficulty: 'Hard',   types: ['Gap fill'],language: 'de' },
+      ],
+      totalQuestions: 30, timeMinutes: 60, scoreRange: 'TDN 3–5',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Writing', instruction: 'Schreiben Sie eine Stellungnahme', minWords: 250, timeMinutes: 60, language: 'de' },
+      ],
+      scoreRange: 'TDN 3–5',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [
+        { id: 'part1', name: 'Teil 1', duration: '3 min', description: 'Short presentation' },
+        { id: 'part2', name: 'Teil 2', duration: '4 min', description: 'Discuss graph' },
+        { id: 'part3', name: 'Teil 3', duration: '5 min', description: 'Discuss controversial topic' },
+      ],
+      scoreRange: 'TDN 3–5',
+    } satisfies SpeakingFormat,
+  },
+
+  cils: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Parte 1', description: 'Short dialogues', questions: 10, type: 'MCQ',        playsCount: 2, language: 'it' },
+        { id: 'part2', name: 'Parte 2', description: 'Long monologue',  questions: 10, type: 'True/False', playsCount: 2, language: 'it' },
+      ],
+      totalQuestions: 20, timeMinutes: 30, scoreRange: '0–30',
+      note: 'Audio plays TWICE in this exam',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Testo 1', questions: 10, difficulty: 'Medium', types: ['MCQ'],     language: 'it' },
+        { id: 'p2', name: 'Testo 2', questions: 10, difficulty: 'Hard',   types: ['Gap fill'],language: 'it' },
+      ],
+      totalQuestions: 20, timeMinutes: 50, scoreRange: '0–30',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Produzione scritta', instruction: 'Scrivi un testo formale in italiano', minWords: 200, timeMinutes: 60, language: 'it' },
+      ],
+      scoreRange: '0–30',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [
+        { id: 'part1', name: 'Parte 1', duration: '5 min',  description: 'Presentazione di sé' },
+        { id: 'part2', name: 'Parte 2', duration: '10 min', description: 'Discussione su un tema' },
+      ],
+      scoreRange: '0–30',
+    } satisfies SpeakingFormat,
+  },
+
+  celi: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Part 1', description: 'Short texts', questions: 10, type: 'MCQ', playsCount: 2, language: 'it' },
+      ],
+      totalQuestions: 10, timeMinutes: 20, scoreRange: 'Pass/Fail',
+      note: 'Audio plays TWICE in this exam',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'Text 1', questions: 12, difficulty: 'Medium', types: ['MCQ', 'Gap fill'], language: 'it' }],
+      totalQuestions: 12, timeMinutes: 40, scoreRange: 'Pass/Fail',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'Writing', instruction: 'Scrivi un testo in italiano', minWords: 150, timeMinutes: 45, language: 'it' }],
+      scoreRange: 'Pass/Fail',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Oral', duration: '10 min', description: 'Conversation in Italian' }],
+      scoreRange: 'Pass/Fail',
+    } satisfies SpeakingFormat,
+  },
+
+  siele: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Tarea 1', description: 'Conversaciones cortas', questions: 15, type: 'MCQ', playsCount: 1, language: 'es' },
+        { id: 'part2', name: 'Tarea 2', description: 'Texto largo',           questions: 15, type: 'MCQ', playsCount: 1, language: 'es' },
+      ],
+      totalQuestions: 30, timeMinutes: 40, scoreRange: '0–250',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Texto 1', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'es' },
+        { id: 'p2', name: 'Texto 2', questions: 15, difficulty: 'Hard',   types: ['MCQ'], language: 'es' },
+      ],
+      totalQuestions: 30, timeMinutes: 50, scoreRange: '0–250',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [
+        { id: 'task1', name: 'Tarea 1', instruction: 'Escribe un texto formal en español',  minWords: 150, timeMinutes: 40, language: 'es' },
+        { id: 'task2', name: 'Tarea 2', instruction: 'Escribe un ensayo de opinión',         minWords: 200, timeMinutes: 40, language: 'es' },
+      ],
+      scoreRange: '0–250',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [
+        { id: 'part1', name: 'Tarea 1', duration: '5 min', description: 'Descripción de imagen' },
+        { id: 'part2', name: 'Tarea 2', duration: '5 min', description: 'Conversación con evaluador' },
+      ],
+      scoreRange: '0–250',
+    } satisfies SpeakingFormat,
+  },
+
+  hskk: {
+    speaking: {
+      parts: [
+        { id: 'part1', name: '重复句子', duration: '3 min', description: 'Repeat sentences',   language: 'zh' },
+        { id: 'part2', name: '朗读句子', duration: '4 min', description: 'Read sentences aloud',language: 'zh' },
+        { id: 'part3', name: '回答问题', duration: '5 min', description: 'Answer questions',    language: 'zh' },
+      ],
+      scoreRange: '0–100', totalTime: '17 min',
+    } satisfies SpeakingFormat,
+  } as any,
+
+  jft: {
+    listening: {
+      sections: [{ id: 'part1', name: '課題1', description: 'Task based comprehension', questions: 10, type: 'MCQ', playsCount: 1, language: 'ja' }],
+      totalQuestions: 10, timeMinutes: 20, scoreRange: 'A1–A2',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: '課題1', questions: 10, difficulty: 'Easy', types: ['MCQ'], language: 'ja' }],
+      totalQuestions: 10, timeMinutes: 20, scoreRange: 'A1–A2',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: '作文', instruction: '簡単な文を書いてください', minWords: 50, timeMinutes: 20, language: 'ja' }],
+      scoreRange: 'A1–A2',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: '話す', duration: '5 min', description: 'Simple Japanese conversation', language: 'ja' }],
+      scoreRange: 'A1–A2',
+    } satisfies SpeakingFormat,
+  },
+
+  tys: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Bölüm 1', description: 'Short conversations', questions: 15, type: 'MCQ', playsCount: 1, language: 'tr' },
+        { id: 'part2', name: 'Bölüm 2', description: 'Longer monologue',    questions: 15, type: 'MCQ', playsCount: 1, language: 'tr' },
+      ],
+      totalQuestions: 30, timeMinutes: 35, scoreRange: '0–100',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Metin 1', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'tr' },
+        { id: 'p2', name: 'Metin 2', questions: 15, difficulty: 'Hard',   types: ['MCQ'], language: 'tr' },
+      ],
+      totalQuestions: 30, timeMinutes: 45, scoreRange: '0–100',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'Yazma', instruction: 'Türkçe olarak bir metin yazın', minWords: 200, timeMinutes: 50, language: 'tr' }],
+      scoreRange: '0–100',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Sözlü', duration: '10 min', description: 'Türkçe konuşma' }],
+      scoreRange: '0–100',
+    } satisfies SpeakingFormat,
+  },
+
+  cnavt: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'Deel 1', description: 'Short conversations', questions: 10, type: 'MCQ',        playsCount: 2, language: 'nl' },
+        { id: 'part2', name: 'Deel 2', description: 'Long monologue',      questions: 10, type: 'True/False', playsCount: 2, language: 'nl' },
+      ],
+      totalQuestions: 20, timeMinutes: 30, scoreRange: 'Pass/Fail',
+      note: 'Audio plays TWICE in this exam',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'Tekst 1', questions: 10, difficulty: 'Medium', types: ['MCQ'],     language: 'nl' },
+        { id: 'p2', name: 'Tekst 2', questions: 10, difficulty: 'Hard',   types: ['Gap fill'],language: 'nl' },
+      ],
+      totalQuestions: 20, timeMinutes: 45, scoreRange: 'Pass/Fail',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'Schrijven', instruction: 'Schrijf een formele tekst in het Nederlands', minWords: 200, timeMinutes: 50, language: 'nl' }],
+      scoreRange: 'Pass/Fail',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Spreken', duration: '10 min', description: 'Gesprek in het Nederlands' }],
+      scoreRange: 'Pass/Fail',
+    } satisfies SpeakingFormat,
+  },
+
+  nt2: {
+    listening: {
+      sections: [{ id: 'part1', name: 'Deel 1', description: 'Conversations', questions: 15, type: 'MCQ', playsCount: 1, language: 'nl' }],
+      totalQuestions: 15, timeMinutes: 25, scoreRange: 'Pass/Fail',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'Tekst 1', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'nl' }],
+      totalQuestions: 15, timeMinutes: 40, scoreRange: 'Pass/Fail',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'Schrijven', instruction: 'Schrijf een tekst in het Nederlands', minWords: 150, timeMinutes: 45, language: 'nl' }],
+      scoreRange: 'Pass/Fail',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Mondeling', duration: '10 min', description: 'Nederlands spreken' }],
+      scoreRange: 'Pass/Fail',
+    } satisfies SpeakingFormat,
+  },
+
+  alpt: {
+    listening: {
+      sections: [
+        { id: 'part1', name: 'القسم 1', description: 'محادثات قصيرة', questions: 15, type: 'MCQ', playsCount: 1, language: 'ar' },
+        { id: 'part2', name: 'القسم 2', description: 'نص طويل',        questions: 15, type: 'MCQ', playsCount: 1, language: 'ar' },
+      ],
+      totalQuestions: 30, timeMinutes: 35, scoreRange: '0–100',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [
+        { id: 'p1', name: 'النص 1', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'ar' },
+        { id: 'p2', name: 'النص 2', questions: 15, difficulty: 'Hard',   types: ['MCQ'], language: 'ar' },
+      ],
+      totalQuestions: 30, timeMinutes: 50, scoreRange: '0–100',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'الكتابة', instruction: 'اكتب نصاً رسمياً باللغة العربية', minWords: 200, timeMinutes: 50, language: 'ar' }],
+      scoreRange: '0–100',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'المحادثة', duration: '10 min', description: 'محادثة باللغة العربية' }],
+      scoreRange: '0–100',
+    } satisfies SpeakingFormat,
+  },
+
+  actfl: {
+    listening: {
+      sections: [{ id: 'part1', name: 'Part 1', description: 'Short recordings', questions: 15, type: 'MCQ', playsCount: 1 }],
+      totalQuestions: 15, timeMinutes: 30, scoreRange: 'Novice–Distinguished',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'Text 1', questions: 15, difficulty: 'Medium', types: ['MCQ'] }],
+      totalQuestions: 15, timeMinutes: 35, scoreRange: 'Novice–Distinguished',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'Writing', instruction: 'Write a formal text', minWords: 150, timeMinutes: 40 }],
+      scoreRange: 'Novice–Distinguished',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'OPI', duration: '20–30 min', description: 'Oral Proficiency Interview' }],
+      scoreRange: 'Novice–Distinguished',
+    } satisfies SpeakingFormat,
+  },
+
+  praveen: {
+    listening: {
+      sections: [{ id: 'part1', name: 'भाग 1', description: 'छोटी बातचीत', questions: 15, type: 'MCQ', playsCount: 1, language: 'hi' }],
+      totalQuestions: 15, timeMinutes: 25, scoreRange: '0–100',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'पाठ 1', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'hi' }],
+      totalQuestions: 15, timeMinutes: 35, scoreRange: '0–100',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'लेखन', instruction: 'हिंदी में एक औपचारिक पत्र लिखें', minWords: 150, timeMinutes: 40, language: 'hi' }],
+      scoreRange: '0–100',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'बोलना', duration: '10 min', description: 'हिंदी में बातचीत' }],
+      scoreRange: '0–100',
+    } satisfies SpeakingFormat,
+  },
+
+  hindi_cefr: {
+    listening: {
+      sections: [{ id: 'part1', name: 'Part 1', description: 'Short Hindi texts', questions: 15, type: 'MCQ', playsCount: 1, language: 'hi' }],
+      totalQuestions: 15, timeMinutes: 25, scoreRange: 'B2',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'Text 1', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'hi' }],
+      totalQuestions: 15, timeMinutes: 35, scoreRange: 'B2',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'Writing', instruction: 'हिंदी में लिखें', minWords: 150, timeMinutes: 40, language: 'hi' }],
+      scoreRange: 'B2',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'Speaking', duration: '10 min', description: 'Hindi conversation' }],
+      scoreRange: 'B2',
+    } satisfies SpeakingFormat,
+  },
+
+  persian_cefr: {
+    listening: {
+      sections: [{ id: 'part1', name: 'بخش ۱', description: 'مکالمات کوتاه', questions: 15, type: 'MCQ', playsCount: 1, language: 'fa' }],
+      totalQuestions: 15, timeMinutes: 25, scoreRange: 'B2',
+    } satisfies ListeningFormat,
+    reading: {
+      passages: [{ id: 'p1', name: 'متن ۱', questions: 15, difficulty: 'Medium', types: ['MCQ'], language: 'fa' }],
+      totalQuestions: 15, timeMinutes: 35, scoreRange: 'B2',
+    } satisfies ReadingFormat,
+    writing: {
+      tasks: [{ id: 'task1', name: 'نوشتار', instruction: 'یک متن رسمی به فارسی بنویسید', minWords: 150, timeMinutes: 40, language: 'fa' }],
+      scoreRange: 'B2',
+    } satisfies WritingFormat,
+    speaking: {
+      parts: [{ id: 'part1', name: 'گفتار', duration: '10 min', description: 'مکالمه به فارسی' }],
+      scoreRange: 'B2',
+    } satisfies SpeakingFormat,
+  },
+
 } // end EXAM_FORMATS
 
 // ── Accessor with overloads for type safety ──────────────────────
