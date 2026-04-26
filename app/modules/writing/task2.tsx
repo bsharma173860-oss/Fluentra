@@ -12,22 +12,25 @@ import { mockScore, setWritingResult } from '@/lib/writingStore';
 import { getTodaysTask2 } from '@/constants/dailyContent';
 import { Analytics } from '@/lib/analytics';
 import { getExamDisplayName } from '@/constants/examDisplayNames';
+import { getLabels } from '@/constants/examLabels';
 
-const GOLD = '#B07A10';
-const RED  = '#C04A06';
+const GOLD  = '#B07A10';
+const RED   = '#C04A06';
 const GREEN = '#16A34A';
 const BLUE  = '#1558B0';
 const BLUE_BG = '#EEF4FF';
+const FR_BLUE = '#1558B0';
 
 // ── Per-exam config ───────────────────────────────────────────────
+
+type Task2Mode = 'essay' | 'discussion' | 'fr-essay';
 
 type Task2Config = {
   taskName: string;
   minWords: number;
   totalSec: number;
-  mode: 'essay' | 'discussion';
+  mode: Task2Mode;
   prompt?: string;
-  placeholder: string;
   instructions: string[];
   target: string;
 };
@@ -38,14 +41,18 @@ const IELTS_PROMPT =
   'on public health and that other measures are required. ' +
   'Discuss both views and give your own opinion.';
 
+const DALF_PROMPT =
+  'En vous appuyant sur les documents et vos connaissances personnelles, défendez un ' +
+  'point de vue argumenté sur la question suivante :\n\n' +
+  '« La mondialisation culturelle représente-t-elle une chance ou une menace pour les ' +
+  'cultures locales ? »';
+
 const TASK2_CONFIG: Record<string, Task2Config> = {
   ielts: {
     taskName: 'Task 2',
     minWords: 250,
     totalSec: 40 * 60,
     mode: 'essay',
-    prompt: IELTS_PROMPT,
-    placeholder: 'Begin your essay here…',
     instructions: [
       'Write at least 250 words',
       'Present a balanced argument',
@@ -58,13 +65,26 @@ const TASK2_CONFIG: Record<string, Task2Config> = {
     minWords: 100,
     totalSec: 10 * 60,
     mode: 'discussion',
-    placeholder: 'Add your contribution to the discussion…',
     instructions: [
       'Write at least 100 words',
       'Add new ideas — do not just agree',
       'Support your opinion with reasons',
     ],
     target: 'Target: 100–150 words',
+  },
+  dalf: {
+    taskName: 'Prise de position',
+    minWords: 250,
+    totalSec: 60 * 60,
+    mode: 'fr-essay',
+    prompt: DALF_PROMPT,
+    instructions: [
+      'Écrivez au moins 250 mots',
+      'Défendez clairement votre point de vue',
+      'Appuyez-vous sur des exemples précis',
+      'Utilisez un registre formel',
+    ],
+    target: 'Minimum 250 mots',
   },
 };
 
@@ -126,10 +146,11 @@ export default function WritingTask2Screen() {
   const examId      = ((params.examId ?? params.exam ?? 'ielts') as string);
   const cfg         = getConfig(examId);
   const displayName = getExamDisplayName(examId);
+  const labels      = getLabels(examId);
   const todaysTask2 = getTodaysTask2();
 
-  // Use today's dynamic prompt for IELTS, fixed for TOEFL
-  const PROMPT = examId === 'ielts' ? todaysTask2.prompt : cfg.prompt ?? '';
+  // Dynamic prompt: IELTS uses today's rotating prompt, others use config
+  const PROMPT = examId === 'ielts' ? todaysTask2.prompt : (cfg.prompt ?? '');
 
   const [text,        setText]        = useState('');
   const [secondsLeft, setSecondsLeft] = useState(cfg.totalSec);
@@ -179,9 +200,9 @@ export default function WritingTask2Screen() {
     if (wordCount < cfg.minWords) {
       Alert.alert(
         'Too short',
-        `You have ${wordCount} words. ${cfg.taskName} requires at least ${cfg.minWords} words. Submit anyway?`,
+        `${wordCount} ${labels.wordCount}. ${labels.writeAtLeast} ${cfg.minWords}. Submit anyway?`,
         [
-          { text: 'Keep writing', style: 'cancel' },
+          { text: 'Cancel', style: 'cancel' },
           { text: 'Submit anyway', style: 'destructive', onPress: doSubmit },
         ]
       );
@@ -190,24 +211,25 @@ export default function WritingTask2Screen() {
     doSubmit();
   }, [submitting, wordCount]);
 
+  // ── Timer badge (shared) ──────────────────────────────────────
+  const timerBadge = (
+    <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
+      <Text style={[s.timerText, isWarning && s.timerTextWarn]}>{toMMSS(secondsLeft)}</Text>
+    </View>
+  );
+
   // ── Prompt panel: IELTS essay ─────────────────────────────────
   const ieltsPromptPanel = (
     <View style={s.promptPanel}>
       <View style={s.promptTopRow}>
-        <View style={s.taskBadge}>
-          <Text style={s.taskBadgeText}>TASK 2</Text>
-        </View>
-        <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
-          <Text style={[s.timerText, isWarning && s.timerTextWarn]}>{toMMSS(secondsLeft)}</Text>
-        </View>
+        <View style={s.taskBadge}><Text style={s.taskBadgeText}>TASK 2</Text></View>
+        {timerBadge}
       </View>
       <Text style={s.examTypeLine}>{displayName} · Writing Task 2</Text>
-
       <View style={s.promptCard}>
         <Text style={s.promptCardLabel}>WRITING TASK 2</Text>
         <Text style={s.promptText}>{PROMPT}</Text>
       </View>
-
       <View style={s.instructionsBox}>
         {cfg.instructions.map((inst, i) => (
           <View key={i} style={s.instrRow}>
@@ -227,13 +249,9 @@ export default function WritingTask2Screen() {
         <View style={[s.taskBadge, { backgroundColor: BLUE_BG }]}>
           <Text style={[s.taskBadgeText, { color: BLUE }]}>DISCUSSION</Text>
         </View>
-        <View style={[s.timerBadge, isWarning && s.timerBadgeWarn]}>
-          <Text style={[s.timerText, isWarning && s.timerTextWarn]}>{toMMSS(secondsLeft)}</Text>
-        </View>
+        {timerBadge}
       </View>
       <Text style={s.examTypeLine}>{displayName} · Academic Discussion</Text>
-
-      {/* Professor question */}
       <View style={s.professorCard}>
         <View style={s.professorHeader}>
           <View style={[s.avatarCircle, { backgroundColor: '#1A1A1A' }]}>
@@ -243,8 +261,6 @@ export default function WritingTask2Screen() {
         </View>
         <Text style={s.professorText}>{TOEFL_DISCUSSION.professor}</Text>
       </View>
-
-      {/* Student responses */}
       {TOEFL_DISCUSSION.students.map(st => (
         <View key={st.name} style={[s.studentCard, { borderLeftColor: st.color, borderLeftWidth: 3 }]}>
           <View style={s.studentHeader}>
@@ -256,7 +272,6 @@ export default function WritingTask2Screen() {
           <Text style={s.studentText}>{st.text}</Text>
         </View>
       ))}
-
       <View style={s.instructionsBox}>
         {cfg.instructions.map((inst, i) => (
           <View key={i} style={s.instrRow}>
@@ -269,34 +284,67 @@ export default function WritingTask2Screen() {
     </View>
   );
 
-  const promptPanel = cfg.mode === 'discussion' ? toeflPromptPanel : ieltsPromptPanel;
+  // ── Prompt panel: DALF prise de position ─────────────────────
+  const dalfPromptPanel = (
+    <View style={s.promptPanel}>
+      <View style={s.promptTopRow}>
+        <View style={[s.taskBadge, { backgroundColor: '#EEF4FF' }]}>
+          <Text style={[s.taskBadgeText, { color: FR_BLUE }]}>PRISE DE POSITION</Text>
+        </View>
+        {timerBadge}
+      </View>
+      <Text style={s.examTypeLine}>{displayName} · {cfg.taskName}</Text>
+      <View style={[s.promptCard, { backgroundColor: '#F8F7FF' }]}>
+        <Text style={[s.promptCardLabel, { color: FR_BLUE }]}>SUJET</Text>
+        <Text style={s.promptText}>{PROMPT}</Text>
+      </View>
+      <View style={s.instructionsBox}>
+        {cfg.instructions.map((inst, i) => (
+          <View key={i} style={s.instrRow}>
+            <View style={[s.instrDot, { backgroundColor: FR_BLUE }]} />
+            <Text style={s.instrText}>{inst}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={s.targetText}>{cfg.target}</Text>
+    </View>
+  );
+
+  function renderPromptPanel() {
+    switch (cfg.mode) {
+      case 'discussion': return toeflPromptPanel;
+      case 'fr-essay':   return dalfPromptPanel;
+      default:           return ieltsPromptPanel;
+    }
+  }
 
   // ── Editor panel ──────────────────────────────────────────────
   const editorPanel = (
     <View style={s.editorPanel}>
       <View style={s.editorTopRow}>
-        <Text style={s.editorTitle}>Your response</Text>
+        <Text style={s.editorTitle}>
+          {cfg.mode === 'fr-essay' || cfg.mode === 'discussion'
+            ? (cfg.mode === 'fr-essay' ? 'Votre réponse' : 'Your response')
+            : 'Your response'}
+        </Text>
         <Text style={[s.wordCountText, { color: wc }]}>
-          {wordCount} / {cfg.minWords} words
+          {wordCount} / {cfg.minWords} {labels.wordCount}
         </Text>
       </View>
-
       <TextInput
         style={s.editor}
         multiline
         value={text}
         onChangeText={setText}
-        placeholder={cfg.placeholder}
+        placeholder={labels.placeholder}
         placeholderTextColor="#BBB"
         textAlignVertical="top"
         autoCorrect={false}
         spellCheck={false}
       />
-
       <View style={s.barTrack}>
         <View style={[s.barFill, { width: `${barPct * 100}%` as any, backgroundColor: wc }]} />
       </View>
-
       <TouchableOpacity
         style={[s.submitBtn, wordOk ? s.submitBtnActive : s.submitBtnInactive]}
         onPress={handleSubmit}
@@ -304,24 +352,24 @@ export default function WritingTask2Screen() {
         activeOpacity={0.85}
       >
         <Text style={[s.submitBtnText, !wordOk && s.submitBtnTextInactive]}>
-          {submitting ? 'Scoring…' : wordOk ? 'Submit for grading →' : 'Submit'}
+          {submitting ? '…' : wordOk ? labels.submit : labels.submit.replace(' →', '')}
         </Text>
       </TouchableOpacity>
     </View>
   );
 
-  // ── Desktop layout ────────────────────────────────────────────
+  // ── Desktop ───────────────────────────────────────────────────
   if (isDesktop) {
     return (
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <WritingSidebar />
-        <View style={s.desktopPrompt}>{promptPanel}</View>
+        <View style={s.desktopPrompt}>{renderPromptPanel()}</View>
         <View style={s.desktopEditor}>{editorPanel}</View>
       </View>
     );
   }
 
-  // ── Mobile layout ─────────────────────────────────────────────
+  // ── Mobile ────────────────────────────────────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }} edges={['top']}>
       <KeyboardAvoidingView
@@ -333,7 +381,7 @@ export default function WritingTask2Screen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {promptPanel}
+          {renderPromptPanel()}
           <View style={s.mobileDivider} />
           {editorPanel}
           <View style={{ height: 40 }} />
@@ -356,22 +404,18 @@ const s = StyleSheet.create({
   mobileContent: { paddingBottom: 24 },
   mobileDivider: { height: 1, backgroundColor: '#EAEAEA' },
 
-  // ── Prompt panel ───────────────────────
   promptPanel: { padding: 24, gap: 12, flex: 1 },
 
   promptTopRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   taskBadge: {
-    backgroundColor: '#FEF9EC', borderRadius: 6,
-    paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: '#FEF9EC', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4,
   },
   taskBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: GOLD },
   timerBadge: {
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 99, backgroundColor: Colors.bg2,
-    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99,
+    backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border,
   },
   timerBadgeWarn: { backgroundColor: '#FFF0EB', borderColor: RED },
   timerText:     { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink },
@@ -379,7 +423,6 @@ const s = StyleSheet.create({
 
   examTypeLine: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999' },
 
-  // IELTS essay prompt
   promptCard: {
     backgroundColor: '#F9F8F5', borderRadius: 12, padding: 16,
   },
@@ -387,19 +430,13 @@ const s = StyleSheet.create({
     fontFamily: 'Inter_700Bold', fontSize: 11, color: GOLD,
     textTransform: 'uppercase' as const, letterSpacing: 0.6, marginBottom: 8,
   },
-  promptText: {
-    fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000', lineHeight: 26,
-  },
+  promptText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000', lineHeight: 26 },
 
-  // TOEFL professor
-  professorCard: {
-    backgroundColor: '#F9F8F5', borderRadius: 12, padding: 14, gap: 8,
-  },
+  professorCard: { backgroundColor: '#F9F8F5', borderRadius: 12, padding: 14, gap: 8 },
   professorHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   professorLabel:  { fontFamily: 'Inter_700Bold', fontSize: 12, color: '#000' },
   professorText:   { fontFamily: 'Inter_500Medium', fontSize: 14, color: '#000', lineHeight: 22 },
 
-  // TOEFL students
   studentCard: {
     backgroundColor: Colors.white, borderRadius: 12, padding: 14, gap: 8,
     borderWidth: 1, borderColor: '#EAEAEA',
@@ -414,7 +451,6 @@ const s = StyleSheet.create({
   },
   avatarText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: '#FFF' },
 
-  // Shared
   instructionsBox: {
     backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12, gap: 7,
     borderWidth: 1, borderColor: '#EAEAEA',
@@ -424,7 +460,6 @@ const s = StyleSheet.create({
   instrText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666' },
   targetText:{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999' },
 
-  // ── Editor panel ───────────────────────
   editorPanel: { padding: 24, flex: 1, gap: 0 },
 
   editorTopRow: {
@@ -442,8 +477,7 @@ const s = StyleSheet.create({
   },
 
   barTrack: {
-    height: 3, backgroundColor: '#F0F0F0',
-    borderRadius: 2, overflow: 'hidden', marginTop: 8,
+    height: 3, backgroundColor: '#F0F0F0', borderRadius: 2, overflow: 'hidden', marginTop: 8,
   },
   barFill: { height: '100%', borderRadius: 2 },
 
@@ -451,8 +485,8 @@ const s = StyleSheet.create({
     borderRadius: 10, paddingVertical: 14,
     alignItems: 'center', justifyContent: 'center', marginTop: 16,
   },
-  submitBtnActive:   { backgroundColor: GOLD },
-  submitBtnInactive: { backgroundColor: '#F4F4F0' },
+  submitBtnActive:       { backgroundColor: GOLD },
+  submitBtnInactive:     { backgroundColor: '#F4F4F0' },
   submitBtnText:         { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.white },
   submitBtnTextInactive: { color: '#BBB' },
 });

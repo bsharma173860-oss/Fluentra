@@ -13,15 +13,18 @@ import { mockScore, setWritingResult } from '@/lib/writingStore';
 import { getTodaysTask1, type Task1Chart } from '@/constants/dailyContent';
 import { ChevronLeftIcon } from '@/components/icons';
 import { getExamDisplayName } from '@/constants/examDisplayNames';
+import { getLabels } from '@/constants/examLabels';
 
 // ── Per-exam config ───────────────────────────────────────────────
+
+type StimulusMode = 'chart' | 'passage' | 'fr-prompt' | 'fr-note' | 'none';
 
 type Task1Config = {
   taskName: string;
   minWords: number;
   maxWords?: number;
   totalSec: number;
-  mode: 'chart' | 'passage';
+  mode: StimulusMode;
   instruction: string;
   note?: string;
 };
@@ -49,18 +52,42 @@ const TASK1_CONFIG: Record<string, Task1Config> = {
       'and how they relate to the reading.',
     note: 'Summarize lecture points — do NOT give your own opinion',
   },
+  delf: {
+    taskName: 'Production écrite',
+    minWords: 250,
+    totalSec: 60 * 60,
+    mode: 'fr-prompt',
+    instruction:
+      'Vous allez écrire une lettre formelle ou un article pour un journal.\n' +
+      'Lisez attentivement le sujet ci-dessous.',
+  },
+  dalf: {
+    taskName: 'Synthèse de documents',
+    minWords: 220,
+    totalSec: 60 * 60,
+    mode: 'fr-note',
+    instruction:
+      'À partir des documents proposés, rédigez une synthèse objective. ' +
+      'Vous ne devez pas donner votre avis personnel.',
+    note: 'Synthèse OBJECTIVE — pas d\'opinion personnelle',
+  },
 };
 
 function getConfig(examId: string): Task1Config {
-  return TASK1_CONFIG[examId] ?? TASK1_CONFIG.ielts;
+  return TASK1_CONFIG[examId] ?? {
+    taskName: 'Task 1',
+    minWords: 150,
+    totalSec: 20 * 60,
+    mode: 'none',
+    instruction: 'Write a response to the following prompt.',
+  };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
 
 function secondsToMMSS(s: number) {
-  const m   = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 function countWords(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -68,30 +95,26 @@ function countWords(text: string) {
 
 // ── IELTS: SVG Bar Chart ──────────────────────────────────────────
 
-const SVG_W  = 280;
-const SVG_H  = 160;
-const PAD_L  = 32;
-const PAD_B  = 36;
-const PAD_T  = 12;
-const PAD_R  = 8;
+const SVG_W  = 280; const SVG_H  = 160;
+const PAD_L  = 32;  const PAD_B  = 36;
+const PAD_T  = 12;  const PAD_R  = 8;
 const PLOT_W = SVG_W - PAD_L - PAD_R;
 const PLOT_H = SVG_H - PAD_T - PAD_B;
 
 function BarChart({ chart }: { chart: Task1Chart }) {
   const { xLabels, series } = chart;
-  const nGroups  = xLabels.length;
-  const nSeries  = series.length;
-  const groupW   = PLOT_W / nGroups;
-  const barW     = Math.min(14, (groupW * 0.7) / nSeries);
-  const gap      = 2;
+  const nGroups = xLabels.length;
+  const nSeries = series.length;
+  const groupW  = PLOT_W / nGroups;
+  const barW    = Math.min(14, (groupW * 0.7) / nSeries);
+  const gap     = 2;
   const totalBarW = nSeries * barW + (nSeries - 1) * gap;
-  const maxVal   = Math.max(...series.flatMap(s => s.values), 100);
-  const Y_TICKS  = [0, 25, 50, 75, 100];
+  const maxVal  = Math.max(...series.flatMap(s => s.values), 100);
+  const Y_TICKS = [0, 25, 50, 75, 100];
 
   function yPos(val: number) {
     return PAD_T + PLOT_H - (val / maxVal) * PLOT_H;
   }
-
   return (
     <Svg width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`}>
       {Y_TICKS.filter(t => t <= maxVal + 10).map(tick => {
@@ -130,16 +153,16 @@ function BarChart({ chart }: { chart: Task1Chart }) {
 
 function IELTSChartPanel({ chart }: { chart: Task1Chart }) {
   return (
-    <View style={ch.card}>
-      <Text style={ch.hint}>Study the chart carefully</Text>
-      <Text style={ch.chartTitle}>{chart.chartTitle}</Text>
+    <View style={stim.card}>
+      <Text style={stim.hint}>Study the chart carefully</Text>
+      <Text style={stim.chartTitle}>{chart.chartTitle}</Text>
       <BarChart chart={chart} />
-      <Text style={ch.taskNote}>Summarise the information and make comparisons where relevant.</Text>
+      <Text style={stim.taskNote}>Summarise the information and make comparisons where relevant.</Text>
     </View>
   );
 }
 
-// ── TOEFL: Reading Passage Panel ──────────────────────────────────
+// ── TOEFL: Reading Passage ────────────────────────────────────────
 
 const TOEFL_PASSAGE = {
   title: 'The Benefits of Urban Green Spaces',
@@ -152,42 +175,154 @@ const TOEFL_PASSAGE = {
 
 function TOEFLPassagePanel() {
   return (
-    <View style={ch.card}>
-      <View style={ch.passageHeader}>
-        <Text style={ch.readingBadge}>READING PASSAGE</Text>
-        <Text style={ch.readingNote}>3 min to read</Text>
+    <View style={stim.card}>
+      <View style={stim.passageHeader}>
+        <Text style={stim.readingBadge}>READING PASSAGE</Text>
+        <Text style={stim.readingNote}>3 min to read</Text>
       </View>
-      <Text style={ch.passageTitle}>{TOEFL_PASSAGE.title}</Text>
+      <Text style={stim.passageTitle}>{TOEFL_PASSAGE.title}</Text>
       {TOEFL_PASSAGE.paragraphs.map((p, i) => (
-        <Text key={i} style={ch.passagePara}>{p}</Text>
+        <Text key={i} style={stim.passagePara}>{p}</Text>
       ))}
-      <View style={ch.lectureBanner}>
-        <Text style={ch.lectureBannerText}>Audio lecture will challenge this passage</Text>
+      <View style={stim.lectureBanner}>
+        <Text style={stim.lectureBannerText}>Audio lecture will challenge this passage</Text>
       </View>
     </View>
   );
 }
 
-const ch = StyleSheet.create({
+// ── DELF: French Prompt Panel ─────────────────────────────────────
+
+const DELF_PROMPT = {
+  title: 'Les réseaux sociaux et les jeunes',
+  text:
+    'Un magazine francophone lance un appel à contributions sur le thème des réseaux ' +
+    'sociaux chez les jeunes. Rédigez un article dans lequel vous analysez les avantages ' +
+    'et les inconvénients des réseaux sociaux pour les jeunes d\'aujourd\'hui. ' +
+    'Donnez votre point de vue et illustrez-le d\'exemples.',
+  criteria: [
+    'Respect de la consigne',
+    'Correction sociolinguistique',
+    'Cohérence et cohésion',
+    'Compétence lexicale/grammaticale',
+  ],
+  scoreRange: '0–25 points',
+  tips: [
+    'Utilisez un registre formel',
+    'Structurez votre réponse : introduction, développement, conclusion',
+    'Vérifiez l\'orthographe et la grammaire',
+    'Minimum 250 mots requis',
+  ],
+};
+
+function DELFPromptPanel() {
+  return (
+    <View style={stim.card}>
+      <Text style={stim.frBadge}>SUJET</Text>
+      <Text style={stim.frPromptTitle}>{DELF_PROMPT.title}</Text>
+      <Text style={stim.frPromptText}>{DELF_PROMPT.text}</Text>
+
+      <View style={stim.frDivider} />
+
+      <Text style={stim.frSectionLabel}>CRITÈRES D'ÉVALUATION</Text>
+      {DELF_PROMPT.criteria.map(c => (
+        <View key={c} style={stim.frCriteriaRow}>
+          <View style={stim.frCriteriaDot} />
+          <Text style={stim.frCriteriaText}>{c}</Text>
+        </View>
+      ))}
+      <Text style={stim.frScoreRange}>{DELF_PROMPT.scoreRange}</Text>
+
+      <View style={stim.frDivider} />
+
+      <Text style={stim.frSectionLabel}>CONSEILS</Text>
+      {DELF_PROMPT.tips.map(t => (
+        <View key={t} style={stim.frTipRow}>
+          <Text style={stim.frTipBullet}>·</Text>
+          <Text style={stim.frTipText}>{t}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ── DALF: Synthesis Note Panel ────────────────────────────────────
+
+function DALFNotePanel() {
+  return (
+    <View style={stim.card}>
+      <Text style={stim.frBadge}>NOTE IMPORTANTE</Text>
+      <View style={stim.dalfBanner}>
+        <Text style={stim.dalfBannerTitle}>Synthèse OBJECTIVE</Text>
+        <Text style={stim.dalfBannerText}>
+          La synthèse doit rester objective. Vous ne devez pas donner votre avis personnel ni exprimer vos opinions sur le sujet.
+        </Text>
+      </View>
+      <Text style={stim.frSectionLabel}>STRUCTURE RECOMMANDÉE</Text>
+      {[
+        '1. Introduction : présentation du sujet',
+        '2. Développement : synthèse des idées principales',
+        '3. Conclusion : bilan objectif',
+      ].map(item => (
+        <Text key={item} style={stim.dalfStructureItem}>{item}</Text>
+      ))}
+      <View style={stim.frDivider} />
+      <Text style={stim.frSectionLabel}>CRITÈRES D'ÉVALUATION</Text>
+      {[
+        'Capacité à synthétiser',
+        'Cohérence et cohésion',
+        'Compétence lexicale',
+        'Compétence grammaticale',
+      ].map(c => (
+        <View key={c} style={stim.frCriteriaRow}>
+          <View style={stim.frCriteriaDot} />
+          <Text style={stim.frCriteriaText}>{c}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const stim = StyleSheet.create({
   card: {
     backgroundColor: Colors.white, borderRadius: 12,
-    borderWidth: 1, borderColor: Colors.border, padding: 14, gap: 8,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 14, gap: 8,
   },
+  // IELTS chart
   hint:       { fontFamily: 'Inter_400Regular', fontSize: 11, color: Colors.ink3 },
   chartTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.ink2, lineHeight: 17 },
   taskNote:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, lineHeight: 18 },
-
-  passageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  readingBadge:  { fontFamily: 'Inter_700Bold', fontSize: 10, color: '#1558B0', letterSpacing: 0.5 },
-  readingNote:   { fontFamily: 'Inter_400Regular', fontSize: 10, color: Colors.ink3 },
-  passageTitle:  { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink, lineHeight: 20 },
-  passagePara:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, lineHeight: 21 },
-  lectureBanner: {
-    backgroundColor: '#EEF4FF', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 8,
-    marginTop: 4,
-  },
+  // TOEFL passage
+  passageHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  readingBadge:      { fontFamily: 'Inter_700Bold', fontSize: 10, color: '#1558B0', letterSpacing: 0.5 },
+  readingNote:       { fontFamily: 'Inter_400Regular', fontSize: 10, color: Colors.ink3 },
+  passageTitle:      { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.ink, lineHeight: 20 },
+  passagePara:       { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, lineHeight: 21 },
+  lectureBanner:     { backgroundColor: '#EEF4FF', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginTop: 4 },
   lectureBannerText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#1558B0' },
+  // French shared
+  frBadge:        { fontFamily: 'Inter_700Bold', fontSize: 10, color: '#1558B0', letterSpacing: 0.6 },
+  frDivider:      { height: 1, backgroundColor: Colors.border, marginVertical: 4 },
+  frSectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#AAA', letterSpacing: 0.6, textTransform: 'uppercase' as const },
+  frCriteriaRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
+  frCriteriaDot:  { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#1558B0', marginTop: 6, flexShrink: 0 },
+  frCriteriaText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, flex: 1 },
+  frScoreRange:   { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#888' },
+  frTipRow:       { flexDirection: 'row', gap: 6 },
+  frTipBullet:    { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#B07A10' },
+  frTipText:      { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, flex: 1, lineHeight: 18 },
+  // DELF
+  frPromptTitle:  { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink, lineHeight: 22 },
+  frPromptText:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, lineHeight: 21 },
+  // DALF
+  dalfBanner: {
+    backgroundColor: '#FFF7ED', borderRadius: 10, padding: 12,
+    borderLeftWidth: 3, borderLeftColor: '#B07A10',
+  },
+  dalfBannerTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#B07A10', marginBottom: 4 },
+  dalfBannerText:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666', lineHeight: 18 },
+  dalfStructureItem: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink2, lineHeight: 20 },
 });
 
 // ── Main screen ───────────────────────────────────────────────────
@@ -199,6 +334,7 @@ export default function WritingTask1Screen() {
   const examId      = ((params.examId ?? params.exam ?? 'ielts') as string);
   const cfg         = getConfig(examId);
   const displayName = getExamDisplayName(examId);
+  const labels      = getLabels(examId);
   const todaysChart = getTodaysTask1();
 
   const [text,        setText]        = useState('');
@@ -226,9 +362,9 @@ export default function WritingTask1Screen() {
     if (!forced && wordCount < cfg.minWords) {
       Alert.alert(
         'Too short',
-        `You have ${wordCount} words. ${cfg.taskName} requires at least ${cfg.minWords}. Submit anyway?`,
+        `${wordCount} ${labels.wordCount}. ${labels.writeAtLeast} ${cfg.minWords}. Submit anyway?`,
         [
-          { text: 'Keep writing', style: 'cancel' },
+          { text: 'Cancel', style: 'cancel' },
           { text: 'Submit anyway', style: 'destructive', onPress: () => doSubmit() },
         ]
       );
@@ -245,10 +381,16 @@ export default function WritingTask1Screen() {
     router.replace('/modules/writing/results' as any);
   }
 
-  // ── Stimulus panel (chart or passage) ─────────────────────────
-  const stimulusPanel = cfg.mode === 'chart'
-    ? <IELTSChartPanel chart={todaysChart} />
-    : <TOEFLPassagePanel />;
+  // ── Stimulus panel ────────────────────────────────────────────
+  function renderStimulus() {
+    switch (cfg.mode) {
+      case 'chart':     return <IELTSChartPanel chart={todaysChart} />;
+      case 'passage':   return <TOEFLPassagePanel />;
+      case 'fr-prompt': return <DELFPromptPanel />;
+      case 'fr-note':   return <DALFNotePanel />;
+      default:          return null;
+    }
+  }
 
   // ── Instruction card ──────────────────────────────────────────
   const instructionCard = (
@@ -260,9 +402,17 @@ export default function WritingTask1Screen() {
         </View>
       ) : null}
       <View style={s.metaRow}>
-        <View style={s.metaPill}><Text style={s.metaPillText}>Min {cfg.minWords} words</Text></View>
-        {cfg.maxWords ? <View style={s.metaPill}><Text style={s.metaPillText}>Max {cfg.maxWords} words</Text></View> : null}
-        <View style={s.metaPill}><Text style={s.metaPillText}>{cfg.totalSec / 60} min</Text></View>
+        <View style={s.metaPill}>
+          <Text style={s.metaPillText}>{labels.writeAtLeast} {cfg.minWords} {labels.wordCount}</Text>
+        </View>
+        {cfg.maxWords ? (
+          <View style={s.metaPill}>
+            <Text style={s.metaPillText}>Max {cfg.maxWords} {labels.wordCount}</Text>
+          </View>
+        ) : null}
+        <View style={s.metaPill}>
+          <Text style={s.metaPillText}>{cfg.totalSec / 60} {labels.minutes}</Text>
+        </View>
       </View>
     </View>
   );
@@ -275,11 +425,7 @@ export default function WritingTask1Screen() {
         multiline
         value={text}
         onChangeText={setText}
-        placeholder={
-          cfg.mode === 'toefl'
-            ? 'Summarize the lecture points and relate them to the reading…'
-            : 'Describe the key trends shown in the chart…'
-        }
+        placeholder={labels.placeholder}
         placeholderTextColor={Colors.ink4}
         textAlignVertical="top"
         autoCorrect={false}
@@ -288,7 +434,7 @@ export default function WritingTask1Screen() {
       <View style={s.editorFooter}>
         <View style={[s.wordBadge, wordOk ? s.wordBadgeOk : s.wordBadgeWarn, overMax && s.wordBadgeOver]}>
           <Text style={[s.wordCount, wordOk ? s.wordCountOk : s.wordCountWarn, overMax && s.wordCountOver]}>
-            {wordCount}{cfg.maxWords ? ` / ${cfg.maxWords}` : ` / ${cfg.minWords}`} words
+            {wordCount} / {cfg.maxWords ?? cfg.minWords} {labels.wordCount}
           </Text>
         </View>
         <TouchableOpacity
@@ -297,11 +443,13 @@ export default function WritingTask1Screen() {
           disabled={submitting}
           activeOpacity={0.85}
         >
-          <Text style={s.submitBtnText}>{submitting ? 'Scoring…' : 'Submit →'}</Text>
+          <Text style={s.submitBtnText}>{submitting ? '…' : labels.submit}</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+
+  const stimulusEl = renderStimulus();
 
   return (
     <AppLayout>
@@ -328,8 +476,7 @@ export default function WritingTask1Screen() {
         {isDesktop ? (
           <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <View style={s.desktopLayout}>
-              {/* Editor side */}
-              <View style={s.desktopEditor}>
+              <View style={[s.desktopEditor, !stimulusEl && { flex: 1 }]}>
                 <ScrollView
                   style={{ flex: 1 }}
                   contentContainerStyle={{ padding: 20, gap: 12 }}
@@ -341,12 +488,13 @@ export default function WritingTask1Screen() {
                   <View style={{ height: 40 }} />
                 </ScrollView>
               </View>
-              {/* Stimulus side */}
-              <View style={s.desktopChart}>
-                <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
-                  {stimulusPanel}
-                </ScrollView>
-              </View>
+              {stimulusEl ? (
+                <View style={s.desktopChart}>
+                  <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+                    {stimulusEl}
+                  </ScrollView>
+                </View>
+              ) : null}
             </View>
           </KeyboardAvoidingView>
         ) : (
@@ -361,7 +509,7 @@ export default function WritingTask1Screen() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              {stimulusPanel}
+              {stimulusEl}
               {instructionCard}
               {editorBlock}
               <View style={{ height: 40 }} />
@@ -387,63 +535,45 @@ const s = StyleSheet.create({
   },
   backBtn: {
     width: 26, height: 26, borderRadius: 6,
-    backgroundColor: Colors.bg2,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center',
   },
   breadcrumb:        { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
   breadcrumbRoot:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textSecondary },
   breadcrumbSep:     { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.textMuted },
   breadcrumbCurrent: { fontFamily: 'Inter_500Medium',  fontSize: 12, color: Colors.textPrimary },
 
-  timerBadge: {
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 99, backgroundColor: Colors.bg2,
-    borderWidth: 1, borderColor: Colors.cardBorder,
-  },
+  timerBadge:     { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.cardBorder },
   timerBadgeWarn: { backgroundColor: Colors.orange_bg, borderColor: Colors.orange },
   timerText:      { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.textPrimary },
   timerTextWarn:  { color: Colors.orange },
 
-  // Desktop
   desktopLayout: { flex: 1, flexDirection: 'row' },
   desktopEditor: { flex: 2, borderRightWidth: 1, borderRightColor: Colors.border },
   desktopChart:  { flex: 1, backgroundColor: Colors.bg },
 
-  // Mobile
   mobileContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
 
-  // Instruction card
   instructionCard: {
     backgroundColor: Colors.white, borderRadius: 12,
-    borderWidth: 1, borderColor: Colors.border,
-    padding: 14, gap: 10,
+    borderWidth: 1, borderColor: Colors.border, padding: 14, gap: 10,
   },
   instructionText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink, lineHeight: 22 },
-  noteRow: {
-    backgroundColor: '#EEF4FF', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 8,
-  },
-  noteText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#1558B0' },
+  noteRow:  { backgroundColor: '#FFF7ED', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, borderLeftWidth: 3, borderLeftColor: '#B07A10' },
+  noteText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#B07A10' },
   metaRow:  { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  metaPill: {
-    backgroundColor: '#F4F4F0', borderRadius: 4,
-    paddingHorizontal: 8, paddingVertical: 3,
-  },
+  metaPill: { backgroundColor: '#F4F4F0', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3 },
   metaPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888' },
 
-  // Editor card
   editorCard: {
     backgroundColor: Colors.white, borderRadius: 12,
     borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
   },
   editor: {
     fontFamily: 'Inter_400Regular', fontSize: 15,
-    color: Colors.ink, lineHeight: 24,
-    minHeight: 280, padding: 16,
+    color: Colors.ink, lineHeight: 24, minHeight: 280, padding: 16,
   },
   editorFooter: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderTopWidth: 1, borderTopColor: Colors.border,
     paddingHorizontal: 14, paddingVertical: 10,
   },
