@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Platform, useWindowDimensions,
+  Platform, useWindowDimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { SpeakingSidebar } from '@/components/layout/SpeakingSidebar';
 import { MicIcon } from '@/components/icons';
 import { getExamsForLanguage } from '@/constants/languageExams';
 import { getExamFormat } from '@/constants/examFormats';
+import { checkRateLimit, incrementUsage } from '@/lib/api';
 
 const PURPLE    = '#5B4EFF';
 const PURPLE_BG = '#F0EEFF';
@@ -26,11 +27,32 @@ export default function SpeakingSelectScreen() {
   const parts    = format?.parts ?? [];
   const criteria = format?.scoringCriteria ?? [];
 
-  function startPart(partId: string) {
-    router.push({
-      pathname: '/modules/speaking/session' as any,
-      params: { exam, part: partId, languageCode: langCode, code: langCode },
-    });
+  const [checking, setChecking] = useState(false);
+
+  async function startPart(partId: string) {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const check = await checkRateLimit('speaking');
+      if (!check.allowed) {
+        Alert.alert(
+          'Daily limit reached',
+          `You have used all your speaking sessions for today.\n${check.plan === 'free' ? 'Upgrade to Pro for 5 sessions/day.' : 'Resets at midnight.'}`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => router.push('/upgrade' as any) },
+          ]
+        );
+        return;
+      }
+      await incrementUsage('speaking');
+      router.push({
+        pathname: '/modules/speaking/session' as any,
+        params: { exam, part: partId, languageCode: langCode, code: langCode },
+      });
+    } finally {
+      setChecking(false);
+    }
   }
 
   const content = (

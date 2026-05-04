@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Platform, useWindowDimensions,
+  Platform, useWindowDimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { WritingSidebar } from '@/components/layout/WritingSidebar';
 import { getTodaysTask2 } from '@/constants/dailyContent';
 import { getExamsForLanguage } from '@/constants/languageExams';
 import { getExamFormat } from '@/constants/examFormats';
+import { checkRateLimit, incrementUsage } from '@/lib/api';
 
 const GOLD     = '#B07A10';
 const GOLD_BG  = '#FEF9EC';
@@ -32,9 +33,29 @@ export default function WritingSelectScreen() {
 
   const todaysTask2 = getTodaysTask2();
   const showTodaysPrompts = exam === 'ielts';
+  const [checking, setChecking] = useState(false);
 
-  function startTask(route: string) {
-    router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode, exam, examId: exam } });
+  async function startTask(route: string) {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const check = await checkRateLimit('writing');
+      if (!check.allowed) {
+        Alert.alert(
+          'Daily limit reached',
+          `You have used all your writing sessions for today.\n${check.plan === 'free' ? 'Upgrade to Pro for 5 sessions/day.' : 'Resets at midnight.'}`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => router.push('/upgrade' as any) },
+          ]
+        );
+        return;
+      }
+      await incrementUsage('writing');
+      router.push({ pathname: route as any, params: { languageCode: langCode, code: langCode, exam, examId: exam } });
+    } finally {
+      setChecking(false);
+    }
   }
 
   const content = (

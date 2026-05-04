@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Platform, useWindowDimensions,
+  Platform, useWindowDimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { ListeningSidebar } from '@/components/layout/ListeningSidebar';
 import { HeadphoneIcon } from '@/components/icons';
 import { getExamsForLanguage } from '@/constants/languageExams';
 import { getExamFormat } from '@/constants/examFormats';
+import { checkRateLimit, incrementUsage } from '@/lib/api';
 
 const GREEN    = '#0A8C5A';
 const GREEN_BG = '#EDFAF4';
@@ -28,11 +29,32 @@ export default function ListeningSelectScreen() {
   // Collect unique question types from sections for the pills
   const questionTypes = Array.from(new Set(sections.map(s => s.type)));
 
-  function startSection(section: string) {
-    router.push({
-      pathname: '/modules/listening/session' as any,
-      params: { exam, section, languageCode: langCode, code: langCode },
-    });
+  const [checking, setChecking] = useState(false);
+
+  async function startSection(section: string) {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const check = await checkRateLimit('listening');
+      if (!check.allowed) {
+        Alert.alert(
+          'Daily limit reached',
+          `You have used all your listening sessions for today.\n${check.plan === 'free' ? 'Upgrade to Pro for 5 sessions/day.' : 'Resets at midnight.'}`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => router.push('/upgrade' as any) },
+          ]
+        );
+        return;
+      }
+      await incrementUsage('listening');
+      router.push({
+        pathname: '/modules/listening/session' as any,
+        params: { exam, examId: exam, section, languageCode: langCode, code: langCode },
+      });
+    } finally {
+      setChecking(false);
+    }
   }
 
   const content = (

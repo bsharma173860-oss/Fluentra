@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Platform, useWindowDimensions,
+  Platform, useWindowDimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { ReadingSidebar } from '@/components/layout/ReadingSidebar';
 import { FileTextIcon } from '@/components/icons';
 import { getExamsForLanguage } from '@/constants/languageExams';
 import { getExamFormat } from '@/constants/examFormats';
+import { checkRateLimit, incrementUsage } from '@/lib/api';
 
 const ORANGE     = '#C04A06';
 const ORANGE_BG  = '#FFF7ED';
@@ -35,11 +36,32 @@ export default function ReadingSelectScreen() {
   // Collect unique question types across all passages
   const questionTypes = Array.from(new Set(passages.flatMap(p => p.types)));
 
-  function startPassage(passage: string) {
-    router.push({
-      pathname: '/modules/reading/session' as any,
-      params: { exam, passage, languageCode: langCode, code: langCode },
-    });
+  const [checking, setChecking] = useState(false);
+
+  async function startPassage(passage: string) {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const check = await checkRateLimit('reading');
+      if (!check.allowed) {
+        Alert.alert(
+          'Daily limit reached',
+          `You have used all your reading sessions for today.\n${check.plan === 'free' ? 'Upgrade to Pro for 5 sessions/day.' : 'Resets at midnight.'}`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Upgrade', onPress: () => router.push('/upgrade' as any) },
+          ]
+        );
+        return;
+      }
+      await incrementUsage('reading');
+      router.push({
+        pathname: '/modules/reading/session' as any,
+        params: { exam, passage, languageCode: langCode, code: langCode },
+      });
+    } finally {
+      setChecking(false);
+    }
   }
 
   const content = (
