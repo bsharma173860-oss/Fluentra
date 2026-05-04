@@ -2,6 +2,7 @@
   "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
   "framework": null,
+  "nodejs": "20.x",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30
