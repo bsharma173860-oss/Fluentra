@@ -12,6 +12,9 @@ import { Analytics } from '@/lib/analytics';
 import {
   setListeningResult, estimateListeningBand, type ListeningQuestion,
 } from '@/lib/listeningStore';
+import {
+  getExamContent, adaptQuestions, type AdaptedQuestion, type SectionContent,
+} from '@/constants/examContent';
 
 const GREEN     = '#0A8C5A';
 const GREEN_BG  = '#EDFAF4';
@@ -20,24 +23,27 @@ const RED       = '#C04A06';
 
 const AUDIO_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 
-const QUESTIONS: ListeningQuestion[] = [
-  { number: 1, type: 'form',  shortLabel: 'Q1', text: 'Customer name:',        prefix: 'Sarah',  suffix: undefined, correctAnswer: 'Johnson',     explanation: 'The caller gives her full name as "Sarah Johnson".' },
-  { number: 2, type: 'form',  shortLabel: 'Q2', text: 'Booking date:',         prefix: undefined,suffix: 'March',   correctAnswer: '15th',         explanation: 'The customer says "the fifteenth of March".' },
-  { number: 3, type: 'form',  shortLabel: 'Q3', text: 'Number of guests:',     prefix: undefined,suffix: undefined, correctAnswer: 'four',          explanation: 'The customer requests a table for four people.' },
-  { number: 4, type: 'form',  shortLabel: 'Q4', text: 'Special requirement:',  prefix: undefined,suffix: 'menu',   correctAnswer: 'vegetarian',    explanation: 'One guest requires a vegetarian menu.' },
-  { number: 5, type: 'form',  shortLabel: 'Q5', text: 'Contact number:',       prefix: '07',     suffix: undefined, correctAnswer: '700123456',     explanation: 'The customer reads out her mobile number beginning with 07.' },
-  { number: 6, type: 'mcq',  shortLabel: 'Q6', text: 'What time does the restaurant open for dinner?',
-    options: [{ key: 'A', label: '6 pm' }, { key: 'B', label: '7 pm' }, { key: 'C', label: '8 pm' }],
-    correctAnswer: 'B', explanation: 'The receptionist confirms dinner service starts at 7 pm.' },
-  { number: 7, type: 'mcq',  shortLabel: 'Q7', text: 'Where is the restaurant located?',
-    options: [{ key: 'A', label: 'City centre' }, { key: 'B', label: 'Suburbs' }, { key: 'C', label: 'Airport' }],
-    correctAnswer: 'A', explanation: 'The address places the restaurant in the city centre.' },
-  { number: 8, type: 'mcq',  shortLabel: 'Q8', text: 'What is included in the set-menu price?',
-    options: [{ key: 'A', label: 'Drinks only' }, { key: 'B', label: 'Food only' }, { key: 'C', label: 'Food and drinks' }],
-    correctAnswer: 'C', explanation: 'The set price covers both food and a welcome drink.' },
-  { number: 9, type: 'note', shortLabel: 'Q9',  text: 'The restaurant was established in:', prefix: undefined, suffix: undefined, correctAnswer: '1985',  explanation: 'The receptionist mentions the restaurant has been open since 1985.' },
-  { number: 10, type: 'note',shortLabel: 'Q10', text: 'The head chef trained in:',           prefix: undefined, suffix: undefined, correctAnswer: 'Paris', explanation: 'It is stated that the head chef completed his training in Paris.' },
-];
+const FALLBACK_SECTION: SectionContent = {
+  title: 'Section 1 — Listening',
+  instruction: 'Listen and answer all questions. Write NO MORE THAN TWO WORDS for each answer.',
+  audioDescription: 'Listening audio',
+  playsCount: 1,
+  questions: [
+    { id: 1,  type: 'form_completion', label: 'Customer name:',       prefix: 'Sarah', answer: 'Johnson'      },
+    { id: 2,  type: 'form_completion', label: 'Booking date:',        suffix: 'March', answer: '15th'         },
+    { id: 3,  type: 'form_completion', label: 'Number of guests:',                     answer: 'four'         },
+    { id: 4,  type: 'form_completion', label: 'Special requirement:',  suffix: 'menu', answer: 'vegetarian'   },
+    { id: 5,  type: 'form_completion', label: 'Contact number:',       prefix: '07',   answer: '700123456'    },
+    { id: 6,  type: 'multiple_choice', question: 'What time does the restaurant open for dinner?',
+      options: ['A) 6 pm', 'B) 7 pm', 'C) 8 pm'], answer: 'B' },
+    { id: 7,  type: 'multiple_choice', question: 'Where is the restaurant located?',
+      options: ['A) City centre', 'B) Suburbs', 'C) Airport'], answer: 'A' },
+    { id: 8,  type: 'multiple_choice', question: 'What is included in the set-menu price?',
+      options: ['A) Drinks only', 'B) Food only', 'C) Food and drinks'], answer: 'C' },
+    { id: 9,  type: 'short_answer',    question: 'The restaurant was established in:', answer: '1985'         },
+    { id: 10, type: 'short_answer',    question: 'The head chef trained in:',          answer: 'Paris'        },
+  ],
+};
 
 const TOTAL_SECONDS = 40 * 60;
 const BAR_COUNT = 20;
@@ -88,7 +94,15 @@ const wf = StyleSheet.create({
 });
 
 // ── Audio player (green themed) ───────────────────────────────────
-function AudioPlayer({ isExamMode, section }: { isExamMode: boolean; section: string }) {
+function AudioPlayer({
+  isExamMode, section, sectionTitle, trackTitle, playsLimit,
+}: {
+  isExamMode: boolean;
+  section: string;
+  sectionTitle: string;
+  trackTitle: string;
+  playsLimit: number;
+}) {
   const soundRef    = useRef<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +111,7 @@ function AudioPlayer({ isExamMode, section }: { isExamMode: boolean; section: st
   const [durMs,     setDurMs]     = useState(0);
   const [error,     setError]     = useState<string | null>(null);
 
-  const canPlay  = !isExamMode || playCount === 0;
+  const canPlay  = !isExamMode || playCount < playsLimit;
   const hasPlayed = playCount > 0;
 
   useEffect(() => {
@@ -147,8 +161,8 @@ function AudioPlayer({ isExamMode, section }: { isExamMode: boolean; section: st
 
   return (
     <View style={ap.card}>
-      <Text style={ap.sectionLabel}>SECTION {section} OF 4</Text>
-      <Text style={ap.trackTitle}>City Council Meeting</Text>
+      <Text style={ap.sectionLabel}>{sectionTitle.toUpperCase()}</Text>
+      <Text style={ap.trackTitle}>{trackTitle}</Text>
       <Text style={ap.trackDur}>{fmt(posMs)} / {durMs > 0 ? fmt(durMs) : '3:45'}</Text>
 
       <Waveform isPlaying={isPlaying} />
@@ -188,9 +202,9 @@ function AudioPlayer({ isExamMode, section }: { isExamMode: boolean; section: st
         </TouchableOpacity>
       </View>
 
-      {isExamMode && hasPlayed && !isPlaying && (
+      {isExamMode && hasPlayed && !isPlaying && playCount >= playsLimit && (
         <View style={ap.examNote}>
-          <Text style={ap.examNoteText}>⚠ Audio plays once in exam mode</Text>
+          <Text style={ap.examNoteText}>⚠ Audio plays {playsLimit === 1 ? 'once' : `${playsLimit} times`} in exam mode</Text>
         </View>
       )}
       {error && <Text style={ap.errorText}>{error}</Text>}
@@ -234,20 +248,21 @@ const ap = StyleSheet.create({
 });
 
 // ── FormQuestion ──────────────────────────────────────────────────
-function FormQuestion({ q, value, onChange }: { q: ListeningQuestion; value: string; onChange: (v: string) => void }) {
+function FormQuestion({ q, value, onChange, isRtl }: { q: AdaptedQuestion; value: string; onChange: (v: string) => void; isRtl?: boolean }) {
   return (
     <View style={fq.wrap}>
-      <Text style={fq.label}>{q.text}</Text>
-      <View style={fq.inputRow}>
+      <Text style={[fq.label, isRtl && fq.rtl]}>{q.text}</Text>
+      <View style={[fq.inputRow, isRtl && { flexDirection: 'row-reverse' as any }]}>
         {q.prefix ? <Text style={fq.fix}>{q.prefix}</Text> : null}
         <TextInput
-          style={fq.input}
+          style={[fq.input, isRtl && fq.inputRtl]}
           value={value}
           onChangeText={onChange}
           placeholder="Type answer..."
           placeholderTextColor={Colors.ink4}
           autoCorrect={false}
           autoCapitalize="none"
+          textAlign={isRtl ? 'right' : 'left'}
         />
         {q.suffix ? <Text style={fq.fix}>{q.suffix}</Text> : null}
       </View>
@@ -258,6 +273,7 @@ function FormQuestion({ q, value, onChange }: { q: ListeningQuestion; value: str
 const fq = StyleSheet.create({
   wrap: { gap: 6 },
   label: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
+  rtl:   { textAlign: 'right' as const, writingDirection: 'rtl' as const },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   fix: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink2 },
   input: {
@@ -266,25 +282,26 @@ const fq = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
     fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink, minWidth: 80,
   },
+  inputRtl: { textAlign: 'right' as const },
 });
 
 // ── McqQuestion ───────────────────────────────────────────────────
-function McqQuestion({ q, value, onSelect }: { q: ListeningQuestion; value: string; onSelect: (k: string) => void }) {
+function McqQuestion({ q, value, onSelect, isRtl }: { q: AdaptedQuestion; value: string; onSelect: (k: string) => void; isRtl?: boolean }) {
   return (
     <View style={mq.wrap}>
-      <Text style={mq.qText}>{q.text}</Text>
+      <Text style={[mq.qText, isRtl && mq.rtl]}>{q.text}</Text>
       <View style={mq.options}>
         {q.options!.map(opt => (
           <TouchableOpacity
             key={opt.key}
-            style={[mq.option, value === opt.key && mq.optionSelected]}
+            style={[mq.option, value === opt.key && mq.optionSelected, isRtl && { flexDirection: 'row-reverse' as any }]}
             onPress={() => onSelect(opt.key)}
             activeOpacity={0.8}
           >
             <View style={[mq.radio, value === opt.key && mq.radioSelected]}>
               {value === opt.key && <View style={mq.radioInner} />}
             </View>
-            <Text style={[mq.optText, value === opt.key && mq.optTextSelected]}>
+            <Text style={[mq.optText, value === opt.key && mq.optTextSelected, isRtl && mq.rtl]}>
               <Text style={mq.optKey}>{opt.key})</Text> {opt.label}
             </Text>
           </TouchableOpacity>
@@ -297,6 +314,7 @@ function McqQuestion({ q, value, onSelect }: { q: ListeningQuestion; value: stri
 const mq = StyleSheet.create({
   wrap: { gap: 8 },
   qText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000', lineHeight: 20 },
+  rtl:   { textAlign: 'right' as const, writingDirection: 'rtl' as const },
   options: { gap: 6 },
   option: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -331,11 +349,19 @@ const qc = StyleSheet.create({
 export default function ListeningSessionScreen() {
   const { width }  = useWindowDimensions();
   const isDesktop  = Platform.OS === 'web' && width >= 768;
-  const params     = useLocalSearchParams<{ exam?: string; section?: string; mode?: string }>();
-  const exam       = params.exam    ?? 'IELTS';
+  const params     = useLocalSearchParams<{ examId?: string; exam?: string; section?: string; mode?: string }>();
+  const examId     = (params.examId ?? params.exam ?? 'ielts').toLowerCase();
   const section    = params.section ?? '1';
   const mode       = (params.mode ?? 'practice') as 'practice' | 'exam';
   const isExamMode = mode === 'exam';
+
+  // ── Load section content ────────────────────────────────────────
+  const sectionKey     = `section${section}`;
+  const rawContent     = getExamContent(examId, 'listening', sectionKey) as SectionContent | null;
+  const sectionContent = rawContent ?? FALLBACK_SECTION;
+  const QUESTIONS      = adaptQuestions(sectionContent.questions);
+  const isRtl          = sectionContent.rtl === true;
+  const playsLimit     = sectionContent.playsCount ?? 1;
 
   const [answers,     setAnswers]    = useState<Record<number, string>>({});
   const [submitting,  setSubmitting] = useState(false);
@@ -343,7 +369,7 @@ export default function ListeningSessionScreen() {
   const startedAt = useRef(Date.now());
 
   useEffect(() => {
-    Analytics.practiceSessionStarted({ module: 'listening', languageCode: 'en', examType: exam, mode: 'practice' });
+    Analytics.practiceSessionStarted({ module: 'listening', languageCode: 'en', examType: examId, mode: 'practice' });
   }, []);
 
   // Countdown timer
@@ -377,8 +403,14 @@ export default function ListeningSessionScreen() {
       if ((answers[q.number] ?? '').trim().toLowerCase() === q.correctAnswer.toLowerCase()) correct++;
     });
     const band = estimateListeningBand(correct, QUESTIONS.length);
-    Analytics.practiceSessionCompleted({ module: 'listening', languageCode: 'en', examType: exam, score: band, durationSeconds: timeTaken });
-    setListeningResult({ exam, section, mode, timeTakenSeconds: timeTaken, totalQuestions: QUESTIONS.length, correctCount: correct, bandEstimate: band, answers, questions: QUESTIONS });
+    Analytics.practiceSessionCompleted({ module: 'listening', languageCode: 'en', examType: examId, score: band, durationSeconds: timeTaken });
+    setListeningResult({
+      exam: examId, section, mode,
+      timeTakenSeconds: timeTaken,
+      totalQuestions: QUESTIONS.length, correctCount: correct, bandEstimate: band,
+      answers,
+      questions: QUESTIONS as unknown as ListeningQuestion[],
+    });
     router.replace('/modules/listening/results' as any);
   }
 
@@ -389,18 +421,24 @@ export default function ListeningSessionScreen() {
   // ── Left panel ─────────────────────────────────────────────────
   const leftPanel = (
     <View style={s.leftPanel}>
-      <AudioPlayer isExamMode={isExamMode} section={section} />
+      <AudioPlayer
+        isExamMode={isExamMode}
+        section={section}
+        sectionTitle={sectionContent.title}
+        trackTitle={sectionContent.audioDescription}
+        playsLimit={playsLimit}
+      />
 
       <View style={s.sectionInfo}>
-        <Text style={s.sectionInfoLabel}>SECTION {section} · QUESTIONS 1–10</Text>
-        <Text style={s.sectionInfoProg}>Question {Math.min(answeredCount + 1, 10)} of 10</Text>
+        <Text style={s.sectionInfoLabel}>{sectionContent.title.toUpperCase()}</Text>
+        <Text style={s.sectionInfoProg}>
+          Question {Math.min(answeredCount + 1, QUESTIONS.length)} of {QUESTIONS.length}
+        </Text>
       </View>
 
       <View style={s.instrBox}>
         <Text style={s.instrTitle}>Instructions</Text>
-        <Text style={s.instrText}>
-          Listen and answer all 10 questions.{'\n'}Write <Text style={{ fontFamily: 'Inter_700Bold', color: '#000' }}>NO MORE THAN TWO WORDS</Text> unless stated.
-        </Text>
+        <Text style={[s.instrText, isRtl && s.instrTextRtl]}>{sectionContent.instruction}</Text>
       </View>
 
       {/* Progress bar */}
@@ -423,32 +461,54 @@ export default function ListeningSessionScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Form completion */}
-        <Text style={s.groupLabel}>Questions 1–5 · Form Completion</Text>
-        <Text style={s.groupInstr}>Complete the booking form. Write NO MORE THAN TWO WORDS.</Text>
-        {formQs.map(q => (
-          <QCard key={q.number} num={q.number} type="Form Completion">
-            <FormQuestion q={q} value={answers[q.number] ?? ''} onChange={v => setAnswer(q.number, v)} />
-          </QCard>
-        ))}
 
-        {/* MCQ */}
-        <Text style={[s.groupLabel, { marginTop: 8 }]}>Questions 6–8 · Multiple Choice</Text>
-        <Text style={s.groupInstr}>Choose the correct letter, A, B or C.</Text>
-        {mcqQs.map(q => (
-          <QCard key={q.number} num={q.number} type="Multiple Choice">
-            <McqQuestion q={q} value={answers[q.number] ?? ''} onSelect={k => setAnswer(q.number, k)} />
-          </QCard>
-        ))}
+        {/* Form completion group */}
+        {formQs.length > 0 && (
+          <>
+            <Text style={s.groupLabel}>
+              {formQs.length === 1
+                ? `Q${formQs[0].number} · Form Completion`
+                : `Q${formQs[0].number}–${formQs[formQs.length - 1].number} · Form Completion`}
+            </Text>
+            {formQs.map(q => (
+              <QCard key={q.number} num={q.number} type="Form Completion">
+                <FormQuestion q={q} value={answers[q.number] ?? ''} onChange={v => setAnswer(q.number, v)} isRtl={isRtl || q.rtl} />
+              </QCard>
+            ))}
+          </>
+        )}
 
-        {/* Note completion */}
-        <Text style={[s.groupLabel, { marginTop: 8 }]}>Questions 9–10 · Note Completion</Text>
-        <Text style={s.groupInstr}>Complete the notes. Write NO MORE THAN TWO WORDS.</Text>
-        {noteQs.map(q => (
-          <QCard key={q.number} num={q.number} type="Note Completion">
-            <FormQuestion q={q} value={answers[q.number] ?? ''} onChange={v => setAnswer(q.number, v)} />
-          </QCard>
-        ))}
+        {/* Multiple choice group */}
+        {mcqQs.length > 0 && (
+          <>
+            <Text style={[s.groupLabel, formQs.length > 0 && { marginTop: 8 }]}>
+              {mcqQs.length === 1
+                ? `Q${mcqQs[0].number} · Multiple Choice`
+                : `Q${mcqQs[0].number}–${mcqQs[mcqQs.length - 1].number} · Multiple Choice`}
+            </Text>
+            {mcqQs.map(q => (
+              <QCard key={q.number} num={q.number} type="Multiple Choice">
+                <McqQuestion q={q} value={answers[q.number] ?? ''} onSelect={k => setAnswer(q.number, k)} isRtl={isRtl || q.rtl} />
+              </QCard>
+            ))}
+          </>
+        )}
+
+        {/* Note completion group */}
+        {noteQs.length > 0 && (
+          <>
+            <Text style={[s.groupLabel, (formQs.length > 0 || mcqQs.length > 0) && { marginTop: 8 }]}>
+              {noteQs.length === 1
+                ? `Q${noteQs[0].number} · Short Answer`
+                : `Q${noteQs[0].number}–${noteQs[noteQs.length - 1].number} · Short Answer`}
+            </Text>
+            {noteQs.map(q => (
+              <QCard key={q.number} num={q.number} type="Short Answer">
+                <FormQuestion q={q} value={answers[q.number] ?? ''} onChange={v => setAnswer(q.number, v)} isRtl={isRtl || q.rtl} />
+              </QCard>
+            ))}
+          </>
+        )}
 
         {/* Submit */}
         <TouchableOpacity
@@ -508,9 +568,10 @@ const s = StyleSheet.create({
   },
   sectionInfoProg: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#000' },
 
-  instrBox:  { backgroundColor: GREEN_BG, borderRadius: 10, padding: 12, gap: 4 },
-  instrTitle:{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: GREEN },
-  instrText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#444', lineHeight: 18 },
+  instrBox:     { backgroundColor: GREEN_BG, borderRadius: 10, padding: 12, gap: 4 },
+  instrTitle:   { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: GREEN },
+  instrText:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#444', lineHeight: 18 },
+  instrTextRtl: { textAlign: 'right' as const, writingDirection: 'rtl' as const },
 
   progressWrap:  { gap: 4 },
   progressTrack: { height: 4, backgroundColor: '#F0F0F0', borderRadius: 2, overflow: 'hidden' },

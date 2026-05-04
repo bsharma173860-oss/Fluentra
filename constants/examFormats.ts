@@ -63,6 +63,7 @@ export type SpeakingPart = {
   responseTime?: string
   talkTime?: string
   topics?: string[]
+  language?: string
 }
 
 export type SpeakingFormat = {
