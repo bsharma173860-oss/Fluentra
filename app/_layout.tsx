@@ -8,11 +8,13 @@
 // });
 
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+
+export { ErrorBoundary } from 'expo-router';
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import {
   Inter_400Regular,
@@ -26,7 +28,9 @@ import { AuthProvider } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 import { initAnalytics, identifyUser } from '@/lib/analytics';
 
-SplashScreen.preventAutoHideAsync();
+if (Platform.OS !== 'web') {
+  SplashScreen.preventAutoHideAsync();
+}
 
 // ── Branded loading screen ────────────────────────────────────
 function LoadingScreen() {
@@ -72,9 +76,9 @@ function RootLayoutInner() {
     initAnalytics();
   }, []);
 
-  // Hide splash once fonts are ready
+  // Hide splash once fonts are ready (native only)
   useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync();
+    if ((fontsLoaded || fontError) && Platform.OS !== 'web') SplashScreen.hideAsync();
   }, [fontsLoaded, fontError]);
 
   // Session state — resolves from SecureStore (fast) or via onAuthStateChange.
