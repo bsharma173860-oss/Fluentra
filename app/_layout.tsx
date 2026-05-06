@@ -1,3 +1,7 @@
+if (typeof window !== 'undefined') {
+  // web only — guards against SSR / static pre-render crashes
+}
+
 // Sentry — install: npx expo install @sentry/react-native
 // Safe init: require() so the native module is never loaded on web.
 if (Platform.OS !== 'web') {
