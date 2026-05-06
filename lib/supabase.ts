@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+
+// expo-secure-store is native-only — never import at module level on web
+const SecureStore = Platform.OS !== 'web'
+  ? require('expo-secure-store')
+  : null;
 
 // ── Env var validation ────────────────────────────────────────
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';

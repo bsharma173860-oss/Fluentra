@@ -1,12 +1,17 @@
 /**
  * Push notifications wrapper.
  * Install the package first: npx expo install expo-notifications
- * All functions are no-ops until the package is available.
+ * All functions are no-ops on web or until the package is available.
  */
+import { Platform } from 'react-native';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
+const Notifications = Platform.OS !== 'web'
+  ? (() => { try { return require('expo-notifications'); } catch { return null; } })()
+  : null;
+
 function getNotifications(): any | null {
-  try { return require('expo-notifications'); } catch { return null; }
+  return Notifications;
 }
 
 export async function requestPermissions(): Promise<boolean> {
