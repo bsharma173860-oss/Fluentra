@@ -1,11 +1,11 @@
 // Sentry — install: npx expo install @sentry/react-native
-// Then uncomment the import and wrap below.
-// import * as Sentry from '@sentry/react-native';
-// Sentry.init({
-//   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-//   environment: process.env.NODE_ENV ?? 'production',
-//   tracesSampleRate: 0.2,
-// });
+// Safe init: require() so the native module is never loaded on web.
+if (Platform.OS !== 'web') {
+  const Sentry = require('@sentry/react-native');
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  });
+}
 
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';

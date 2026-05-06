@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
-import * as AppleAuthentication from 'expo-apple-authentication';
+// expo-apple-authentication is iOS-only — never import at module level on web
 import { Colors } from '@/constants/colors';
 import { supabase } from '@/lib/supabase';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -90,6 +90,8 @@ export default function LoginScreen() {
     setError('');
     setOauthLoading('apple');
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const AppleAuthentication = require('expo-apple-authentication');
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
