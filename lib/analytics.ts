@@ -86,7 +86,7 @@ export const Analytics = {
   streakMilestone: (props: {
     languageCode: string;
     streakDays: number;
-    milestone: 7 | 14 | 30 | 40;
+    milestone: 7 | 9;
   }) => track('streak_milestone', props),
 
   // Exams

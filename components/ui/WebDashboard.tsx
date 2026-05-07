@@ -101,7 +101,7 @@ function HybridCard({ lang }: { lang: any }) {
   const code    = lang.language_code
   const t       = getTheme(code)
   const streak  = lang.streak_count || 0
-  const pct     = Math.min((streak / 40) * 100, 100)
+  const pct     = Math.min((streak / 9) * 100, 100)
   const session = getSession(code)
   const badges  = getBadges(code)
   const cefr    = cefrShort(streak)
@@ -343,7 +343,7 @@ export function WebDashboard({ languages, userName, loading, onAddLanguage }: Pr
   const totalStreak = languages.reduce((s, l) => s + (l.streak_count || 0), 0)
   const avgProgress = languages.length > 0
     ? Math.round(
-        languages.reduce((s, l) => s + Math.min(((l.streak_count || 0) / 40) * 100, 100), 0)
+        languages.reduce((s, l) => s + Math.min(((l.streak_count || 0) / 9) * 100, 100), 0)
         / languages.length
       )
     : 0

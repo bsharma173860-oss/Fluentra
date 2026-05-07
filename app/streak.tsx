@@ -138,8 +138,8 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
 
 // ─── Streak bar ────────────────────────────────────────────────────────────────
 const STREAK_DAYS = 23;
-const STREAK_TARGET = 40;
-const MILESTONES = [7, 14, 30, 40];
+const STREAK_TARGET = 9;
+const MILESTONES = [7, 9];
 
 function StreakBar() {
   const pct = Math.min(STREAK_DAYS / STREAK_TARGET, 1) * 100;

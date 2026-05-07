@@ -256,7 +256,7 @@ export default function LanguagePage() {
                   <Text style={s.startExamText}>{isPro ? 'Start Exam' : 'Upgrade'}</Text>
                 </TouchableOpacity>
                 <Text style={s.examNote}>Results stay private</Text>
-                <Text style={s.examNote}>No 40-day wait</Text>
+                <Text style={s.examNote}>No 9-day wait</Text>
               </View>
             </View>
 
@@ -339,12 +339,12 @@ export default function LanguagePage() {
               ) : (
                 <View style={s.lockRow}>
                   <LockIcon size={14} color="rgba(255,255,255,0.5)" />
-                  <Text style={s.lockText}>{streak}/40 streak days to unlock</Text>
+                  <Text style={s.lockText}>{streak}/9 streak days to unlock</Text>
                 </View>
               )}
 
               <View style={s.monthlyBar}>
-                <View style={[s.monthlyBarFill, { width: `${Math.min((streak / 40) * 100, 100)}%` as any }]} />
+                <View style={[s.monthlyBarFill, { width: `${Math.min((streak / 9) * 100, 100)}%` as any }]} />
               </View>
             </View>
 

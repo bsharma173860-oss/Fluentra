@@ -252,7 +252,7 @@ function LangCardExpanded({
             {badges.length > 0 ? `${badges[0]} · ` : ''}{cefr}
           </Text>
           <View style={ex.footerRight}>
-            <Text style={ex.footerRightText}>{streak}/40 to exam</Text>
+            <Text style={ex.footerRightText}>{streak}/9 to exam</Text>
             <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={ex.removeText}>Remove</Text>
             </TouchableOpacity>

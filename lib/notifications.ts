@@ -56,7 +56,7 @@ export async function sendStreakMilestone(days: number): Promise<void> {
     await N.scheduleNotificationAsync({
       content: {
         title: `${days}-day streak! 🎉`,
-        body: days === 40 ? "You've unlocked the monthly exam!" : "Keep going — you're on fire!",
+        body: days === 9 ? "You've unlocked the monthly exam!" : "Keep going — you're on fire!",
       },
       trigger: null,
     });

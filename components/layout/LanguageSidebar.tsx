@@ -12,7 +12,7 @@ import {
 } from '@/components/icons';
 import { UserMenu } from '@/components/layout/UserMenu';
 
-const STREAK_TARGET = 40;
+const STREAK_TARGET = 9;
 
 const PRACTICE_NAV = [
   { id: 'speaking',  label: 'Speaking',      Icon: MicIcon           },

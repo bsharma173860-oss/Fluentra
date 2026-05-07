@@ -89,10 +89,10 @@ export default function MonthlyExam() {
             <View style={s.streakCheck}><CheckIcon size={14} color={Colors.white} /></View>
             <View>
               <Text style={s.streakTitle}>Streak requirement met</Text>
-              <Text style={s.streakSub}>You have a 40+ day streak — exam is unlocked</Text>
+              <Text style={s.streakSub}>You have a 9+ day streak — exam is unlocked</Text>
             </View>
           </View>
-          <View style={s.streakBadge}><FlameIcon size={16} color={Colors.orange} /><Text style={s.streakBadgeText}> 40+</Text></View>
+          <View style={s.streakBadge}><FlameIcon size={16} color={Colors.orange} /><Text style={s.streakBadgeText}> 9+</Text></View>
         </View>
 
         {/* Leaderboard preview */}

@@ -15,7 +15,7 @@ import {
 const { width: W } = Dimensions.get('window');
 const H_PAD = 20;
 const STREAK_COUNT = 32;
-const STREAK_TARGET = 40;
+const STREAK_TARGET = 9;
 const EXAMS_UNLOCKED = STREAK_COUNT >= STREAK_TARGET;
 
 // ─── Language data ────────────────────────────────────────────────────────────
@@ -364,7 +364,7 @@ export default function ExamsScreen() {
           <EmptyState
             iconComponent={<CheckIcon size={28} color={Colors.ink3} />}
             title="No exams yet"
-            subtitle="Build a 40-day streak to unlock monthly exams"
+            subtitle="Build a 9-day streak to unlock monthly exams"
           />
         )}
 
