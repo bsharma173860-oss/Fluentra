@@ -3,19 +3,15 @@ import {
   View, Text, TextInput, StyleSheet,
   TouchableOpacity, KeyboardAvoidingView,
   Platform, ScrollView, ActivityIndicator,
-  useWindowDimensions,
+  Alert, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
 // expo-apple-authentication is iOS-only — never import at module level on web
 import { Colors } from '@/constants/colors';
 import { supabase } from '@/lib/supabase';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { FluentraLogo } from '@/components/FluentraLogo';
-
-WebBrowser.maybeCompleteAuthSession();
 
 // ── Inline OAuth icons ────────────────────────────────────────────
 function GoogleIcon() {
@@ -68,21 +64,37 @@ export default function LoginScreen() {
 
   // ── Google OAuth ──────────────────────────────────────────────
   async function handleGoogle() {
-    setError('');
-    setOauthLoading('google');
-    const redirectTo = makeRedirectUri({ scheme: 'fluentra', path: 'auth/callback' });
-    const { data, error: oauthErr } = await supabase.auth.signInWithOAuth({
+    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: true },
+      options: {
+        redirectTo: Platform.OS === 'web'
+          ? window.location.origin + '/auth/callback'
+          : 'fluentra://auth/callback',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
     });
-    if (oauthErr || !data.url) {
-      setOauthLoading(null);
-      setError(oauthErr?.message ?? 'Could not start Google sign-in.');
+    if (oauthErr) Alert.alert('Error', oauthErr.message);
+  }
+
+  // ── Forgot password ───────────────────────────────────────────
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      Alert.alert('Enter email', 'Please enter your email address first');
       return;
     }
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-    setOauthLoading(null);
-    if (result.type === 'success' && 'url' in result) await handleOAuthCallback(result.url);
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: Platform.OS === 'web'
+        ? window.location.origin + '/auth/reset-password'
+        : 'fluentra://auth/reset-password',
+    });
+    if (resetErr) {
+      Alert.alert('Error', resetErr.message);
+    } else {
+      Alert.alert('Email sent!', 'Check your inbox for a password reset link');
+    }
   }
 
   // ── Apple Sign In ─────────────────────────────────────────────
@@ -111,22 +123,6 @@ export default function LoginScreen() {
     }
   }
 
-  // ── OAuth callback ────────────────────────────────────────────
-  async function handleOAuthCallback(callbackUrl: string) {
-    try {
-      const url    = new URL(callbackUrl);
-      const params = new URLSearchParams(url.hash ? url.hash.substring(1) : url.search.substring(1));
-      const at     = params.get('access_token');
-      const rt     = params.get('refresh_token');
-      if (at && rt) {
-        const { error: sessErr } = await supabase.auth.setSession({ access_token: at, refresh_token: rt });
-        if (sessErr) setError(sessErr.message);
-        else router.replace('/(tabs)/home');
-      } else {
-        setError('Sign-in completed but no token received. Please try again.');
-      }
-    } catch { setError('Failed to complete sign-in.'); }
-  }
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -211,7 +207,7 @@ export default function LoginScreen() {
           <View style={s.field}>
             <View style={s.labelRow}>
               <Text style={s.label}>Password</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleForgotPassword}>
                 <Text style={s.forgotLink}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
