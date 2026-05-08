@@ -14,6 +14,56 @@ import {
   estimateBand,
   ReadingQuestion,
 } from '@/lib/readingStore';
+import { useAuth } from '@/lib/authContext';
+
+const API = process.env.EXPO_PUBLIC_API_URL ?? '/api';
+
+// ── AI content helpers ────────────────────────────────────────────
+
+/** Split a prose passage into labeled paragraph objects (A, B, C…) */
+function splitPassage(text: string): { label: string; text: string }[] {
+  const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const chunks = text.split(/\n{2,}/).filter(c => c.trim().length > 40);
+  return chunks.slice(0, 6).map((c, i) => ({ label: labels[i], text: c.trim() }));
+}
+
+/** Map AI question objects to the ReadingQuestion shape */
+function mapAiQuestions(
+  aiQuestions: any[]
+): { questions: ReadingQuestion[]; headings: { key: string; label: string }[] } {
+  const questions: ReadingQuestion[] = [];
+  const headings: { key: string; label: string }[] = [];
+
+  aiQuestions.forEach((q: any, i: number) => {
+    const num = i + 1;
+    if (q.type === 'mcq' && Array.isArray(q.options)) {
+      const opts = q.options.map((o: string, oi: number) => ({
+        key:   String.fromCharCode(65 + oi),  // A, B, C, D
+        label: o,
+      }));
+      // Find the correct answer key
+      const correctIdx = q.options.findIndex(
+        (o: string) => o === q.answer || o.toLowerCase() === q.answer?.toLowerCase()
+      );
+      const correctKey = correctIdx >= 0 ? String.fromCharCode(65 + correctIdx) : 'A';
+      questions.push({
+        number: num, type: 'mcq', shortLabel: `Q${num}`,
+        text: q.text, options: opts,
+        correctAnswer: correctKey, explanation: q.explanation ?? '',
+      });
+    } else if (q.type === 'tfng' || q.type === 'tf') {
+      questions.push({
+        number: num, type: 'tfng', shortLabel: `Statement ${num}`,
+        text: q.text,
+        correctAnswer: (q.answer ?? 'TRUE').toUpperCase(),
+        explanation: q.explanation ?? '',
+      });
+    }
+    // Skip matching — AI doesn't generate labeled headings
+  });
+
+  return { questions, headings };
+}
 
 const ORANGE     = '#C04A06';
 const ORANGE_BG  = '#FFF7ED';
@@ -183,16 +233,17 @@ function secondsToMMSS(s: number) {
 // HeadingSelector
 // ─────────────────────────────────────────────────────────────────
 function HeadingSelector({
-  questionNumber, paragraphLabel, value, usedKeys, onSelect,
+  questionNumber, paragraphLabel, value, usedKeys, onSelect, headingList,
 }: {
   questionNumber: number;
   paragraphLabel: string;
   value: string | undefined;
   usedKeys: string[];
   onSelect: (key: string) => void;
+  headingList: { key: string; label: string }[];
 }) {
   const [expanded, setExpanded] = useState(false);
-  const selected = HEADINGS.find(h => h.key === value);
+  const selected = headingList.find(h => h.key === value);
 
   return (
     <View style={hs.wrap}>
@@ -215,7 +266,7 @@ function HeadingSelector({
 
       {expanded && (
         <View style={hs.dropdown}>
-          {HEADINGS.map(h => {
+          {headingList.map(h => {
             const alreadyUsed = usedKeys.includes(h.key) && h.key !== value;
             return (
               <TouchableOpacity
@@ -427,9 +478,42 @@ const tfng = StyleSheet.create({
 export default function ReadingSessionScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
-  const params    = useLocalSearchParams<{ exam?: string; passage?: string }>();
+  const params    = useLocalSearchParams<{ exam?: string; passage?: string; languageCode?: string }>();
   const exam      = params.exam ?? 'IELTS';
   const passage   = params.passage ?? '1';
+  const langCode  = params.languageCode ?? 'en';
+
+  const { user } = useAuth();
+
+  // AI content overrides (replace static passage/questions when loaded)
+  const [aiTitle,     setAiTitle]     = useState<string>(PASSAGE_TITLE);
+  const [paragraphs,  setParagraphs]  = useState(PARAGRAPHS);
+  const [questions,   setQuestions]   = useState<ReadingQuestion[]>(QUESTIONS);
+  const [headings,    setHeadings]    = useState(HEADINGS);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const qs  = new URLSearchParams({ userId: user.id, languageCode: langCode, module: 'reading' });
+        const res = await fetch(`${API}/content/today?${qs}`);
+        const json = res.ok ? await res.json() : null;
+        const c = json?.content;
+        if (c?.passage && Array.isArray(c.questions) && c.questions.length > 0) {
+          const paras = splitPassage(c.passage);
+          if (paras.length > 0) {
+            const { questions: aiQs, headings: aiH } = mapAiQuestions(c.questions);
+            if (aiQs.length > 0) {
+              setAiTitle(c.title ?? PASSAGE_TITLE);
+              setParagraphs(paras);
+              setQuestions(aiQs);
+              if (aiH.length > 0) setHeadings(aiH);
+            }
+          }
+        }
+      } catch {}
+    })();
+  }, [user, langCode]);
 
   const [answers,     setAnswers]     = useState<Record<number, string>>({});
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
@@ -452,9 +536,9 @@ export default function ReadingSessionScreen() {
 
   const answeredCount = Object.keys(answers).length;
   const isWarning     = secondsLeft <= WARN_SECONDS;
-  const allAnswered   = answeredCount === QUESTIONS.length;
+  const allAnswered   = answeredCount === questions.length;
 
-  const usedHeadingKeys = QUESTIONS
+  const usedHeadingKeys = questions
     .filter(q => q.type === 'matching')
     .map(q => answers[q.number])
     .filter(Boolean) as string[];
@@ -478,11 +562,11 @@ export default function ReadingSessionScreen() {
     setSubmitting(true);
     const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
     let correct = 0;
-    QUESTIONS.forEach(q => { if (currentAnswers[q.number] === q.correctAnswer) correct++; });
-    const band = estimateBand(correct, QUESTIONS.length);
+    questions.forEach(q => { if (currentAnswers[q.number] === q.correctAnswer) correct++; });
+    const band = estimateBand(correct, questions.length);
     Analytics.practiceSessionCompleted({
       module: 'reading',
-      languageCode: 'en',
+      languageCode: langCode,
       examType: exam,
       score: band,
       durationSeconds: timeTaken,
@@ -490,20 +574,20 @@ export default function ReadingSessionScreen() {
     setReadingResult({
       exam,
       difficulty: passage === '1' ? 'Easy' : passage === '2' ? 'Medium' : passage === '3' ? 'Hard' : 'Full',
-      passageTitle: PASSAGE_TITLE,
+      passageTitle: aiTitle,
       timeTakenSeconds: timeTaken,
-      totalQuestions: QUESTIONS.length,
+      totalQuestions: questions.length,
       correctCount: correct,
       bandEstimate: band,
       answers: currentAnswers,
-      questions: QUESTIONS,
+      questions,
     });
     router.replace('/modules/reading/results' as any);
   }
 
-  const matchingQs = QUESTIONS.filter(q => q.type === 'matching');
-  const mcqQs      = QUESTIONS.filter(q => q.type === 'mcq');
-  const tfngQs     = QUESTIONS.filter(q => q.type === 'tfng');
+  const matchingQs = questions.filter(q => q.type === 'matching');
+  const mcqQs      = questions.filter(q => q.type === 'mcq');
+  const tfngQs     = questions.filter(q => q.type === 'tfng');
 
   const passageLabel = passage === 'full' ? 'Full Test' : `Passage ${passage}`;
   const progressPct  = (answeredCount / QUESTIONS.length) * 100;
@@ -517,15 +601,15 @@ export default function ReadingSessionScreen() {
           <View style={p.passageBadge}>
             <Text style={p.passageBadgeText}>{passageLabel}</Text>
           </View>
-          <Text style={p.passageTitle} numberOfLines={1}>{PASSAGE_TITLE}</Text>
+          <Text style={p.passageTitle} numberOfLines={1}>{aiTitle}</Text>
         </View>
         <Text style={[p.timer, isWarning && p.timerWarn]}>{secondsToMMSS(secondsLeft)}</Text>
       </View>
 
       {/* Passage text */}
       <ScrollView style={p.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={p.scrollContent}>
-        <Text style={p.passageHeading}>{PASSAGE_TITLE}</Text>
-        {PARAGRAPHS.map(para => (
+        <Text style={p.passageHeading}>{aiTitle}</Text>
+        {paragraphs.map(para => (
           <View key={para.label} style={p.paraBlock}>
             <Text style={p.paraText}>
               <Text style={p.paraLabel}>Paragraph {para.label}{'  '}</Text>
@@ -547,7 +631,7 @@ export default function ReadingSessionScreen() {
         <View style={{ flex: 1 }}>
           <View style={q.topRow}>
             <Text style={q.topTitle}>Questions</Text>
-            <Text style={q.topCount}>{answeredCount}/{QUESTIONS.length} answered</Text>
+            <Text style={q.topCount}>{answeredCount}/{questions.length} answered</Text>
           </View>
           <View style={q.progressTrack}>
             <View style={[q.progressFill, { width: `${progressPct}%` as any }]} />
@@ -564,7 +648,7 @@ export default function ReadingSessionScreen() {
           <Text style={q.sectionInstr}>Choose the correct heading for each paragraph.</Text>
           <View style={q.headingListBox}>
             <Text style={q.headingListLabel}>LIST OF HEADINGS</Text>
-            {HEADINGS.map(h => (
+            {headings.map(h => (
               <Text key={h.key} style={q.headingItem}>{h.label}</Text>
             ))}
           </View>
@@ -577,6 +661,7 @@ export default function ReadingSessionScreen() {
                 value={answers[mq.number]}
                 usedKeys={usedHeadingKeys}
                 onSelect={key => setAnswer(mq.number, key)}
+                headingList={headings}
               />
             ))}
           </View>
@@ -626,7 +711,7 @@ export default function ReadingSessionScreen() {
           activeOpacity={0.85}
         >
           <Text style={[q.submitText, !allAnswered && q.submitTextDisabled]}>
-            {submitting ? 'Submitting…' : allAnswered ? 'Submit Answers →' : `Answer all questions (${answeredCount}/${QUESTIONS.length})`}
+            {submitting ? 'Submitting…' : allAnswered ? 'Submit Answers →' : `Answer all questions (${answeredCount}/${questions.length})`}
           </Text>
         </TouchableOpacity>
       </View>
@@ -673,7 +758,7 @@ export default function ReadingSessionScreen() {
             activeOpacity={0.8}
           >
             <Text style={[st.toggleText, mobileView === v && st.toggleTextActive]}>
-              {v === 'passage' ? 'Passage' : `Questions (${answeredCount}/${QUESTIONS.length})`}
+              {v === 'passage' ? 'Passage' : `Questions (${answeredCount}/${questions.length})`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -683,8 +768,8 @@ export default function ReadingSessionScreen() {
         <View style={{ flex: 1 }}>
           {/* Mobile passage text (no top bar — already in header) */}
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={p.scrollContent}>
-            <Text style={p.passageHeading}>{PASSAGE_TITLE}</Text>
-            {PARAGRAPHS.map(para => (
+            <Text style={p.passageHeading}>{aiTitle}</Text>
+            {paragraphs.map(para => (
               <View key={para.label} style={p.paraBlock}>
                 <Text style={p.paraText}>
                   <Text style={p.paraLabel}>Paragraph {para.label}{'  '}</Text>

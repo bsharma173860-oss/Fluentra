@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView, View, Text, StyleSheet, TouchableOpacity, Dimensions,
 } from 'react-native';
@@ -14,6 +14,85 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import {
   MicIcon, PenIcon, HeadphoneIcon, BookIcon, FlameIcon, ChartIcon, CalendarIcon, type IconProps,
 } from '@/components/icons';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
+
+// ─── Real Supabase stats ──────────────────────────────────────────
+
+type LiveStats = {
+  totalWords:    number;
+  streakCount:   number;
+  avgWritingBand: number;
+  sessionsThisWeek: number;
+  writingHistory: { label: string; score: number }[];
+  recentSessions: { module: string; score: number; date: string; languageCode: string }[];
+};
+
+async function fetchLiveStats(userId: string, languageCode: string): Promise<Partial<LiveStats>> {
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekAgoISO = weekAgo.toISOString();
+
+  const [vocabRes, streakRes, writingRes, writingHistRes] = await Promise.allSettled([
+    supabase
+      .from('vocab_progress')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('language_code', languageCode),
+
+    supabase
+      .from('user_languages')
+      .select('streak_count')
+      .eq('user_id', userId)
+      .eq('language_code', languageCode)
+      .single(),
+
+    supabase
+      .from('writing_attempts')
+      .select('overall_band, created_at')
+      .eq('user_id', userId)
+      .eq('language_code', languageCode)
+      .order('created_at', { ascending: false })
+      .limit(20),
+
+    supabase
+      .from('writing_attempts')
+      .select('overall_band, created_at')
+      .eq('user_id', userId)
+      .eq('language_code', languageCode)
+      .gte('created_at', new Date(Date.now() - 90 * 86400000).toISOString())
+      .order('created_at', { ascending: true })
+      .limit(30),
+  ]);
+
+  const totalWords = vocabRes.status === 'fulfilled' ? (vocabRes.value.count ?? 0) : 0;
+  const streakCount = streakRes.status === 'fulfilled' && streakRes.value.data
+    ? (streakRes.value.data.streak_count ?? 0) : 0;
+
+  const writingAttempts = writingRes.status === 'fulfilled' ? (writingRes.value.data ?? []) : [];
+  const avgWritingBand = writingAttempts.length > 0
+    ? writingAttempts.reduce((s, a) => s + (a.overall_band ?? 0), 0) / writingAttempts.length
+    : 0;
+
+  const sessionsThisWeek = writingAttempts.filter(a => a.created_at >= weekAgoISO).length;
+
+  const writingHistData = writingHistRes.status === 'fulfilled' ? (writingHistRes.value.data ?? []) : [];
+  const writingHistory: { label: string; score: number }[] = writingHistData
+    .filter(a => a.overall_band)
+    .map(a => ({
+      label: new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      score: Number(a.overall_band),
+    }));
+
+  const recentSessions = writingAttempts.slice(0, 5).map(a => ({
+    module:       'Writing',
+    score:        Number(a.overall_band ?? 0),
+    date:         new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    languageCode,
+  }));
+
+  return { totalWords, streakCount, avgWritingBand, sessionsThisWeek, writingHistory, recentSessions };
+}
 
 type IC = React.ComponentType<IconProps>;
 
@@ -153,6 +232,7 @@ const PERIOD_TABS = ['7d', '30d', '90d'];
 export default function ProgressScreen() {
   const { lang: initialLang } = useLocalSearchParams<{ lang?: string }>();
   const { languages } = useUserLanguages();
+  const { user } = useAuth();
 
   const availableCodes = languages.length > 0
     ? languages.map(l => l.language_code)
@@ -161,14 +241,33 @@ export default function ProgressScreen() {
   const [lang, setLang] = useState(initialLang ?? availableCodes[0] ?? 'en');
   const [period, setPeriod] = useState('30d');
   const [examFilter, setExamFilter] = useState('all');
+  const [liveStats, setLiveStats] = useState<Partial<LiveStats>>({});
+
+  useEffect(() => {
+    if (!user) return;
+    fetchLiveStats(user.id, lang).then(setLiveStats).catch(() => {});
+  }, [user, lang]);
 
   const theme   = getTheme(lang);
-  const stats   = LANG_STATS[lang] ?? LANG_STATS.en;
+  // Merge live stats over hardcoded fallbacks
+  const fallbackStats = LANG_STATS[lang] ?? LANG_STATS.en;
+  const stats = {
+    avgBand:    liveStats.avgWritingBand   ? Number(liveStats.avgWritingBand.toFixed(1))   : fallbackStats.avgBand,
+    sessions:   liveStats.sessionsThisWeek ?? fallbackStats.sessions,
+    bestScore:  fallbackStats.bestScore,
+    streak:     liveStats.streakCount      ?? fallbackStats.streak,
+    totalWords: liveStats.totalWords       ?? 0,
+  };
   const modules = MODULE_DATA[lang] ?? MODULE_DATA.en;
   const allExams = EXAM_DATA[lang] ?? [];
   const exams   = examFilter === 'all' ? allExams : allExams.filter(e => e.name.toLowerCase().includes(examFilter.toLowerCase()));
+  const recentSessions = liveStats.recentSessions && liveStats.recentSessions.length > 0
+    ? liveStats.recentSessions
+    : null;
   const sessions = ALL_SESSIONS.filter(s => s.lang === lang);
-  const chartData = CHART_DATA[lang] ?? CHART_DATA.en;
+  const chartData = liveStats.writingHistory && liveStats.writingHistory.length > 1
+    ? liveStats.writingHistory
+    : (CHART_DATA[lang] ?? CHART_DATA.en);
 
   // Exam filter pills derived from available exams for current language
   const examPills = ['all', ...allExams.map(e => e.name.split(' ')[0])];
@@ -207,15 +306,17 @@ export default function ProgressScreen() {
         <View style={s.statsGrid}>
           <View style={[s.statCard, { backgroundColor: theme.accentLight }]}>
             <Text style={s.statLabel}>AVG BAND SCORE</Text>
-            <Text style={[s.statNum, { color: theme.accent }]}>{stats.avgBand.toFixed(1)}</Text>
+            <Text style={[s.statNum, { color: theme.accent }]}>
+              {stats.avgBand > 0 ? stats.avgBand.toFixed(1) : '—'}
+            </Text>
           </View>
-          <View style={[s.statCard, { backgroundColor: Colors.bg2 }]}>
-            <Text style={s.statLabel}>SESSIONS</Text>
-            <Text style={[s.statNum, { color: Colors.ink }]}>{stats.sessions}</Text>
+          <View style={[s.statCard, { backgroundColor: Colors.p_soft }]}>
+            <Text style={s.statLabel}>WORDS LEARNED</Text>
+            <Text style={[s.statNum, { color: Colors.p }]}>{stats.totalWords}</Text>
           </View>
           <View style={[s.statCard, { backgroundColor: Colors.gold_bg }]}>
-            <Text style={s.statLabel}>BEST SCORE</Text>
-            <Text style={[s.statNum, { color: Colors.gold }]}>{stats.bestScore.toFixed(1)}</Text>
+            <Text style={s.statLabel}>SESSIONS (7d)</Text>
+            <Text style={[s.statNum, { color: Colors.gold }]}>{stats.sessions}</Text>
           </View>
           <View style={[s.statCard, { backgroundColor: Colors.orange_bg }]}>
             <Text style={s.statLabel}>STREAK</Text>
@@ -323,7 +424,26 @@ export default function ProgressScreen() {
 
         {/* ── Recent sessions ── */}
         <Text style={s.sectionTitle}>Recent sessions</Text>
-        {sessions.length === 0 ? (
+        {recentSessions ? (
+          <View style={s.sessionList}>
+            {recentSessions.map((session, i) => (
+              <View key={i} style={s.sessionRow}>
+                <View style={[s.sessionIconWrap, { backgroundColor: Colors.p + '22' }]}>
+                  <PenIcon size={22} color={Colors.p} />
+                </View>
+                <View style={s.sessionInfo}>
+                  <Text style={s.sessionTitle}>{session.module}</Text>
+                  <Text style={s.sessionMeta}>{session.date}</Text>
+                </View>
+                {session.score > 0 && (
+                  <View style={[s.scoreBadge, { backgroundColor: Colors.p + '18' }]}>
+                    <Text style={[s.scoreBadgeText, { color: Colors.p }]}>{session.score.toFixed(1)}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : sessions.length === 0 ? (
           <EmptyState
             iconComponent={<ChartIcon size={28} color={Colors.ink3} />}
             title="No sessions yet"
