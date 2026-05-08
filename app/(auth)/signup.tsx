@@ -35,11 +35,18 @@ export default function SignupScreen() {
     if (password.length < 8)   { setError('Password must be at least 8 characters.'); return; }
     if (password !== confirm)  { setError('Passwords do not match.'); return; }
 
+    const emailRedirectTo = typeof window !== 'undefined'
+      ? window.location.origin + '/auth/callback'
+      : 'https://fluentra-kappa.vercel.app/auth/callback';
+
     setLoading(true);
     const { data, error: err } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: name.trim() } },
+      options: {
+        data: { full_name: name.trim() },
+        emailRedirectTo,
+      },
     });
     setLoading(false);
 

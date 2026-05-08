@@ -62,7 +62,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: SecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // Must be true on web so OAuth and magic-link tokens in the URL hash are
+    // picked up automatically after the redirect back to the app.
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
 

@@ -64,16 +64,15 @@ export default function LoginScreen() {
 
   // ── Google OAuth ──────────────────────────────────────────────
   async function handleGoogle() {
+    const redirectTo = typeof window !== 'undefined'
+      ? window.location.origin + '/auth/callback'
+      : 'https://fluentra-kappa.vercel.app/auth/callback';
+
     const { error: oauthErr } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: Platform.OS === 'web'
-          ? window.location.origin + '/auth/callback'
-          : 'fluentra://auth/callback',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+        redirectTo,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     });
     if (oauthErr) Alert.alert('Error', oauthErr.message);
@@ -85,10 +84,12 @@ export default function LoginScreen() {
       Alert.alert('Enter email', 'Please enter your email address first');
       return;
     }
+    const redirectTo = typeof window !== 'undefined'
+      ? window.location.origin + '/auth/reset-password'
+      : 'https://fluentra-kappa.vercel.app/auth/reset-password';
+
     const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: Platform.OS === 'web'
-        ? window.location.origin + '/auth/reset-password'
-        : 'fluentra://auth/reset-password',
+      redirectTo,
     });
     if (resetErr) {
       Alert.alert('Error', resetErr.message);
