@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/authContext';
 import {
   PersonIcon, PhoneIcon, LightningIcon, BookIcon,
   HelpCircleIcon, LogOutIcon, ChevronRightIcon, ExternalLinkIcon,
-  type IconProps,
+  ChartIcon, type IconProps,
 } from '@/components/icons';
 import { AppLayout } from '@/components/layout/AppLayout';
 
@@ -62,7 +62,9 @@ function SettingsGroup({ rows }: { rows: Row[] }) {
 export default function SettingsScreen() {
   const { width }  = useWindowDimensions();
   const isDesktop  = Platform.OS === 'web' && width >= 768;
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const isAdmin = user?.email === 'bsharma173860@gmail.com' ||
+    (process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? '').split(',').includes(user?.email ?? '');
 
   async function handleSignOut() {
     await signOut();
@@ -124,6 +126,19 @@ export default function SettingsScreen() {
         <SettingsGroup rows={SECTION2} />
         <View style={s.gap} />
         <SettingsGroup rows={SECTION3} />
+
+        {isAdmin && (
+          <>
+            <View style={s.gap} />
+            <SettingsGroup rows={[{
+              Icon: ChartIcon,
+              label: 'Admin Dashboard',
+              badge: 'Admin',
+              right: 'chevron',
+              onPress: () => router.push('/admin' as any),
+            }]} />
+          </>
+        )}
 
         <View style={{ height: 48 }} />
       </ScrollView>
