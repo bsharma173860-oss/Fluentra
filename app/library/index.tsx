@@ -1,38 +1,72 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, TextInput, Platform, useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Colors } from '@/constants/colors';
-import { getAllLibraryItems, type LibraryItem } from '@/constants/dailyContent';
 import { BookIcon, HeadphoneIcon, PenIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-// ── Filter types ──────────────────────────────────────────────────
-type FilterTab = 'all' | 'reading' | 'listening' | 'writing';
+const API = process.env.EXPO_PUBLIC_API_URL ?? '/api';
 
-const FILTER_TABS: { id: FilterTab; label: string }[] = [
-  { id: 'all',       label: 'All'       },
-  { id: 'reading',   label: 'Reading'   },
-  { id: 'listening', label: 'Listening' },
-  { id: 'writing',   label: 'Writing'   },
-];
+// ── Types ──────────────────────────────────────────────────────────
 
-const MODULE_META: Record<
-  LibraryItem['module'],
-  { label: string; color: string; bg: string; filterTab: FilterTab; route: string }
-> = {
-  reading:       { label: 'Reading',        color: Colors.blue,   bg: Colors.blue_bg,   filterTab: 'reading',   route: '/modules/reading/select'   },
-  listening:     { label: 'Listening',      color: Colors.green,  bg: Colors.green_bg,  filterTab: 'listening', route: '/modules/listening/select' },
-  writing_task1: { label: 'Writing Task 1', color: Colors.orange, bg: Colors.orange_bg, filterTab: 'writing',   route: '/modules/writing/task1'    },
-  writing_task2: { label: 'Writing Task 2', color: Colors.p,      bg: Colors.p_soft,    filterTab: 'writing',   route: '/modules/writing/task2'    },
+type ContentType = 'writing_prompt' | 'reading' | 'listening' | 'vocab' | 'grammar' | 'speaking';
+
+type LibraryItem = {
+  id:            string;
+  language_code: string;
+  exam_type:     string;
+  content_type:  ContentType;
+  title:         string;
+  difficulty:    string;
+  date:          string;   // YYYY-MM-DD
+  created_at:    string;
 };
 
-// ── Search icon ───────────────────────────────────────────────────
+// ── Filter tabs ────────────────────────────────────────────────────
+
+type FilterTab = 'all' | ContentType;
+
+const FILTER_TABS: { id: FilterTab; label: string }[] = [
+  { id: 'all',            label: 'All'       },
+  { id: 'reading',        label: 'Reading'   },
+  { id: 'listening',      label: 'Listening' },
+  { id: 'writing_prompt', label: 'Writing'   },
+  { id: 'vocab',          label: 'Vocab'     },
+  { id: 'grammar',        label: 'Grammar'   },
+  { id: 'speaking',       label: 'Speaking'  },
+];
+
+// ── Content-type meta (color, icon, route) ─────────────────────────
+
+const TYPE_META: Record<ContentType, { label: string; color: string; bg: string; route: string }> = {
+  reading:        { label: 'Reading',        color: Colors.blue,   bg: Colors.blue_bg,   route: '/modules/reading/select'   },
+  listening:      { label: 'Listening',      color: Colors.green,  bg: Colors.green_bg,  route: '/modules/listening/select' },
+  writing_prompt: { label: 'Writing',        color: Colors.orange, bg: Colors.orange_bg, route: '/modules/writing/session'  },
+  vocab:          { label: 'Vocabulary',     color: Colors.p,      bg: Colors.p_soft,    route: '/language'                 },
+  grammar:        { label: 'Grammar',        color: '#E67E22',     bg: '#FEF3E2',        route: '/language'                 },
+  speaking:       { label: 'Speaking',       color: '#9B59B6',     bg: '#F5EEF8',        route: '/modules/speaking/session' },
+};
+
+// ── Helpers ────────────────────────────────────────────────────────
+
+function isToday(dateStr: string): boolean {
+  return dateStr === new Date().toISOString().split('T')[0];
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+// ── Icons ──────────────────────────────────────────────────────────
+
 function SearchIcon({ size = 16, color = Colors.ink3 }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -42,10 +76,12 @@ function SearchIcon({ size = 16, color = Colors.ink3 }: { size?: number; color?:
   );
 }
 
-// ── Module icon circle ────────────────────────────────────────────
-function ModuleIconCircle({ module: mod }: { module: LibraryItem['module'] }) {
-  const meta = MODULE_META[mod];
-  const Icon = mod === 'reading' ? BookIcon : mod === 'listening' ? HeadphoneIcon : PenIcon;
+function TypeIcon({ type }: { type: ContentType }) {
+  const meta = TYPE_META[type];
+  const Icon =
+    type === 'reading'   ? BookIcon :
+    type === 'listening' ? HeadphoneIcon :
+    PenIcon;
   return (
     <View style={[g.iconCircle, { backgroundColor: meta.color }]}>
       <Icon size={20} color="#FFFFFF" strokeWidth={1.8} />
@@ -54,39 +90,39 @@ function ModuleIconCircle({ module: mod }: { module: LibraryItem['module'] }) {
 }
 
 // ── Card ──────────────────────────────────────────────────────────
+
 function LibraryCard({ item, cardWidth }: { item: LibraryItem; cardWidth: number }) {
-  const meta = MODULE_META[item.module];
+  const meta  = TYPE_META[item.content_type];
+  const today = isToday(item.date);
+
   return (
     <TouchableOpacity
       style={[g.card, { width: cardWidth }]}
       activeOpacity={0.8}
       onPress={() => router.push(meta.route as any)}
     >
-      {/* Colored top */}
       <View style={[g.cardTop, { backgroundColor: meta.bg }]}>
-        {item.isToday && (
+        {today && (
           <View style={g.todayBadge}>
             <Text style={g.todayBadgeText}>TODAY</Text>
           </View>
         )}
-        <ModuleIconCircle module={item.module} />
+        <TypeIcon type={item.content_type} />
       </View>
 
-      {/* Body */}
       <View style={g.cardBody}>
         <View style={[g.modPill, { backgroundColor: meta.bg }]}>
           <Text style={[g.modPillText, { color: meta.color }]}>{meta.label}</Text>
         </View>
         <Text style={g.cardTitle} numberOfLines={3}>{item.title}</Text>
-        {!item.isToday && (
-          <Text style={g.dayLabel}>Day {item.dayIndex}</Text>
-        )}
+        <Text style={g.dayLabel}>{today ? 'Today' : formatDate(item.date)}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-// ── Section header ────────────────────────────────────────────────
+// ── Section header ─────────────────────────────────────────────────
+
 function SectionHeader({ label, count }: { label: string; count: number }) {
   return (
     <View style={g.sectionRow}>
@@ -99,6 +135,7 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
 }
 
 // ── Grid renderer ──────────────────────────────────────────────────
+
 function CardGrid({ items, cardWidth, gap }: { items: LibraryItem[]; cardWidth: number; gap: number }) {
   const rows: LibraryItem[][] = [];
   for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
@@ -107,7 +144,7 @@ function CardGrid({ items, cardWidth, gap }: { items: LibraryItem[]; cardWidth: 
       {rows.map((row, ri) => (
         <View key={ri} style={[g.gridRow, { gap }]}>
           {row.map(item => (
-            <LibraryCard key={`${item.module}-${item.id}`} item={item} cardWidth={cardWidth} />
+            <LibraryCard key={item.id} item={item} cardWidth={cardWidth} />
           ))}
           {row.length === 1 && <View style={{ width: cardWidth }} />}
         </View>
@@ -117,39 +154,57 @@ function CardGrid({ items, cardWidth, gap }: { items: LibraryItem[]; cardWidth: 
 }
 
 // ── Screen ────────────────────────────────────────────────────────
+
 export default function LibraryScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && screenWidth >= 768;
 
+  const params = useLocalSearchParams<{ code?: string }>();
+
+  const [items,     setItems]     = useState<LibraryItem[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
   const [query,     setQuery]     = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
-  const allItems = useMemo(() => getAllLibraryItems(), []);
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = new URLSearchParams({ limit: '50' });
+      if (params.code) qs.set('code', params.code as string);
+      if (activeTab !== 'all') qs.set('type', activeTab);
+
+      const res = await fetch(`${API}/library?${qs}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setItems(json.items ?? []);
+    } catch (err: any) {
+      console.error('[library] fetch error:', err);
+      setError('Could not load library. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [params.code, activeTab]);
+
+  useEffect(() => { fetchItems(); }, [fetchItems]);
 
   const filtered = useMemo(() => {
-    let items = allItems;
-    if (activeTab !== 'all') items = items.filter(i => MODULE_META[i.module].filterTab === activeTab);
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      items = items.filter(i => i.title.toLowerCase().includes(q) || i.topic.toLowerCase().includes(q));
-    }
-    return [...items].sort((a, b) => {
-      if (a.isToday && !b.isToday) return -1;
-      if (!a.isToday && b.isToday) return 1;
-      return a.title.localeCompare(b.title);
-    });
-  }, [allItems, activeTab, query]);
+    if (!query.trim()) return items;
+    const q = query.toLowerCase();
+    return items.filter(i => i.title.toLowerCase().includes(q));
+  }, [items, query]);
 
-  const todayItems = filtered.filter(i => i.isToday);
-  const restItems  = filtered.filter(i => !i.isToday);
-  const todayCount = allItems.filter(i => i.isToday).length;
+  const todayItems = filtered.filter(i => isToday(i.date));
+  const restItems  = filtered.filter(i => !isToday(i.date));
+  const todayCount = items.filter(i => isToday(i.date)).length;
 
   // Card width
-  const hPad = isDesktop ? 32 : 20;
-  const maxContent = isDesktop ? 680 : screenWidth;
+  const hPad        = isDesktop ? 32 : 20;
+  const maxContent  = isDesktop ? 680 : screenWidth;
   const contentWidth = Math.min(screenWidth, maxContent) - hPad * 2;
-  const cardGap = 10;
-  const cardWidth = (contentWidth - cardGap) / 2;
+  const cardGap     = 10;
+  const cardWidth   = (contentWidth - cardGap) / 2;
 
   return (
     <AppLayout>
@@ -169,7 +224,7 @@ export default function LibraryScreen() {
               style={s.searchInput}
               value={query}
               onChangeText={setQuery}
-              placeholder="Search passages, topics…"
+              placeholder="Search titles…"
               placeholderTextColor={Colors.ink4}
               autoCorrect={false}
               autoCapitalize="none"
@@ -205,11 +260,21 @@ export default function LibraryScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {filtered.length === 0 ? (
+          {loading ? (
+            <View style={s.center}>
+              <ActivityIndicator size="large" color={Colors.p} />
+            </View>
+          ) : error ? (
+            <EmptyState
+              iconComponent={<SearchIcon size={28} color={Colors.ink3} />}
+              title="Could not load library"
+              subtitle={error}
+            />
+          ) : filtered.length === 0 ? (
             <EmptyState
               iconComponent={<SearchIcon size={28} color={Colors.ink3} />}
               title="Nothing found"
-              subtitle={query ? `Nothing matched "${query}"` : 'Try a different search term'}
+              subtitle={query ? `Nothing matched "${query}"` : 'Content will appear here as it is generated'}
             />
           ) : (
             <>
@@ -322,7 +387,5 @@ const s = StyleSheet.create({
 
   section: { marginBottom: 28 },
 
-  empty:      { paddingTop: 64, alignItems: 'center', gap: 10 },
-  emptyTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: Colors.ink },
-  emptyText:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3 },
+  center: { flex: 1, paddingTop: 80, alignItems: 'center' },
 });
