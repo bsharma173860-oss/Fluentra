@@ -1,7 +1,3 @@
-/**
- * Speaking session — matches page_sessions.jsx SpeakingSession
- * Left: part selector + live scores. Right: prompt + recording UI.
- */
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -9,279 +5,208 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-
-const C = {
-  bg: '#F9F8F5', bg2: '#F4F1EB', bg3: '#EDEAE3', card: '#FFFFFF',
-  border: '#EAEAEA', hairline: '#F4F4F4',
-  ink: '#000000', ink2: '#333333', ink3: '#666666', ink4: '#999999', ink5: '#BBBBBB',
-  brand: '#C04A06',
-  speaking: { c: '#5B4EFF', bg: '#EEEDFF' },
-};
+import { T } from '@/constants/theme';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 const PARTS = [
-  { n: 1, label: 'Part 1', desc: 'Interview — personal topics', prompt: 'The examiner will ask you about yourself and familiar topics.\n\nTell me about your hometown. What do you like most about where you grew up, and has it changed much since your childhood?' },
-  { n: 2, label: 'Part 2', desc: 'Long turn — 2-min monologue', prompt: 'Describe a place you visited recently that left a strong impression on you.\n\nYou should say:\n• where the place is\n• when you visited\n• what you did there\n• and explain why it left such an impression on you.' },
-  { n: 3, label: 'Part 3', desc: 'Discussion — abstract ideas', prompt: 'We\'ve been talking about memorable places. Now I\'d like to discuss some wider issues related to this.\n\nHow does tourism affect the cultural identity of popular travel destinations? Do you think the economic benefits outweigh the cultural costs?' },
+  { n: 1, label: 'Part 1 — Introduction',  desc: 'Answer questions about familiar topics.', prompt: 'Tell me about your hometown. What do you like most about it?' },
+  { n: 2, label: 'Part 2 — Long Turn',      desc: 'Speak for 1–2 minutes on the cue card.', prompt: 'Describe a time when you helped someone. You should say:\n• who you helped\n• what the situation was\n• how you helped them\nAnd explain how you felt afterwards.' },
+  { n: 3, label: 'Part 3 — Discussion',     desc: 'Discuss abstract topics with the AI examiner.', prompt: 'Do you think people today are less willing to help strangers than in the past? Why or why not?' },
 ];
 
-const SCORES = [
-  { l: 'Fluency', v: '7.0' },
-  { l: 'Lexical', v: '7.5' },
-  { l: 'Grammar', v: '6.5' },
-  { l: 'Pronunc.', v: '7.0' },
+const CRITERIA = [
+  { key: 'Fluency',       val: 7.5 },
+  { key: 'Vocabulary',    val: 7.0 },
+  { key: 'Grammar',       val: 6.5 },
+  { key: 'Pronunciation', val: 7.0 },
 ];
 
-type Phase = 'prep' | 'recording' | 'done';
-
-export default function SpeakingSession() {
-  const [phase, setPhase] = useState<Phase>('prep');
-  const [partIdx, setPartIdx] = useState(1);
+export default function SpeakingSessionScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
-  const part = PARTS[partIdx - 1];
+  const [activePart, setActivePart] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
-  const mins = Math.floor(820 / 60);
-  const secs = 820 % 60;
-  const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const part = PARTS[activePart];
+  const overallScore = CRITERIA.reduce((sum, c) => sum + c.val, 0) / CRITERIA.length;
 
-  function goNext() {
-    if (partIdx < 3) { setPartIdx(p => p + 1); setPhase('prep'); }
-    else router.push('/modules/speaking/results' as any);
-  }
-
-  if (isDesktop) {
-    return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' } as any}>
-        {/* Header */}
-        <div style={{ height: 64, borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 16, padding: '0 28px', flexShrink: 0, background: C.card } as any}>
-          <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: 10, background: C.bg2, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.ink2, cursor: 'pointer' } as any}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-          <div style={{ flex: 1, minWidth: 0 } as any}>
-            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 2 } as any}>IELTS Speaking</div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink } as any}>IELTS Speaking — AI Examiner</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 } as any}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 } as any}>
-              <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' } as any}>Progress</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 } as any}>
-                <div style={{ width: 160, height: 5, background: C.bg3, borderRadius: 99, overflow: 'hidden' } as any}>
-                  <div style={{ height: '100%', width: `${(partIdx - 1) * 33 + 20}%`, background: C.speaking.c, borderRadius: 99, transition: 'width .4s' } as any} />
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.ink4 } as any}>{(partIdx - 1) * 33 + 20}%</span>
-              </div>
-            </div>
-            <div style={{ padding: '7px 14px', borderRadius: 10, background: '#F4F4F0' } as any}>
-              <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, fontFamily: 'monospace' } as any}>{timeStr}</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr', overflow: 'hidden' } as any}>
-          {/* Part selector sidebar */}
-          <div style={{ borderRight: `1px solid ${C.border}`, padding: '24px 20px', background: C.bg, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' } as any}>
-            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 10 } as any}>SECTIONS</div>
-            {PARTS.map(p => (
-              <button key={p.n} onClick={() => { setPartIdx(p.n); setPhase('prep'); }}
-                style={{
-                  padding: '12px 14px', borderRadius: 12,
-                  border: `1px solid ${partIdx === p.n ? C.speaking.c + '44' : C.border}`,
-                  background: partIdx === p.n ? C.speaking.bg : C.card,
-                  textAlign: 'left', cursor: 'pointer',
-                } as any}>
-                <div style={{ fontSize: 11, color: partIdx === p.n ? C.speaking.c : C.ink4, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 3 } as any}>{p.label}</div>
-                <div style={{ fontSize: 11.5, color: partIdx === p.n ? C.speaking.c : C.ink3 } as any}>{p.desc}</div>
-              </button>
-            ))}
-
-            <div style={{ height: 1, background: C.border, margin: '10px 0' } as any} />
-            <div style={{ fontSize: 12, color: C.ink4, fontWeight: 600, marginBottom: 6 } as any}>Scores so far</div>
-            {SCORES.map(r => (
-              <div key={r.l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 } as any}>
-                <span style={{ color: C.ink3 } as any}>{r.l}</span>
-                <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 14, color: C.speaking.c } as any}>{r.v}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Main */}
-          <div style={{ overflow: 'auto', padding: '32px 40px', background: C.card, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' } as any}>
-            <div style={{ width: '100%', maxWidth: 560 } as any}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 99, background: C.speaking.bg, fontSize: 11, fontWeight: 700, color: C.speaking.c, marginBottom: 20 } as any}>
-                {part.label}
-              </div>
-
-              {/* Prompt card */}
-              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 18, padding: 28, marginBottom: 28 } as any}>
-                <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 10 } as any}>QUESTION</div>
-                <div style={{ fontSize: 16, color: C.ink, lineHeight: 1.65, whiteSpace: 'pre-line', fontFamily: "Georgia, serif" } as any}>{part.prompt}</div>
-              </div>
-
-              {phase === 'prep' && (
-                <div style={{ textAlign: 'center' } as any}>
-                  <div style={{ fontSize: 13, color: C.ink3, marginBottom: 20 } as any}>Take a moment to gather your thoughts, then begin recording.</div>
-                  <button onClick={() => setPhase('recording')} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '13px 28px', borderRadius: 12, background: C.speaking.c,
-                    color: '#fff', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer',
-                  } as any}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    Start recording
-                  </button>
-                </div>
-              )}
-
-              {phase === 'recording' && (
-                <div style={{ textAlign: 'center' } as any}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, color: C.brand } as any}>
-                    <span style={{ width: 8, height: 8, borderRadius: 4, background: C.brand, display: 'inline-block', animation: 'pulse 1s infinite' } as any} />
-                    <span style={{ fontSize: 13, fontWeight: 700 } as any}>Recording…</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 48, marginBottom: 20 } as any}>
-                    {Array.from({ length: 24 }).map((_, i) => (
-                      <div key={i} style={{ width: 5, borderRadius: 3, background: C.speaking.c, height: 8 + Math.abs(Math.sin(i * 0.8) * 28), opacity: 0.7 + Math.sin(i * 0.5) * 0.3 } as any} />
-                    ))}
-                  </div>
-                  <button onClick={() => setPhase('done')} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '11px 24px', borderRadius: 12, background: 'transparent',
-                    color: C.speaking.c, fontSize: 14, fontWeight: 700,
-                    border: `1.5px solid ${C.speaking.c}`, cursor: 'pointer',
-                  } as any}>
-                    Stop recording
-                  </button>
-                </div>
-              )}
-
-              {phase === 'done' && (
-                <div style={{ background: C.speaking.bg, border: `1px solid ${C.speaking.c}33`, borderRadius: 16, padding: 24 } as any}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.speaking.c, marginBottom: 12 } as any}>AI Feedback</div>
-                  <div style={{ fontSize: 13.5, color: C.ink, lineHeight: 1.65, marginBottom: 18 } as any}>
-                    Good response — clear structure and confident delivery. Your use of linking phrases was effective, though some hesitation was noted at complex points. Aim to expand your vocabulary range further.
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 } as any}>
-                    {SCORES.map(r => (
-                      <div key={r.l} style={{ background: C.card, borderRadius: 10, padding: '10px 14px' } as any}>
-                        <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 } as any}>{r.l}</div>
-                        <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 22, color: C.speaking.c } as any}>{r.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={goNext} style={{
-                    width: '100%', padding: '13px 24px', borderRadius: 12,
-                    background: C.speaking.c, color: '#fff', fontSize: 14, fontWeight: 700,
-                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  } as any}>
-                    {partIdx < 3 ? `Continue to Part ${partIdx + 1}` : 'Finish & see results'}
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Mobile
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-      <View style={h.bar}>
-        <TouchableOpacity style={h.exitBtn} onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, color: C.ink2 }}>✕</Text>
+  const content = (
+    <View style={{ flex: 1 }}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+          <Text style={s.backBtnText}>←</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={h.module}>IELTS SPEAKING</Text>
-          <Text style={h.title} numberOfLines={1}>{part.label} — {part.desc}</Text>
+          <Text style={s.headerTitle}>Speaking · IELTS Academic</Text>
+          <Text style={s.headerMeta}>AI Examiner · {PARTS.length} parts</Text>
         </View>
-        <Text style={h.timer}>{timeStr}</Text>
+        <View style={s.timerBadge}><Text style={s.timerText}>11:43</Text></View>
+      </View>
+      <View style={s.progressBar}>
+        <View style={[s.progressFill, { width: `${((activePart + 1) / PARTS.length) * 100}%` as any }]} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }} showsVerticalScrollIndicator={false}>
-        {/* Part nav */}
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {PARTS.map(p => (
-            <TouchableOpacity key={p.n} style={[m.partBtn, partIdx === p.n && { backgroundColor: C.speaking.bg, borderColor: C.speaking.c }]}
-              onPress={() => { setPartIdx(p.n); setPhase('prep'); }}>
-              <Text style={[m.partBtnText, partIdx === p.n && { color: C.speaking.c }]}>{p.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {isDesktop ? (
+        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+          {/* Left: part selector + live scores */}
+          <View style={s.leftPane}>
+            <Text style={s.paneTitle}>SECTIONS</Text>
+            {PARTS.map((p, i) => (
+              <TouchableOpacity key={i} style={[s.partBtn, activePart === i && s.partBtnActive]} onPress={() => setActivePart(i)}>
+                <View style={[s.partNum, activePart === i && { backgroundColor: T.speaking }]}>
+                  <Text style={[s.partNumText, activePart === i && { color: '#fff' }]}>{p.n}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.partLabel}>{p.label}</Text>
+                  <Text style={s.partDesc}>{p.desc}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
 
-        {/* Prompt */}
-        <View style={m.card}>
-          <Text style={m.sectionLabel}>QUESTION</Text>
-          <Text style={m.prompt}>{part.prompt}</Text>
-        </View>
-
-        {/* Phase UI */}
-        {phase === 'prep' && (
-          <View style={m.centred}>
-            <Text style={m.hint}>Take a moment to gather your thoughts.</Text>
-            <TouchableOpacity style={[m.bigBtn, { backgroundColor: C.speaking.c }]} onPress={() => setPhase('recording')}>
-              <Text style={m.bigBtnText}>🎙 Start recording</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {phase === 'recording' && (
-          <View style={m.centred}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <View style={[m.recDot, { backgroundColor: C.brand }]} />
-              <Text style={[m.hint, { color: C.brand, fontFamily: 'Inter_700Bold' }]}>Recording…</Text>
-            </View>
-            <TouchableOpacity style={[m.bigBtn, { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: C.speaking.c }]} onPress={() => setPhase('done')}>
-              <Text style={[m.bigBtnText, { color: C.speaking.c }]}>Stop recording</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {phase === 'done' && (
-          <View style={[m.card, { backgroundColor: C.speaking.bg, borderColor: C.speaking.c + '33' }]}>
-            <Text style={[m.sectionLabel, { color: C.speaking.c }]}>AI FEEDBACK</Text>
-            <Text style={m.feedbackBody}>
-              Good response — clear structure and confident delivery. Your use of linking phrases was effective, though some hesitation was noted at complex points.
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-              {SCORES.map(r => (
-                <View key={r.l} style={[m.scoreCard, { backgroundColor: C.card }]}>
-                  <Text style={m.scoreLabel}>{r.l}</Text>
-                  <Text style={[m.scoreVal, { color: C.speaking.c }]}>{r.v}</Text>
+            <View style={s.liveScores}>
+              <Text style={[s.paneTitle, { marginBottom: 10 }]}>YOUR SCORE SO FAR</Text>
+              <Text style={[s.overallScore, { color: T.speaking }]}>{overallScore.toFixed(1)}</Text>
+              {CRITERIA.map(c => (
+                <View key={c.key} style={s.criteriaRow}>
+                  <Text style={s.criteriaLabel}>{c.key}</Text>
+                  <View style={s.criteriaBar}>
+                    <View style={[s.criteriaFill, { width: `${(c.val / 9) * 100}%` as any }]} />
+                  </View>
+                  <Text style={s.criteriaScore}>{c.val.toFixed(1)}</Text>
                 </View>
               ))}
             </View>
-            <TouchableOpacity style={[m.bigBtn, { backgroundColor: C.speaking.c, marginTop: 16 }]} onPress={goNext}>
-              <Text style={m.bigBtnText}>{partIdx < 3 ? `Continue to Part ${partIdx + 1}` : 'Finish & see results'}</Text>
-            </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+
+          {/* Right: prompt + recording */}
+          <View style={s.rightPane}>
+            <Text style={s.questionLabel}>QUESTION {activePart + 1}</Text>
+            <Text style={s.promptText}>{part.prompt}</Text>
+            <Text style={s.prepHint}>Take a moment to prepare your answer, then press Record.</Text>
+            {!showFeedback ? (
+              <TouchableOpacity
+                style={[s.recordBtn, recording && s.recordBtnActive]}
+                onPress={() => {
+                  if (!recording) {
+                    setRecording(true);
+                    setTimeout(() => { setRecording(false); setShowFeedback(true); }, 3000);
+                  }
+                }}
+              >
+                <Text style={s.recordBtnText}>{recording ? '⏹ Stop & submit' : '🎤 Start recording'}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={s.feedbackCard}>
+                <Text style={s.feedbackTitle}>AI Feedback</Text>
+                <Text style={s.feedbackBody}>Good fluency and natural pacing. You used a good range of vocabulary. Consider adding a personal example to make Part 3 answers more vivid.</Text>
+                <TouchableOpacity
+                  style={s.nextBtn}
+                  onPress={() => {
+                    if (activePart < PARTS.length - 1) { setActivePart(p => p + 1); setShowFeedback(false); }
+                    else router.push('/modules/speaking/results' as any);
+                  }}
+                >
+                  <Text style={s.nextBtnText}>{activePart < PARTS.length - 1 ? 'Next part →' : 'Finish session →'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={s.mobileContent}>
+          {/* Part selector */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {PARTS.map((p, i) => (
+              <TouchableOpacity key={i} style={[s.mobilePartChip, activePart === i && s.mobilePartChipActive]} onPress={() => setActivePart(i)}>
+                <Text style={[s.mobilePartChipText, activePart === i && { color: T.speaking }]}>{p.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <View style={s.promptCard}>
+            <Text style={s.promptText}>{part.prompt}</Text>
+          </View>
+
+          {/* Live scores */}
+          <View style={s.mobileScoresCard}>
+            <Text style={s.paneTitle}>SCORE SO FAR</Text>
+            <Text style={[s.overallScore, { color: T.speaking, fontSize: 36 }]}>{overallScore.toFixed(1)}</Text>
+            {CRITERIA.map(c => (
+              <View key={c.key} style={s.criteriaRow}>
+                <Text style={s.criteriaLabel}>{c.key}</Text>
+                <View style={s.criteriaBar}><View style={[s.criteriaFill, { width: `${(c.val / 9) * 100}%` as any }]} /></View>
+                <Text style={s.criteriaScore}>{c.val.toFixed(1)}</Text>
+              </View>
+            ))}
+          </View>
+
+          <TouchableOpacity style={[s.recordBtn, recording && s.recordBtnActive]} onPress={() => {
+            if (!recording) { setRecording(true); setTimeout(() => { setRecording(false); router.push('/modules/speaking/results' as any); }, 3000); }
+          }}>
+            <Text style={s.recordBtnText}>{recording ? '⏹ Stop & submit' : '🎤 Start recording'}</Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
+    </View>
   );
+
+  if (isDesktop) return <AppLayout>{content}</AppLayout>;
+  return <SafeAreaView style={s.safe} edges={['top']}>{content}</SafeAreaView>;
 }
 
-const h = StyleSheet.create({
-  bar: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border },
-  exitBtn: { width: 34, height: 34, borderRadius: 9, backgroundColor: C.bg2, alignItems: 'center', justifyContent: 'center' },
-  module: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1, textTransform: 'uppercase' },
-  title: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.ink },
-  timer: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink4 },
-});
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: T.bg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border },
+  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { fontSize: 18, color: T.ink3 },
+  headerTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  headerMeta: { fontSize: 11, color: T.ink4 },
+  timerBadge: { backgroundColor: T.bg2, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  timerText: { fontSize: 12, fontWeight: '700', color: T.ink },
+  progressBar: { height: 3, backgroundColor: T.track },
+  progressFill: { height: '100%', backgroundColor: T.speaking },
 
-const m = StyleSheet.create({
-  card: { backgroundColor: C.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: C.border },
-  sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 },
-  partBtn: { flex: 1, padding: 10, borderRadius: 10, borderWidth: 1.5, borderColor: C.border, alignItems: 'center', backgroundColor: C.card },
-  partBtnText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: C.ink3 },
-  prompt: { fontFamily: 'Inter_400Regular', fontSize: 14, color: C.ink, lineHeight: 24 },
-  centred: { alignItems: 'center', gap: 12, padding: 20 },
-  hint: { fontFamily: 'Inter_400Regular', fontSize: 13, color: C.ink3, textAlign: 'center' },
-  recDot: { width: 8, height: 8, borderRadius: 4 },
-  bigBtn: { borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, alignItems: 'center', minWidth: 180 },
-  bigBtnText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
-  feedbackBody: { fontFamily: 'Inter_400Regular', fontSize: 13, color: C.ink, lineHeight: 20 },
-  scoreCard: { borderRadius: 10, padding: 10, minWidth: 80 },
-  scoreLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-  scoreVal: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 22, lineHeight: 24 },
+  leftPane: { width: 280, backgroundColor: T.paper, borderRightWidth: 1, borderRightColor: T.border, padding: 24, gap: 8 },
+  rightPane: { flex: 1, padding: 32, gap: 20 },
+  paneTitle: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 },
+
+  partBtn: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 10, borderRadius: 10 },
+  partBtnActive: { backgroundColor: T.speakingBg },
+  partNum: { width: 24, height: 24, borderRadius: 6, backgroundColor: T.bg2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  partNumText: { fontSize: 11, fontWeight: '700', color: T.ink4 },
+  partLabel: { fontSize: 12.5, fontWeight: '600', color: T.ink },
+  partDesc: { fontSize: 11, color: T.ink4, marginTop: 2 },
+
+  liveScores: { marginTop: 16, gap: 8 },
+  overallScore: { fontFamily: T.serif, fontSize: 44, lineHeight: 50, textAlign: 'center' },
+  criteriaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  criteriaLabel: { fontSize: 11, color: T.ink3, width: 88 },
+  criteriaBar: { flex: 1, height: 5, backgroundColor: T.bg3, borderRadius: 99, overflow: 'hidden' },
+  criteriaFill: { height: '100%', backgroundColor: T.speaking, borderRadius: 99 },
+  criteriaScore: { fontSize: 11, fontWeight: '700', color: T.ink, width: 28, textAlign: 'right' },
+
+  questionLabel: { fontSize: 10.5, fontWeight: '700', color: T.speaking, letterSpacing: 0.8, textTransform: 'uppercase' },
+  promptText: { fontFamily: T.serif, fontSize: 20, color: T.ink, lineHeight: 28 },
+  prepHint: { fontSize: 13, color: T.ink3, lineHeight: 20 },
+
+  recordBtn: { backgroundColor: T.speaking, borderRadius: 12, padding: 16, alignItems: 'center' },
+  recordBtnActive: { backgroundColor: '#B00020' },
+  recordBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  feedbackCard: { backgroundColor: T.speakingBg, borderRadius: 14, padding: 18, gap: 12 },
+  feedbackTitle: { fontSize: 13, fontWeight: '700', color: T.speaking },
+  feedbackBody: { fontSize: 13.5, color: T.ink, lineHeight: 20 },
+  nextBtn: { backgroundColor: T.speaking, borderRadius: 10, padding: 13, alignItems: 'center' },
+  nextBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  mobileContent: { padding: 16, gap: 16 },
+  mobilePartChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: T.border, marginRight: 8, backgroundColor: T.card },
+  mobilePartChipActive: { borderColor: T.speaking, backgroundColor: T.speakingBg },
+  mobilePartChipText: { fontSize: 12, fontWeight: '600', color: T.ink3 },
+  promptCard: { backgroundColor: T.card, borderRadius: 14, padding: 18, borderWidth: 1, borderColor: T.border },
+  mobileScoresCard: { backgroundColor: T.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: T.border, gap: 10 },
 });

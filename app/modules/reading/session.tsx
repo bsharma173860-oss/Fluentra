@@ -1,268 +1,194 @@
-/**
- * Reading session — matches page_sessions.jsx ReadingSession
- * Split-pane: passage left, MCQ/fill-in right, progress header
- */
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
-  Platform, useWindowDimensions,
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, Platform, useWindowDimensions, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-
-const C = {
-  bg: '#F9F8F5', bg2: '#F4F1EB', bg3: '#EDEAE3', card: '#FFFFFF',
-  border: '#EAEAEA', hairline: '#F4F4F4',
-  ink: '#000000', ink2: '#333333', ink3: '#666666', ink4: '#999999', ink5: '#BBBBBB',
-  reading: { c: '#C04A06', bg: '#FFE5DE' },
-  listening: { c: '#1A8F4E', bg: '#E2F5E9' },
-};
+import { T } from '@/constants/theme';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 const PASSAGE = `Sleep and memory have a complex, bidirectional relationship that researchers have only begun to fully understand in recent decades. During sleep, the brain does not simply rest — it actively processes and consolidates the information gathered during waking hours, transferring memories from short-term storage in the hippocampus to long-term storage in the cortex.
 
-A landmark 2003 study by Walker et al. demonstrated that students who learned a complex motor task and then slept showed a 20.5% improvement in performance the following day, compared to those who remained awake. This finding was replicated across verbal learning tasks, suggesting that sleep plays a domain-general role in memory consolidation rather than a task-specific one.
+A landmark 2003 study by Walker et al. demonstrated that students who learned a complex motor task and then slept showed a 20.5% improvement in performance the following day, compared to those who remained awake. This finding was replicated across verbal learning tasks, suggesting that sleep plays a domain-general role in memory consolidation.
 
 The precise mechanism appears to involve slow-wave sleep (SWS) and rapid eye movement (REM) sleep in different but complementary ways. SWS, characterised by large, slow brain oscillations, seems particularly important for declarative memory — facts and events. REM sleep, by contrast, appears critical for procedural and emotional memories.`;
 
 const QUESTIONS = [
-  { n: 1, type: 'Multiple choice', stem: 'What does the study by Walker et al. primarily demonstrate?', options: ['Sleep improves motor task performance only', 'Sleep plays a domain-general role in memory consolidation', 'REM sleep is more important than SWS', 'Memory consolidation only occurs during waking hours'] },
-  { n: 2, type: 'True / False / NG', stem: 'SWS is particularly important for procedural memory.', options: ['True', 'False', 'Not Given'] },
-  { n: 3, type: 'Multiple choice', stem: 'The 2003 Walker et al. study found what percentage improvement in performance?', options: ['15.0%', '20.5%', '25.0%', '18.5%'] },
-  { n: 4, type: 'Fill in the blank', stem: 'According to the passage, memories are transferred from the _______ to the cortex during sleep.', options: null },
-  { n: 5, type: 'Multiple choice', stem: 'Which type of sleep appears most critical for emotional memories?', options: ['Slow-wave sleep', 'REM sleep', 'Light sleep', 'Both equally'] },
+  { n: 1, type: 'True/False/NG', stem: 'The researcher claims that sleep deprivation directly causes memory loss.', options: ['True', 'False', 'Not Given'] },
+  { n: 2, type: 'Multiple Choice', stem: 'According to the passage, which factor most significantly affects cognitive performance?', options: ['Duration of sleep', 'Quality of sleep', 'Time of sleep onset', 'Sleep environment'] },
+  { n: 3, type: 'True/False/NG', stem: 'Students who studied before sleeping retained more information than those who studied in the morning.', options: ['True', 'False', 'Not Given'] },
+  { n: 4, type: 'Gap Fill', stem: 'The study found that ________ hours of sleep was optimal for memory consolidation.', options: null },
+  { n: 5, type: 'Multiple Choice', stem: 'The word "consolidation" in paragraph 3 is closest in meaning to:', options: ['strengthening', 'reduction', 'transfer', 'activation'] },
 ];
 
-function SessionHeader({ progress, timeLeft }: { progress: number; timeLeft: number }) {
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
-  const isWarning = timeLeft < 300;
-
-  if (Platform.OS === 'web') {
-    return (
-      <div style={{
-        height: 64, borderBottom: `1px solid ${C.border}`,
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '0 28px', flexShrink: 0, background: C.card,
-      } as any}>
-        <button onClick={() => router.back()} style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: C.bg2, border: `1px solid ${C.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: C.ink2, cursor: 'pointer',
-        } as any}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <div style={{ flex: 1, minWidth: 0 } as any}>
-          <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 2 } as any}>IELTS Reading</div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as any}>Sleep &amp; Memory — Academic Reading Passage 2</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 } as any}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 } as any}>
-            <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' } as any}>Progress</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 } as any}>
-              <div style={{ width: 160, height: 5, background: C.bg3, borderRadius: 99, overflow: 'hidden' } as any}>
-                <div style={{ height: '100%', width: `${progress}%`, background: C.reading.c, borderRadius: 99, transition: 'width .4s' } as any} />
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.ink4 } as any}>{Math.round(progress)}%</span>
-            </div>
-          </div>
-          <div style={{ padding: '7px 14px', borderRadius: 10, background: isWarning ? '#FEF2F2' : '#F4F4F0', border: `1px solid ${isWarning ? '#EF4444' : 'transparent'}` } as any}>
-            <div style={{ fontSize: 11, color: isWarning ? '#EF4444' : C.ink4, fontWeight: 700, letterSpacing: '.05em', fontFamily: 'monospace' } as any}>
-              {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <View style={h.bar}>
-      <TouchableOpacity style={h.exitBtn} onPress={() => router.back()}>
-        <Text style={{ fontSize: 16, color: C.ink2 }}>✕</Text>
-      </TouchableOpacity>
-      <View style={{ flex: 1 }}>
-        <Text style={h.module}>IELTS READING</Text>
-        <Text style={h.title} numberOfLines={1}>Sleep &amp; Memory — Passage 2</Text>
-      </View>
-      <Text style={[h.timer, isWarning && { color: '#EF4444' }]}>
-        {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-      </Text>
-    </View>
-  );
-}
-
-const h = StyleSheet.create({
-  bar: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border },
-  exitBtn: { width: 34, height: 34, borderRadius: 9, backgroundColor: C.bg2, alignItems: 'center', justifyContent: 'center' },
-  module: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1, textTransform: 'uppercase' },
-  title: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.ink },
-  timer: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink4, fontVariant: ['tabular-nums'] as any },
-});
-
-export default function ReadingSession() {
-  const [answered, setAnswered] = useState<Record<number, string>>({});
+export default function ReadingSessionScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const answered = Object.keys(answers).length;
 
-  const answered_count = Object.keys(answered).length;
-  const progress = 18 + (answered_count / QUESTIONS.length) * 82;
-
-  function answer(n: number, opt: string) {
-    setAnswered(a => ({ ...a, [n]: opt }));
+  function setAnswer(n: number, v: string) {
+    setAnswers(prev => ({ ...prev, [n]: v }));
   }
+
+  const content = (
+    <View style={{ flex: 1 }}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+          <Text style={s.backBtnText}>←</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>Reading · IELTS Academic</Text>
+          <Text style={s.headerMeta}>Passage 2 · Hard</Text>
+        </View>
+        <View style={s.timerBadge}><Text style={s.timerText}>28:14</Text></View>
+        <View style={s.progressBadge}>
+          <Text style={s.progressText}>{answered}/5</Text>
+        </View>
+      </View>
+
+      {/* Progress bar */}
+      <View style={s.progressBar}>
+        <View style={[s.progressFill, { width: `${(answered / 5) * 100}%` as any }]} />
+      </View>
+
+      {isDesktop ? (
+        // Desktop: side-by-side
+        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+          <ScrollView style={s.passagePane} contentContainerStyle={s.passagePaneContent}>
+            <Text style={s.passageEyebrow}>PASSAGE</Text>
+            <Text style={s.passageTitle}>Sleep &amp; Memory — Academic Reading Passage 2</Text>
+            <Text style={s.passageBody}>{PASSAGE}</Text>
+          </ScrollView>
+          <ScrollView style={s.questionsPane} contentContainerStyle={s.questionsPaneContent}>
+            <Text style={s.questionsEyebrow}>QUESTIONS 1–5</Text>
+            {QUESTIONS.map(q => <QuestionBlock key={q.n} q={q} answer={answers[q.n]} onAnswer={v => setAnswer(q.n, v)} />)}
+            <TouchableOpacity style={s.submitBtn} onPress={() => router.push('/modules/reading/results' as any)}>
+              <Text style={s.submitBtnText}>Submit &amp; get feedback</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      ) : (
+        // Mobile: single scroll
+        <ScrollView contentContainerStyle={s.mobileContent}>
+          <View style={s.passageCardMobile}>
+            <Text style={s.passageEyebrow}>PASSAGE</Text>
+            <Text style={s.passageTitle}>Sleep &amp; Memory</Text>
+            <Text style={s.passageBody} numberOfLines={6}>{PASSAGE}</Text>
+            <TouchableOpacity><Text style={[s.passageEyebrow, { color: T.reading }]}>Read full passage →</Text></TouchableOpacity>
+          </View>
+          {QUESTIONS.map(q => <QuestionBlock key={q.n} q={q} answer={answers[q.n]} onAnswer={v => setAnswer(q.n, v)} />)}
+          <TouchableOpacity style={s.submitBtn} onPress={() => router.push('/modules/reading/results' as any)}>
+            <Text style={s.submitBtnText}>Submit &amp; get feedback</Text>
+          </TouchableOpacity>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
+    </View>
+  );
 
   if (isDesktop) {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' } as any}>
-        <SessionHeader progress={progress} timeLeft={2180} />
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' } as any}>
-          {/* Passage */}
-          <div style={{ overflow: 'auto', padding: '28px 32px', borderRight: `1px solid ${C.border}`, background: C.bg } as any}>
-            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 14 } as any}>PASSAGE</div>
-            <div style={{ fontSize: 14.5, lineHeight: 1.85, color: C.ink2, fontFamily: "Georgia,'DM Serif Display',serif" } as any}>
-              {PASSAGE.split('\n\n').map((para, i) => (
-                <p key={i} style={{ marginBottom: 20 }}>{para}</p>
-              ))}
-            </div>
-          </div>
-
-          {/* Questions */}
-          <div style={{ overflow: 'auto', padding: '28px 32px', background: C.card } as any}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 } as any}>
-              <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' } as any}>QUESTIONS</div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: C.reading.bg, fontSize: 11, fontWeight: 700, color: C.reading.c } as any}>
-                {answered_count}/5
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 } as any}>
-              {QUESTIONS.map(q => (
-                <div key={q.n} style={{ padding: 18, borderRadius: 14, border: `1px solid ${answered[q.n] ? C.reading.c + '44' : C.border}`, background: answered[q.n] ? C.reading.bg : C.card, transition: 'all .2s' } as any}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 } as any}>
-                    <div style={{ width: 24, height: 24, borderRadius: 12, background: answered[q.n] ? C.reading.c : C.bg3, color: answered[q.n] ? '#fff' : C.ink4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 } as any}>{q.n}</div>
-                    <div>
-                      <div style={{ fontSize: 10, color: C.reading.c, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 } as any}>{q.type}</div>
-                      <div style={{ fontSize: 13.5, color: C.ink, lineHeight: 1.5 } as any}>{q.stem}</div>
-                    </div>
-                  </div>
-                  {q.options ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, paddingLeft: 34 } as any}>
-                      {q.options.map(opt => (
-                        <button key={opt} onClick={() => answer(q.n, opt)} style={{
-                          padding: '9px 14px', borderRadius: 9,
-                          border: `1.5px solid ${answered[q.n] === opt ? C.reading.c : C.border}`,
-                          background: answered[q.n] === opt ? C.reading.bg : 'transparent',
-                          fontSize: 13, fontWeight: answered[q.n] === opt ? 700 : 400,
-                          color: answered[q.n] === opt ? C.reading.c : C.ink,
-                          textAlign: 'left', cursor: 'pointer', transition: 'all .15s',
-                        } as any}>{opt}</button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ paddingLeft: 34 } as any}>
-                      <input
-                        placeholder="Write your answer here…"
-                        onChange={() => answer(q.n, 'filled')}
-                        style={{ width: '100%', padding: '10px 14px', borderRadius: 9, border: `1.5px solid ${C.border}`, fontSize: 13, color: C.ink, fontFamily: "'Inter',sans-serif", outline: 'none', boxSizing: 'border-box' } as any}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 24 } as any}>
-              <button onClick={() => router.push('/modules/reading/results' as any)} style={{
-                width: '100%', padding: '14px 24px', borderRadius: 12,
-                background: C.reading.c, color: '#fff', fontSize: 14, fontWeight: 700,
-                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              } as any}>
-                Submit answers
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AppLayout>
+        {content}
+      </AppLayout>
     );
   }
 
-  // Mobile layout
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-      <SessionHeader progress={progress} timeLeft={2180} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }} showsVerticalScrollIndicator={false}>
-        {/* Passage card */}
-        <View style={m.section}>
-          <Text style={m.sectionLabel}>PASSAGE</Text>
-          {PASSAGE.split('\n\n').map((para, i) => (
-            <Text key={i} style={m.passage}>{para}</Text>
-          ))}
-        </View>
-
-        {/* Questions */}
-        <View style={m.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={m.sectionLabel}>QUESTIONS</Text>
-            <View style={[m.chip, { backgroundColor: C.reading.bg }]}>
-              <Text style={[m.chipText, { color: C.reading.c }]}>{answered_count}/5</Text>
-            </View>
-          </View>
-          {QUESTIONS.map(q => (
-            <View key={q.n} style={[m.qCard, answered[q.n] && { borderColor: C.reading.c + '44', backgroundColor: C.reading.bg }]}>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-                <View style={[m.qNum, answered[q.n] && { backgroundColor: C.reading.c }]}>
-                  <Text style={[m.qNumText, answered[q.n] && { color: '#fff' }]}>{q.n}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[m.qType, { color: C.reading.c }]}>{q.type}</Text>
-                  <Text style={m.qStem}>{q.stem}</Text>
-                </View>
-              </View>
-              {q.options ? (
-                <View style={{ gap: 6, paddingLeft: 32 }}>
-                  {q.options.map(opt => (
-                    <TouchableOpacity key={opt} onPress={() => answer(q.n, opt)}
-                      style={[m.option, answered[q.n] === opt && { borderColor: C.reading.c, backgroundColor: C.reading.bg }]}>
-                      <Text style={[m.optionText, answered[q.n] === opt && { color: C.reading.c, fontFamily: 'Inter_700Bold' }]}>{opt}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <View style={{ paddingLeft: 32 }}>
-                  <TextInput
-                    placeholder="Write your answer here…"
-                    style={m.textInput}
-                    onChangeText={() => answer(q.n, 'filled')}
-                    placeholderTextColor={C.ink5}
-                  />
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-
-        <TouchableOpacity style={[m.submitBtn, { backgroundColor: C.reading.c }]} onPress={() => router.push('/modules/reading/results' as any)}>
-          <Text style={m.submitText}>Submit answers</Text>
-        </TouchableOpacity>
-      </ScrollView>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {content}
     </SafeAreaView>
   );
 }
 
-const m = StyleSheet.create({
-  section: { backgroundColor: C.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: C.border },
-  sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 12 },
-  passage: { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 24, color: C.ink2, marginBottom: 14 },
-  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
-  chipText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
-  qCard: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 14, marginBottom: 10 },
-  qNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: C.bg3, alignItems: 'center', justifyContent: 'center' },
-  qNumText: { fontFamily: 'Inter_700Bold', fontSize: 11, color: C.ink4 },
-  qType: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 },
-  qStem: { fontFamily: 'Inter_400Regular', fontSize: 13, color: C.ink, lineHeight: 20 },
-  option: { padding: 10, borderRadius: 9, borderWidth: 1.5, borderColor: C.border, backgroundColor: 'transparent' },
-  optionText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: C.ink },
-  textInput: { borderWidth: 1.5, borderColor: C.border, borderRadius: 9, padding: 10, fontSize: 13, color: C.ink, fontFamily: 'Inter_400Regular' },
-  submitBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
-  submitText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
+function QuestionBlock({ q, answer, onAnswer }: {
+  q: typeof QUESTIONS[0];
+  answer: string | undefined;
+  onAnswer: (v: string) => void;
+}) {
+  return (
+    <View style={s.questionBlock}>
+      <View style={s.questionHeader}>
+        <View style={s.questionNum}><Text style={s.questionNumText}>{q.n}</Text></View>
+        <Text style={s.questionType}>{q.type}</Text>
+      </View>
+      <Text style={s.questionStem}>{q.stem}</Text>
+      {q.options ? (
+        <View style={s.options}>
+          {q.options.map(o => (
+            <TouchableOpacity
+              key={o}
+              style={[s.option, answer === o && s.optionSelected]}
+              onPress={() => onAnswer(o)}
+            >
+              <View style={[s.optionDot, answer === o && s.optionDotSelected]} />
+              <Text style={[s.optionText, answer === o && s.optionTextSelected]}>{o}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <TextInput
+          style={s.gapInput}
+          placeholder="Type your answer…"
+          placeholderTextColor={T.ink4}
+          value={answer || ''}
+          onChangeText={onAnswer}
+        />
+      )}
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: T.bg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border, backgroundColor: T.bg },
+  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { fontSize: 18, color: T.ink3 },
+  headerTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  headerMeta: { fontSize: 11, color: T.ink4 },
+  timerBadge: { backgroundColor: T.bg2, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  timerText: { fontSize: 12, fontWeight: '700', color: T.ink, fontVariant: ['tabular-nums'] },
+  progressBadge: { backgroundColor: T.readingBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  progressText: { fontSize: 12, fontWeight: '700', color: T.reading },
+  progressBar: { height: 3, backgroundColor: T.track, flexShrink: 0 },
+  progressFill: { height: '100%', backgroundColor: T.reading },
+
+  // Desktop split
+  passagePane: { flex: 1, backgroundColor: T.paper, borderRightWidth: 1, borderRightColor: T.border },
+  passagePaneContent: { padding: 28, gap: 12 },
+  questionsPane: { width: 380, backgroundColor: T.card },
+  questionsPaneContent: { padding: 24, gap: 16 },
+
+  // Mobile
+  mobileContent: { padding: 16, gap: 16 },
+  passageCardMobile: { backgroundColor: T.paper, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: T.border, gap: 8 },
+
+  passageEyebrow: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 0.8, textTransform: 'uppercase' },
+  passageTitle: { fontFamily: T.serif, fontSize: 20, color: T.ink, lineHeight: 26 },
+  passageBody: { fontSize: 14, color: T.ink2, lineHeight: 22 },
+
+  questionsEyebrow: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 0.8, textTransform: 'uppercase' },
+
+  // Question block
+  questionBlock: { backgroundColor: T.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: T.border, gap: 10 },
+  questionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  questionNum: { width: 24, height: 24, borderRadius: 6, backgroundColor: T.readingBg, alignItems: 'center', justifyContent: 'center' },
+  questionNumText: { fontSize: 12, fontWeight: '700', color: T.reading },
+  questionType: { fontSize: 11, color: T.ink4, fontWeight: '600' },
+  questionStem: { fontSize: 14, color: T.ink, lineHeight: 20 },
+  options: { gap: 8 },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 9, borderWidth: 1, borderColor: T.border, backgroundColor: T.bg },
+  optionSelected: { borderColor: T.reading, backgroundColor: T.readingBg },
+  optionDot: { width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: T.border },
+  optionDotSelected: { backgroundColor: T.reading, borderColor: T.reading },
+  optionText: { fontSize: 13, color: T.ink2 },
+  optionTextSelected: { color: T.reading, fontWeight: '600' },
+  gapInput: { borderWidth: 1.5, borderColor: T.border, borderRadius: 9, padding: 10, fontSize: 14, color: T.ink },
+
+  submitBtn: { backgroundColor: T.reading, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 },
+  submitBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });

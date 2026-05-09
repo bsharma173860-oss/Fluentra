@@ -61,10 +61,11 @@ export default function TabLayout() {
         />
       ))}
       {/* Pages accessible from sidebar / navigation but not shown in mobile tab bar */}
-      <Tabs.Screen name="scores/index"      options={{ href: null }} />
-      <Tabs.Screen name="practice/index"    options={{ href: null }} />
-      <Tabs.Screen name="settings/index"    options={{ href: null }} />
-      <Tabs.Screen name="settings/account"  options={{ href: null }} />
+      <Tabs.Screen name="scores/index"        options={{ href: null }} />
+      <Tabs.Screen name="practice/index"      options={{ href: null }} />
+      <Tabs.Screen name="settings/index"      options={{ href: null }} />
+      <Tabs.Screen name="settings/account"    options={{ href: null }} />
+      <Tabs.Screen name="leaderboard/index"   options={{ href: null }} />
     </Tabs>
   );
 }

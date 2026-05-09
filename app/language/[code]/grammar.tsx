@@ -1,450 +1,171 @@
-/**
- * language/[code]/grammar.tsx
- * Daily grammar lesson with examples and interactive exercises.
- * Route: /language/:code/grammar
- */
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors } from '@/constants/colors';
-import { useAuth } from '@/lib/authContext';
+import { T } from '@/constants/theme';
+import { AppLayout } from '@/components/layout/AppLayout';
 
-const API = process.env.EXPO_PUBLIC_API_URL ?? '/api';
+const LESSONS = [
+  { title: 'Present Perfect vs Simple Past', level: 'B1', mins: 8,  done: true  },
+  { title: 'Modal Verbs of Deduction',        level: 'B2', mins: 10, done: true  },
+  { title: 'Conditional Sentences (Mixed)',   level: 'B2', mins: 12, done: false },
+  { title: 'Passive Voice in Academic Writing', level: 'C1', mins: 9, done: false },
+  { title: 'Cleft Sentences for Emphasis',    level: 'C1', mins: 7,  done: false },
+];
 
-// ── Types ──────────────────────────────────────────────────────────
-
-type Example = {
-  sentence:    string;
-  note:        string;
-  translation?: string;
-};
-
-type Exercise = {
-  question: string;
-  answer:   string;
-  options?: string[];   // if present → multiple choice; else → fill-in-the-blank
-};
-
-type GrammarContent = {
-  title:       string;
-  topic:       string;
-  explanation: string;
-  examples:    Example[];
-  exercises:   Exercise[];
-};
-
-type AnswerState = 'unanswered' | 'correct' | 'wrong';
-
-// ── Helpers ────────────────────────────────────────────────────────
-
-async function fetchGrammar(userId: string, languageCode: string, examType?: string): Promise<GrammarContent> {
-  // 1. Try cache
-  try {
-    const qs  = new URLSearchParams({ userId, languageCode, module: 'grammar' });
-    const res = await fetch(`${API}/content/today?${qs}`);
-    if (res.ok) {
-      const json = await res.json();
-      if (json.content?.topic) return json.content as GrammarContent;
-    }
-  } catch {}
-
-  // 2. Generate fresh
-  const res = await fetch(`${API}/content/generate`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ userId, languageCode, module: 'grammar', examType }),
-  });
-  if (!res.ok) throw new Error(`generate failed: ${res.status}`);
-  const json = await res.json();
-  return json.content as GrammarContent;
-}
-
-// ── Section title ──────────────────────────────────────────────────
-
-function SectionTitle({ number, label }: { number: number; label: string }) {
-  return (
-    <View style={st.row}>
-      <View style={st.badge}>
-        <Text style={st.num}>{number}</Text>
-      </View>
-      <Text style={st.label}>{label}</Text>
-    </View>
-  );
-}
-
-const st = StyleSheet.create({
-  row:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  badge: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.p, alignItems: 'center', justifyContent: 'center' },
-  num:   { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.white },
-  label: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink },
-});
-
-// ── Exercise item ──────────────────────────────────────────────────
-
-function ExerciseItem({
-  exercise,
-  index,
-  answered,
-  chosenAnswer,
-  onAnswer,
-}: {
-  exercise:     Exercise;
-  index:        number;
-  answered:     boolean;
-  chosenAnswer: string | null;
-  onAnswer:     (answer: string) => void;
-}) {
-  const isCorrect = chosenAnswer === exercise.answer;
-  const hasOptions = exercise.options && exercise.options.length > 0;
-
-  return (
-    <View style={ex.wrap}>
-      <Text style={ex.qnum}>Q{index + 1}</Text>
-      <Text style={ex.question}>{exercise.question}</Text>
-
-      {hasOptions ? (
-        // Multiple choice
-        <View style={ex.opts}>
-          {exercise.options!.map(opt => {
-            let bg: string = Colors.bg2;
-            let border: string = Colors.border;
-            let textColor: string = Colors.ink;
-            if (answered) {
-              if (opt === exercise.answer) {
-                bg = Colors.green_bg; border = Colors.green; textColor = Colors.green;
-              } else if (opt === chosenAnswer) {
-                bg = Colors.danger_bg; border = Colors.danger; textColor = Colors.danger;
-              }
-            } else if (opt === chosenAnswer) {
-              bg = Colors.p_soft; border = Colors.p; textColor = Colors.p;
-            }
-            return (
-              <TouchableOpacity
-                key={opt}
-                style={[ex.opt, { backgroundColor: bg, borderColor: border }]}
-                onPress={() => !answered && onAnswer(opt)}
-                activeOpacity={answered ? 1 : 0.7}
-                disabled={answered}
-              >
-                <Text style={[ex.optText, { color: textColor }]}>{opt}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ) : (
-        // Fill-in-the-blank: tap to reveal
-        <TouchableOpacity
-          style={[
-            ex.revealBtn,
-            answered && isCorrect  && ex.revealCorrect,
-            answered && !isCorrect && ex.revealWrong,
-          ]}
-          onPress={() => !answered && onAnswer(exercise.answer)}
-          activeOpacity={answered ? 1 : 0.8}
-          disabled={answered}
-        >
-          <Text style={[ex.revealText, answered && { color: isCorrect ? Colors.green : Colors.danger }]}>
-            {answered ? exercise.answer : 'Tap to reveal answer'}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {answered && (
-        <View style={ex.feedbackRow}>
-          <Text style={[ex.feedbackIcon, isCorrect ? ex.correct : ex.wrong]}>
-            {isCorrect ? '✓ Correct!' : '✗ The answer is: ' + exercise.answer}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-const ex = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    gap: 10,
-    marginBottom: 12,
-  },
-  qnum:     { fontFamily: 'Inter_700Bold', fontSize: 11, color: Colors.p, textTransform: 'uppercase', letterSpacing: 0.5 },
-  question: { fontFamily: 'Inter_500Medium', fontSize: 15, color: Colors.ink, lineHeight: 22 },
-  opts:     { gap: 8 },
-  opt: {
-    borderRadius: 10,
-    borderWidth: 1.5,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  optText:      { fontFamily: 'Inter_500Medium', fontSize: 14 },
-  revealBtn: {
-    backgroundColor: Colors.p_soft,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: Colors.p,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  revealCorrect: { backgroundColor: Colors.green_bg, borderColor: Colors.green },
-  revealWrong:   { backgroundColor: Colors.danger_bg, borderColor: Colors.danger },
-  revealText:    { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.p },
-  feedbackRow:   { flexDirection: 'row', alignItems: 'center' },
-  feedbackIcon:  { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  correct:       { color: Colors.green },
-  wrong:         { color: Colors.danger },
-});
-
-// ── Score banner ───────────────────────────────────────────────────
-
-function ScoreBanner({ correct, total }: { correct: number; total: number }) {
-  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-  const emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '📚';
-  return (
-    <View style={sb.wrap}>
-      <Text style={sb.emoji}>{emoji}</Text>
-      <Text style={sb.score}>You got {correct}/{total} correct!</Text>
-      <Text style={sb.note}>Review tomorrow to reinforce this topic.</Text>
-    </View>
-  );
-}
-
-const sb = StyleSheet.create({
-  wrap:  { backgroundColor: Colors.p_soft, borderRadius: 16, padding: 20, alignItems: 'center', gap: 6, marginBottom: 20 },
-  emoji: { fontSize: 32 },
-  score: { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.p },
-  note:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, textAlign: 'center' },
-});
-
-// ── Main screen ────────────────────────────────────────────────────
+const EXERCISES = [
+  { q: 'She ______ (live) in Paris for three years.', options: ['lives', 'has lived', 'lived', 'is living'], answer: 'has lived' },
+  { q: 'If I ______ (know) earlier, I would have helped.', options: ['knew', 'had known', 'know', 'would know'], answer: 'had known' },
+  { q: 'The report ______ (write) by the research team.', options: ['wrote', 'was written', 'has written', 'is writing'], answer: 'was written' },
+];
 
 export default function GrammarScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
-  const { user }  = useAuth();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+  const [activeLesson, setActiveLesson] = useState(2);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
 
-  const [content,  setContent]  = useState<GrammarContent | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-
-  // Per-exercise: selected option and whether submitted
-  const [choices,   setChoices]   = useState<(string | null)[]>([]);
-  const [answered,  setAnswered]  = useState<boolean[]>([]);
-  const [allDone,   setAllDone]   = useState(false);
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const g = await fetchGrammar(user.id, code as string);
-      setContent(g);
-      const n = g.exercises?.length ?? 0;
-      setChoices(new Array(n).fill(null));
-      setAnswered(new Array(n).fill(false));
-      setAllDone(false);
-    } catch (err: any) {
-      setError('Could not load grammar lesson. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, code]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const handleAnswer = useCallback((exerciseIndex: number, answer: string) => {
-    setChoices(prev => { const n = [...prev]; n[exerciseIndex] = answer; return n; });
-    setAnswered(prev => {
-      const n = [...prev]; n[exerciseIndex] = true;
-      if (n.every(Boolean)) setAllDone(true);
-      return n;
-    });
-  }, []);
-
-  const correctCount = answered.reduce((acc, done, i) => {
-    if (!done || !content) return acc;
-    return acc + (choices[i] === content.exercises[i].answer ? 1 : 0);
-  }, 0);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={s.safe}>
-        <View style={s.center}>
-          <ActivityIndicator size="large" color={Colors.p} />
-          <Text style={s.loadingText}>Loading grammar lesson…</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error || !content) {
-    return (
-      <SafeAreaView style={s.safe}>
-        <View style={s.center}>
-          <Text style={s.errorText}>{error ?? 'No grammar lesson available today.'}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={load}>
-            <Text style={s.retryText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={s.safe}>
-      {/* Header */}
+  const content = (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.scroll, isDesktop && s.scrollDesktop]} showsVerticalScrollIndicator={false}>
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Text style={s.back}>←</Text>
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Grammar</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}><Text style={s.backBtnText}>←</Text></TouchableOpacity>
+        <Text style={s.headerTitle}>Grammar · {code?.toUpperCase()}</Text>
       </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={s.scroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Section 1: Explanation ── */}
-        <View style={s.section}>
-          <SectionTitle number={1} label="Explanation" />
+      {isDesktop ? (
+        <View style={s.desktopLayout}>
+          {/* Sidebar lesson list */}
+          <View style={s.lessonSidebar}>
+            <Text style={s.sidebarTitle}>LESSONS</Text>
+            {LESSONS.map((l, i) => (
+              <TouchableOpacity key={i} style={[s.lessonItem, activeLesson === i && s.lessonItemActive]} onPress={() => setActiveLesson(i)}>
+                <View style={[s.lessonCheck, l.done && s.lessonCheckDone]}><Text style={{ color: l.done ? '#fff' : T.ink5, fontSize: 11 }}>{l.done ? '✓' : i + 1}</Text></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.lessonTitle, activeLesson === i && { color: T.writing }]} numberOfLines={2}>{l.title}</Text>
+                  <Text style={s.lessonMeta}>{l.level} · {l.mins} min</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Lesson content */}
+          <View style={{ flex: 1 }}>
+            {renderLesson()}
+          </View>
+        </View>
+      ) : (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginBottom: 12 }}>
+            {LESSONS.map((l, i) => (
+              <TouchableOpacity key={i} style={[s.lessonChip, activeLesson === i && s.lessonChipActive]} onPress={() => setActiveLesson(i)}>
+                <Text style={[s.lessonChipText, activeLesson === i && { color: T.writing }]} numberOfLines={1}>{l.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {renderLesson()}
+        </>
+      )}
+      <View style={{ height: 40 }} />
+    </ScrollView>
+  );
 
-          <Text style={s.topic}>{content.title ?? content.topic}</Text>
+  function renderLesson() {
+    const l = LESSONS[activeLesson];
+    return (
+      <View style={s.lessonContent}>
+        <View style={s.lessonHero}>
+          <Text style={s.lessonHeroEyebrow}>{l.level} · {l.mins} min</Text>
+          <Text style={s.lessonHeroTitle}>{l.title}</Text>
+        </View>
 
-          <View style={s.explanationBox}>
-            <Text style={s.explanationText}>{content.explanation}</Text>
+        <View style={s.explanationCard}>
+          <Text style={s.explanationTitle}>Explanation</Text>
+          <Text style={s.explanationBody}>
+            In English, the present perfect connects past actions to the present moment. Use it when the exact time is not specified or not important. Example: "I have visited Paris." — the exact time doesn't matter; what matters is the current state.
+          </Text>
+          <View style={s.exampleBox}>
+            <Text style={s.exampleLabel}>EXAMPLE</Text>
+            <Text style={s.exampleText}>✓ She has worked here for three years. (still working)</Text>
+            <Text style={s.exampleText}>✓ He worked here last year. (no longer working)</Text>
           </View>
         </View>
 
-        {/* ── Section 2: Examples ── */}
-        {content.examples?.length > 0 && (
-          <View style={s.section}>
-            <SectionTitle number={2} label="Examples" />
-            <View style={s.examplesWrap}>
-              {content.examples.map((ex, i) => (
-                <View key={i} style={s.exampleCard}>
-                  <Text style={s.exampleSentence}>{ex.sentence}</Text>
-                  {ex.translation ? (
-                    <Text style={s.exampleTranslation}>{ex.translation}</Text>
-                  ) : null}
-                  {ex.note ? (
-                    <View style={s.noteRow}>
-                      <Text style={s.noteDot}>•</Text>
-                      <Text style={s.noteText}>{ex.note}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              ))}
+        <Text style={s.exercisesTitle}>Practice exercises</Text>
+        {EXERCISES.map((e, i) => (
+          <View key={i} style={s.exercise}>
+            <Text style={s.exerciseQ}>{e.q}</Text>
+            <View style={s.exerciseOptions}>
+              {e.options.map(o => {
+                const sel = answers[i] === o;
+                const correct = sel && o === e.answer;
+                const wrong = sel && o !== e.answer;
+                return (
+                  <TouchableOpacity key={o} style={[s.exerciseOpt, sel && (correct ? s.optCorrect : s.optWrong)]} onPress={() => setAnswers(a => ({ ...a, [i]: o }))}>
+                    <Text style={[s.exerciseOptText, correct && { color: T.listening, fontWeight: '700' }, wrong && { color: '#B00020' }]}>{o}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
+            {answers[i] && <Text style={[s.exerciseFeedback, { color: answers[i] === e.answer ? T.listening : '#B00020' }]}>{answers[i] === e.answer ? '✓ Correct!' : `✗ Correct: ${e.answer}`}</Text>}
           </View>
-        )}
+        ))}
 
-        {/* ── Section 3: Exercises ── */}
-        {content.exercises?.length > 0 && (
-          <View style={s.section}>
-            <SectionTitle number={3} label="Exercises" />
-
-            {allDone && (
-              <ScoreBanner correct={correctCount} total={content.exercises.length} />
-            )}
-
-            {content.exercises.map((exercise, i) => (
-              <ExerciseItem
-                key={i}
-                exercise={exercise}
-                index={i}
-                answered={answered[i]}
-                chosenAnswer={choices[i]}
-                onAnswer={answer => handleAnswer(i, answer)}
-              />
-            ))}
-          </View>
-        )}
-
-        <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
-          <Text style={s.backBtnText}>← Back to Language</Text>
+        <TouchableOpacity style={s.nextLessonBtn} onPress={() => setActiveLesson(i => Math.min(i + 1, LESSONS.length - 1))}>
+          <Text style={s.nextLessonBtnText}>Next lesson →</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
-  );
+  if (isDesktop) return <AppLayout languageCode={code}>{content}</AppLayout>;
+  return <SafeAreaView style={s.safe} edges={['top']}>{content}</SafeAreaView>;
 }
 
-// ── Styles ────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: Colors.bg },
-  scroll: { padding: 20 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
+  safe: { flex: 1, backgroundColor: T.bg },
+  scroll: { paddingBottom: 20 },
+  scrollDesktop: {},
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: T.border },
+  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { fontSize: 18, color: T.ink3 },
+  headerTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: T.ink },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  back:        { fontFamily: 'Inter_500Medium', fontSize: 20, color: Colors.ink2 },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.ink },
+  desktopLayout: { flexDirection: 'row' },
+  lessonSidebar: { width: 260, backgroundColor: T.paper, borderRightWidth: 1, borderRightColor: T.border, padding: 20, gap: 6 },
+  sidebarTitle: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 },
+  lessonItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 10, borderRadius: 10 },
+  lessonItemActive: { backgroundColor: T.writingBg },
+  lessonCheck: { width: 22, height: 22, borderRadius: 6, backgroundColor: T.bg2, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+  lessonCheckDone: { backgroundColor: T.listening },
+  lessonTitle: { fontSize: 12.5, fontWeight: '600', color: T.ink, lineHeight: 18 },
+  lessonMeta: { fontSize: 11, color: T.ink4, marginTop: 2 },
 
-  section:   { marginBottom: 28 },
-  topic:     { fontFamily: 'Inter_700Bold', fontSize: 22, color: Colors.ink, marginBottom: 12 },
+  lessonChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: T.border, marginRight: 8, backgroundColor: T.card, maxWidth: 200 },
+  lessonChipActive: { borderColor: T.writing, backgroundColor: T.writingBg },
+  lessonChipText: { fontSize: 12, fontWeight: '600', color: T.ink3 },
 
-  explanationBox: {
-    backgroundColor: Colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-  },
-  explanationText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: Colors.ink2,
-    lineHeight: 24,
-  },
+  lessonContent: { padding: 20, gap: 16 },
+  lessonHero: { gap: 6 },
+  lessonHeroEyebrow: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 0.8, textTransform: 'uppercase' },
+  lessonHeroTitle: { fontFamily: T.serif, fontSize: 26, color: T.ink, lineHeight: 32 },
 
-  examplesWrap: { gap: 10 },
-  exampleCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.p,
-    gap: 6,
-  },
-  exampleSentence:    { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: Colors.ink, lineHeight: 22 },
-  exampleTranslation: { fontFamily: 'Inter_400Regular',  fontSize: 13, color: Colors.ink3, fontStyle: 'italic' },
-  noteRow:   { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
-  noteDot:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.p, marginTop: 1 },
-  noteText:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink3, flex: 1, lineHeight: 19 },
+  explanationCard: { backgroundColor: T.card, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: T.border, gap: 12 },
+  explanationTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  explanationBody: { fontSize: 14, color: T.ink2, lineHeight: 22 },
+  exampleBox: { backgroundColor: T.writingBg, borderRadius: 10, padding: 12, gap: 6 },
+  exampleLabel: { fontSize: 10, fontWeight: '700', color: T.writing, letterSpacing: 0.8, textTransform: 'uppercase' },
+  exampleText: { fontSize: 13, color: T.ink, lineHeight: 18 },
 
-  backBtn: {
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  backBtnText: { fontFamily: 'Inter_500Medium', fontSize: 14, color: Colors.ink3 },
+  exercisesTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  exercise: { backgroundColor: T.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: T.border, gap: 10 },
+  exerciseQ: { fontSize: 14, color: T.ink, lineHeight: 20 },
+  exerciseOptions: { gap: 6 },
+  exerciseOpt: { padding: 10, borderRadius: 9, borderWidth: 1, borderColor: T.border, backgroundColor: T.bg },
+  optCorrect: { borderColor: T.listening, backgroundColor: T.listeningBg },
+  optWrong: { borderColor: '#B00020', backgroundColor: '#FCE6E2' },
+  exerciseOptText: { fontSize: 13, color: T.ink },
+  exerciseFeedback: { fontSize: 12, fontWeight: '700' },
 
-  loadingText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3, marginTop: 12 },
-  errorText:   { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3, textAlign: 'center' },
-  retryBtn:    { paddingHorizontal: 24, paddingVertical: 12, backgroundColor: Colors.p, borderRadius: 10 },
-  retryText:   { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.white },
+  nextLessonBtn: { backgroundColor: T.writing, borderRadius: 12, padding: 14, alignItems: 'center' },
+  nextLessonBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });

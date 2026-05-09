@@ -1,285 +1,168 @@
-/**
- * Writing session — matches page_sessions.jsx WritingSession
- * Left: prompt + task switcher + chart + AI tips. Right: textarea + word count.
- */
 import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
-  Platform, useWindowDimensions,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { T } from '@/constants/theme';
+import { AppLayout } from '@/components/layout/AppLayout';
 
-const C = {
-  bg: '#F9F8F5', bg2: '#F4F1EB', bg3: '#EDEAE3', card: '#FFFFFF',
-  border: '#EAEAEA', hairline: '#F4F4F4',
-  ink: '#000000', ink2: '#333333', ink3: '#666666', ink4: '#999999', ink5: '#BBBBBB',
-  writing: { c: '#A65A00', bg: '#FFEAC2' },
-  listening: { c: '#1A8F4E', bg: '#E2F5E9' },
-};
-
-const TASK1_TIPS = [
-  'Begin with an overview sentence describing the main trend.',
-  'Avoid copying the question — paraphrase it in your introduction.',
-  'Group data points logically — do not describe every value.',
+const TASKS = [
+  {
+    n: 1, label: 'Task 1 — Graph Description', meta: 'Task 1 · Minimum 150 words · 20 min',
+    prompt: 'The graph below shows the number of international students studying in the UK between 2005 and 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+    tips: ['Identify the overall trend first.', 'Include specific data points with numbers.', 'Compare and contrast different periods.', 'Avoid giving opinions — only describe.'],
+  },
+  {
+    n: 2, label: 'Task 2 — Opinion Essay', meta: 'Task 2 · Minimum 250 words · 40 min',
+    prompt: 'Some people believe that technology has made it harder for people to maintain meaningful relationships. To what extent do you agree or disagree?\n\nGive reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words.',
+    tips: ['State your position clearly in the intro.', 'Use one main idea per body paragraph.', 'Include specific examples to support claims.', 'Write a clear conclusion restating your view.'],
+  },
 ];
 
-const TASK2_TIPS = [
-  'State your position clearly in the introduction.',
-  'Each body paragraph should have one main idea with support.',
-  'Write a conclusion that doesn\'t introduce new information.',
-];
-
-const CHART_DATA = [[2005, 120], [2008, 145], [2011, 185], [2014, 210], [2017, 240], [2020, 195]] as const;
-
-export default function WritingSession() {
-  const [task, setTask] = useState<'task1' | 'task2'>('task2');
-  const [text, setText] = useState('');
-  const [wordCount, setWordCount] = useState(0);
+export default function WritingSessionScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
+  const [activeTask, setActiveTask] = useState(0);
+  const [texts, setTexts] = useState<Record<number, string>>({ 0: '', 1: '' });
 
-  const TARGET = task === 'task1' ? 150 : 250;
-  const pct = Math.min(100, (wordCount / TARGET) * 100);
-  const timeLeft = task === 'task1' ? 1180 : 2380;
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
-  const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const task = TASKS[activeTask];
+  const wordCount = (texts[activeTask] || '').split(/\s+/).filter(Boolean).length;
+  const minWords = activeTask === 0 ? 150 : 250;
 
-  function handleChange(val: string) {
-    setText(val);
-    setWordCount(val.trim() ? val.trim().split(/\s+/).length : 0);
-  }
-
-  if (isDesktop) {
-    return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' } as any}>
-        {/* Header */}
-        <div style={{ height: 64, borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 16, padding: '0 28px', flexShrink: 0, background: C.card } as any}>
-          <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: 10, background: C.bg2, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.ink2, cursor: 'pointer' } as any}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-          <div style={{ flex: 1, minWidth: 0 } as any}>
-            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 2 } as any}>IELTS Writing</div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink } as any}>
-              {task === 'task1' ? 'Task 1 — Graph description' : 'Task 2 — Essay'}
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 } as any}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 } as any}>
-              <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' } as any}>Progress</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 } as any}>
-                <div style={{ width: 160, height: 5, background: C.bg3, borderRadius: 99, overflow: 'hidden' } as any}>
-                  <div style={{ height: '100%', width: `${pct}%`, background: wordCount >= TARGET ? C.listening.c : C.writing.c, borderRadius: 99, transition: 'width .3s' } as any} />
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.ink4 } as any}>{Math.round(pct)}%</span>
-              </div>
-            </div>
-            <div style={{ padding: '7px 14px', borderRadius: 10, background: '#F4F4F0' } as any}>
-              <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, fontFamily: 'monospace' } as any}>{timeStr}</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' } as any}>
-          {/* Prompt panel */}
-          <div style={{ overflow: 'auto', padding: '28px 32px', borderRight: `1px solid ${C.border}`, background: C.bg, display: 'flex', flexDirection: 'column', gap: 20 } as any}>
-            {/* Task switcher */}
-            <div style={{ display: 'flex', gap: 8 } as any}>
-              {(['task1', 'task2'] as const).map(t => (
-                <button key={t} onClick={() => { setTask(t); setText(''); setWordCount(0); }} style={{
-                  padding: '7px 16px', borderRadius: 9,
-                  border: `1.5px solid ${task === t ? C.writing.c : C.border}`,
-                  background: task === t ? C.writing.bg : C.card,
-                  fontSize: 12.5, fontWeight: 700,
-                  color: task === t ? C.writing.c : C.ink2,
-                  cursor: 'pointer',
-                } as any}>{t === 'task1' ? 'Task 1' : 'Task 2'}</button>
-              ))}
-            </div>
-
-            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' } as any}>
-              {task === 'task1' ? 'TASK 1 · 20 MIN · 150 WORDS MIN' : 'TASK 2 · 40 MIN · 250 WORDS MIN'}
-            </div>
-
-            {task === 'task1' ? (
-              <>
-                <div style={{ fontSize: 14, color: C.ink, lineHeight: 1.65, fontFamily: "Georgia,serif" } as any}>
-                  The bar chart shows the number of international students enrolled in UK universities between 2005 and 2020. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.
-                </div>
-                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20 } as any}>
-                  <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 14 } as any}>CHART</div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 } as any}>
-                    {CHART_DATA.map(([yr, v]) => (
-                      <div key={yr} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 } as any}>
-                        <div style={{ width: '100%', background: C.writing.c, borderRadius: '5px 5px 0 0', height: (v / 240) * 100 + '%', opacity: 0.8 } as any} />
-                        <div style={{ fontSize: 10, color: C.ink4, fontWeight: 600 } as any}>{yr}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div style={{ fontSize: 14, color: C.ink, lineHeight: 1.65, fontFamily: "Georgia,serif" } as any}>
-                <strong>Write about the following topic:</strong><br /><br />
-                <em>Some people believe that technology has made our lives overly complicated. Others argue that it has made life easier and more convenient.</em><br /><br />
-                Discuss both views and give your own opinion. Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words.
-              </div>
-            )}
-
-            {/* AI tips */}
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16 } as any}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.writing.c, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 } as any}>AI TIPS</div>
-              {(task === 'task1' ? TASK1_TIPS : TASK2_TIPS).map(t => (
-                <div key={t} style={{ display: 'flex', gap: 8, marginBottom: 7, fontSize: 12.5, color: C.ink2 } as any}>
-                  <span style={{ color: C.writing.c, flexShrink: 0 }}>→</span> {t}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Writing area */}
-          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', background: C.card } as any}>
-            <div style={{ flex: 1, position: 'relative' } as any}>
-              <textarea
-                value={text}
-                onChange={(e: any) => handleChange(e.target.value)}
-                placeholder={task === 'task1'
-                  ? 'The bar chart illustrates the trend in international students studying in the UK from 2005 to 2020…'
-                  : 'In today\'s increasingly connected world, technology has transformed the way people communicate and maintain relationships…'
-                }
-                style={{
-                  width: '100%', height: '100%',
-                  border: 'none', outline: 'none', resize: 'none',
-                  padding: '28px 32px',
-                  fontSize: 14.5, lineHeight: 1.8, color: C.ink,
-                  fontFamily: "Georgia,'DM Serif Display',serif",
-                  background: 'transparent', boxSizing: 'border-box',
-                } as any}
-              />
-            </div>
-
-            {/* Bottom bar */}
-            <div style={{ height: 56, borderTop: `1px solid ${C.border}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexShrink: 0 } as any}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 } as any}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: wordCount >= TARGET ? C.listening.c : C.ink } as any}>
-                  {wordCount} / {TARGET} words
-                </div>
-                <div style={{ width: 100, height: 5, background: C.bg3, borderRadius: 99, overflow: 'hidden' } as any}>
-                  <div style={{ height: '100%', width: pct + '%', background: wordCount >= TARGET ? C.listening.c : C.writing.c, borderRadius: 99, transition: 'width .3s' } as any} />
-                </div>
-                {wordCount < TARGET
-                  ? <div style={{ fontSize: 11, color: C.ink4 } as any}>{TARGET - wordCount} more to go</div>
-                  : <div style={{ display: 'inline-flex', padding: '3px 9px', borderRadius: 99, background: C.listening.bg, fontSize: 10, fontWeight: 700, color: C.listening.c } as any}>Min. reached ✓</div>
-                }
-              </div>
-              <div style={{ display: 'flex', gap: 8 } as any}>
-                <button style={{ padding: '8px 14px', borderRadius: 9, border: `1.5px solid ${C.writing.c}`, background: 'transparent', color: C.writing.c, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 } as any}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  Get AI feedback
-                </button>
-                <button onClick={() => router.push('/modules/writing/results' as any)} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: C.writing.c, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 } as any}>
-                  Submit essay
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Mobile
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-      <View style={h.bar}>
-        <TouchableOpacity style={h.exitBtn} onPress={() => router.back()}>
-          <Text style={{ fontSize: 16, color: C.ink2 }}>✕</Text>
-        </TouchableOpacity>
+  const content = (
+    <View style={{ flex: 1 }}>
+      <View style={s.header}>
+        <TouchableOpacity style={s.backBtn} onPress={() => router.back()}><Text style={s.backBtnText}>←</Text></TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={h.module}>IELTS WRITING</Text>
-          <Text style={h.title} numberOfLines={1}>{task === 'task1' ? 'Task 1 — Graph' : 'Task 2 — Essay'}</Text>
+          <Text style={s.headerTitle}>Writing · IELTS Academic</Text>
+          <Text style={s.headerMeta}>{task.meta}</Text>
         </View>
-        <Text style={h.timer}>{timeStr}</Text>
+        <View style={s.timerBadge}><Text style={s.timerText}>38:40</Text></View>
+      </View>
+      <View style={s.progressBar}><View style={[s.progressFill, { width: `${Math.min((wordCount / minWords) * 100, 100)}%` as any }]} /></View>
+
+      {/* Task switcher */}
+      <View style={s.taskSwitcher}>
+        {TASKS.map((t, i) => (
+          <TouchableOpacity key={i} style={[s.taskTab, activeTask === i && s.taskTabActive]} onPress={() => setActiveTask(i)}>
+            <Text style={[s.taskTabText, activeTask === i && s.taskTabTextActive]}>{t.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }} showsVerticalScrollIndicator={false}>
-        {/* Task switcher */}
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {(['task1', 'task2'] as const).map(t => (
-            <TouchableOpacity key={t} style={[m.taskBtn, task === t && { backgroundColor: C.writing.bg, borderColor: C.writing.c }]}
-              onPress={() => { setTask(t); setText(''); setWordCount(0); }}>
-              <Text style={[m.taskBtnText, task === t && { color: C.writing.c }]}>{t === 'task1' ? 'Task 1' : 'Task 2'}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Prompt */}
-        <View style={m.card}>
-          <Text style={m.sectionLabel}>{task === 'task1' ? 'TASK 1 · 150 WORDS MIN' : 'TASK 2 · 250 WORDS MIN'}</Text>
-          <Text style={m.promptText}>
-            {task === 'task1'
-              ? 'The bar chart shows international students enrolled in UK universities 2005–2020. Summarise the information by selecting and reporting the main features.'
-              : 'Some people believe technology has made our lives overly complicated. Others argue it has made life easier. Discuss both views and give your own opinion.'
-            }
-          </Text>
-        </View>
-
-        {/* Writing area */}
-        <View style={m.card}>
-          <Text style={m.sectionLabel}>YOUR RESPONSE</Text>
-          <TextInput
-            multiline
-            value={text}
-            onChangeText={handleChange}
-            placeholder={task === 'task1' ? 'The bar chart illustrates…' : 'In today\'s increasingly connected world…'}
-            style={m.textarea}
-            placeholderTextColor={C.ink5}
-          />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 }}>
-            <Text style={[m.wordCount, wordCount >= TARGET && { color: C.listening.c }]}>
-              {wordCount}/{TARGET} words
-            </Text>
-            <View style={m.progressTrack}>
-              <View style={[m.progressFill, { width: `${pct}%` as any, backgroundColor: wordCount >= TARGET ? C.listening.c : C.writing.c }]} />
-            </View>
-            {wordCount >= TARGET && (
-              <View style={[m.chip, { backgroundColor: C.listening.bg }]}>
-                <Text style={[m.chipText, { color: C.listening.c }]}>✓</Text>
+      {isDesktop ? (
+        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+          <ScrollView style={s.leftPane} contentContainerStyle={s.leftPaneContent}>
+            <Text style={s.promptTitle}>{task.label}</Text>
+            <Text style={s.promptText}>{task.prompt}</Text>
+            {/* Bar chart placeholder for Task 1 */}
+            {activeTask === 0 && (
+              <View style={s.chartPlaceholder}>
+                <Text style={s.chartLabel}>IELTS Chart: UK International Students</Text>
+                <View style={s.chartBars}>
+                  {[55, 62, 71, 88, 102, 118, 125].map((v, i) => (
+                    <View key={i} style={s.chartBarCol}>
+                      <View style={[s.chartBar, { height: (v / 130) * 80, backgroundColor: T.writing }]} />
+                      <Text style={s.chartBarLabel}>{['05','07','09','11','13','15','20'][i]}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
+            <View style={s.tipsCard}>
+              <Text style={s.tipsLabel}>BAND 7+ TIPS</Text>
+              {task.tips.map((tip, i) => (
+                <View key={i} style={s.tipRow}><View style={s.tipDot} /><Text style={s.tipText}>{tip}</Text></View>
+              ))}
+            </View>
+          </ScrollView>
+          <View style={s.rightPane}>
+            <TextInput
+              style={s.editor}
+              multiline
+              placeholder="Start writing your answer here…"
+              placeholderTextColor={T.ink4}
+              value={texts[activeTask]}
+              onChangeText={v => setTexts(t => ({ ...t, [activeTask]: v }))}
+              textAlignVertical="top"
+            />
+            <View style={s.editorFooter}>
+              <Text style={[s.wordCount, wordCount >= minWords && { color: T.listening }]}>
+                {wordCount} words {wordCount < minWords ? `(min ${minWords})` : '✓'}
+              </Text>
+              <TouchableOpacity style={s.submitBtn} onPress={() => router.push('/modules/writing/results' as any)}>
+                <Text style={s.submitBtnText}>Submit for grading →</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        <TouchableOpacity style={[m.submitBtn, { backgroundColor: C.writing.c }]} onPress={() => router.push('/modules/writing/results' as any)}>
-          <Text style={m.submitText}>Submit essay</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      ) : (
+        <ScrollView contentContainerStyle={s.mobileContent}>
+          <View style={s.mobilePromptCard}>
+            <Text style={s.promptText}>{task.prompt}</Text>
+          </View>
+          <TextInput
+            style={s.mobileEditor}
+            multiline
+            placeholder="Start writing here…"
+            placeholderTextColor={T.ink4}
+            value={texts[activeTask]}
+            onChangeText={v => setTexts(t => ({ ...t, [activeTask]: v }))}
+            textAlignVertical="top"
+          />
+          <View style={s.editorFooter}>
+            <Text style={[s.wordCount, wordCount >= minWords && { color: T.listening }]}>{wordCount} words</Text>
+            <TouchableOpacity style={s.submitBtn} onPress={() => router.push('/modules/writing/results' as any)}>
+              <Text style={s.submitBtnText}>Submit →</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
+    </View>
   );
+
+  if (isDesktop) return <AppLayout>{content}</AppLayout>;
+  return <SafeAreaView style={s.safe} edges={['top']}>{content}</SafeAreaView>;
 }
 
-const h = StyleSheet.create({
-  bar: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border },
-  exitBtn: { width: 34, height: 34, borderRadius: 9, backgroundColor: C.bg2, alignItems: 'center', justifyContent: 'center' },
-  module: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1, textTransform: 'uppercase' },
-  title: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.ink },
-  timer: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink4 },
-});
-
-const m = StyleSheet.create({
-  card: { backgroundColor: C.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: C.border },
-  sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 },
-  taskBtn: { flex: 1, padding: 10, borderRadius: 10, borderWidth: 1.5, borderColor: C.border, alignItems: 'center', backgroundColor: C.card },
-  taskBtnText: { fontFamily: 'Inter_700Bold', fontSize: 12.5, color: C.ink3 },
-  promptText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: C.ink, lineHeight: 22 },
-  textarea: { fontFamily: 'Inter_400Regular', fontSize: 14, color: C.ink, lineHeight: 24, minHeight: 200, textAlignVertical: 'top' },
-  wordCount: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: C.ink },
-  progressTrack: { flex: 1, height: 4, backgroundColor: C.bg3, borderRadius: 99, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 99 },
-  chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
-  chipText: { fontFamily: 'Inter_700Bold', fontSize: 10 },
-  submitBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
-  submitText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: T.bg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: T.border },
+  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { fontSize: 18, color: T.ink3 },
+  headerTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  headerMeta: { fontSize: 11, color: T.ink4 },
+  timerBadge: { backgroundColor: T.bg2, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  timerText: { fontSize: 12, fontWeight: '700', color: T.ink },
+  progressBar: { height: 3, backgroundColor: T.track },
+  progressFill: { height: '100%', backgroundColor: T.writing },
+  taskSwitcher: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: T.border, backgroundColor: T.card },
+  taskTab: { flex: 1, paddingVertical: 10, paddingHorizontal: 16 },
+  taskTabActive: { borderBottomWidth: 2, borderBottomColor: T.writing },
+  taskTabText: { fontSize: 12.5, fontWeight: '500', color: T.ink3, textAlign: 'center' },
+  taskTabTextActive: { color: T.writing, fontWeight: '700' },
+  leftPane: { flex: 1, backgroundColor: T.paper, borderRightWidth: 1, borderRightColor: T.border },
+  leftPaneContent: { padding: 28, gap: 16 },
+  rightPane: { flex: 1, backgroundColor: T.card, padding: 24, gap: 0 },
+  promptTitle: { fontFamily: T.serif, fontSize: 22, color: T.ink, lineHeight: 28 },
+  promptText: { fontSize: 14, color: T.ink2, lineHeight: 22 },
+  chartPlaceholder: { backgroundColor: T.writingBg, borderRadius: 12, padding: 14, gap: 10 },
+  chartLabel: { fontSize: 10.5, fontWeight: '700', color: T.writing, letterSpacing: 0.6, textTransform: 'uppercase' },
+  chartBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 90 },
+  chartBarCol: { flex: 1, alignItems: 'center', gap: 4 },
+  chartBar: { width: '100%', borderRadius: 3 },
+  chartBarLabel: { fontSize: 9, color: T.ink4 },
+  tipsCard: { backgroundColor: T.bg2, borderRadius: 12, padding: 14, gap: 8 },
+  tipsLabel: { fontSize: 10, fontWeight: '700', color: T.ink4, letterSpacing: 0.8, textTransform: 'uppercase' },
+  tipRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  tipDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: T.writing, marginTop: 8, flexShrink: 0 },
+  tipText: { fontSize: 12.5, color: T.ink2, lineHeight: 18, flex: 1 },
+  editor: { flex: 1, fontSize: 14, color: T.ink, lineHeight: 22, fontFamily: 'Inter_400Regular', textAlignVertical: 'top' },
+  editorFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTopWidth: 1, borderTopColor: T.border },
+  wordCount: { fontSize: 12, color: T.ink4, fontWeight: '600' },
+  submitBtn: { backgroundColor: T.writing, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10 },
+  submitBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  mobileContent: { padding: 16, gap: 14 },
+  mobilePromptCard: { backgroundColor: T.paper, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: T.border },
+  mobileEditor: { backgroundColor: T.card, borderRadius: 14, borderWidth: 1, borderColor: T.border, padding: 14, fontSize: 14, color: T.ink, minHeight: 200 },
 });

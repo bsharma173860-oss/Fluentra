@@ -1,732 +1,419 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, TextInput, Modal, Alert,
-  Platform, useWindowDimensions,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { router, useFocusEffect } from 'expo-router'
-import { supabase } from '@/lib/supabase'
-import { AppLayout } from '@/components/layout/AppLayout'
-import { AddLanguageModal } from '@/components/ui/AddLanguageModal'
-import { WebDashboard } from '@/components/ui/WebDashboard'
-import { FlagSVG } from '@/components/flags'
-import {
-  SearchIcon, PlusIcon, FlameIcon, XIcon,
-  MicIcon, HeadphoneIcon, BookIcon, CheckIcon,
-  ChevronRightIcon, ArrowRightIcon,
-} from '@/components/icons'
-import { getTheme } from '@/constants/languageThemes'
-import { LANGUAGE_EXAMS } from '@/constants/examProfiles'
+  StyleSheet, Platform, useWindowDimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
+import { T } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { MobileTabBar } from '@/components/layout/MobileTabBar';
+import { FlagSVG } from '@/components/flags';
+import { getTheme } from '@/constants/languageThemes';
+import type { UserLanguage } from '@/lib/supabase';
 
-// ─────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────
-function cefrFor(streak: number): string {
-  if (streak < 8)  return 'B1'
-  if (streak < 21) return 'B2'
-  if (streak < 36) return 'C1'
-  return 'C2'
+function cefrFor(pct: number) {
+  if (pct < 25)  return 'B1 · Intermediate';
+  if (pct < 50) return 'B2 · Upper-int.';
+  if (pct < 75) return 'C1 · Advanced';
+  return 'C2 · Mastery';
 }
 
-/** Returns short badge labels for a language, e.g. ['DELE'] or ['IELTS', 'TOEFL'] */
-function getBadges(code: string): string[] {
-  const exams = LANGUAGE_EXAMS[code]
-  if (!exams || exams.length === 0) return []
-  // Return at most 2 short names (strip "Academic", "iBT", etc.)
-  return exams.slice(0, 2).map(e => e.name.split(' ')[0])
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Mock session data (replace with real Supabase data when available)
-// ─────────────────────────────────────────────────────────────────
-type StepIc = 'mic' | 'head' | 'book'
-type Step = { ic: StepIc; label: string; meta: string; done: boolean }
-type SessionInfo = { title: string; time: string; focus: string; steps: Step[] }
-
-const SESSION_DATA: Record<string, SessionInfo> = {
-  es: {
-    title: 'Ordering at a café',
-    time: '12 min', focus: 'Speaking + Listening',
-    steps: [
-      { ic: 'mic',  label: 'Pronunciation warm-up', meta: '3 min', done: true  },
-      { ic: 'head', label: 'Listen & repeat',        meta: '5 min', done: false },
-      { ic: 'book', label: 'New vocabulary',         meta: '4 min', done: false },
-    ],
-  },
-  ja: {
-    title: 'Train station announcements',
-    time: '15 min', focus: 'Listening',
-    steps: [
-      { ic: 'head', label: 'Listen & repeat',   meta: '6 min', done: false },
-      { ic: 'book', label: 'Kanji review · 12', meta: '5 min', done: false },
-      { ic: 'mic',  label: 'Shadowing',         meta: '4 min', done: false },
-    ],
-  },
-  fr: {
-    title: 'Passé composé',
-    time: '10 min', focus: 'Grammar',
-    steps: [
-      { ic: 'book', label: 'Review rules',        meta: '3 min', done: true  },
-      { ic: 'book', label: 'Fill-in-the-blanks',  meta: '4 min', done: false },
-      { ic: 'mic',  label: 'Speak in past tense', meta: '3 min', done: false },
-    ],
-  },
-  de: {
-    title: 'At the bakery',
-    time: '8 min', focus: 'Vocabulary',
-    steps: [
-      { ic: 'book', label: 'New words · 8',     meta: '3 min', done: false },
-      { ic: 'mic',  label: 'Pronounce 5 words', meta: '3 min', done: false },
-      { ic: 'head', label: 'Mini dialogue',     meta: '2 min', done: false },
-    ],
-  },
-}
-
-function getSession(code: string): SessionInfo {
-  return SESSION_DATA[code] ?? {
-    title: 'Daily practice session',
-    time: '10 min', focus: 'Listening + Speaking',
-    steps: [
-      { ic: 'head', label: 'Listen & repeat',   meta: '4 min', done: false },
-      { ic: 'mic',  label: 'Speaking practice', meta: '3 min', done: false },
-      { ic: 'book', label: 'Vocabulary review', meta: '3 min', done: false },
-    ],
-  }
-}
-
-function StepIcon({ ic }: { ic: StepIc }) {
-  if (ic === 'mic')  return <MicIcon      size={13} color="#999" />
-  if (ic === 'head') return <HeadphoneIcon size={13} color="#999" />
-  return                    <BookIcon      size={13} color="#999" />
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Collapsed card
-// ─────────────────────────────────────────────────────────────────
-function LangCardCollapsed({ lang, onTap }: { lang: any; onTap: () => void }) {
-  const code   = lang.language_code
-  const t      = getTheme(code)
-  const streak = lang.streak_count || 0
+// ── Gradient language card ────────────────────────────────────────
+function LangCard({ lang }: { lang: UserLanguage }) {
+  const theme = getTheme(lang.language_code);
+  const pct = Math.min((lang.fluency_percent / 9) * 100, 100);
+  const circumference = Math.PI * 2 * 30;
 
   return (
-    <TouchableOpacity style={cc.card} onPress={onTap} activeOpacity={0.85}>
-      <View style={cc.flag}>
-        <FlagSVG code={code} width={42} height={30} />
-      </View>
-      <View style={cc.info}>
-        <Text style={cc.native} numberOfLines={1}>{t.native}</Text>
-        <Text style={cc.sub}>{t.name} · {cefrFor(streak)}</Text>
-      </View>
-      <View style={cc.streakRow}>
-        <FlameIcon size={13} color={streak > 0 ? t.accent : '#CCC'} />
-        <Text style={[cc.streakNum, { color: streak > 0 ? t.accent : '#BBB' }]}>{streak}</Text>
-      </View>
-      <ChevronRightIcon size={14} color="#BBB" />
-    </TouchableOpacity>
-  )
-}
-
-const cc = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFF', borderRadius: 20, borderWidth: 1, borderColor: '#EAEAEA',
-    padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14,
-  },
-  flag:      { borderRadius: 5, overflow: 'hidden', flexShrink: 0 },
-  info:      { flex: 1, minWidth: 0 },
-  native:    { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#000', lineHeight: 20 },
-  sub:       { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999', marginTop: 1 },
-  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginRight: 6 },
-  streakNum: { fontFamily: 'Inter_700Bold', fontSize: 13 },
-})
-
-// ─────────────────────────────────────────────────────────────────
-// Expanded card
-// ─────────────────────────────────────────────────────────────────
-function LangCardExpanded({
-  lang, onClose, onRemove,
-}: {
-  lang: any; onClose: () => void; onRemove: () => void
-}) {
-  const code    = lang.language_code
-  const t       = getTheme(code)
-  const streak  = lang.streak_count || 0
-  const session = getSession(code)
-  const badges  = getBadges(code)
-  const cefr    = cefrFor(streak)
-
-  const [steps,     setSteps]     = useState<Step[]>(() => session.steps.map(s => ({ ...s })))
-  const [completed, setCompleted] = useState(false)
-
-  const doneCount = steps.filter(s => s.done).length
-  const stepPct   = steps.length > 0 ? (doneCount / steps.length) * 100 : 0
-
-  function toggleStep(i: number) {
-    setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, done: !s.done } : s))
-  }
-
-  return (
-    <View style={[ex.card, { borderColor: t.accentLight, shadowColor: t.accent }]}>
-
-      {/* ── Header ── */}
-      <View style={ex.header}>
-        <View style={ex.flagSmall}>
-          <FlagSVG code={code} width={32} height={22} />
-        </View>
-        <Text style={ex.headerNative}>{t.native}</Text>
-        <Text style={ex.headerEn}> · {t.name}</Text>
-        <View style={ex.headerStreak}>
-          <FlameIcon size={14} color={t.accent} />
-          <Text style={[ex.headerStreakNum, { color: t.accent }]}>{streak}</Text>
-        </View>
-        <TouchableOpacity onPress={onClose} style={ex.closeBtn} activeOpacity={0.7}>
-          {/* Chevron rotated 90° counter-clockwise = pointing up = collapse */}
-          <View style={{ transform: [{ rotate: '-90deg' }] }}>
-            <ChevronRightIcon size={14} color="#BBB" />
+    <TouchableOpacity
+      style={[s.langCard, { backgroundColor: theme.accent }]}
+      onPress={() => router.push(`/language/${lang.language_code}` as any)}
+      activeOpacity={0.9}
+    >
+      {/* Hero section */}
+      <View style={[s.langHero, { backgroundColor: theme.accent }]}>
+        <View style={s.langHeroRow}>
+          <View style={s.flagWrap}>
+            <FlagSVG code={lang.language_code} width={48} height={32} />
           </View>
+          <View style={s.streakBadge}>
+            <Text style={s.streakBadgeText}>🔥 {Math.round(lang.fluency_percent)}%</Text>
+          </View>
+        </View>
+        <Text style={s.langNative}>{lang.language_name_en || lang.language_code.toUpperCase()}</Text>
+        <Text style={s.langEnglish}>{lang.language_code.toUpperCase()} · {cefrFor(lang.fluency_percent)}</Text>
+      </View>
+
+      {/* Sheet */}
+      <View style={s.langSheet}>
+        {/* Ring */}
+        <View style={{ width: 80, height: 80, position: 'relative' }}>
+          <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={[s.ringNum, { color: T.ink }]}>{Math.round(lang.fluency_percent)}%</Text>
+            <Text style={s.ringLabel}>Fluency</Text>
+          </View>
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', gap: 5, marginBottom: 8, flexWrap: 'wrap' }}>
+            <View style={[s.chip, { backgroundColor: theme.accentLight }]}>
+              <Text style={[s.chipText, { color: theme.accent }]}>IELTS</Text>
+            </View>
+          </View>
+          <Text style={s.nextUpLabel}>Next up</Text>
+          <Text style={s.nextUpTitle}>Practice session</Text>
+          <Text style={s.nextUpMeta}>10 min</Text>
+          <TouchableOpacity style={[s.continueBtn, { borderColor: theme.accent }]} onPress={() => router.push(`/language/${lang.language_code}` as any)}>
+            <Text style={[s.continueBtnText, { color: theme.accent }]}>Continue →</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ── Today hero banner ──────────────────────────────────────────────
+function TodayHero({ lang, streak }: { lang: UserLanguage | null; streak: number }) {
+  if (!lang) return null;
+  const theme = getTheme(lang.language_code);
+
+  if (streak >= 9) {
+    return (
+      <TouchableOpacity style={s.unlockBanner} onPress={() => router.push('/modules/reading/session' as any)} activeOpacity={0.9}>
+        <View style={s.unlockIcon}><Text style={{ fontSize: 22 }}>🎉</Text></View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.unlockEyebrow}>STREAK MILESTONE UNLOCKED</Text>
+          <Text style={s.unlockTitle}>Your exam is ready.</Text>
+          <Text style={s.unlockMeta}>{streak}-day streak · take it any time</Text>
+        </View>
+        <View style={s.unlockCta}><Text style={[s.unlockCtaText, { color: T.brand }]}>Open exam →</Text></View>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity style={[s.heroBanner, { shadowColor: theme.accent }]} onPress={() => router.push('/(tabs)/practice' as any)} activeOpacity={0.9}>
+      <View style={[s.heroIcon, { backgroundColor: theme.accent }]}>
+        <Text style={{ color: '#fff', fontSize: 18 }}>▶</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.heroEyebrow}>YOUR 15 MINUTES TODAY</Text>
+        <Text style={s.heroTitle}>Practice session</Text>
+        <Text style={s.heroMeta}>{lang.language_code.toUpperCase()} · Grammar · 15 min</Text>
+      </View>
+      <View style={[s.heroCta, { backgroundColor: theme.accent }]}>
+        <Text style={s.heroCtaText}>Start →</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ── Week strip ────────────────────────────────────────────────────
+function WeekStrip() {
+  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const dayOfWeek = new Date().getDay();
+  const todayIdx = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  return (
+    <View style={s.weekCard}>
+      <View style={s.weekHeader}>
+        <View style={s.weekFlame}><Text>🔥</Text></View>
+        <Text style={s.weekTitle}>This week</Text>
+      </View>
+      <View style={s.weekGrid}>
+        {days.map((d, i) => {
+          const done = i < todayIdx;
+          const today = i === todayIdx;
+          return (
+            <View key={i} style={s.weekCell}>
+              <View style={[s.weekDot, done && s.weekDotDone, today && s.weekDotToday]}>
+                <Text style={[s.weekDotText, done && { color: '#fff' }, today && { color: T.brand }]}>
+                  {done ? '✓' : i + 1}
+                </Text>
+              </View>
+              <Text style={[s.weekDay, today && { color: T.brand, fontWeight: '700' }]}>{d}</Text>
+            </View>
+          );
+        })}
+      </View>
+      <Text style={s.weekFooter}>Keep your streak going!</Text>
+    </View>
+  );
+}
+
+// ── Quick links ───────────────────────────────────────────────────
+const QUICK_LINKS = [
+  { label: 'Progress',  route: '/(tabs)/progress' },
+  { label: 'Library',   route: '/library' },
+  { label: 'Exams',     route: '/(tabs)/exams' },
+  { label: 'Settings',  route: '/(tabs)/settings' },
+  { label: 'Upgrade',   route: '/upgrade' },
+  { label: 'Help',      route: '/help' },
+];
+
+// ── Main screen ───────────────────────────────────────────────────
+export default function HomeScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+  const { user, profile } = useAuth();
+  const [languages, setLanguages] = useState<UserLanguage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const firstName = profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
+  const longestStreak = languages.length ? Math.max(...languages.map(l => l.fluency_percent)) : 0;
+
+  const fetchLanguages = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_languages')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true });
+    setLanguages((data as UserLanguage[]) || []);
+    setLoading(false);
+  }, [user]);
+
+  useFocusEffect(useCallback(() => { fetchLanguages(); }, [fetchLanguages]));
+
+  const content = (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.scroll, isDesktop && s.scrollDesktop]} showsVerticalScrollIndicator={false}>
+      {/* Page header */}
+      <View style={s.pageHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.eyebrow}>{greet}, {firstName}</Text>
+          <Text style={s.pageTitle}>Keep the streaks alive.</Text>
+        </View>
+        <View style={s.statsRow}>
+          <View style={s.stat}>
+            <Text style={s.statLabel}>STREAK</Text>
+            <Text style={s.statNum}>{longestStreak} <Text style={s.statUnit}>days</Text></Text>
+          </View>
+          <View style={s.statDivider} />
+          <View style={s.stat}>
+            <Text style={s.statLabel}>LANGUAGES</Text>
+            <Text style={s.statNum}>{languages.length}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Today hero */}
+      <TodayHero lang={languages[0] || null} streak={longestStreak} />
+
+      {/* Languages grid */}
+      <View style={s.sectionHeader}>
+        <Text style={s.sectionTitle}>Your languages</Text>
+        <TouchableOpacity onPress={() => router.push('/language/add' as any)} style={s.addBtn}>
+          <Text style={s.addBtnText}>+ Add</Text>
         </TouchableOpacity>
       </View>
 
-      {/* ── Today's session hero ── */}
-      <View style={[ex.hero, { backgroundColor: t.bg }]}>
-        {/* Decorative 5×5 dot grid, top-right, opacity 0.12 */}
-        <View style={ex.dotGrid} pointerEvents="none">
-          {Array.from({ length: 25 }).map((_, i) => (
-            <View key={i} style={[ex.dotItem, { backgroundColor: t.accent }]} />
+      {isDesktop ? (
+        <View style={s.langGrid}>
+          {languages.map(l => <LangCard key={l.id} lang={l} />)}
+        </View>
+      ) : (
+        <View style={s.langStack}>
+          {languages.map(l => <LangCard key={l.id} lang={l} />)}
+        </View>
+      )}
+
+      {loading && languages.length === 0 && (
+        <View style={s.emptyState}>
+          <Text style={s.emptyText}>Add a language to get started</Text>
+          <TouchableOpacity style={s.emptyBtn} onPress={() => router.push('/language/add' as any)}>
+            <Text style={s.emptyBtnText}>Add your first language</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Aside panel — desktop: right column; mobile: below */}
+      <View style={[isDesktop && s.asideRow]}>
+        <View style={[isDesktop && { flex: 1 }]}>
+          <WeekStrip />
+        </View>
+        {isDesktop && <View style={{ flex: 1 }}>
+          {/* Friends today panel */}
+          <View style={s.friendsCard}>
+            <Text style={s.friendsTitle}>FRIENDS TODAY</Text>
+            {[
+              { name: 'Liam', avatar: 'L', color: '#7B4BC4', mins: 22, action: 'practiced French' },
+              { name: 'Yui',  avatar: 'Y', color: '#1F8A5B', mins: 18, action: 'finished a mock' },
+              { name: 'Anna', avatar: 'A', color: '#D97757', mins: 14, action: '31-day streak!' },
+            ].map((f, i, all) => (
+              <View key={f.name} style={[s.friendRow, i < all.length - 1 && { borderBottomWidth: 1, borderBottomColor: T.hairline }]}>
+                <View style={[s.friendAvatar, { backgroundColor: f.color }]}>
+                  <Text style={s.friendAvatarText}>{f.avatar}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.friendName}><Text style={{ fontWeight: '700' }}>{f.name}</Text> {f.action}</Text>
+                  <Text style={s.friendMeta}>{f.mins} min · today</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>}
+      </View>
+
+      {/* Tutor CTA */}
+      <TouchableOpacity style={s.tutorCard} onPress={() => router.push('/language/en/tutor' as any)} activeOpacity={0.9}>
+        <View style={s.tutorIcon}><Text style={{ fontSize: 18 }}>💬</Text></View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.tutorTitle}>Ask the AI tutor</Text>
+          <Text style={s.tutorSub}>Grammar, vocab, conversation</Text>
+        </View>
+        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16 }}>→</Text>
+      </TouchableOpacity>
+
+      {/* Quick links */}
+      <View style={s.quickLinksCard}>
+        <Text style={s.quickLinksTitle}>QUICK LINKS</Text>
+        <View style={s.quickLinksGrid}>
+          {QUICK_LINKS.map(q => (
+            <TouchableOpacity key={q.label} style={s.quickLink} onPress={() => router.push(q.route as any)}>
+              <Text style={s.quickLinkText}>{q.label}</Text>
+            </TouchableOpacity>
           ))}
         </View>
-        {/* eyebrow: 10/700 uppercase, letterSpacing .16em = 1.6dp at 10px */}
-        <Text style={[ex.heroEyebrow, { color: t.accent }]}>TODAY'S SESSION</Text>
-        <Text style={ex.heroTitle}>{session.title}</Text>
-        <Text style={ex.heroMeta}>{session.time} · {session.focus}</Text>
       </View>
 
-      {/* ── Checklist ── */}
-      <View style={ex.checklist}>
-        {steps.map((step, i) => (
-          <TouchableOpacity
-            key={i}
-            style={ex.checkRow}
-            onPress={() => toggleStep(i)}
-            activeOpacity={0.7}
-          >
-            <View style={[ex.checkCircle, { backgroundColor: step.done ? t.accent : '#F4F4F0' }]}>
-              {step.done
-                ? <CheckIcon size={12} color="#FFF" />
-                : <StepIcon ic={step.ic} />}
-            </View>
-            <Text style={[ex.checkLabel, step.done && ex.checkLabelDone]}>{step.label}</Text>
-            <Text style={ex.checkMeta}>{step.meta}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {!isDesktop && <View style={{ height: 20 }} />}
+    </ScrollView>
+  );
 
-      {/* ── Session progress + CTA ── */}
-      <View style={ex.ctaSection}>
-        <View style={ex.progressRow}>
-          <Text style={ex.progressLabel}>SESSION</Text>
-          <Text style={ex.progressCount}>{doneCount}/{steps.length} steps</Text>
-        </View>
-        <View style={ex.progressTrack}>
-          <View style={[ex.progressFill, { width: `${stepPct}%` as any, backgroundColor: t.accent }]} />
-        </View>
-
-        <TouchableOpacity
-          style={[ex.continueBtn, { backgroundColor: completed ? '#E8E6DF' : t.accent }]}
-          onPress={() => setCompleted(c => !c)}
-          activeOpacity={0.85}
-        >
-          {completed ? (
-            <Text style={[ex.continueBtnText, { color: '#888' }]}>Session started →</Text>
-          ) : (
-            <View style={ex.continueBtnInner}>
-              <Text style={ex.continueBtnText}>Continue</Text>
-              <ArrowRightIcon size={14} color="#FFF" />
-            </View>
-          )}
-        </TouchableOpacity>
-
-        {/* Footer meta */}
-        <View style={ex.footerRow}>
-          <Text style={ex.footerLeft}>
-            {badges.length > 0 ? `${badges[0]} · ` : ''}{cefr}
-          </Text>
-          <View style={ex.footerRight}>
-            <Text style={ex.footerRightText}>{streak}/9 to exam</Text>
-            <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={ex.removeText}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-    </View>
-  )
-}
-
-const ex = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFF', borderRadius: 24, borderWidth: 1,
-    overflow: 'hidden',
-    shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
-
-  // Header — padding 16 vertical / 20 horizontal, hairline bottom
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 20, paddingVertical: 16,
-    borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
-  },
-  flagSmall:       { borderRadius: 3, overflow: 'hidden', flexShrink: 0 },
-  headerNative:    { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#000' },
-  headerEn:        { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999' },
-  headerStreak:    { marginLeft: 'auto' as any, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerStreakNum: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  closeBtn:        { marginLeft: 8, padding: 4 },
-
-  // Hero — padding 20 vertical / 22 horizontal
-  hero: {
-    paddingHorizontal: 22, paddingVertical: 20,
-    position: 'relative', overflow: 'hidden',
-  },
-  dotGrid: {
-    position: 'absolute', top: 8, right: -8,
-    flexDirection: 'row', flexWrap: 'wrap',
-    width: 80, gap: 6, opacity: 0.12,
-  },
-  dotItem:     { width: 3, height: 3, borderRadius: 1.5 },
-  // .16em at 10px = 1.6dp
-  heroEyebrow: {
-    fontFamily: 'Inter_700Bold', fontSize: 10,
-    textTransform: 'uppercase' as const, letterSpacing: 1.6, marginBottom: 6,
-  },
-  heroTitle: {
-    fontFamily: 'DMSerifDisplay_400Regular', fontSize: 26,
-    color: '#000', lineHeight: 30, marginBottom: 6,
-  },
-  heroMeta: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#666' },
-
-  // Checklist — padding 16 vertical / 22 horizontal, gap 10
-  checklist: { paddingHorizontal: 22, paddingVertical: 16, gap: 10 },
-  // Each row: paddingVertical 6 per spec
-  checkRow:  {
-    flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6,
-  },
-  checkCircle: {
-    width: 26, height: 26, borderRadius: 13,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  checkLabel:     { fontFamily: 'Inter_500Medium', fontSize: 13.5, color: '#000', flex: 1 },
-  checkLabelDone: { color: '#BBB', textDecorationLine: 'line-through' as const },
-  checkMeta:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBB' },
-
-  // CTA section — padding 4 top / 22 horiz / 20 bottom
-  ctaSection:    { paddingHorizontal: 22, paddingBottom: 20, paddingTop: 4 },
-  progressRow:   {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6,
-  },
-  // SESSION eyebrow: .05em at 11px ≈ 0.55dp
-  progressLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#999', letterSpacing: 0.55 },
-  progressCount: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#666' },
-  progressTrack: { height: 4, backgroundColor: '#F4F4F0', borderRadius: 99, overflow: 'hidden', marginBottom: 14 },
-  progressFill:  { height: '100%' as any, borderRadius: 99 },
-
-  // Continue button: full-width, 14px padding all sides, 14px radius
-  continueBtn: {
-    borderRadius: 14, padding: 14,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  continueBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  continueBtnText:  { fontFamily: 'Inter_600SemiBold', fontSize: 14.5, color: '#FFF' },
-
-  // Footer meta — hairline top, 14px padding top
-  footerRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: 14, paddingTop: 14,
-    borderTopWidth: 1, borderTopColor: '#F4F4F4',
-  },
-  footerLeft:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999' },
-  footerRight:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  footerRightText: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999' },
-  removeText:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#DDD' },
-})
-
-// ─────────────────────────────────────────────────────────────────
-// Main home screen
-// ─────────────────────────────────────────────────────────────────
-export default function HomeScreen() {
-  const { width }  = useWindowDimensions()
-  const isDesktop  = Platform.OS === 'web' && width >= 768
-
-  const [languages,    setLanguages]    = useState<any[]>([])
-  const [loading,      setLoading]      = useState(true)
-  const [showModal,    setShowModal]    = useState(false)
-  const [showSearch,   setShowSearch]   = useState(false)
-  const [searchText,   setSearchText]   = useState('')
-  const [adding,       setAdding]       = useState('')
-  const [userName,     setUserName]     = useState('there')
-  const [expandedCode, setExpandedCode] = useState<string | null>(null)
-
-  async function fetchLanguages() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
-
-      const { data: profile } = await supabase
-        .from('profiles').select('name').eq('id', user.id).single()
-      if (profile?.name) setUserName(profile.name.split(' ')[0])
-
-      const { data, error } = await supabase
-        .from('user_languages').select('*')
-        .eq('user_id', user.id).order('created_at', { ascending: true })
-
-      if (!error && data) {
-        const sorted = [...data].sort((a, b) => {
-          if (a.language_code === 'en') return -1
-          if (b.language_code === 'en') return  1
-          return (b.streak_count || 0) - (a.streak_count || 0)
-        })
-        setLanguages(sorted)
-        // Auto-expand the first language on first load
-        setExpandedCode(prev => prev === null && sorted.length > 0 ? sorted[0].language_code : prev)
-      }
-      setLoading(false)
-    } catch { setLoading(false) }
-  }
-
-  useFocusEffect(useCallback(() => { fetchLanguages() }, []))
-
-  useEffect(() => {
-    fetchLanguages()
-    const channel = supabase
-      .channel('home-' + Date.now())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_languages' },
-        () => fetchLanguages())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  async function addLanguage(lang: { code: string; native: string; english: string }) {
-    setAdding(lang.code)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setAdding(''); return }
-      const { error } = await supabase.from('user_languages').insert({
-        user_id:              user.id,
-        language_code:        lang.code,
-        language_name_en:     lang.english,
-        language_name_native: lang.native,
-        fluency_percent:      0,
-        streak_count:         0,
-        exam_unlocked:        false,
-      })
-      if (!error) {
-        setShowModal(false)
-        setTimeout(() => fetchLanguages(), 400)
-      }
-      setAdding('')
-    } catch { setAdding('') }
-  }
-
-  function removeLanguage(lang: any) {
-    Alert.alert(
-      `Remove ${getTheme(lang.language_code).name}?`,
-      'This will delete your streak and progress for this language.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove', style: 'destructive',
-          onPress: async () => {
-            await supabase.from('user_languages').delete().eq('id', lang.id)
-            setLanguages(prev => prev.filter(l => l.id !== lang.id))
-            if (expandedCode === lang.language_code) setExpandedCode(null)
-          },
-        },
-      ]
-    )
-  }
-
-  function getGreeting(): string {
-    const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
-
-  const filtered = searchText.trim() === ''
-    ? languages
-    : languages.filter(l => {
-        const t = getTheme(l.language_code)
-        return (
-          t.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          t.native.toLowerCase().includes(searchText.toLowerCase())
-        )
-      })
-
-  // ── Desktop: web dashboard ────────────────────────────────────
   if (isDesktop) {
     return (
       <AppLayout>
-        <WebDashboard
-          languages={languages}
-          userName={userName}
-          loading={loading}
-          onAddLanguage={() => setShowModal(true)}
-          onRemoveLanguage={removeLanguage}
-        />
-        <AddLanguageModal
-          visible={showModal}
-          onClose={() => setShowModal(false)}
-          addedCodes={languages.map(l => l.language_code)}
-          addingCode={adding}
-          onAdd={addLanguage}
-        />
+        {content}
       </AppLayout>
-    )
+    );
   }
 
-  // ── Mobile: V5 expandable card list ──────────────────────────
   return (
-    <AppLayout>
-      <SafeAreaView style={s.safe} edges={['top']}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-
-          {/* ── Greeting ── */}
-          <View style={s.header}>
-            <View style={{ flex: 1 }}>
-              {/* .1em at 11px = 1.1dp */}
-              <Text style={s.greeting}>{getGreeting()}</Text>
-              <Text style={s.name}>{userName}.</Text>
-            </View>
-            <TouchableOpacity style={s.searchBtn} onPress={() => setShowSearch(true)}>
-              <SearchIcon size={16} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* ── YOUR LANGUAGES row ── */}
-          <View style={s.sectionRow}>
-            <Text style={s.sectionLabel}>YOUR LANGUAGES</Text>
-            <TouchableOpacity style={s.addBtn} onPress={() => setShowModal(true)} activeOpacity={0.8}>
-              <PlusIcon size={14} color="#666" />
-              <Text style={s.addBtnText}>Add</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* ── Language card list ── */}
-          <View style={s.cardList}>
-            {loading ? (
-              <>
-                {[0, 1].map(i => <View key={i} style={s.skeleton} />)}
-              </>
-            ) : filtered.length === 0 ? (
-              <TouchableOpacity style={s.emptyCard} onPress={() => setShowModal(true)} activeOpacity={0.8}>
-                <PlusIcon size={20} color="#CCC" />
-                <Text style={s.emptyText}>Add your first language</Text>
-              </TouchableOpacity>
-            ) : (
-              filtered.map(lang => {
-                const code = lang.language_code
-                if (expandedCode === code) {
-                  return (
-                    <LangCardExpanded
-                      key={lang.id || code}
-                      lang={lang}
-                      onClose={() => setExpandedCode(null)}
-                      onRemove={() => removeLanguage(lang)}
-                    />
-                  )
-                }
-                return (
-                  <LangCardCollapsed
-                    key={lang.id || code}
-                    lang={lang}
-                    onTap={() => setExpandedCode(code)}
-                  />
-                )
-              })
-            )}
-          </View>
-
-          {/* ── Weekly review promo ── */}
-          {!loading && (
-            <TouchableOpacity
-              style={s.promoCard}
-              activeOpacity={0.85}
-              onPress={() => router.push('/(tabs)/progress' as any)}
-            >
-              <View style={s.promoIcon}>
-                <Text style={{ fontSize: 18 }}>✨</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.promoTitle}>Weekly review is ready</Text>
-                <Text style={s.promoSub}>8 min · covers 42 new words</Text>
-              </View>
-              <ChevronRightIcon size={14} color="#BBB" />
-            </TouchableOpacity>
-          )}
-
-          <View style={{ height: 48 }} />
-        </ScrollView>
-      </SafeAreaView>
-
-      {/* ── Search modal ── */}
-      <Modal
-        visible={showSearch}
-        transparent
-        animationType="fade"
-        onRequestClose={() => { setShowSearch(false); setSearchText('') }}
-      >
-        <View style={s.searchOverlay}>
-          <SafeAreaView edges={['top']}>
-            <View style={s.searchBar}>
-              <SearchIcon size={16} color="#BBB" />
-              <TextInput
-                autoFocus
-                style={s.searchInput}
-                placeholder="Search languages..."
-                placeholderTextColor="#BBB"
-                value={searchText}
-                onChangeText={setSearchText}
-              />
-              <TouchableOpacity
-                onPress={() => { setShowSearch(false); setSearchText('') }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <XIcon size={18} color="#999" />
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-          <ScrollView style={s.searchResults} keyboardShouldPersistTaps="handled">
-            {filtered.map(lang => {
-              const t = getTheme(lang.language_code)
-              return (
-                <TouchableOpacity
-                  key={lang.language_code}
-                  style={s.searchItem}
-                  onPress={() => {
-                    setShowSearch(false)
-                    setSearchText('')
-                    router.push(`/language/${lang.language_code}` as any)
-                  }}
-                >
-                  <View style={{ borderRadius: 4, overflow: 'hidden' }}>
-                    <FlagSVG code={lang.language_code} width={32} height={22} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.searchItemNative}>{t.native}</Text>
-                    <Text style={s.searchItemEn}>{t.name}</Text>
-                  </View>
-                  {(lang.streak_count || 0) > 0 && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <FlameIcon size={12} color={t.accent} />
-                      <Text style={[s.searchItemStreak, { color: t.accent }]}>
-                        {lang.streak_count}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              )
-            })}
-            {filtered.length === 0 && searchText.length > 0 && (
-              <Text style={s.noResults}>No languages found</Text>
-            )}
-            <View style={{ height: 24 }} />
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* ── Add language modal ── */}
-      <AddLanguageModal
-        visible={showModal}
-        onClose={() => setShowModal(false)}
-        addedCodes={languages.map(l => l.language_code)}
-        addingCode={adding}
-        onAdd={addLanguage}
-      />
-    </AppLayout>
-  )
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {content}
+      <MobileTabBar />
+    </SafeAreaView>
+  );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#F9F8F5' },
-  scroll: { paddingBottom: 32 },
+  safe: { flex: 1, backgroundColor: T.bg },
+  scroll: { padding: 18, gap: 18, paddingBottom: 20 },
+  scrollDesktop: { padding: 28, paddingHorizontal: 36, maxWidth: 1200, alignSelf: 'center', width: '100%' },
 
-  // Greeting block
-  header: {
-    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 28, paddingBottom: 20,
-  },
-  // .1em at 11px = 1.1dp letterSpacing
-  greeting: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#999',
-    letterSpacing: 1.1, textTransform: 'uppercase' as const, marginBottom: 4,
-  },
-  name: {
-    fontFamily: 'DMSerifDisplay_400Regular', fontSize: 34, color: '#000', lineHeight: 38,
-  },
-  searchBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#F4F4F0', alignItems: 'center', justifyContent: 'center',
-  },
+  pageHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 4 },
+  eyebrow: { fontSize: 11, fontWeight: '700', color: T.ink4, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 4 },
+  pageTitle: { fontFamily: T.serif, fontSize: 34, color: T.ink, lineHeight: 38 },
 
-  // "YOUR LANGUAGES" + Add row
-  sectionRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, marginBottom: 12,
-  },
-  sectionLabel: {
-    fontFamily: 'Inter_700Bold', fontSize: 11, color: '#999',
-    letterSpacing: 1.1, textTransform: 'uppercase' as const,
-  },
-  addBtn:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#666' },
+  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  stat: { alignItems: 'flex-end' },
+  statLabel: { fontSize: 9, fontWeight: '700', color: T.ink4, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 2 },
+  statNum: { fontFamily: T.serif, fontSize: 28, color: T.ink, lineHeight: 32 },
+  statUnit: { fontSize: 16, color: T.ink4 },
+  statDivider: { width: 1, height: 40, backgroundColor: T.border },
 
-  // Card stack — 10px gap per spec
-  cardList: { paddingHorizontal: 22, gap: 10 },
+  // Hero banners
+  heroBanner: {
+    backgroundColor: T.ink,
+    borderRadius: 18, padding: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 40,
+  },
+  heroIcon: { width: 54, height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  heroEyebrow: { fontSize: 9.5, fontWeight: '700', color: 'rgba(255,255,255,0.6)', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 4 },
+  heroTitle: { fontFamily: T.serif, fontSize: 20, color: '#fff', lineHeight: 24, marginBottom: 3 },
+  heroMeta: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)' },
+  heroCta: { borderRadius: 11, paddingHorizontal: 16, paddingVertical: 12 },
+  heroCtaText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
-  skeleton: { height: 72, borderRadius: 20, backgroundColor: '#EDECEA' },
+  unlockBanner: {
+    borderRadius: 18, padding: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    backgroundColor: T.brand,
+    shadowColor: T.brand, shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 30,
+  },
+  unlockIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  unlockEyebrow: { fontSize: 9.5, fontWeight: '700', color: 'rgba(255,255,255,0.85)', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 4 },
+  unlockTitle: { fontFamily: T.serif, fontSize: 20, color: '#fff', lineHeight: 24 },
+  unlockMeta: { fontSize: 11.5, color: 'rgba(255,255,255,0.85)' },
+  unlockCta: { backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  unlockCtaText: { fontSize: 12.5, fontWeight: '700' },
 
-  emptyCard: {
-    borderWidth: 1.5, borderStyle: 'dashed' as const, borderColor: '#DCDCDC',
-    borderRadius: 20, paddingVertical: 32,
-    alignItems: 'center', gap: 8,
-  },
-  emptyText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#CCC' },
+  // Section
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  addBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, borderRadius: 9 },
+  addBtnText: { fontSize: 12, fontWeight: '600', color: T.ink2 },
 
-  // Weekly review promo card
-  promoCard: {
-    marginHorizontal: 22, marginTop: 24,
-    backgroundColor: '#FFF', borderRadius: 16,
-    borderWidth: 1, borderColor: '#EAEAEA',
-    padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12,
-  },
-  promoIcon: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#F4F4F0', alignItems: 'center', justifyContent: 'center',
-  },
-  promoTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#000' },
-  promoSub:   { fontFamily: 'Inter_400Regular',  fontSize: 11, color: '#999', marginTop: 2 },
+  // Lang cards
+  langGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
+  langStack: { gap: 14 },
+  langCard: { borderRadius: 18, overflow: 'hidden' },
+  langHero: { padding: 18, paddingBottom: 22 },
+  langHeroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  flagWrap: { borderRadius: 4, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8 },
+  streakBadge: { backgroundColor: 'rgba(255,255,255,0.22)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
+  streakBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  langNative: { fontFamily: T.serif, fontSize: 34, color: '#fff', lineHeight: 38, marginBottom: 2 },
+  langEnglish: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
 
-  // Search modal
-  searchOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  searchBar: {
-    backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 16, height: 52,
-    borderBottomWidth: 1, borderBottomColor: '#EAEAEA',
-  },
-  searchInput:     { flex: 1, fontSize: 15, color: '#000', padding: 0 },
-  searchResults:   { backgroundColor: '#FFF', maxHeight: 380 },
-  searchItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
-  },
-  searchItemNative: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
-  searchItemEn:     { fontFamily: 'Inter_400Regular',  fontSize: 11, color: '#999', marginTop: 2 },
-  searchItemStreak: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  noResults: { padding: 24, textAlign: 'center' as const, color: '#BBB', fontSize: 14 },
-})
+  langSheet: { backgroundColor: T.card, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'center' },
+  ringNum: { fontFamily: T.serif, fontSize: 22, lineHeight: 26 },
+  ringLabel: { fontSize: 8, color: T.ink4, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' },
+  chip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
+  chipText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
+  nextUpLabel: { fontSize: 9, color: T.ink4, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  nextUpTitle: { fontSize: 12, fontWeight: '600', color: T.ink, lineHeight: 16 },
+  nextUpMeta: { fontSize: 10, color: T.ink4 },
+  continueBtn: { marginTop: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1 },
+  continueBtnText: { fontSize: 11.5, fontWeight: '600' },
+
+  // Empty state
+  emptyState: { alignItems: 'center', padding: 40, gap: 16 },
+  emptyText: { fontSize: 14, color: T.ink3, textAlign: 'center' },
+  emptyBtn: { backgroundColor: T.brand, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  emptyBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  // Week strip
+  weekCard: { backgroundColor: T.bg2, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: T.border, gap: 12 },
+  weekHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  weekFlame: { width: 28, height: 28, borderRadius: 14, backgroundColor: T.brandLight, alignItems: 'center', justifyContent: 'center' },
+  weekTitle: { fontSize: 12.5, fontWeight: '700', color: T.ink },
+  weekGrid: { flexDirection: 'row', gap: 6 },
+  weekCell: { flex: 1, alignItems: 'center', gap: 5 },
+  weekDot: { width: '100%', aspectRatio: 1, maxWidth: 38, borderRadius: 9, backgroundColor: T.card, borderWidth: 1.5, borderColor: T.border, alignItems: 'center', justifyContent: 'center' },
+  weekDotDone: { backgroundColor: T.brand, borderColor: T.brand },
+  weekDotToday: { backgroundColor: T.brandLight, borderColor: T.brand },
+  weekDotText: { fontSize: 11, fontWeight: '700', color: T.ink5 },
+  weekDay: { fontSize: 9.5, color: T.ink4, fontWeight: '500' },
+  weekFooter: { fontSize: 11.5, color: T.ink3, textAlign: 'center' },
+
+  // Aside
+  asideRow: { flexDirection: 'row', gap: 18 },
+
+  // Friends
+  friendsCard: { backgroundColor: T.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: T.border, gap: 4 },
+  friendsTitle: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
+  friendAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  friendAvatarText: { color: '#fff', fontWeight: '700', fontSize: 12.5 },
+  friendName: { fontSize: 12.5, color: T.ink, lineHeight: 18 },
+  friendMeta: { fontSize: 10.5, color: T.ink4 },
+
+  // Tutor
+  tutorCard: { backgroundColor: T.ink, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tutorIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  tutorTitle: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  tutorSub: { fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+
+  // Quick links
+  quickLinksCard: { backgroundColor: T.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: T.border },
+  quickLinksTitle: { fontSize: 10.5, fontWeight: '700', color: T.ink4, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 },
+  quickLinksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  quickLink: { paddingHorizontal: 10, paddingVertical: 8, backgroundColor: T.bg2, borderRadius: 9, borderWidth: 1, borderColor: T.hairline },
+  quickLinkText: { fontSize: 11.5, fontWeight: '600', color: T.ink2 },
+});

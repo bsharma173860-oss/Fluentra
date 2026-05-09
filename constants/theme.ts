@@ -43,13 +43,9 @@ export type AppTheme = {
 };
 
 export function useTheme(): AppTheme {
-  const scheme = useColorScheme();
   // No dark token set defined — using light tokens only.
-  // When dark mode is designed, swap values below.
-  const dark = false; // scheme === 'dark';
-
   return {
-    dark,
+    dark: false,
     // Surfaces
     bg:         '#F9F8F5',
     bg2:        '#F4F1EB',
@@ -110,11 +106,15 @@ export const T = {
   brand:      '#C04A06',
   brandSoft:  '#FFF0EE',
   brandLight: '#FFE5DE',
-  // Module accents
-  speaking:   { c: '#5B4EFF', bg: '#EEEDFF' },
-  writing:    { c: '#A65A00', bg: '#FFEAC2' },
-  listening:  { c: '#1A8F4E', bg: '#E2F5E9' },
-  reading:    { c: '#C04A06', bg: '#FFE5DE' },
+  // Module accents (flat strings — use speakingBg etc. for backgrounds)
+  speaking:   '#5B4EFF',
+  speakingBg: '#EEEDFF',
+  writing:    '#A65A00',
+  writingBg:  '#FFEAC2',
+  listening:  '#1A8F4E',
+  listeningBg:'#E2F5E9',
+  reading:    '#C04A06',
+  readingBg:  '#FFE5DE',
   // Typography
   serif: 'DMSerifDisplay_400Regular' as const,
   sans:  'Inter_400Regular' as const,

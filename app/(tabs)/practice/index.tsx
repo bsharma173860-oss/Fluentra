@@ -1,259 +1,233 @@
-/**
- * Practice hub — matches design handoff prototype page_practice.jsx
- * 4 module hero tiles + sessions table + daily mix strip
- */
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, useWindowDimensions,
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { T } from '@/constants/theme';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { MicIcon, PenIcon, HeadphoneIcon, BookIcon, ChevronRightIcon, ArrowRightIcon } from '@/components/icons';
+import { MobileTabBar } from '@/components/layout/MobileTabBar';
 
-const C = {
-  bg: '#F9F8F5', bg2: '#F4F1EB', card: '#FFFFFF',
-  border: '#EAEAEA', hairline: '#F4F4F4',
-  ink: '#000000', ink2: '#333333', ink3: '#666666', ink4: '#999999', ink5: '#BBBBBB',
-  brand: '#C04A06',
-};
-const MOD = {
-  speaking:  { c: '#5B4EFF', bg: '#EEEDFF' },
-  writing:   { c: '#A65A00', bg: '#FFEAC2' },
-  listening: { c: '#1A8F4E', bg: '#E2F5E9' },
-  reading:   { c: '#C04A06', bg: '#FFE5DE' },
-};
+type ModuleKey = 'speaking' | 'writing' | 'listening' | 'reading';
 
-const MODULES = [
-  { id: 'speaking',  Icon: MicIcon,       title: 'Speaking',  sub: 'Conversation drills + AI feedback',        route: '/modules/speaking/select' },
-  { id: 'writing',   Icon: PenIcon,       title: 'Writing',   sub: 'Essays graded by your exam rubric',         route: '/modules/writing/select' },
-  { id: 'listening', Icon: HeadphoneIcon, title: 'Listening', sub: 'Native audio across topics',                route: '/modules/listening/select' },
-  { id: 'reading',   Icon: BookIcon,      title: 'Reading',   sub: 'Passages with comprehension questions',     route: '/modules/reading/select' },
-] as const;
-
-const FILTERS = ['All', 'Speaking', 'Writing', 'Listening', 'Reading'];
-
-const RECENT = [
-  { mod: 'speaking',  title: 'IELTS Speaking Part 2',        lang: 'English',   date: 'Today, 9:00 AM',  score: '7.5/9' },
-  { mod: 'writing',   title: 'Task 1 — Graph description',   lang: 'English',   date: 'Yesterday',       score: '6.5/9' },
-  { mod: 'listening', title: 'Section 3 — Academic',         lang: 'English',   date: '2 days ago',      score: '32/40' },
-  { mod: 'reading',   title: 'Passage 2 — Science',          lang: 'English',   date: '3 days ago',      score: '11/13' },
+const MODULES: { key: ModuleKey; title: string; sub: string; color: string; bg: string; sessions: number; score: number; route: string }[] = [
+  { key: 'speaking',  title: 'Speaking',  sub: 'Conversation drills + AI feedback', color: T.speaking,  bg: T.speakingBg,  sessions: 142, score: 7.0, route: '/modules/speaking/session' },
+  { key: 'writing',   title: 'Writing',   sub: 'Essays graded by your exam rubric',   color: T.writing,   bg: T.writingBg,   sessions: 68,  score: 6.5, route: '/modules/writing/session'   },
+  { key: 'listening', title: 'Listening', sub: 'Native audio across topics',          color: T.listening, bg: T.listeningBg, sessions: 94,  score: 7.5, route: '/modules/listening/session' },
+  { key: 'reading',   title: 'Reading',   sub: 'Passages with comprehension Qs',      color: T.reading,   bg: T.readingBg,   sessions: 76,  score: 7.0, route: '/modules/reading/session'   },
 ];
 
-// ── Module hero tile ──────────────────────────────────────────────────────
-function ModuleHero({ id, Icon, title, sub, route, isWeb }: any) {
-  const { c } = MOD[id as keyof typeof MOD];
+const RECENT_SESSIONS = [
+  { module: 'speaking',  title: 'IELTS Speaking Part 2',       lang: 'English',  date: 'Today',      score: '7.5/9',  color: T.speaking,  bg: T.speakingBg },
+  { module: 'writing',   title: 'Task 1 — Graph description',  lang: 'English',  date: 'Yesterday',  score: '6.5/9',  color: T.writing,   bg: T.writingBg  },
+  { module: 'listening', title: 'Section 3 — Academic',        lang: 'English',  date: '2 days ago', score: '32/40',  color: T.listening, bg: T.listeningBg},
+  { module: 'reading',   title: 'Passage 2 — Science',         lang: 'English',  date: '3 days ago', score: '11/13',  color: T.reading,   bg: T.readingBg  },
+];
 
-  if (isWeb) {
-    return (
-      <div onClick={() => router.push(route)} style={{
-        textAlign: 'left', cursor: 'pointer', borderRadius: 18,
-        padding: '24px 26px',
-        background: `linear-gradient(135deg, ${c} 0%, ${c}cc 100%)`,
-        color: '#fff', border: 'none',
-        display: 'flex', flexDirection: 'column', gap: 18, minHeight: 170,
-        transition: 'transform .2s, box-shadow .2s',
-      } as any}
-        onMouseEnter={e => {
-          (e.currentTarget as any).style.transform = 'translateY(-2px)';
-          (e.currentTarget as any).style.boxShadow = `0 12px 32px ${c}44`;
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as any).style.transform = 'none';
-          (e.currentTarget as any).style.boxShadow = 'none';
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ width: 42, height: 42, borderRadius: 11,
-            background: 'rgba(255,255,255,.2)', backdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon size={18} color="#fff" />
-          </div>
-        </div>
-        <div style={{ marginTop: 'auto' }}>
-          <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
-            fontSize: 26, lineHeight: 1.05, marginBottom: 6 }}>{title}</div>
-          <div style={{ fontSize: 12.5, opacity: .85 }}>{sub}</div>
-        </div>
-      </div>
-    );
+// Module labels for filtering
+const FILTERS = ['All', 'Speaking', 'Writing', 'Listening', 'Reading'];
+
+export default function PracticeScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+  const [filter, setFilter] = useState('All');
+
+  const filteredSessions = RECENT_SESSIONS.filter(s => filter === 'All' || s.module === filter.toLowerCase());
+
+  const content = (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.scroll, isDesktop && s.scrollDesktop]} showsVerticalScrollIndicator={false}>
+      {/* Page header */}
+      <View style={s.pageHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.eyebrow}>Practice</Text>
+          <Text style={s.pageTitle}>Pick what you'll practice today.</Text>
+        </View>
+        <TouchableOpacity style={s.customBtn} onPress={() => router.push('/modules/speaking/session' as any)}>
+          <Text style={s.customBtnText}>+ Custom session</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Module hero cards — 2x2 on mobile, 4-col on desktop */}
+      <View style={isDesktop ? s.moduleGridDesktop : s.moduleGrid}>
+        {MODULES.map(m => (
+          <TouchableOpacity
+            key={m.key}
+            style={[s.moduleCard, { backgroundColor: m.color }]}
+            onPress={() => router.push(m.route as any)}
+            activeOpacity={0.9}
+          >
+            <View style={s.moduleCardTop}>
+              <View style={s.moduleIconWrap}>
+                <Text style={s.moduleIconText}>
+                  {m.key === 'speaking' ? '🎤' : m.key === 'writing' ? '✍️' : m.key === 'listening' ? '🎧' : '📖'}
+                </Text>
+              </View>
+              <View style={s.sessionsBadge}>
+                <Text style={s.sessionsBadgeText}>{m.sessions} sessions</Text>
+              </View>
+            </View>
+            <View style={{ marginTop: 'auto' }}>
+              <Text style={s.moduleTitle}>{m.title}</Text>
+              <Text style={s.moduleSub}>{m.sub}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Filter row */}
+      <View style={s.filterRow}>
+        <Text style={s.filterLabel}>Module sessions</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScroll}>
+          {FILTERS.map(f => (
+            <TouchableOpacity
+              key={f}
+              style={[s.filterChip, filter === f && s.filterChipActive]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={[s.filterChipText, filter === f && s.filterChipTextActive]}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Sessions table */}
+      <View style={s.table}>
+        {filteredSessions.map((row, i) => (
+          <TouchableOpacity
+            key={i}
+            style={[s.tableRow, i < filteredSessions.length - 1 && s.tableRowBorder]}
+            onPress={() => router.push(`/modules/${row.module}/results` as any)}
+            activeOpacity={0.7}
+          >
+            <View style={[s.tableIcon, { backgroundColor: row.bg }]}>
+              <Text style={[s.tableIconText, { color: row.color }]}>
+                {row.module[0].toUpperCase()}
+              </Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.tableTitle} numberOfLines={1}>{row.title}</Text>
+              <Text style={s.tableMeta}>{row.lang} · {row.date}</Text>
+            </View>
+            <Text style={s.tableScore}>{row.score}</Text>
+            <Text style={s.tableArrow}>›</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Daily mix CTA */}
+      <View style={s.mixCard}>
+        <View style={s.mixIcon}>
+          <Text style={{ fontSize: 20 }}>⚡</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.mixTitle}>Daily mix · 18 min</Text>
+          <Text style={s.mixSub}>One Speaking + Listening + Reading drill, picked from your weakest topics.</Text>
+        </View>
+        <TouchableOpacity style={s.mixBtn} onPress={() => router.push('/modules/speaking/session' as any)}>
+          <Text style={s.mixBtnText}>Start mix →</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Module cards mobile — detail cards */}
+      {!isDesktop && (
+        <>
+          <Text style={s.sectionTitle}>By module</Text>
+          <View style={s.mobileModuleGrid}>
+            {MODULES.map(m => (
+              <TouchableOpacity key={m.key} style={s.mobileModuleCard} onPress={() => router.push(m.route as any)} activeOpacity={0.8}>
+                <View style={s.mobileModuleTop}>
+                  <View style={[s.mobileModuleIcon, { backgroundColor: m.bg }]}>
+                    <Text style={{ fontSize: 14 }}>
+                      {m.key === 'speaking' ? '🎤' : m.key === 'writing' ? '✍️' : m.key === 'listening' ? '🎧' : '📖'}
+                    </Text>
+                  </View>
+                  <Text style={s.mobileModuleScore}>{m.score.toFixed(1)}</Text>
+                </View>
+                <Text style={s.mobileModuleTitle}>{m.title}</Text>
+                <Text style={s.mobileModuleSub}>{m.sub.split(' ').slice(0, 3).join(' ')}…</Text>
+                <Text style={[s.mobileModuleCta, { color: m.color }]}>Continue →</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
+
+      <View style={{ height: 20 }} />
+    </ScrollView>
+  );
+
+  if (isDesktop) {
+    return <AppLayout>{content}</AppLayout>;
   }
 
   return (
-    <TouchableOpacity
-      style={[mh.card, { backgroundColor: c }]}
-      onPress={() => router.push(route as any)}
-      activeOpacity={0.88}
-    >
-      <View style={mh.iconWrap}><Icon size={20} color="#fff" /></View>
-      <Text style={mh.title}>{title}</Text>
-      <Text style={mh.sub}>{sub}</Text>
-    </TouchableOpacity>
-  );
-}
-
-const mh = StyleSheet.create({
-  card: { borderRadius: 18, padding: 22, gap: 10, flex: 1, minWidth: '45%' },
-  iconWrap: {
-    width: 40, height: 40, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,.2)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  title: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 22, color: '#fff', lineHeight: 26 },
-  sub:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,.85)' },
-});
-
-// ── Recent session row ────────────────────────────────────────────────────
-function SessionRow({ item }: { item: typeof RECENT[0] }) {
-  const mod = MOD[item.mod as keyof typeof MOD];
-  const Icon = MODULES.find(m => m.id === item.mod)?.Icon ?? BookIcon;
-  return (
-    <View style={sr.row}>
-      <View style={[sr.icon, { backgroundColor: mod.bg }]}>
-        <Icon size={14} color={mod.c} />
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={sr.title} numberOfLines={1}>{item.title}</Text>
-        <Text style={sr.meta}>{item.lang} · {item.date}</Text>
-      </View>
-      <Text style={sr.score}>{item.score}</Text>
-      <ChevronRightIcon size={13} color={C.ink5} />
-    </View>
-  );
-}
-const sr = StyleSheet.create({
-  row:   { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
-    backgroundColor: C.card, borderRadius: 12,
-    borderWidth: 1, borderColor: C.border },
-  icon:  { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  title: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.ink },
-  meta:  { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.ink4, marginTop: 1 },
-  score: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 16, color: C.ink, flexShrink: 0 },
-});
-
-// ── Main screen ──────────────────────────────────────────────────────────
-export default function PracticeScreen() {
-  const [activeFilter, setActiveFilter] = useState('All');
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === 'web' && width >= 768;
-
-  const filtered = activeFilter === 'All'
-    ? RECENT
-    : RECENT.filter(r => r.mod === activeFilter.toLowerCase());
-
-  return (
-    <AppLayout>
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: isDesktop ? '28px 36px 48px' as any : 20, paddingBottom: 48, gap: 24 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── Page header ── */}
-          <View style={{ gap: 4, marginBottom: 4 }}>
-            <Text style={s.eyebrow}>PRACTICE</Text>
-            <Text style={s.pageTitle}>Pick what you'll practice today.</Text>
-          </View>
-
-          {/* ── 4 module tiles ── */}
-          {isDesktop ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 } as any}>
-              {MODULES.map(m => <ModuleHero key={m.id} {...m} isWeb />)}
-            </div>
-          ) : (
-            <View style={s.modGrid}>
-              {MODULES.map(m => <ModuleHero key={m.id} {...m} isWeb={false} />)}
-            </View>
-          )}
-
-          {/* ── Filter chips + recent sessions ── */}
-          <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={s.sectionTitle}>Recent sessions</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 6, flexDirection: 'row' }}>
-                {FILTERS.map(f => (
-                  <TouchableOpacity key={f}
-                    style={[s.chip, activeFilter === f && s.chipActive]}
-                    onPress={() => setActiveFilter(f)} activeOpacity={0.8}>
-                    <Text style={[s.chipText, activeFilter === f && s.chipTextActive]}>{f}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {filtered.length > 0 ? (
-              <View style={{ gap: 8 }}>
-                {filtered.map((item, i) => <SessionRow key={i} item={item} />)}
-              </View>
-            ) : (
-              <View style={s.empty}>
-                <Text style={s.emptyText}>No sessions yet</Text>
-                <Text style={s.emptySub}>Start a practice to see your results here</Text>
-              </View>
-            )}
-          </View>
-
-          {/* ── Daily mix strip ── */}
-          <TouchableOpacity
-            style={s.mixCard}
-            onPress={() => router.push('/modules/listening/select' as any)}
-            activeOpacity={0.88}
-          >
-            <View style={s.mixIcon}>
-              <Text style={{ fontSize: 20 }}>✨</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.mixTitle}>Daily mix · 18 min</Text>
-              <Text style={s.mixSub}>
-                One Speaking + one Listening + one Reading drill, picked from your weakest topics.
-              </Text>
-            </View>
-            <View style={s.mixCta}>
-              <Text style={s.mixCtaText}>Start mix</Text>
-              <ArrowRightIcon size={14} color={C.brand} />
-            </View>
-          </TouchableOpacity>
-
-        </ScrollView>
-      </SafeAreaView>
-    </AppLayout>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {content}
+      <MobileTabBar />
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  eyebrow:   { fontFamily: 'Inter_700Bold', fontSize: 11, color: C.ink4,
-    letterSpacing: 1.2, textTransform: 'uppercase' },
-  pageTitle: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 32, color: C.ink, lineHeight: 36 },
-  sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink },
+  safe: { flex: 1, backgroundColor: T.bg },
+  scroll: { padding: 18, gap: 18, paddingBottom: 20 },
+  scrollDesktop: { padding: 28, paddingHorizontal: 36 },
 
-  modGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  pageHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 },
+  eyebrow: { fontSize: 11, fontWeight: '700', color: T.ink4, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 4 },
+  pageTitle: { fontFamily: T.serif, fontSize: 30, color: T.ink, lineHeight: 36 },
+  customBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, borderRadius: 10 },
+  customBtnText: { fontSize: 13, fontWeight: '600', color: T.ink2 },
 
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 99,
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.border,
-  },
-  chipActive:     { backgroundColor: C.ink, borderColor: C.ink },
-  chipText:       { fontFamily: 'Inter_500Medium', fontSize: 12, color: C.ink3 },
-  chipTextActive: { color: '#fff' },
+  // Module grid
+  moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  moduleGridDesktop: { flexDirection: 'row', gap: 14 },
+  moduleCard: { borderRadius: 18, padding: 22, minHeight: 160, flexDirection: 'column', gap: 14, width: '47%' },
+  moduleCardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  moduleIconWrap: { width: 42, height: 42, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  moduleIconText: { fontSize: 20 },
+  sessionsBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99 },
+  sessionsBadgeText: { fontSize: 11, color: '#fff', fontWeight: '700' },
+  moduleTitle: { fontFamily: T.serif, fontSize: 24, color: '#fff', lineHeight: 28, marginBottom: 4 },
+  moduleSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
 
-  empty: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border,
-    padding: 32, alignItems: 'center', gap: 6 },
-  emptyText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.ink4 },
-  emptySub:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.ink5, textAlign: 'center' },
+  // Filters
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  filterLabel: { fontSize: 13, fontWeight: '700', color: T.ink },
+  filterScroll: { flex: 1 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginRight: 4 },
+  filterChipActive: { backgroundColor: T.card, borderWidth: 1, borderColor: T.border },
+  filterChipText: { fontSize: 12, color: T.ink3 },
+  filterChipTextActive: { color: T.ink, fontWeight: '700' },
 
-  mixCard: {
-    backgroundColor: C.ink, borderRadius: 16, padding: 20,
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-  },
-  mixIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: C.brand,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  mixTitle: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 20, color: '#fff', lineHeight: 22, marginBottom: 4 },
-  mixSub:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,.7)' },
-  mixCta:   { flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, flexShrink: 0 },
-  mixCtaText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: C.brand },
+  // Table
+  table: { backgroundColor: T.card, borderRadius: 14, borderWidth: 1, borderColor: T.border, overflow: 'hidden' },
+  tableRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
+  tableRowBorder: { borderBottomWidth: 1, borderBottomColor: T.hairline },
+  tableIcon: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  tableIconText: { fontSize: 13, fontWeight: '800' },
+  tableTitle: { fontSize: 13, fontWeight: '600', color: T.ink },
+  tableMeta: { fontSize: 11, color: T.ink4, marginTop: 2 },
+  tableScore: { fontFamily: T.serif, fontSize: 16, color: T.ink },
+  tableArrow: { fontSize: 18, color: T.ink5 },
+
+  // Daily mix
+  mixCard: { backgroundColor: T.ink, borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  mixIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: T.brand, alignItems: 'center', justifyContent: 'center' },
+  mixTitle: { fontFamily: T.serif, fontSize: 20, color: '#fff', lineHeight: 24, marginBottom: 4 },
+  mixSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
+  mixBtn: { backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  mixBtnText: { fontSize: 13, fontWeight: '700', color: T.ink },
+
+  // Mobile module grid
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  mobileModuleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  mobileModuleCard: { width: '47%', backgroundColor: T.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: T.border, gap: 8 },
+  mobileModuleTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  mobileModuleIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  mobileModuleScore: { fontFamily: T.serif, fontSize: 20, color: T.ink },
+  mobileModuleTitle: { fontSize: 13, fontWeight: '700', color: T.ink },
+  mobileModuleSub: { fontSize: 10.5, color: T.ink3 },
+  mobileModuleCta: { fontSize: 10.5, fontWeight: '700' },
 });
