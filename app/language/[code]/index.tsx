@@ -16,10 +16,17 @@ import {
 import { getExamFormat } from '@/constants/examFormats';
 
 const MODULE_COLORS: Record<string, string> = {
-  speaking: '#5B4EFF',
-  writing:  '#B07A10',
-  listening:'#0A8C5A',
-  reading:  '#C04A06',
+  speaking:  '#5B4EFF',   // purple
+  writing:   '#A65A00',   // gold
+  listening: '#1A8F4E',   // green
+  reading:   '#C04A06',   // orange = brand
+};
+
+const MODULE_BG_COLORS: Record<string, string> = {
+  speaking:  '#EEEDFF',
+  writing:   '#FFEAC2',
+  listening: '#E2F5E9',
+  reading:   '#FFE5DE',
 };
 
 // Module routes: practice modules go to existing select pages

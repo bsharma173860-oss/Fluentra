@@ -8,8 +8,8 @@ export function FluentraIcon({ size = 32 }: { size?: number }) {
     <Svg width={size} height={size} viewBox="0 0 32 32">
       <Defs>
         <LinearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor="#5B4EFF" />
-          <Stop offset="1" stopColor="#7B6FFF" />
+          <Stop offset="0" stopColor="#C04A06" />
+          <Stop offset="1" stopColor="#E8732F" />
         </LinearGradient>
       </Defs>
       <Rect width="32" height="32" rx="9" fill="url(#logoGrad)" />
@@ -57,5 +57,5 @@ const l = StyleSheet.create({
     color: '#000000',
     includeFontPadding: false,
   },
-  ra: { color: '#5B4EFF' },
+  ra: { color: '#C04A06' },
 });

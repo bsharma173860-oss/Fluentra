@@ -97,7 +97,7 @@ function LangRow({
         onDragEnd={onDragEnd}
         style={{
           opacity:      isDragging ? 0.4 : 1,
-          borderLeft:   isDragOver ? '2px solid #5B4EFF' : '2px solid transparent',
+          borderLeft:   isDragOver ? '2px solid #C04A06' : '2px solid transparent',
           cursor:       'grab',
           borderRadius: 6,
           transition:   'opacity 0.15s, border-left 0.1s',
