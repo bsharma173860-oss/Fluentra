@@ -1,19 +1,36 @@
 /**
- * WebDashboard — desktop-only home screen (V2+V4 hybrid).
- * Rendered only when Platform.OS === 'web' && width >= 768.
- * Uses HTML elements directly (div/svg) so we can leverage CSS
- * gradients, grid, box-shadow, and backdrop-filter.
+ * WebDashboard — desktop home screen matching the design handoff prototype.
+ * Source: ~/Desktop/claude_code_handoff/prototypes/redesign/web/page_dashboard.jsx
+ * Uses HTML elements directly for CSS gradients, grid, box-shadow, backdrop-filter.
  */
 import React, { useState } from 'react'
 import { View, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { FlagSVG } from '@/components/flags'
-import { FlameIcon, ArrowRightIcon, BellIcon } from '@/components/icons'
+import { FlameIcon, ArrowRightIcon, BellIcon, PlusIcon } from '@/components/icons'
 import { getTheme } from '@/constants/languageThemes'
 import { LANGUAGE_EXAMS } from '@/constants/examProfiles'
 import type { ExamProfile } from '@/constants/examProfiles'
 
-// ── Helpers ───────────────────────────────────────────────────────
+const T = {
+  bg:      '#F9F8F5',
+  bg2:     '#F4F1EB',
+  bg3:     '#EDEAE3',
+  card:    '#FFFFFF',
+  paper:   '#FFFEFA',
+  border:  '#EAEAEA',
+  hairline:'#F4F4F4',
+  ink:     '#000000',
+  ink2:    '#333333',
+  ink3:    '#666666',
+  ink4:    '#999999',
+  ink5:    '#BBBBBB',
+  brand:   '#C04A06',
+  brandSoft:'#FFF0EE',
+  brandLight:'#FFE5DE',
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
 
 function cefrShort(streak: number): string {
   if (streak < 8)  return 'B1'
@@ -23,10 +40,10 @@ function cefrShort(streak: number): string {
 }
 
 function cefrLong(streak: number): string {
-  if (streak < 8)  return 'B1 — Intermediate'
-  if (streak < 21) return 'B2 — Upper Intermediate'
-  if (streak < 36) return 'C1 — Advanced'
-  return 'C2 — Mastery'
+  if (streak < 8)  return 'B1 · Intermediate'
+  if (streak < 21) return 'B2 · Upper-int.'
+  if (streak < 36) return 'C1 · Advanced'
+  return 'C2 · Mastery'
 }
 
 function getBadges(code: string): string[] {
@@ -43,9 +60,7 @@ const SESSION_TITLES: Record<string, { title: string; time: string; focus: strin
 }
 
 function getSession(code: string) {
-  return SESSION_TITLES[code] ?? {
-    title: 'Daily practice session', time: '10 min', focus: 'Listening + Speaking',
-  }
+  return SESSION_TITLES[code] ?? { title: 'Daily practice', time: '10 min', focus: 'Listening + Speaking' }
 }
 
 function getGreeting(): string {
@@ -55,14 +70,12 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-// ── SVG Ring ──────────────────────────────────────────────────────
-// Uses native HTML <svg> so we get CSS transitions and no RN-SVG quirks.
+// ── SVG Ring (CSS-animated stroke-dashoffset) ─────────────────────────────
 
 function SvgRing({
-  pct, size, stroke, color, trackColor, children,
+  pct, size, stroke, color, children,
 }: {
-  pct: number; size: number; stroke: number; color: string;
-  trackColor: string; children: React.ReactNode;
+  pct: number; size: number; stroke: number; color: string; children: React.ReactNode
 }) {
   const r      = (size - stroke) / 2
   const C      = 2 * Math.PI * r
@@ -70,34 +83,26 @@ function SvgRing({
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <svg
-        width={size} height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        style={{ transform: 'rotate(-90deg)', display: 'block' }}
-      >
-        <circle cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke={trackColor} strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r}
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+        <circle cx={size/2} cy={size/2} r={r}
+          fill="none" stroke={T.bg3} strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r}
           fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={`${C} ${C}`} strokeDashoffset={offset}
           style={{ transition: 'stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)' }} />
       </svg>
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center' }}>
         {children}
       </div>
     </div>
   )
 }
 
-// ── Hybrid Card ───────────────────────────────────────────────────
+// ── Language card — full hybrid design (gradient hero + white sheet) ──────
 
-function HybridCard({ lang }: { lang: any }) {
-  const [hovered, setHovered] = useState(false)
-
+function LangCard({ lang, onEnter, isHovered }: { lang: any; onEnter: () => void; isHovered: boolean }) {
   const code    = lang.language_code
   const t       = getTheme(code)
   const streak  = lang.streak_count || 0
@@ -109,146 +114,93 @@ function HybridCard({ lang }: { lang: any }) {
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={onEnter}
+      onMouseLeave={onEnter}
       onClick={() => router.push(`/language/${code}` as any)}
       style={{
-        borderRadius: 24,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        // Gradient background — CSS only, no LinearGradient needed
-        background: `linear-gradient(160deg, ${t.accent} 0%, ${t.accent}DD 55%, ${t.bg} 100%)`,
-        boxShadow: hovered
-          ? `0 16px 48px ${t.accent}33, 0 0 0 1px ${t.accent}22`
-          : `0 4px 16px ${t.accent}18`,
-        transform: hovered ? 'translateY(-2px)' : 'none',
-        transition: 'all .25s cubic-bezier(.2,.8,.2,1)',
-        cursor: 'pointer',
+        borderRadius: 22, overflow: 'hidden', cursor: 'pointer',
+        display: 'flex', flexDirection: 'column',
+        background: `linear-gradient(160deg, ${t.accent} 0%, ${t.accent}DD 55%, ${t.accentLight} 100%)`,
+        boxShadow: isHovered
+          ? `0 4px 20px ${t.accent}33, 0 0 0 1px ${t.accent}22`
+          : `0 4px 20px ${t.accent}1f, 0 0 0 1px ${t.accent}22`,
+        transform: isHovered ? 'translateY(-2px)' : 'none',
+        transition: 'all .2s cubic-bezier(.2,.8,.2,1)',
       } as React.CSSProperties}
     >
-      {/* ── Gradient hero top ── */}
-      <div style={{ padding: '24px 26px 28px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
-        {/* Decorative 10×8 white dot grid, opacity 0.1 */}
-        <div style={{
-          position: 'absolute', top: -20, right: -20,
-          width: 180, height: 180,
+      {/* Gradient hero */}
+      <div style={{ padding: '22px 24px 26px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+        {/* Dot pattern */}
+        <div style={{ position: 'absolute', top: -30, right: -20, width: 200, height: 200,
           display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 10,
-          opacity: 0.1, pointerEvents: 'none',
-        }}>
+          opacity: 0.1, pointerEvents: 'none' }}>
           {Array.from({ length: 80 }).map((_, i) => (
             <div key={i} style={{ width: 4, height: 4, borderRadius: 2, background: '#fff' }} />
           ))}
         </div>
-
-        {/* Flag (52×34, shadow) + streak pill */}
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', marginBottom: 18,
-          position: 'relative',
-        }}>
-          <div style={{ boxShadow: '0 2px 8px rgba(0,0,0,.25)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-            <FlagSVG code={code} width={52} height={34} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 18, position: 'relative' }}>
+          <div style={{ boxShadow: '0 2px 8px rgba(0,0,0,.2)', borderRadius: 5, overflow: 'hidden' }}>
+            <FlagSVG code={code} width={48} height={32} />
           </div>
-          {/* Streak pill — glassmorphism */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: 'rgba(255,255,255,.22)',
-            padding: '6px 12px', borderRadius: 99,
-            backdropFilter: 'blur(10px)',
-          }}>
-            <FlameIcon size={13} color="#FFF" />
-            <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'Inter_700Bold, Inter, sans-serif' }}>
-              {streak}-day
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5,
+            background: 'rgba(255,255,255,.22)', padding: '5px 11px',
+            borderRadius: 99, backdropFilter: 'blur(10px)', fontSize: 12, fontWeight: 700 }}>
+            <FlameIcon size={13} color="#FFF" /> {streak}-day
           </div>
         </div>
-
-        {/* Native name — DM Serif Display 42 */}
-        <div style={{ fontFamily: "'DMSerifDisplay_400Regular', 'DM Serif Display', Georgia, serif", fontSize: 42, lineHeight: 1, marginBottom: 4 }}>
-          {t.native}
-        </div>
-        {/* English name + CEFR long — 13/500, opacity .85 */}
-        <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 500, fontFamily: 'Inter_500Medium, Inter, sans-serif' }}>
-          {t.name} · {cefrL}
-        </div>
+        <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+          fontSize: 38, lineHeight: 1, marginBottom: 4 }}>{t.native}</div>
+        <div style={{ fontSize: 12.5, opacity: 0.85, fontWeight: 500 }}>{t.name} · {cefrL}</div>
       </div>
 
-      {/* ── White sheet (ring + stats + CTA) ── */}
-      <div style={{
-        background: '#fff',
-        borderTopLeftRadius: 24, borderTopRightRadius: 24,
-        marginTop: 'auto',
-        padding: '22px 26px',
-        display: 'flex', gap: 20,
-      }}>
-        {/* Progress ring — 108px, stroke 9 */}
-        <SvgRing pct={pct} size={108} stroke={9} color={t.accent} trackColor="#F2F2F2">
-          <div style={{ fontFamily: "'DMSerifDisplay_400Regular', 'DM Serif Display', Georgia, serif", fontSize: 32, color: '#000', lineHeight: 1 }}>
-            {streak}
-          </div>
-          <div style={{ fontSize: 9, color: '#999', letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, marginTop: 2, fontFamily: 'Inter_700Bold, Inter, sans-serif' }}>
-            Day streak
-          </div>
+      {/* White sheet */}
+      <div style={{ background: T.card, borderTopLeftRadius: 22, borderTopRightRadius: 22,
+        padding: '20px 22px', display: 'flex', gap: 16 }}>
+        <SvgRing pct={pct} size={92} stroke={8} color={t.accent}>
+          <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+            fontSize: 26, color: T.ink, lineHeight: 1 }}>{streak}</div>
+          <div style={{ fontSize: 8.5, color: T.ink4, letterSpacing: '.12em',
+            textTransform: 'uppercase', fontWeight: 700, marginTop: 2 }}>Day streak</div>
         </SvgRing>
 
-        {/* Right column */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          {/* Badge chips row */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-            {badges.map(b => (
-              <div key={b} style={{
-                padding: '4px 10px', borderRadius: 99,
+          {/* Chips */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 8, flexWrap: 'wrap' }}>
+            {badges.slice(0, 1).map(b => (
+              <div key={b} style={{ padding: '3px 9px', borderRadius: 99,
                 background: t.accentLight, color: t.accent,
-                fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em',
-                fontFamily: 'Inter_700Bold, Inter, sans-serif',
-              }}>
-                {b}
-              </div>
+                fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em' }}>{b}</div>
             ))}
-            {/* CEFR chip */}
-            <div style={{
-              padding: '4px 10px', borderRadius: 99,
-              background: '#F4F4F0', color: '#666',
-              fontSize: 10.5, fontWeight: 700,
-              fontFamily: 'Inter_700Bold, Inter, sans-serif',
-            }}>
-              {cefr}
-            </div>
+            <div style={{ padding: '3px 9px', borderRadius: 99,
+              background: T.bg2, color: T.ink3,
+              fontSize: 10.5, fontWeight: 700 }}>{cefr}</div>
           </div>
 
-          {/* "NEXT UP" section */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 600, marginBottom: 2, fontFamily: 'Inter_600SemiBold, Inter, sans-serif' }}>
-              Next up
-            </div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: '#000', lineHeight: 1.25, fontFamily: 'Inter_600SemiBold, Inter, sans-serif' }}>
-              {session.title}
-            </div>
-            <div style={{ fontSize: 11, color: '#999', marginTop: 2, fontFamily: 'Inter_400Regular, Inter, sans-serif' }}>
-              {session.time} · {session.focus}
-            </div>
+          {/* Next up */}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, color: T.ink4, fontWeight: 700,
+              letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 2 }}>Next up</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, lineHeight: 1.25 }}>
+              {session.title}</div>
+            <div style={{ fontSize: 11, color: T.ink4, marginTop: 1 }}>
+              {session.time} · {session.focus}</div>
           </div>
 
-          {/* Continue button — fills on card hover */}
+          {/* Continue button */}
           <button
-            onClick={(e) => { e.stopPropagation(); router.push(`/language/${code}` as any) }}
+            onClick={e => { e.stopPropagation(); router.push(`/language/${code}` as any) }}
             style={{
-              marginTop: 'auto',
-              padding: '10px 14px',
-              background: hovered ? t.accent : '#fff',
-              color: hovered ? '#fff' : t.accent,
-              border: `1.5px solid ${t.accent}`,
-              borderRadius: 10,
-              fontSize: 12.5, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              cursor: 'pointer',
-              transition: 'all .2s',
-              fontFamily: 'Inter_700Bold, Inter, sans-serif',
+              marginTop: 'auto', padding: '9px 14px',
+              background: isHovered ? t.accent : T.card,
+              color: isHovered ? '#fff' : t.accent,
+              border: `1.5px solid ${t.accent}`, borderRadius: 10,
+              fontSize: 12, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              cursor: 'pointer', transition: 'all .2s',
             } as React.CSSProperties}
           >
-            Continue
-            <ArrowRightIcon size={13} color={hovered ? '#FFF' : t.accent} />
+            Continue <ArrowRightIcon size={12} color={isHovered ? '#fff' : t.accent} />
           </button>
         </div>
       </div>
@@ -256,116 +208,90 @@ function HybridCard({ lang }: { lang: any }) {
   )
 }
 
-// ── Web top bar ───────────────────────────────────────────────────
-// height 60, bottom border #EAEAEA, search input + bell + avatar
+// ── Skeleton card ─────────────────────────────────────────────────────────
 
-function WebTopBar({ userName, onSearch }: { userName: string; onSearch?: () => void }) {
-  const initial = (userName[0] ?? '?').toUpperCase()
-
+function SkeletonCard() {
   return (
     <div style={{
-      height: 60, flexShrink: 0,
-      borderBottom: '1px solid #EAEAEA',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 32px',
-      background: '#F9F8F5',
-    } as React.CSSProperties}>
-      {/* Search — 320px wide, ⌘K chip */}
-      <div
-        onClick={onSearch}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          width: 320, padding: '8px 14px',
-          background: '#fff', borderRadius: 10,
-          border: '1px solid #EAEAEA', color: '#999', cursor: 'pointer',
-        }}
-      >
-        {/* Inline search SVG to avoid react-native-svg layout issues inside a plain div */}
-        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#BBB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <span style={{ fontSize: 13, flex: 1, fontFamily: 'Inter_400Regular, Inter, sans-serif' }}>
-          Search lessons, phrases, grammar…
-        </span>
-        <span style={{
-          fontSize: 10, color: '#BBB',
-          border: '1px solid #EAEAEA', borderRadius: 4, padding: '2px 6px',
-          fontFamily: 'Inter_400Regular, Inter, sans-serif',
-        }}>
-          ⌘K
-        </span>
-      </div>
+      height: 280, borderRadius: 22,
+      background: 'linear-gradient(90deg,#EDECEA 0%,#F4F3F0 50%,#EDECEA 100%)',
+      backgroundSize: '400% 100%',
+      animation: 'shimmer 1.5s ease-in-out infinite',
+    } as React.CSSProperties} />
+  )
+}
 
-      {/* Bell + avatar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <BellIcon size={18} color="#666" />
-        <div style={{
-          width: 32, height: 32, borderRadius: 16,
-          background: '#C04A06', color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 13, fontWeight: 700, flexShrink: 0,
-          fontFamily: 'Inter_700Bold, Inter, sans-serif',
-        }}>
-          {initial}
+// ── Week calendar strip ───────────────────────────────────────────────────
+
+function WeekCalendar({ streakDays }: { streakDays: number }) {
+  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+  const today = new Date().getDay() // 0=Sun
+  const todayIdx = today === 0 ? 6 : today - 1
+
+  return (
+    <div style={{ padding: 18, background: T.bg2, borderRadius: 14,
+      border: `1px solid ${T.border}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 14,
+          background: T.brandLight, color: T.brand,
+          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <FlameIcon size={13} color={T.brand} />
         </div>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: T.ink }}>This week</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 5 }}>
+        {days.map((d, i) => {
+          const done  = i < todayIdx && i < streakDays
+          const isToday = i === todayIdx
+          return (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 4 }}>
+              <div style={{
+                width: '100%', aspectRatio: '1', maxWidth: 32, borderRadius: 8,
+                background: done ? T.brand : isToday ? T.brandLight : T.card,
+                border: `1.5px solid ${isToday ? T.brand : T.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10.5, fontWeight: 700,
+                color: done ? '#fff' : isToday ? T.brand : T.ink5,
+              }}>
+                {done ? '✓' : i + 1}
+              </div>
+              <div style={{ fontSize: 9.5, fontWeight: isToday ? 700 : 500,
+                color: isToday ? T.brand : T.ink4 }}>{d}</div>
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ marginTop: 12, fontSize: 11.5, color: T.ink3, textAlign: 'center' }}>
+        {streakDays}-day streak · keep it going
       </div>
     </div>
   )
 }
 
-// ── Skeleton card ─────────────────────────────────────────────────
-
-function SkeletonCard() {
-  return (
-    <div style={{
-      height: 280, borderRadius: 24,
-      background: 'linear-gradient(90deg, #EDECEA 0%, #F4F3F0 50%, #EDECEA 100%)',
-      backgroundSize: '400% 100%',
-      animation: 'shimmer 1.5s ease-in-out infinite',
-    } as React.CSSProperties}/>
-  )
-}
-
-// ── Main WebDashboard ─────────────────────────────────────────────
+// ── Main export ───────────────────────────────────────────────────────────
 
 type Props = {
-  languages:       any[];
-  userName:        string;
-  loading:         boolean;
-  onAddLanguage:   () => void;
-  onRemoveLanguage: (lang: any) => void;
+  languages:        any[]
+  userName:         string
+  loading:          boolean
+  onAddLanguage:    () => void
+  onRemoveLanguage: (lang: any) => void
 }
 
 export function WebDashboard({ languages, userName, loading, onAddLanguage }: Props) {
-  type Filter = 'all' | 'active' | 'archived'
-  const [filter, setFilter] = useState<Filter>('all')
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const totalStreak = languages.reduce((s, l) => s + (l.streak_count || 0), 0)
-  const avgProgress = languages.length > 0
-    ? Math.round(
-        languages.reduce((s, l) => s + Math.min(((l.streak_count || 0) / 9) * 100, 100), 0)
-        / languages.length
-      )
-    : 0
-
-  const greeting     = getGreeting()
-  const greetingLine = `${greeting.toUpperCase()}, ${userName.toUpperCase()}`
-
-  const filtered =
-    filter === 'active'   ? languages.filter(l => (l.streak_count || 0) > 0) :
-    filter === 'archived' ? []   // no archived concept yet — show empty
-    : languages
-
-  const filterOptions: [Filter, string][] = [
-    ['all',      `All ${languages.length}`],
-    ['active',   'Active'],
-    ['archived', 'Archived'],
-  ]
+  const greeting      = getGreeting()
+  const longestStreak = languages.length ? Math.max(...languages.map(l => l.streak_count || 0)) : 0
+  const totalStreak   = languages.reduce((s, l) => s + (l.streak_count || 0), 0)
+  const topLang       = languages[0]
+  const topSession    = topLang ? getSession(topLang.language_code) : null
+  const topTheme      = topLang ? getTheme(topLang.language_code) : null
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Shimmer keyframes injected once */}
-      {/* @ts-ignore — style tag is valid on web */}
+      {/* @ts-ignore */}
       <style>{`
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
@@ -373,113 +299,276 @@ export function WebDashboard({ languages, userName, loading, onAddLanguage }: Pr
         }
       `}</style>
 
-      {/* Top bar */}
-      <WebTopBar userName={userName} />
+      {/* ── Topbar ── */}
+      <div style={{
+        height: 64, flexShrink: 0, borderBottom: `1px solid ${T.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 36px', background: T.bg,
+      } as React.CSSProperties}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, width: 360,
+            padding: '9px 14px', background: T.card, borderRadius: 11,
+            border: `1px solid ${T.border}`, color: T.ink4, cursor: 'pointer',
+          }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={T.ink5} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span style={{ fontSize: 13, flex: 1 }}>Search lessons, phrases, grammar…</span>
+            <span style={{ fontSize: 10, color: T.ink5, border: `1px solid ${T.border}`,
+              borderRadius: 5, padding: '2px 6px', fontWeight: 600, letterSpacing: '.04em' }}>⌘K</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button style={{ width: 36, height: 36, borderRadius: 10, background: T.card,
+            border: `1px solid ${T.border}`, color: T.ink2,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', cursor: 'pointer' }}>
+            <BellIcon size={17} color={T.ink3} />
+            <span style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6,
+              borderRadius: 3, background: T.brand }} />
+          </button>
+          <div style={{ width: 36, height: 36, borderRadius: 18,
+            background: `linear-gradient(135deg,${T.brand},#E8732F)`,
+            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            {(userName[0] ?? '?').toUpperCase()}
+          </div>
+        </div>
+      </div>
 
-      {/* Scrollable content */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 40, paddingTop: 32, paddingBottom: 48 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Greeting + stats ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
-          {/* Left: greeting text */}
+      {/* ── Scrollable content ── */}
+      <ScrollView style={{ flex: 1 }}
+        contentContainerStyle={{ padding: '28px 36px 48px' }}
+        showsVerticalScrollIndicator={false}>
+
+        {/* ── Page header ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-end',
+          justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#999', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6, fontFamily: 'Inter_700Bold, Inter, sans-serif' }}>
-              {greetingLine}
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.ink4,
+              letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+              {greeting}, {userName}
             </div>
-            <div style={{ fontFamily: "'DMSerifDisplay_400Regular', 'DM Serif Display', Georgia, serif", fontSize: 40, color: '#000', lineHeight: 1.1 }}>
+            <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+              fontSize: 38, color: T.ink, lineHeight: 1.1 }}>
               Keep the streaks alive.
             </div>
           </div>
-
-          {/* Right: stats pair */}
-          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 10, color: '#999', letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 3, fontFamily: 'Inter_700Bold, Inter, sans-serif' }}>
-                Total streak days
+              <div style={{ fontSize: 10, color: T.ink4, fontWeight: 700,
+                letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+                Longest streak
               </div>
-              <div style={{ fontFamily: "'DMSerifDisplay_400Regular', 'DM Serif Display', Georgia, serif", fontSize: 32, color: '#000', lineHeight: 1 }}>
-                {totalStreak}
+              <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+                fontSize: 32, color: T.ink, lineHeight: 1 }}>
+                {longestStreak} <span style={{ fontSize: 18, color: T.ink4 }}>days</span>
               </div>
             </div>
-            {/* Divider */}
-            <div style={{ width: 1, background: '#EAEAEA', alignSelf: 'stretch' }} />
+            <div style={{ width: 1, alignSelf: 'stretch', background: T.border }} />
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 10, color: '#999', letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 3, fontFamily: 'Inter_700Bold, Inter, sans-serif' }}>
-                Avg. exam progress
+              <div style={{ fontSize: 10, color: T.ink4, fontWeight: 700,
+                letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+                Languages
               </div>
-              <div style={{ fontFamily: "'DMSerifDisplay_400Regular', 'DM Serif Display', Georgia, serif", fontSize: 32, color: '#000', lineHeight: 1 }}>
-                {avgProgress}%
+              <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+                fontSize: 32, color: T.ink, lineHeight: 1 }}>
+                {languages.length}
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Section header + filter tabs ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#000', fontFamily: 'Inter_700Bold, Inter, sans-serif' }}>
-            Your languages
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {filterOptions.map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                style={{
-                  padding: '6px 12px', fontSize: 12, cursor: 'pointer',
-                  fontWeight: filter === key ? 600 : 500,
-                  color: filter === key ? '#000' : '#999',
-                  background: filter === key ? '#fff' : 'transparent',
-                  border: filter === key ? '1px solid #EAEAEA' : '1px solid transparent',
-                  borderRadius: 8,
-                  fontFamily: 'Inter_600SemiBold, Inter, sans-serif',
-                  transition: 'all .15s',
-                } as React.CSSProperties}
-              >
-                {label}
+        {/* ── Today hero ── */}
+        {!loading && topLang && topSession && topTheme && (
+          <button
+            onClick={() => router.push(`/language/${topLang.language_code}` as any)}
+            style={{
+              width: '100%', textAlign: 'left', cursor: 'pointer',
+              background: 'linear-gradient(110deg,#000 0%,#1a1a14 100%)',
+              borderRadius: 18, padding: '20px 26px', marginBottom: 24,
+              display: 'flex', alignItems: 'center', gap: 20,
+              border: 'none', color: '#fff',
+              boxShadow: `0 10px 40px ${topTheme.accent}33`,
+            } as React.CSSProperties}
+          >
+            <div style={{ width: 54, height: 54, borderRadius: 14, background: topTheme.accent,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, color: '#fff', fontSize: 22 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700,
+                color: 'rgba(255,255,255,.6)', letterSpacing: '.14em',
+                textTransform: 'uppercase', marginBottom: 4 }}>
+                Your {topSession.time} today
+              </div>
+              <div style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+                fontSize: 22, color: '#fff', lineHeight: 1.15 }}>
+                {topSession.title}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', marginTop: 4 }}>
+                {getTheme(topLang.language_code).name} · {topSession.focus}
+              </div>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '12px 18px', background: topTheme.accent,
+              borderRadius: 11, fontSize: 13, fontWeight: 700, color: '#fff',
+              flexShrink: 0,
+            }}>
+              Start now <ArrowRightIcon size={14} color="#fff" />
+            </div>
+          </button>
+        )}
+
+        {/* ── 2-col grid: language cards (2/3) + right rail (1/3) ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+
+          {/* Language cards */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>
+                Your languages
+              </div>
+              <button onClick={onAddLanguage} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '6px 12px', fontSize: 12, fontWeight: 600,
+                color: T.ink2, background: T.card,
+                border: `1px solid ${T.border}`, borderRadius: 9, cursor: 'pointer',
+              } as React.CSSProperties}>
+                <PlusIcon size={11} color={T.ink3} /> Add language
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── 2-column card grid ── */}
-        {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 } as React.CSSProperties}>
-            <SkeletonCard /><SkeletonCard />
-            <SkeletonCard /><SkeletonCard />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{
-            padding: '60px 40px', textAlign: 'center',
-            background: '#fff', borderRadius: 24,
-            border: '1.5px dashed #DDD',
-          } as React.CSSProperties}>
-            <div style={{ fontSize: 15, color: '#888', marginBottom: 12, fontFamily: 'Inter_400Regular, Inter, sans-serif' }}>
-              {filter === 'archived' ? 'No archived languages' : 'No languages yet'}
             </div>
-            {filter === 'all' && (
-              <button
-                onClick={onAddLanguage}
-                style={{
-                  padding: '10px 24px', background: '#000', color: '#fff',
+
+            {loading ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 } as React.CSSProperties}>
+                <SkeletonCard /><SkeletonCard />
+              </div>
+            ) : languages.length === 0 ? (
+              <div style={{
+                padding: '60px 40px', textAlign: 'center',
+                background: T.card, borderRadius: 22,
+                border: '1.5px dashed #DDD',
+              } as React.CSSProperties}>
+                <div style={{ fontSize: 15, color: T.ink4, marginBottom: 12 }}>No languages yet</div>
+                <button onClick={onAddLanguage} style={{
+                  padding: '10px 24px', background: T.ink, color: '#fff',
                   borderRadius: 10, fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', border: 'none',
-                  fontFamily: 'Inter_600SemiBold, Inter, sans-serif',
-                } as React.CSSProperties}
-              >
-                Add your first language
-              </button>
+                } as React.CSSProperties}>
+                  Add your first language
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 } as React.CSSProperties}>
+                {languages.map(lang => (
+                  <LangCard
+                    key={lang.id || lang.language_code}
+                    lang={lang}
+                    isHovered={hoveredId === (lang.id || lang.language_code)}
+                    onEnter={() => setHoveredId(prev =>
+                      prev === (lang.id || lang.language_code) ? null : (lang.id || lang.language_code)
+                    )}
+                  />
+                ))}
+              </div>
             )}
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 } as React.CSSProperties}>
-            {filtered.map(lang => (
-              <HybridCard key={lang.id || lang.language_code} lang={lang} />
-            ))}
+
+          {/* Right rail */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Week streak calendar */}
+            <WeekCalendar streakDays={longestStreak} />
+
+            {/* AI Tutor shortcut */}
+            <button
+              onClick={() => router.push('/language/en/tutor' as any)}
+              style={{
+                background: T.ink, color: '#fff', borderRadius: 14,
+                padding: '18px 18px', display: 'flex', alignItems: 'center',
+                gap: 14, textAlign: 'left', cursor: 'pointer', border: 'none',
+              } as React.CSSProperties}
+            >
+              <div style={{ width: 38, height: 38, borderRadius: 11,
+                background: 'rgba(255,255,255,.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', flexShrink: 0 }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Ask the AI tutor</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.65)', marginTop: 2 }}>
+                  Grammar, vocab, conversation
+                </div>
+              </div>
+              <ArrowRightIcon size={14} color="rgba(255,255,255,.5)" />
+            </button>
+
+            {/* Quick links */}
+            <div style={{ background: T.card, borderRadius: 14,
+              border: `1px solid ${T.border}`, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.ink4,
+                letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10 }}>
+                Quick links
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {[
+                  { label: 'Library',  route: '/library'              },
+                  { label: 'Progress', route: '/(tabs)/progress'      },
+                  { label: 'Exams',    route: '/(tabs)/exams'         },
+                  { label: 'Settings', route: '/(tabs)/settings'      },
+                ].map(q => (
+                  <button key={q.label}
+                    onClick={() => router.push(q.route as any)}
+                    style={{
+                      padding: '8px 10px', borderRadius: 9, background: T.bg2,
+                      border: `1px solid ${T.hairline}`, fontSize: 11.5,
+                      color: T.ink2, fontWeight: 600, textAlign: 'left', cursor: 'pointer',
+                    } as React.CSSProperties}
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats summary */}
+            {languages.length > 0 && (
+              <div style={{ background: T.card, borderRadius: 14,
+                border: `1px solid ${T.border}`, padding: '16px 18px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.ink4,
+                  letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>
+                  Your stats
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: T.ink3 }}>Total streak days</span>
+                    <span style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+                      fontSize: 16, color: T.ink, fontWeight: 400 }}>{totalStreak}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: T.ink3 }}>Languages</span>
+                    <span style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+                      fontSize: 16, color: T.ink }}>{languages.length}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: T.ink3 }}>Best streak</span>
+                    <span style={{ fontFamily: "'DMSerifDisplay_400Regular','DM Serif Display',Georgia,serif",
+                      fontSize: 16, color: T.ink }}>{longestStreak} days</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </ScrollView>
     </View>
   )
