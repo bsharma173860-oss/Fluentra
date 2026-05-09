@@ -1,3 +1,7 @@
+// @ts-nocheck
+import { ModuleResults } from '@/components/modules/ModuleResults';
+export default function ListeningResults() { return <ModuleResults mod="listening" />; }
+// legacy imports below kept for reference only
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,

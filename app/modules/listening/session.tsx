@@ -1,602 +1,294 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+/**
+ * Listening session — matches page_sessions.jsx ListeningSession
+ * Left: audio player + notes. Right: questions panel.
+ */
+import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, Animated, Easing, Platform, useWindowDimensions,
+  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Audio } from 'expo-av';
-import { Colors } from '@/constants/colors';
-import { ListeningSidebar } from '@/components/layout/ListeningSidebar';
-import { Analytics } from '@/lib/analytics';
-import {
-  setListeningResult, estimateListeningBand, type ListeningQuestion,
-} from '@/lib/listeningStore';
-import {
-  getExamContent, adaptQuestions, type AdaptedQuestion, type SectionContent,
-} from '@/constants/examContent';
+import { router } from 'expo-router';
 
-const GREEN     = '#0A8C5A';
-const GREEN_BG  = '#EDFAF4';
-const GREEN_BDR = '#C0E8D4';
-const RED       = '#C04A06';
-
-const AUDIO_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-
-const FALLBACK_SECTION: SectionContent = {
-  title: 'Section 1 — Listening',
-  instruction: 'Listen and answer all questions. Write NO MORE THAN TWO WORDS for each answer.',
-  audioDescription: 'Listening audio',
-  playsCount: 1,
-  questions: [
-    { id: 1,  type: 'form_completion', label: 'Customer name:',       prefix: 'Sarah', answer: 'Johnson'      },
-    { id: 2,  type: 'form_completion', label: 'Booking date:',        suffix: 'March', answer: '15th'         },
-    { id: 3,  type: 'form_completion', label: 'Number of guests:',                     answer: 'four'         },
-    { id: 4,  type: 'form_completion', label: 'Special requirement:',  suffix: 'menu', answer: 'vegetarian'   },
-    { id: 5,  type: 'form_completion', label: 'Contact number:',       prefix: '07',   answer: '700123456'    },
-    { id: 6,  type: 'multiple_choice', question: 'What time does the restaurant open for dinner?',
-      options: ['A) 6 pm', 'B) 7 pm', 'C) 8 pm'], answer: 'B' },
-    { id: 7,  type: 'multiple_choice', question: 'Where is the restaurant located?',
-      options: ['A) City centre', 'B) Suburbs', 'C) Airport'], answer: 'A' },
-    { id: 8,  type: 'multiple_choice', question: 'What is included in the set-menu price?',
-      options: ['A) Drinks only', 'B) Food only', 'C) Food and drinks'], answer: 'C' },
-    { id: 9,  type: 'short_answer',    question: 'The restaurant was established in:', answer: '1985'         },
-    { id: 10, type: 'short_answer',    question: 'The head chef trained in:',          answer: 'Paris'        },
-  ],
+const C = {
+  bg: '#F9F8F5', bg2: '#F4F1EB', bg3: '#EDEAE3', card: '#FFFFFF',
+  border: '#EAEAEA', hairline: '#F4F4F4',
+  ink: '#000000', ink2: '#333333', ink3: '#666666', ink4: '#999999', ink5: '#BBBBBB',
+  listening: { c: '#1A8F4E', bg: '#E2F5E9' },
 };
 
-const TOTAL_SECONDS = 40 * 60;
-const BAR_COUNT = 20;
+const QUESTIONS = [
+  { n: 1, stem: 'What is the main purpose of the academic discussion?', options: ['To analyse declining bee populations', 'To debate climate change effects', 'To review recent pollination studies', 'To compare different insect species'] },
+  { n: 2, stem: 'According to the speaker, which factor has contributed most to bee decline?', options: ['Climate change', 'Pesticide use', 'Habitat loss', 'Parasites'] },
+  { n: 3, stem: 'The term "colony collapse disorder" refers to:', options: ['Bees leaving the hive without returning', 'A viral infection affecting bee larvae', 'Reduced honey production in winter', 'Aggressive behaviour between colonies'] },
+  { n: 4, stem: 'Complete the sentence: Neonicotinoids are a type of _______ that affect bee navigation.', options: null },
+  { n: 5, stem: 'Which solution does the expert recommend as most immediately actionable?', options: ['Banning all pesticides', 'Planting wildflower corridors', 'Relocating bee colonies', 'Funding more research'] },
+];
 
-// ── Waveform ─────────────────────────────────────────────────────
-function Waveform({ isPlaying }: { isPlaying: boolean }) {
-  const anims = useRef(
-    Array.from({ length: BAR_COUNT }, () => new Animated.Value(0.15))
-  ).current;
+export default function ListeningSession() {
+  const [playing, setPlaying] = useState(false);
+  const [playedPct, setPlayedPct] = useState(34);
+  const [answered, setAnswered] = useState<Record<number, string>>({});
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
 
-  useEffect(() => {
-    if (!isPlaying) {
-      anims.forEach(a => Animated.timing(a, { toValue: 0.15, duration: 200, useNativeDriver: false }).start());
-      return;
-    }
-    const loops = anims.map((a, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 45),
-          Animated.timing(a, { toValue: 0.2 + Math.random() * 0.8, duration: 280 + Math.random() * 200, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
-          Animated.timing(a, { toValue: 0.15 + Math.random() * 0.3, duration: 220 + Math.random() * 150, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
-        ])
-      )
-    );
-    loops.forEach(l => l.start());
-    return () => loops.forEach(l => l.stop());
-  }, [isPlaying]);
+  const answered_count = Object.keys(answered).length;
 
-  return (
-    <View style={wf.wrap}>
-      {anims.map((a, i) => (
-        <Animated.View
-          key={i}
-          style={[wf.bar, {
-            height: a.interpolate({ inputRange: [0, 1], outputRange: [3, 32] }),
-            backgroundColor: isPlaying ? GREEN : GREEN_BDR,
-            opacity: isPlaying ? a.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) : 0.5,
-          }]}
-        />
-      ))}
-    </View>
-  );
-}
-
-const wf = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 36 },
-  bar:  { width: 4, borderRadius: 2, minHeight: 3 },
-});
-
-// ── Audio player (green themed) ───────────────────────────────────
-function AudioPlayer({
-  isExamMode, section, sectionTitle, trackTitle, playsLimit,
-}: {
-  isExamMode: boolean;
-  section: string;
-  sectionTitle: string;
-  trackTitle: string;
-  playsLimit: number;
-}) {
-  const soundRef    = useRef<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [playCount, setPlayCount] = useState(0);
-  const [posMs,     setPosMs]     = useState(0);
-  const [durMs,     setDurMs]     = useState(0);
-  const [error,     setError]     = useState<string | null>(null);
-
-  const canPlay  = !isExamMode || playCount < playsLimit;
-  const hasPlayed = playCount > 0;
-
-  useEffect(() => {
-    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false });
-    return () => { soundRef.current?.unloadAsync(); };
-  }, []);
-
-  const progressPct = durMs > 0 ? (posMs / durMs) * 100 : 0;
-  const fmt = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-  };
-
-  async function seek(delta: number) {
-    if (!soundRef.current) return;
-    await soundRef.current.setPositionAsync(Math.max(0, posMs + delta));
+  function answer(n: number, opt: string) {
+    setAnswered(a => ({ ...a, [n]: opt }));
   }
 
-  async function togglePlay() {
-    if (!canPlay && !isPlaying) return;
-    setError(null);
-    if (isPlaying) { await soundRef.current?.pauseAsync(); setIsPlaying(false); return; }
-    if (!soundRef.current) {
-      setIsLoading(true);
-      try {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: AUDIO_URL }, { shouldPlay: true },
-          (status) => {
-            if (status.isLoaded) {
-              setPosMs(status.positionMillis ?? 0);
-              setDurMs(status.durationMillis ?? 0);
-              if (status.didJustFinish) { setIsPlaying(false); setPosMs(0); }
-            }
-          }
-        );
-        soundRef.current = sound;
-        setPlayCount(c => c + 1);
-        setIsPlaying(true);
-      } catch { setError('Could not load audio. Check your connection.'); }
-      finally { setIsLoading(false); }
-      return;
-    }
-    await soundRef.current.playAsync();
-    if (playCount === 0) setPlayCount(1);
-    setIsPlaying(true);
-  }
+  const mins = Math.floor(1640 / 60);
+  const secs = 1640 % 60;
+  const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
-  return (
-    <View style={ap.card}>
-      <Text style={ap.sectionLabel}>{sectionTitle.toUpperCase()}</Text>
-      <Text style={ap.trackTitle}>{trackTitle}</Text>
-      <Text style={ap.trackDur}>{fmt(posMs)} / {durMs > 0 ? fmt(durMs) : '3:45'}</Text>
-
-      <Waveform isPlaying={isPlaying} />
-
-      <View style={ap.progressTrack}>
-        <View style={[ap.progressFill, { width: `${progressPct}%` as any }]} />
-      </View>
-
-      <View style={ap.controls}>
-        <TouchableOpacity
-          style={ap.sideBtn}
-          onPress={() => seek(-10000)}
-          disabled={!hasPlayed}
-          activeOpacity={0.75}
-        >
-          <Text style={ap.sideBtnText}>↺</Text>
-          <Text style={ap.sideBtnSub}>10s</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[ap.playBtn, (!canPlay && !isPlaying) && ap.playBtnDisabled]}
-          onPress={togglePlay}
-          disabled={isLoading || (!canPlay && !isPlaying)}
-          activeOpacity={0.85}
-        >
-          <Text style={ap.playIcon}>{isLoading ? '…' : isPlaying ? '⏸' : '▶'}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={ap.sideBtn}
-          onPress={() => seek(10000)}
-          disabled={!hasPlayed || isExamMode}
-          activeOpacity={0.75}
-        >
-          <Text style={ap.sideBtnText}>↻</Text>
-          <Text style={ap.sideBtnSub}>10s</Text>
-        </TouchableOpacity>
-      </View>
-
-      {isExamMode && hasPlayed && !isPlaying && playCount >= playsLimit && (
-        <View style={ap.examNote}>
-          <Text style={ap.examNoteText}>⚠ Audio plays {playsLimit === 1 ? 'once' : `${playsLimit} times`} in exam mode</Text>
-        </View>
-      )}
-      {error && <Text style={ap.errorText}>{error}</Text>}
-    </View>
-  );
-}
-
-const ap = StyleSheet.create({
-  card: {
-    backgroundColor: GREEN_BG, borderRadius: 16, padding: 20, gap: 10,
-  },
-  sectionLabel: {
-    fontFamily: 'Inter_700Bold', fontSize: 10, color: GREEN,
-    textTransform: 'uppercase' as const, letterSpacing: 0.6,
-  },
-  trackTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
-  trackDur:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#888' },
-  progressTrack: { height: 3, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 2, overflow: 'hidden' },
-  progressFill:  { height: '100%', backgroundColor: GREEN, borderRadius: 2 },
-  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20 },
-  sideBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.white,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  sideBtnText: { fontSize: 16, color: GREEN, lineHeight: 18 },
-  sideBtnSub:  { fontFamily: 'Inter_400Regular', fontSize: 8, color: GREEN, marginTop: -2 },
-  playBtn: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: GREEN,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: GREEN, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
-  },
-  playBtnDisabled: { backgroundColor: Colors.ink4, shadowOpacity: 0 },
-  playIcon: { fontSize: 18, color: Colors.white },
-  examNote: {
-    backgroundColor: '#FFF3ED', borderRadius: 8, padding: 10,
-    borderWidth: 1, borderColor: '#F0C8A0',
-  },
-  examNoteText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: RED, textAlign: 'center' },
-  errorText:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.danger, textAlign: 'center' },
-});
-
-// ── FormQuestion ──────────────────────────────────────────────────
-function FormQuestion({ q, value, onChange, isRtl }: { q: AdaptedQuestion; value: string; onChange: (v: string) => void; isRtl?: boolean }) {
-  return (
-    <View style={fq.wrap}>
-      <Text style={[fq.label, isRtl && fq.rtl]}>{q.text}</Text>
-      <View style={[fq.inputRow, isRtl && { flexDirection: 'row-reverse' as any }]}>
-        {q.prefix ? <Text style={fq.fix}>{q.prefix}</Text> : null}
-        <TextInput
-          style={[fq.input, isRtl && fq.inputRtl]}
-          value={value}
-          onChangeText={onChange}
-          placeholder="Type answer..."
-          placeholderTextColor={Colors.ink4}
-          autoCorrect={false}
-          autoCapitalize="none"
-          textAlign={isRtl ? 'right' : 'left'}
-        />
-        {q.suffix ? <Text style={fq.fix}>{q.suffix}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
-const fq = StyleSheet.create({
-  wrap: { gap: 6 },
-  label: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000' },
-  rtl:   { textAlign: 'right' as const, writingDirection: 'rtl' as const },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  fix: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink2 },
-  input: {
-    flex: 1, backgroundColor: Colors.white,
-    borderWidth: 1, borderColor: Colors.border,
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
-    fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink, minWidth: 80,
-  },
-  inputRtl: { textAlign: 'right' as const },
-});
-
-// ── McqQuestion ───────────────────────────────────────────────────
-function McqQuestion({ q, value, onSelect, isRtl }: { q: AdaptedQuestion; value: string; onSelect: (k: string) => void; isRtl?: boolean }) {
-  return (
-    <View style={mq.wrap}>
-      <Text style={[mq.qText, isRtl && mq.rtl]}>{q.text}</Text>
-      <View style={mq.options}>
-        {q.options!.map(opt => (
-          <TouchableOpacity
-            key={opt.key}
-            style={[mq.option, value === opt.key && mq.optionSelected, isRtl && { flexDirection: 'row-reverse' as any }]}
-            onPress={() => onSelect(opt.key)}
-            activeOpacity={0.8}
-          >
-            <View style={[mq.radio, value === opt.key && mq.radioSelected]}>
-              {value === opt.key && <View style={mq.radioInner} />}
-            </View>
-            <Text style={[mq.optText, value === opt.key && mq.optTextSelected, isRtl && mq.rtl]}>
-              <Text style={mq.optKey}>{opt.key})</Text> {opt.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-const mq = StyleSheet.create({
-  wrap: { gap: 8 },
-  qText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#000', lineHeight: 20 },
-  rtl:   { textAlign: 'right' as const, writingDirection: 'rtl' as const },
-  options: { gap: 6 },
-  option: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.white,
-    borderRadius: 10, borderWidth: 1, borderColor: Colors.border, padding: 10,
-  },
-  optionSelected: { borderColor: GREEN, backgroundColor: GREEN_BG },
-  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  radioSelected: { borderColor: GREEN },
-  radioInner:    { width: 8, height: 8, borderRadius: 4, backgroundColor: GREEN },
-  optText:       { fontFamily: 'Inter_400Regular', fontSize: 13, color: Colors.ink2, flex: 1 },
-  optTextSelected: { color: GREEN, fontFamily: 'Inter_500Medium' },
-  optKey:        { fontFamily: 'Inter_700Bold' },
-});
-
-// ── Question card wrapper ─────────────────────────────────────────
-function QCard({ num, type, children }: { num: number; type: string; children: React.ReactNode }) {
-  return (
-    <View style={qc.wrap}>
-      <Text style={qc.meta}>Q{num} · {type}</Text>
-      {children}
-    </View>
-  );
-}
-
-const qc = StyleSheet.create({
-  wrap: { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 14, marginBottom: 8 },
-  meta: { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999', marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-});
-
-// ── Main ─────────────────────────────────────────────────────────
-export default function ListeningSessionScreen() {
-  const { width }  = useWindowDimensions();
-  const isDesktop  = Platform.OS === 'web' && width >= 768;
-  const params     = useLocalSearchParams<{ examId?: string; exam?: string; section?: string; mode?: string }>();
-  const examId     = (params.examId ?? params.exam ?? 'ielts').toLowerCase();
-  const section    = params.section ?? '1';
-  const mode       = (params.mode ?? 'practice') as 'practice' | 'exam';
-  const isExamMode = mode === 'exam';
-
-  // ── Load section content ────────────────────────────────────────
-  const sectionKey     = `section${section}`;
-  const rawContent     = getExamContent(examId, 'listening', sectionKey) as SectionContent | null;
-  const sectionContent = rawContent ?? FALLBACK_SECTION;
-  const QUESTIONS      = adaptQuestions(sectionContent.questions);
-  const isRtl          = sectionContent.rtl === true;
-  const playsLimit     = sectionContent.playsCount ?? 1;
-
-  const [answers,     setAnswers]    = useState<Record<number, string>>({});
-  const [submitting,  setSubmitting] = useState(false);
-  const [secondsLeft, setSecsLeft]   = useState(TOTAL_SECONDS);
-  const startedAt = useRef(Date.now());
-
-  useEffect(() => {
-    Analytics.practiceSessionStarted({ module: 'listening', languageCode: 'en', examType: examId, mode: 'practice' });
-  }, []);
-
-  // Countdown timer
-  useEffect(() => {
-    const id = setInterval(() => {
-      setSecsLeft(s => {
-        if (s <= 1) { clearInterval(id); doSubmit(); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const setAnswer = useCallback((qNum: number, val: string) => {
-    setAnswers(prev => ({ ...prev, [qNum]: val }));
-  }, []);
-
-  const answeredCount = Object.keys(answers).filter(k => answers[+k]?.trim().length > 0).length;
-  const allAnswered   = answeredCount === QUESTIONS.length;
-
-  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-  const ss = String(secondsLeft % 60).padStart(2, '0');
-  const isTimerWarn = secondsLeft <= 5 * 60;
-
-  function doSubmit() {
-    if (submitting) return;
-    setSubmitting(true);
-    const timeTaken = Math.round((Date.now() - startedAt.current) / 1000);
-    let correct = 0;
-    QUESTIONS.forEach(q => {
-      if ((answers[q.number] ?? '').trim().toLowerCase() === q.correctAnswer.toLowerCase()) correct++;
-    });
-    const band = estimateListeningBand(correct, QUESTIONS.length);
-    Analytics.practiceSessionCompleted({ module: 'listening', languageCode: 'en', examType: examId, score: band, durationSeconds: timeTaken });
-    setListeningResult({
-      exam: examId, section, mode,
-      timeTakenSeconds: timeTaken,
-      totalQuestions: QUESTIONS.length, correctCount: correct, bandEstimate: band,
-      answers,
-      questions: QUESTIONS as unknown as ListeningQuestion[],
-    });
-    router.replace('/modules/listening/results' as any);
-  }
-
-  const formQs = QUESTIONS.filter(q => q.type === 'form');
-  const mcqQs  = QUESTIONS.filter(q => q.type === 'mcq');
-  const noteQs = QUESTIONS.filter(q => q.type === 'note');
-
-  // ── Left panel ─────────────────────────────────────────────────
-  const leftPanel = (
-    <View style={s.leftPanel}>
-      <AudioPlayer
-        isExamMode={isExamMode}
-        section={section}
-        sectionTitle={sectionContent.title}
-        trackTitle={sectionContent.audioDescription}
-        playsLimit={playsLimit}
-      />
-
-      <View style={s.sectionInfo}>
-        <Text style={s.sectionInfoLabel}>{sectionContent.title.toUpperCase()}</Text>
-        <Text style={s.sectionInfoProg}>
-          Question {Math.min(answeredCount + 1, QUESTIONS.length)} of {QUESTIONS.length}
-        </Text>
-      </View>
-
-      <View style={s.instrBox}>
-        <Text style={s.instrTitle}>Instructions</Text>
-        <Text style={[s.instrText, isRtl && s.instrTextRtl]}>{sectionContent.instruction}</Text>
-      </View>
-
-      {/* Progress bar */}
-      <View style={s.progressWrap}>
-        <View style={s.progressTrack}>
-          <View style={[s.progressFill, { width: `${(answeredCount / QUESTIONS.length) * 100}%` as any }]} />
-        </View>
-        <Text style={s.progressText}>{answeredCount}/{QUESTIONS.length} answered</Text>
-      </View>
-    </View>
-  );
-
-  // ── Right panel ─────────────────────────────────────────────────
-  const rightPanel = (
-    <View style={s.rightPanel}>
-      {/* Timer */}
-      <View style={s.timerRow}>
-        <Text style={s.timerLabel}>Time remaining</Text>
-        <Text style={[s.timerTime, isTimerWarn && s.timerTimeWarn]}>{mm}:{ss}</Text>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-
-        {/* Form completion group */}
-        {formQs.length > 0 && (
-          <>
-            <Text style={s.groupLabel}>
-              {formQs.length === 1
-                ? `Q${formQs[0].number} · Form Completion`
-                : `Q${formQs[0].number}–${formQs[formQs.length - 1].number} · Form Completion`}
-            </Text>
-            {formQs.map(q => (
-              <QCard key={q.number} num={q.number} type="Form Completion">
-                <FormQuestion q={q} value={answers[q.number] ?? ''} onChange={v => setAnswer(q.number, v)} isRtl={isRtl || q.rtl} />
-              </QCard>
-            ))}
-          </>
-        )}
-
-        {/* Multiple choice group */}
-        {mcqQs.length > 0 && (
-          <>
-            <Text style={[s.groupLabel, formQs.length > 0 && { marginTop: 8 }]}>
-              {mcqQs.length === 1
-                ? `Q${mcqQs[0].number} · Multiple Choice`
-                : `Q${mcqQs[0].number}–${mcqQs[mcqQs.length - 1].number} · Multiple Choice`}
-            </Text>
-            {mcqQs.map(q => (
-              <QCard key={q.number} num={q.number} type="Multiple Choice">
-                <McqQuestion q={q} value={answers[q.number] ?? ''} onSelect={k => setAnswer(q.number, k)} isRtl={isRtl || q.rtl} />
-              </QCard>
-            ))}
-          </>
-        )}
-
-        {/* Note completion group */}
-        {noteQs.length > 0 && (
-          <>
-            <Text style={[s.groupLabel, (formQs.length > 0 || mcqQs.length > 0) && { marginTop: 8 }]}>
-              {noteQs.length === 1
-                ? `Q${noteQs[0].number} · Short Answer`
-                : `Q${noteQs[0].number}–${noteQs[noteQs.length - 1].number} · Short Answer`}
-            </Text>
-            {noteQs.map(q => (
-              <QCard key={q.number} num={q.number} type="Short Answer">
-                <FormQuestion q={q} value={answers[q.number] ?? ''} onChange={v => setAnswer(q.number, v)} isRtl={isRtl || q.rtl} />
-              </QCard>
-            ))}
-          </>
-        )}
-
-        {/* Submit */}
-        <TouchableOpacity
-          style={[s.submitBtn, !allAnswered && s.submitBtnDisabled]}
-          onPress={doSubmit}
-          disabled={!allAnswered || submitting}
-          activeOpacity={0.85}
-        >
-          <Text style={[s.submitBtnText, !allAnswered && s.submitBtnTextDisabled]}>
-            {submitting ? 'Submitting…' : allAnswered ? 'Submit Answers →' : `Answer all questions (${answeredCount}/${QUESTIONS.length})`}
-          </Text>
-        </TouchableOpacity>
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </View>
-  );
-
-  // ── Desktop layout ─────────────────────────────────────────────
   if (isDesktop) {
+    const waveHeights = Array.from({ length: 80 }, (_, i) => 20 + Math.abs(Math.sin(i * 0.7 + 1) * Math.cos(i * 0.4) * 28));
+
     return (
-      <View style={{ flex: 1, flexDirection: 'row' }}>
-        <ListeningSidebar />
-        <View style={s.desktopLeft}>{leftPanel}</View>
-        <View style={s.desktopRight}>{rightPanel}</View>
-      </View>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' } as any}>
+        {/* Header */}
+        <div style={{ height: 64, borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 16, padding: '0 28px', flexShrink: 0, background: C.card } as any}>
+          <button onClick={() => router.back()} style={{ width: 36, height: 36, borderRadius: 10, background: C.bg2, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.ink2, cursor: 'pointer' } as any}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div style={{ flex: 1, minWidth: 0 } as any}>
+            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 2 } as any}>IELTS Listening</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink } as any}>Section 3 — Academic Discussion</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 } as any}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 } as any}>
+              <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' } as any}>Progress</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 } as any}>
+                <div style={{ width: 160, height: 5, background: C.bg3, borderRadius: 99, overflow: 'hidden' } as any}>
+                  <div style={{ height: '100%', width: `${Math.min(100, 40 + answered_count * 12)}%`, background: C.listening.c, borderRadius: 99, transition: 'width .4s' } as any} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: C.ink4 } as any}>{Math.min(100, 40 + answered_count * 12)}%</span>
+              </div>
+            </div>
+            <div style={{ padding: '7px 14px', borderRadius: 10, background: '#F4F4F0' } as any}>
+              <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, fontFamily: 'monospace' } as any}>{timeStr}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' } as any}>
+          {/* Audio + notes */}
+          <div style={{ overflow: 'auto', padding: '28px 32px', borderRight: `1px solid ${C.border}`, background: C.bg, display: 'flex', flexDirection: 'column', gap: 20 } as any}>
+            <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' } as any}>AUDIO TRACK</div>
+
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, padding: 24 } as any}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 } as any}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: C.listening.bg, color: C.listening.c, display: 'flex', alignItems: 'center', justifyContent: 'center' } as any}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.ink } as any}>Decline of the Bees</div>
+                  <div style={{ fontSize: 12, color: C.ink4, marginTop: 2 } as any}>IELTS · 6:40 min</div>
+                </div>
+              </div>
+
+              {/* Waveform */}
+              <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 1.5, marginBottom: 14, overflow: 'hidden' } as any}>
+                {waveHeights.map((ht, i) => {
+                  const played = (i / 80) * 100 < playedPct;
+                  return <div key={i} style={{ width: 4, borderRadius: 2, height: ht, background: played ? C.listening.c : C.bg3, flexShrink: 0 } as any} />;
+                })}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 } as any}>
+                <span style={{ fontSize: 11, color: C.ink4, fontFamily: 'monospace', width: 36 } as any}>2:16</span>
+                <div
+                  style={{ flex: 1, height: 4, background: C.bg3, borderRadius: 99, overflow: 'hidden', cursor: 'pointer' } as any}
+                  onClick={(e: any) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setPlayedPct(Math.round(((e.clientX - rect.left) / rect.width) * 100));
+                  }}
+                >
+                  <div style={{ height: '100%', width: playedPct + '%', background: C.listening.c, borderRadius: 99 } as any} />
+                </div>
+                <span style={{ fontSize: 11, color: C.ink4, fontFamily: 'monospace', width: 36, textAlign: 'right' } as any}>6:40</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 } as any}>
+                <button style={{ width: 36, height: 36, borderRadius: 18, background: C.bg2, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.ink2, cursor: 'pointer' } as any}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>
+                </button>
+                <button
+                  onClick={() => setPlaying(p => !p)}
+                  style={{ width: 52, height: 52, borderRadius: 26, background: C.listening.c, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 6px 16px ${C.listening.c}44`, cursor: 'pointer', border: 'none' } as any}
+                >
+                  {playing
+                    ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    : <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                  }
+                </button>
+                <button style={{ width: 36, height: 36, borderRadius: 18, background: C.bg2, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.ink2, cursor: 'pointer' } as any}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-5"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, flex: 1 } as any}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 10 } as any}>My notes</div>
+              <textarea
+                placeholder="Take notes as you listen…"
+                style={{ width: '100%', minHeight: 120, border: 'none', outline: 'none', resize: 'none', fontSize: 13, color: C.ink2, fontFamily: "'Inter',sans-serif", lineHeight: 1.6, background: 'transparent', boxSizing: 'border-box' } as any}
+              />
+            </div>
+          </div>
+
+          {/* Questions */}
+          <div style={{ overflow: 'auto', padding: '28px 32px', background: C.card } as any}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 } as any}>
+              <div style={{ fontSize: 11, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' } as any}>QUESTIONS</div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 99, background: C.listening.bg, fontSize: 11, fontWeight: 700, color: C.listening.c } as any}>
+                {answered_count}/5
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 } as any}>
+              {QUESTIONS.map(q => (
+                <div key={q.n} style={{ padding: 16, borderRadius: 14, border: `1px solid ${answered[q.n] ? C.listening.c + '44' : C.border}`, background: answered[q.n] ? C.listening.bg : C.bg } as any}>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 10 } as any}>
+                    <div style={{ width: 22, height: 22, borderRadius: 11, background: answered[q.n] ? C.listening.c : C.bg3, color: answered[q.n] ? '#fff' : C.ink4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 } as any}>{q.n}</div>
+                    <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.5 } as any}>{q.stem}</div>
+                  </div>
+                  {q.options ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 32 } as any}>
+                      {q.options.map(opt => (
+                        <button key={opt} onClick={() => answer(q.n, opt)} style={{
+                          padding: '8px 12px', borderRadius: 8,
+                          border: `1.5px solid ${answered[q.n] === opt ? C.listening.c : C.border}`,
+                          background: answered[q.n] === opt ? C.listening.bg : 'transparent',
+                          fontSize: 12.5, fontWeight: answered[q.n] === opt ? 700 : 400,
+                          color: answered[q.n] === opt ? C.listening.c : C.ink,
+                          textAlign: 'left', cursor: 'pointer', transition: 'all .15s',
+                        } as any}>{opt}</button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ paddingLeft: 32 } as any}>
+                      <input
+                        placeholder="Write your answer…"
+                        onChange={() => answer(q.n, 'filled')}
+                        style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${C.border}`, fontSize: 13, color: C.ink, fontFamily: "'Inter',sans-serif", outline: 'none', boxSizing: 'border-box' } as any}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 20 } as any}>
+              <button onClick={() => router.push('/modules/listening/results' as any)} style={{
+                width: '100%', padding: '14px 24px', borderRadius: 12,
+                background: C.listening.c, color: '#fff', fontSize: 14, fontWeight: 700,
+                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              } as any}>
+                Submit answers
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // ── Mobile layout ──────────────────────────────────────────────
+  // Mobile
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {leftPanel}
-        <View style={{ height: 1, backgroundColor: '#EAEAEA' }} />
-        {rightPanel}
-        <View style={{ height: 40 }} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
+      <View style={h.bar}>
+        <TouchableOpacity style={h.exitBtn} onPress={() => router.back()}>
+          <Text style={{ fontSize: 16, color: C.ink2 }}>✕</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={h.module}>IELTS LISTENING</Text>
+          <Text style={h.title} numberOfLines={1}>Section 3 — Academic Discussion</Text>
+        </View>
+        <Text style={h.timer}>{timeStr}</Text>
+      </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }} showsVerticalScrollIndicator={false}>
+        <View style={m.card}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <View style={[m.playerIcon, { backgroundColor: C.listening.bg }]}>
+              <Text style={{ fontSize: 20 }}>🎧</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={m.cardTitle}>Decline of the Bees</Text>
+              <Text style={m.cardSub}>IELTS · 6:40 min</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={[m.playBtn, { backgroundColor: C.listening.c }]} onPress={() => setPlaying(p => !p)}>
+            <Text style={m.playBtnText}>{playing ? '⏸ Pause' : '▶ Play audio'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={m.card}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={m.sectionLabel}>QUESTIONS</Text>
+            <View style={[m.chip, { backgroundColor: C.listening.bg }]}>
+              <Text style={[m.chipText, { color: C.listening.c }]}>{answered_count}/5</Text>
+            </View>
+          </View>
+          {QUESTIONS.map(q => (
+            <View key={q.n} style={[m.qCard, answered[q.n] && { borderColor: C.listening.c + '44', backgroundColor: C.listening.bg }]}>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                <View style={[m.qNum, answered[q.n] && { backgroundColor: C.listening.c }]}>
+                  <Text style={[m.qNumText, answered[q.n] && { color: '#fff' }]}>{q.n}</Text>
+                </View>
+                <Text style={[m.qStem, { flex: 1 }]}>{q.stem}</Text>
+              </View>
+              {q.options ? (
+                <View style={{ gap: 6, paddingLeft: 32 }}>
+                  {q.options.map(opt => (
+                    <TouchableOpacity key={opt} onPress={() => answer(q.n, opt)}
+                      style={[m.option, answered[q.n] === opt && { borderColor: C.listening.c, backgroundColor: C.listening.bg }]}>
+                      <Text style={[m.optionText, answered[q.n] === opt && { color: C.listening.c, fontFamily: 'Inter_700Bold' }]}>{opt}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={{ paddingLeft: 32 }}>
+                  <TextInput placeholder="Write your answer…" style={m.textInput} onChangeText={() => answer(q.n, 'filled')} placeholderTextColor={C.ink5} />
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity style={[m.submitBtn, { backgroundColor: C.listening.c }]} onPress={() => router.push('/modules/listening/results' as any)}>
+          <Text style={m.submitText}>Submit answers</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  desktopLeft: {
-    width: '38%' as any, flex: 0,
-    borderRightWidth: 1, borderRightColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
-  },
-  desktopRight: { flex: 1, backgroundColor: Colors.bg },
+const h = StyleSheet.create({
+  bar: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.border },
+  exitBtn: { width: 34, height: 34, borderRadius: 9, backgroundColor: C.bg2, alignItems: 'center', justifyContent: 'center' },
+  module: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1, textTransform: 'uppercase' },
+  title: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.ink },
+  timer: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink4 },
+});
 
-  // ── Left panel ────────────────────────────────
-  leftPanel: { padding: 20, gap: 14 },
-
-  sectionInfo: { gap: 2 },
-  sectionInfoLabel: {
-    fontFamily: 'Inter_600SemiBold', fontSize: 10, color: '#888',
-    textTransform: 'uppercase' as const, letterSpacing: 0.6,
-  },
-  sectionInfoProg: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#000' },
-
-  instrBox:     { backgroundColor: GREEN_BG, borderRadius: 10, padding: 12, gap: 4 },
-  instrTitle:   { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: GREEN },
-  instrText:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#444', lineHeight: 18 },
-  instrTextRtl: { textAlign: 'right' as const, writingDirection: 'rtl' as const },
-
-  progressWrap:  { gap: 4 },
-  progressTrack: { height: 4, backgroundColor: '#F0F0F0', borderRadius: 2, overflow: 'hidden' },
-  progressFill:  { height: '100%', backgroundColor: GREEN, borderRadius: 2 },
-  progressText:  { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#888' },
-
-  // ── Right panel ───────────────────────────────
-  rightPanel: { padding: 20, flex: 1 },
-
-  timerRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  timerLabel:    { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999' },
-  timerTime:     { fontFamily: 'Inter_700Bold', fontSize: 14, color: RED },
-  timerTimeWarn: { color: RED },
-
-  groupLabel: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#000', marginBottom: 2 },
-  groupInstr: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#888', lineHeight: 17, marginBottom: 8 },
-
-  submitBtn: {
-    backgroundColor: GREEN, borderRadius: 12,
-    paddingVertical: 15, alignItems: 'center', marginTop: 8,
-  },
-  submitBtnDisabled:    { backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  submitBtnText:        { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.white },
-  submitBtnTextDisabled:{ color: Colors.ink3 },
+const m = StyleSheet.create({
+  card: { backgroundColor: C.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: C.border },
+  sectionLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4, letterSpacing: 1.2, textTransform: 'uppercase' },
+  playerIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cardTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: C.ink },
+  cardSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: C.ink4 },
+  playBtn: { borderRadius: 10, padding: 12, alignItems: 'center' },
+  playBtnText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#fff' },
+  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
+  chipText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
+  qCard: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 10 },
+  qNum: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.bg3, alignItems: 'center', justifyContent: 'center' },
+  qNumText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: C.ink4 },
+  qStem: { fontFamily: 'Inter_400Regular', fontSize: 13, color: C.ink, lineHeight: 20 },
+  option: { padding: 9, borderRadius: 8, borderWidth: 1.5, borderColor: C.border },
+  optionText: { fontFamily: 'Inter_400Regular', fontSize: 12.5 as any, color: C.ink },
+  textInput: { borderWidth: 1.5, borderColor: C.border, borderRadius: 8, padding: 9, fontSize: 13, color: C.ink, fontFamily: 'Inter_400Regular' },
+  submitBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
+  submitText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: '#fff' },
 });

@@ -1,473 +1,295 @@
-import React, { useState } from 'react';
+/**
+ * Exams page — matches page_exams.jsx ExamsPage
+ * Dark hero + exam cards grid + leaderboard
+ */
+import React from 'react';
 import {
-  ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
-import { Colors } from '@/constants/colors';
-import { getLangNames } from '@/constants/languages';
+import { router } from 'expo-router';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { EmptyState } from '@/components/ui/EmptyState';
-import {
-  TrophyIcon, CheckIcon, LockIcon, CalendarIcon,
-} from '@/components/icons';
+import { TrophyIcon } from '@/components/icons';
 
-const { width: W } = Dimensions.get('window');
-const H_PAD = 20;
-const STREAK_COUNT = 32;
-const STREAK_TARGET = 9;
-const EXAMS_UNLOCKED = STREAK_COUNT >= STREAK_TARGET;
-
-// ─── Language data ────────────────────────────────────────────────────────────
-const LANGUAGES = ['en', 'es', 'fr'];
-
-// ─── Monthly exam ─────────────────────────────────────────────────────────────
-type MonthlyExamMeta = {
-  title: string; registered: number; fee: string; date: string; examColor: string;
-};
-const MONTHLY_EXAM: Record<string, MonthlyExamMeta> = {
-  en: { title: 'IELTS Academic — May 2026', registered: 847, fee: '$5', date: 'May 1, 2026',  examColor: Colors.p      },
-  es: { title: 'DELE B2 — May 2026',        registered: 312, fee: '$5', date: 'May 3, 2026',  examColor: Colors.orange },
-  fr: { title: 'DELF B2 — May 2026',        registered: 218, fee: '$5', date: 'May 5, 2026',  examColor: '#1558B0'     },
+const C = {
+  bg: '#F9F8F5', bg2: '#F4F1EB', bg3: '#EDEAE3', card: '#FFFFFF',
+  border: '#EAEAEA', hairline: '#F4F4F4',
+  ink: '#000000', ink2: '#333333', ink3: '#666666', ink4: '#999999', ink5: '#BBBBBB',
+  brand: '#C04A06', brandLight: '#FFE5DE',
+  speaking:  { c: '#5B4EFF', bg: '#EEEDFF' },
+  writing:   { c: '#A65A00', bg: '#FFEAC2' },
+  listening: { c: '#1A8F4E', bg: '#E2F5E9' },
+  reading:   { c: '#C04A06', bg: '#FFE5DE' },
 };
 
-// ─── Leaderboard data ─────────────────────────────────────────────────────────
-type LBEntry = { rank: number; name: string; score: number; flag: string; initial: string; change?: number };
-type LBData = { top3: LBEntry[]; rest: LBEntry[]; myCountry: LBEntry[]; you: LBEntry };
+const EXAMS = [
+  { name: 'IELTS Academic', lang: 'en', color: C.speaking.c,  accentBg: C.speaking.bg,  next: 'Apr 28', score: '7.0', sessions: 18 },
+  { name: 'TOEFL iBT',      lang: 'en', color: '#1558B0',     accentBg: '#EEF6FF',       next: 'May 12', score: '92',  sessions: 6  },
+  { name: 'DELE B2',        lang: 'es', color: C.brand,       accentBg: C.brandLight,    next: 'Jun 04', score: '72',  sessions: 4  },
+  { name: 'DELF B2',        lang: 'fr', color: '#1558B0',     accentBg: '#EEF6FF',       next: 'May 30', score: '68',  sessions: 2  },
+  { name: 'JLPT N4',        lang: 'ja', color: '#C84070',     accentBg: '#FFE0EC',       next: 'Jul 07', score: 'B',   sessions: 5  },
+  { name: 'Goethe B1',      lang: 'de', color: C.writing.c,   accentBg: C.writing.bg,    next: '—',      score: '—',   sessions: 0  },
+];
 
-const LEADERBOARD: Record<string, LBData> = {
-  en: {
-    top3: [
-      { rank: 1, name: 'Sara A.',    score: 8.5, flag: '🇬🇧', initial: 'S' },
-      { rank: 2, name: 'Mohamed K.', score: 8.0, flag: '🇸🇦', initial: 'M' },
-      { rank: 3, name: 'Jana P.',    score: 7.5, flag: '🇨🇿', initial: 'J' },
-    ],
-    rest: [
-      { rank: 4, name: 'Riya M.',  score: 7.0, flag: '🇮🇳', initial: 'R', change: +0.5 },
-      { rank: 5, name: 'Karim H.', score: 7.0, flag: '🇪🇬', initial: 'K', change: +1.0 },
-      { rank: 6, name: 'Priya S.', score: 7.0, flag: '🇮🇳', initial: 'P' },
-      { rank: 7, name: 'Ahmed Z.', score: 6.5, flag: '🇦🇪', initial: 'A' },
-      { rank: 8, name: 'Li Wei',   score: 6.5, flag: '🇨🇳', initial: 'L' },
-    ],
-    myCountry: [
-      { rank: 2, name: 'Emma K.', score: 7.0, flag: '🇨🇦', initial: 'E', change: +0.5 },
-      { rank: 3, name: 'Lucas B.', score: 6.5, flag: '🇨🇦', initial: 'L' },
-    ],
-    you: { rank: 12, name: 'You', score: 6.5, flag: '🇨🇦', initial: 'Y', change: +0.5 },
-  },
-  es: {
-    top3: [
-      { rank: 1, name: 'Isabella R.', score: 7.5, flag: '🇪🇸', initial: 'I' },
-      { rank: 2, name: 'Miguel A.',   score: 7.0, flag: '🇲🇽', initial: 'M' },
-      { rank: 3, name: 'Carlos M.',   score: 7.0, flag: '🇲🇽', initial: 'C' },
-    ],
-    rest: [
-      { rank: 4, name: 'Ana L.',     score: 6.5, flag: '🇦🇷', initial: 'A', change: +0.5 },
-      { rank: 5, name: 'Tomás V.',   score: 6.0, flag: '🇨🇴', initial: 'T' },
-    ],
-    myCountry: [
-      { rank: 2, name: 'Sofia N.', score: 6.0, flag: '🇨🇦', initial: 'S' },
-    ],
-    you: { rank: 8, name: 'You', score: 5.5, flag: '🇨🇦', initial: 'Y', change: +0.5 },
-  },
-  fr: {
-    top3: [
-      { rank: 1, name: 'Sophie L.',   score: 8.0, flag: '🇫🇷', initial: 'S' },
-      { rank: 2, name: 'Marie D.',    score: 7.5, flag: '🇫🇷', initial: 'M' },
-      { rank: 3, name: 'Jean-P. B.', score: 7.0, flag: '🇧🇪', initial: 'J' },
-    ],
-    rest: [
-      { rank: 4, name: 'Luca F.',  score: 6.5, flag: '🇮🇹', initial: 'L', change: +0.5 },
-      { rank: 5, name: 'Emma V.',  score: 6.0, flag: '🇩🇪', initial: 'E' },
-    ],
-    myCountry: [
-      { rank: 3, name: 'Marc T.', score: 6.5, flag: '🇨🇦', initial: 'M', change: +0.5 },
-    ],
-    you: { rank: 6, name: 'You', score: 4.5, flag: '🇨🇦', initial: 'Y', change: +0.5 },
-  },
+const LEADERBOARD = [
+  { rank: 1,  name: 'Akira Tanaka',  country: 'jp', score: '8.5', sessions: 54, you: false },
+  { rank: 2,  name: 'Lena Nowak',    country: 'de', score: '8.5', sessions: 48, you: false },
+  { rank: 3,  name: 'Pierre Dubois', country: 'fr', score: '8.0', sessions: 62, you: false },
+  { rank: 18, name: 'María García',  country: 'es', score: '7.5', sessions: 24, you: true  },
+  { rank: 19, name: 'Sam Patel',     country: 'in', score: '7.5', sessions: 21, you: false },
+];
+
+const FLAG_EMOJI: Record<string, string> = {
+  en: '🇬🇧', jp: '🇯🇵', de: '🇩🇪', fr: '🇫🇷', es: '🇪🇸', in: '🇮🇳',
 };
-
-// ─── Past exam results ────────────────────────────────────────────────────────
-type PastExam = { month: string; exam: string; band: number; rank: number };
-const PAST_EXAMS: Record<string, PastExam[]> = {
-  en: [
-    { month: 'March 2026',   exam: 'IELTS', band: 7.0, rank: 15 },
-    { month: 'February 2026', exam: 'IELTS', band: 6.5, rank: 22 },
-  ],
-  es: [
-    { month: 'March 2026', exam: 'DELE', band: 5.5, rank: 8 },
-  ],
-  fr: [],
-};
-
-// ─── Podium component ─────────────────────────────────────────────────────────
-const GOLD   = '#B07A10';
-const SILVER = '#7A8A9A';
-const BRONZE = '#9A5A2A';
-
-function Podium({ top3 }: { top3: LBEntry[] }) {
-  // Display order: 2nd (left), 1st (center), 3rd (right)
-  const order = [top3[1], top3[0], top3[2]];
-  const podiumHeights = [64, 88, 48]; // 2nd, 1st, 3rd
-  const podiumColors = [SILVER, GOLD, BRONZE];
-  const isFirst = [false, true, false];
-
-  return (
-    <View style={p.wrap}>
-      {order.map((entry, idx) => {
-        const height = podiumHeights[idx];
-        const color = podiumColors[idx];
-        const first = isFirst[idx];
-        return (
-          <View key={entry.rank} style={p.col}>
-            {first && <TrophyIcon size={22} color={GOLD} />}
-            <View style={[p.avatar, first && p.avatarFirst, { borderColor: color }]}>
-              <Text style={[p.initial, first && p.initialFirst]}>{entry.initial}</Text>
-            </View>
-            <Text style={p.name}>{entry.name.split(' ')[0]}</Text>
-            <Text style={[p.score, { color }]}>{entry.score.toFixed(1)}</Text>
-            <View style={[p.podiumBlock, { height, backgroundColor: color + '22', borderTopColor: color }]}>
-              <Text style={[p.rankNum, { color }]}>#{entry.rank}</Text>
-              <Text style={p.flag}>{entry.flag}</Text>
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-const p = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8, paddingBottom: 4 },
-  col: { alignItems: 'center', flex: 1, gap: 4 },
-  avatar: {
-    width: 50, height: 50, borderRadius: 25,
-    backgroundColor: Colors.bg2, borderWidth: 2.5,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarFirst: { width: 62, height: 62, borderRadius: 31, backgroundColor: '#FEF9EC' },
-  initial: { fontFamily: 'Inter_700Bold', fontSize: 18, color: Colors.ink },
-  initialFirst: { fontSize: 22 },
-  name: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: Colors.ink, textAlign: 'center' },
-  score: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-  podiumBlock: {
-    width: '100%', borderTopWidth: 3, borderRadius: 6,
-    alignItems: 'center', justifyContent: 'flex-start',
-    paddingTop: 6, gap: 2,
-  },
-  rankNum: { fontFamily: 'Inter_700Bold', fontSize: 13 },
-  flag: { fontSize: 14 },
-});
-
-// ─── Leaderboard row ──────────────────────────────────────────────────────────
-function LBRow({ entry, you = false }: { entry: LBEntry; you?: boolean }) {
-  const up = (entry.change ?? 0) > 0;
-  return (
-    <View style={[lb.row, you && lb.youRow]}>
-      <Text style={[lb.rank, you && lb.youText]}>#{entry.rank}</Text>
-      <View style={[lb.avatar, you && lb.youAvatar]}>
-        <Text style={lb.initial}>{entry.initial}</Text>
-      </View>
-      <Text style={[lb.name, you && lb.youText]}>{entry.name}</Text>
-      <Text style={lb.flag}>{entry.flag}</Text>
-      {entry.change !== undefined && entry.change !== 0 && (
-        <Text style={[lb.change, { color: up ? Colors.green : Colors.danger }]}>
-          {up ? '↑' : '↓'}{Math.abs(entry.change).toFixed(1)}
-        </Text>
-      )}
-      <Text style={[lb.score, you && { color: Colors.p }]}>{entry.score.toFixed(1)}</Text>
-    </View>
-  );
-}
-
-const lb = StyleSheet.create({
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 10, paddingHorizontal: 14,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
-  youRow: {
-    backgroundColor: Colors.p_soft,
-    borderBottomWidth: 0, borderRadius: 10,
-    marginHorizontal: 4, marginBottom: 4,
-  },
-  rank: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.ink3, width: 28 },
-  avatar: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center',
-  },
-  youAvatar: { backgroundColor: Colors.p },
-  initial: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
-  name: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink, flex: 1 },
-  youText: { color: Colors.p, fontFamily: 'Inter_700Bold' },
-  flag: { fontSize: 16 },
-  change: { fontFamily: 'Inter_600SemiBold', fontSize: 11, width: 32, textAlign: 'right' },
-  score: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.ink, width: 36, textAlign: 'right' },
-});
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
-const LB_TABS = ['All', 'My country'];
 
 export default function ExamsScreen() {
-  const { lang: initialLang } = useLocalSearchParams<{ lang?: string }>();
-  const [lang, setLang] = useState(initialLang ?? 'en');
-  const [lbTab, setLbTab] = useState('All');
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
 
-  const monthlyExam = MONTHLY_EXAM[lang] ?? MONTHLY_EXAM.en;
-  const lbData = LEADERBOARD[lang] ?? LEADERBOARD.en;
-  const pastExams = PAST_EXAMS[lang] ?? [];
-  const daysRemaining = Math.max(0, STREAK_TARGET - STREAK_COUNT);
-  const listRows = lbTab === 'All' ? lbData.rest : lbData.myCountry;
+  if (isDesktop) {
+    return (
+      <AppLayout>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' } as any}>
+          <div style={{ flex: 1, overflow: 'auto' } as any}>
+            {/* Dark hero */}
+            <div style={{ background: C.ink, color: '#fff', padding: '40px 36px', position: 'relative', overflow: 'hidden' } as any}>
+              {/* Dot grid bg */}
+              <div style={{ position: 'absolute', top: -50, right: -50, width: 400, height: 400, display: 'grid', gridTemplateColumns: 'repeat(20,1fr)', gap: 14, opacity: .06, pointerEvents: 'none' } as any}>
+                {Array.from({ length: 300 }).map((_, i) => <div key={i} style={{ width: 4, height: 4, borderRadius: 2, background: '#fff' } as any} />)}
+              </div>
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 32 } as any}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)', fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 10 } as any}>Certification track</div>
+                  <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 48, lineHeight: 1.05, marginBottom: 10, maxWidth: 540 } as any}>Your road to certified.</div>
+                  <div style={{ fontSize: 14, color: 'rgba(255,255,255,.7)', maxWidth: 540, lineHeight: 1.5 } as any}>Track scheduled exams, monthly mocks, and your global percentile. Practice runs are graded by the same rubrics as the real test.</div>
+                </div>
+                <div style={{ display: 'flex', gap: 32, alignItems: 'flex-end', flexShrink: 0 } as any}>
+                  <div>
+                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 48, lineHeight: 1, color: '#fff' } as any}>P82</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 6 } as any}>Global percentile</div>
+                  </div>
+                  <div style={{ width: 1, height: 60, background: 'rgba(255,255,255,.18)' } as any} />
+                  <div>
+                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 48, lineHeight: 1, color: '#fff' } as any}>4</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 6 } as any}>Active exams</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-  function handleRegister() {
-    Alert.alert(
-      'Payments coming soon',
-      'Online payment will be required to register for monthly exams. Stay tuned!',
-      [{ text: 'Got it' }],
+            {/* Body */}
+            <div style={{ padding: '28px 36px 40px' } as any}>
+              {/* Next exam + mock tier */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 14, marginBottom: 32 } as any}>
+                <div style={{ background: C.brand, color: '#fff', borderRadius: 16, padding: '22px 26px', display: 'flex', alignItems: 'center', gap: 20 } as any}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } as any}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                  <div style={{ flex: 1 } as any}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 4 } as any}>Next up</div>
+                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 22, lineHeight: 1.1 } as any}>IELTS Mock · Apr 28</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', marginTop: 4 } as any}>2h 45m · all 4 modules · graded vs real bands</div>
+                  </div>
+                  <button style={{ padding: '10px 18px', borderRadius: 10, background: '#fff', color: C.brand, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', flexShrink: 0 } as any}>
+                    Start practice run →
+                  </button>
+                </div>
+
+                <div style={{ background: C.card, border: `1.5px solid ${C.brand}33`, borderRadius: 16, padding: '18px 20px' } as any}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8 } as any}>
+                    <span style={{ display: 'inline-flex', padding: '3px 9px', borderRadius: 99, background: C.brandLight, fontSize: 10, fontWeight: 700, color: C.brand } as any}>Daily mock</span>
+                    <span style={{ display: 'inline-flex', padding: '3px 9px', borderRadius: 99, background: C.listening.bg, fontSize: 10, fontWeight: 700, color: C.listening.c } as any}>Free on Pro</span>
+                  </div>
+                  <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.2, marginBottom: 6 } as any}>Take a mock without a streak.</div>
+                  <div style={{ fontSize: 11.5, color: C.ink3, lineHeight: 1.45, marginBottom: 14 } as any}>Pro: unlimited daily mocks free. Free tier: $2 per session — same scoring rubric.</div>
+                  <div style={{ display: 'flex', gap: 8 } as any}>
+                    <button style={{ padding: '9px 16px', borderRadius: 9, background: C.brand, color: '#fff', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' } as any}>Free mock →</button>
+                    <button style={{ padding: '9px 16px', borderRadius: 9, background: 'transparent', color: C.ink2, fontSize: 12, fontWeight: 600, border: `1.5px solid ${C.border}`, cursor: 'pointer' } as any}>$5 official</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Exam cards */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 14 } as any}>All exams</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 } as any}>
+                {EXAMS.map(e => (
+                  <div key={e.name} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', cursor: 'pointer' } as any}
+                    onClick={() => router.push(`/(tabs)/exams` as any)}>
+                    <div style={{ padding: '18px 20px', borderBottom: `1px solid ${C.hairline}`, display: 'flex', alignItems: 'center', gap: 12 } as any}>
+                      <div style={{ width: 32, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 } as any}>
+                        {FLAG_EMOJI[e.lang] ?? '🌐'}
+                      </div>
+                      <div style={{ flex: 1 } as any}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, lineHeight: 1.2 } as any}>{e.name}</div>
+                        <div style={{ fontSize: 11, color: C.ink4, marginTop: 2 } as any}>{e.sessions} sessions logged</div>
+                      </div>
+                    </div>
+                    <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } as any}>
+                      <div>
+                        <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' } as any}>Best</div>
+                        <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 24, color: C.ink, lineHeight: 1, marginTop: 3 } as any}>{e.score}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' } as any}>
+                        <div style={{ fontSize: 10, color: C.ink4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' } as any}>Next mock</div>
+                        <div style={{ fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 3 } as any}>{e.next}</div>
+                      </div>
+                    </div>
+                    <div style={{ padding: '12px 20px', background: C.bg2, borderTop: `1px solid ${C.hairline}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } as any}>
+                      <div style={{ fontSize: 11.5, color: e.color, fontWeight: 700 } as any}>Open exam track</div>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={e.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Leaderboard */}
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' } as any}>
+                <div style={{ padding: '18px 22px', borderBottom: `1px solid ${C.hairline}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' } as any}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.ink } as any}>IELTS · global leaderboard</div>
+                    <div style={{ fontSize: 11, color: C.ink4, marginTop: 2 } as any}>Top 100 this month — your rank #18</div>
+                  </div>
+                  <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: 99, background: C.brandLight, fontSize: 11, fontWeight: 700, color: C.brand } as any}>You · #18</span>
+                </div>
+                {LEADERBOARD.map((row, i) => (
+                  <div key={row.rank} style={{
+                    display: 'grid', gridTemplateColumns: '40px 1fr 48px 100px 60px',
+                    padding: '12px 22px', alignItems: 'center',
+                    borderBottom: i < LEADERBOARD.length - 1 ? `1px solid ${C.hairline}` : 'none',
+                    background: row.you ? C.brandLight : 'transparent',
+                  } as any}>
+                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 18, color: row.rank <= 3 ? C.brand : C.ink3 } as any}>#{row.rank}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 } as any}>
+                      <div style={{ width: 30, height: 30, borderRadius: 15, background: C.brand, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 } as any}>{row.name[0]}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.ink } as any}>{row.name} {row.you && <span style={{ color: C.brand } as any}>· you</span>}</div>
+                    </div>
+                    <div style={{ fontSize: 18 } as any}>{FLAG_EMOJI[row.country] ?? '🌐'}</div>
+                    <div style={{ fontSize: 12, color: C.ink3 } as any}>{row.sessions} sessions</div>
+                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 18, color: C.ink, textAlign: 'right' } as any}>{row.score}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
+  // Mobile
   return (
     <AppLayout>
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={s.title}>Exams & Rankings</Text>
-
-        {/* ── Language selector ── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.pillScroll} contentContainerStyle={s.pillRow}>
-          {LANGUAGES.map(code => {
-            const names = getLangNames(code);
-            const active = lang === code;
-            return (
-              <TouchableOpacity
-                key={code}
-                style={[s.pill, active && s.pillActive]}
-                onPress={() => setLang(code)}
-                activeOpacity={0.75}
-              >
-                <Text style={s.pillFlag}>{names.flag}</Text>
-                <View style={s.pillTextBlock}>
-                  <Text style={[s.pillNative, active && s.pillNativeActive]}>{names.native}</Text>
-                  {names.english !== names.native && (
-                    <Text style={[s.pillEnglish, active && s.pillEnglishActive]}>{names.english}</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* ── Monthly exam card ── */}
-        <View style={s.monthlyCard}>
-          <View style={s.monthlyTop}>
-            <View style={[s.monthlyBadge, { backgroundColor: monthlyExam.examColor + '33' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <TrophyIcon size={14} color={Colors.white} />
-                <Text style={s.monthlyBadgeText}>Monthly Exam</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
+          {/* Dark hero */}
+          <View style={s.hero}>
+            <Text style={s.heroEyebrow}>CERTIFICATION TRACK</Text>
+            <Text style={s.heroTitle}>Your road to certified.</Text>
+            <Text style={s.heroSub}>Track scheduled exams, monthly mocks, and your global percentile.</Text>
+            <View style={{ flexDirection: 'row', gap: 24, marginTop: 20 }}>
+              <View>
+                <Text style={s.heroStat}>P82</Text>
+                <Text style={s.heroStatLabel}>Global percentile</Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,.18)' }} />
+              <View>
+                <Text style={s.heroStat}>4</Text>
+                <Text style={s.heroStatLabel}>Active exams</Text>
               </View>
             </View>
           </View>
-          <Text style={s.monthlyTitle}>{monthlyExam.title}</Text>
 
-          <View style={s.monthlyStats}>
-            <View style={s.monthlyStat}>
-              <Text style={s.monthlyStatNum}>{monthlyExam.registered.toLocaleString()}</Text>
-              <Text style={s.monthlyStatLabel}>Registered</Text>
-            </View>
-            <View style={s.monthlyStatDiv} />
-            <View style={s.monthlyStat}>
-              <Text style={s.monthlyStatNum}>{monthlyExam.fee}</Text>
-              <Text style={s.monthlyStatLabel}>Entry fee</Text>
-            </View>
-            <View style={s.monthlyStatDiv} />
-            <View style={s.monthlyStat}>
-              <CalendarIcon size={18} color={Colors.white} />
-              <Text style={s.monthlyStatLabel}>{monthlyExam.date}</Text>
-            </View>
-          </View>
-
-          {EXAMS_UNLOCKED ? (
-            <View style={s.monthlyUnlocked}>
-              <View style={s.unlockedBadge}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <CheckIcon size={14} color={Colors.green} />
-                  <Text style={s.unlockedText}>Exam unlocked</Text>
+          <View style={{ padding: 16, gap: 14 }}>
+            {/* Next exam */}
+            <View style={[s.card, { backgroundColor: C.brand }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View style={s.trophyIcon}>
+                  <TrophyIcon size={18} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.nextEyebrow}>NEXT UP</Text>
+                  <Text style={s.nextTitle}>IELTS Mock · Apr 28</Text>
+                  <Text style={s.nextSub}>2h 45m · all 4 modules</Text>
                 </View>
               </View>
-              <TouchableOpacity style={s.registerBtn} onPress={handleRegister} activeOpacity={0.85}>
-                <Text style={s.registerBtnText}>Register for {monthlyExam.fee}</Text>
+              <TouchableOpacity style={s.startBtn}>
+                <Text style={s.startBtnText}>Start practice run →</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <View style={s.lockedRow}>
-              <LockIcon size={18} color="rgba(255,255,255,0.65)" />
-              <Text style={s.lockedText}>{daysRemaining} more streak days to unlock</Text>
-            </View>
-          )}
-        </View>
 
-        {/* ── Leaderboard ── */}
-        <View style={s.lbCard}>
-          <View style={s.lbHeader}>
-            <View>
-              <Text style={s.sectionTitle}>Weekly champions</Text>
-              <Text style={s.lbSubtitle}>847 students · resets Monday</Text>
-            </View>
-            <View style={s.lbTabs}>
-              {LB_TABS.map(t => (
-                <TouchableOpacity
-                  key={t}
-                  style={[s.lbTab, lbTab === t && s.lbTabActive]}
-                  onPress={() => setLbTab(t)}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[s.lbTabText, lbTab === t && s.lbTabTextActive]}>{t}</Text>
+            {/* Exam cards */}
+            <Text style={s.sectionTitle}>All exams</Text>
+            {EXAMS.map(e => (
+              <View key={e.name} style={s.examCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 24 }}>{FLAG_EMOJI[e.lang] ?? '🌐'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.examName}>{e.name}</Text>
+                    <Text style={s.examSessions}>{e.sessions} sessions logged</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <View>
+                    <Text style={s.examStatLabel}>BEST</Text>
+                    <Text style={s.examScore}>{e.score}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={s.examStatLabel}>NEXT MOCK</Text>
+                    <Text style={s.examNextDate}>{e.next}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={[s.examCta, { borderTopColor: C.hairline }]}>
+                  <Text style={[s.examCtaText, { color: e.color }]}>Open exam track →</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+              </View>
+            ))}
 
-          {/* Podium — only show in All tab */}
-          {lbTab === 'All' && <Podium top3={lbData.top3} />}
-
-          {/* List rows */}
-          <View style={s.lbList}>
-            {listRows.map(entry => <LBRow key={entry.rank} entry={entry} />)}
-          </View>
-
-          {/* Your row — always pinned */}
-          <LBRow entry={lbData.you} you />
-        </View>
-
-        {/* ── Past exam results ── */}
-        {pastExams.length > 0 && (
-          <>
-            <Text style={s.sectionTitle}>Your exam history</Text>
-            <View style={s.historyCard}>
-              {pastExams.map((exam, i) => (
-                <View key={i} style={[s.historyRow, i < pastExams.length - 1 && s.historyBorder]}>
-                  <View style={s.historyLeft}>
-                    <Text style={s.historyMonth}>{exam.month}</Text>
-                    <Text style={s.historyExam}>{exam.exam}</Text>
-                  </View>
-                  <View style={s.historyRight}>
-                    <Text style={s.historyBand}>{exam.band.toFixed(1)}</Text>
-                    <Text style={s.historyRank}>Rank #{exam.rank}</Text>
-                  </View>
+            {/* Leaderboard */}
+            <Text style={s.sectionTitle}>IELTS · global leaderboard</Text>
+            <View style={s.card}>
+              {LEADERBOARD.map((row, i) => (
+                <View key={row.rank} style={[s.leaderRow, row.you && { backgroundColor: C.brandLight }, i < LEADERBOARD.length - 1 && { borderBottomWidth: 1, borderBottomColor: C.hairline }]}>
+                  <Text style={[s.leaderRank, row.rank <= 3 && { color: C.brand }]}>#{row.rank}</Text>
+                  <Text style={{ fontSize: 18 }}>{FLAG_EMOJI[row.country] ?? '🌐'}</Text>
+                  <Text style={[s.leaderName, row.you && { color: C.brand }]}>{row.name}{row.you ? ' · you' : ''}</Text>
+                  <Text style={s.leaderScore}>{row.score}</Text>
                 </View>
               ))}
             </View>
-          </>
-        )}
-
-        {pastExams.length === 0 && (
-          <EmptyState
-            iconComponent={<CheckIcon size={28} color={Colors.ink3} />}
-            title="No exams yet"
-            subtitle="Build a 9-day streak to unlock monthly exams"
-          />
-        )}
-
-        <View style={{ height: 24 }} />
-      </ScrollView>
-    </SafeAreaView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </AppLayout>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  content: { padding: H_PAD, gap: 16 },
-  title: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 30, color: Colors.ink },
-
-  pillScroll: { marginHorizontal: -H_PAD },
-  pillRow: { flexDirection: 'row', gap: 8, paddingHorizontal: H_PAD },
-  pill: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 99, backgroundColor: Colors.white,
-    borderWidth: 1, borderColor: Colors.border,
-  },
-  pillActive: { backgroundColor: Colors.p, borderColor: Colors.p },
-  pillFlag: { fontSize: 16 },
-  pillTextBlock: { gap: 0 },
-  pillNative: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.ink },
-  pillNativeActive: { color: Colors.white },
-  pillEnglish: { fontFamily: 'Inter_400Regular', fontSize: 10, color: Colors.ink3 },
-  pillEnglishActive: { color: 'rgba(255,255,255,0.65)' },
-
-  monthlyCard: {
-    backgroundColor: '#1A1A2E', borderRadius: 22,
-    padding: 20, gap: 14,
-  },
-  monthlyTop: {},
-  monthlyBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  monthlyBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 12, color: Colors.white },
-  monthlyTitle: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 22, color: Colors.white, lineHeight: 28 },
-  monthlyStats: { flexDirection: 'row', alignItems: 'center' },
-  monthlyStat: { flex: 1, alignItems: 'center', gap: 2 },
-  monthlyStatNum: { fontFamily: 'Inter_700Bold', fontSize: 15, color: Colors.white },
-  monthlyStatLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.5)' },
-  monthlyStatDiv: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.15)' },
-  monthlyUnlocked: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  unlockedBadge: {
-    flex: 1,
-    backgroundColor: Colors.green + '33', borderRadius: 10,
-    paddingVertical: 10, paddingHorizontal: 12,
-  },
-  unlockedText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: Colors.green },
-  registerBtn: {
-    flex: 1, backgroundColor: Colors.p, borderRadius: 10,
-    paddingVertical: 10, alignItems: 'center',
-  },
-  registerBtnText: { fontFamily: 'Inter_700Bold', fontSize: 14, color: Colors.white },
-  lockedRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10,
-    paddingVertical: 12, paddingHorizontal: 14,
-  },
-  lockedText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.65)' },
-
-  lbCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 22, borderWidth: 1, borderColor: Colors.border,
-    overflow: 'hidden', paddingTop: 18,
-  },
-  lbHeader: {
-    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
-    paddingHorizontal: 16, marginBottom: 16,
-  },
-  sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: Colors.ink },
-  lbSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },
-  lbTabs: {
-    flexDirection: 'row', backgroundColor: Colors.bg2,
-    borderRadius: 8, padding: 2, gap: 2,
-  },
-  lbTab: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6 },
-  lbTabActive: { backgroundColor: Colors.white },
-  lbTabText: { fontFamily: 'Inter_500Medium', fontSize: 11, color: Colors.ink3 },
-  lbTabTextActive: { fontFamily: 'Inter_700Bold', color: Colors.ink, fontSize: 11 },
-  lbList: {},
-
-  historyCard: {
-    backgroundColor: Colors.white, borderRadius: 18,
-    borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
-  },
-  historyRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  historyBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  historyLeft: { flex: 1 },
-  historyMonth: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: Colors.ink },
-  historyExam: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3, marginTop: 2 },
-  historyRight: { alignItems: 'flex-end' },
-  historyBand: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 24, color: Colors.p },
-  historyRank: { fontFamily: 'Inter_400Regular', fontSize: 12, color: Colors.ink3 },
-
-  emptyHistory: {
-    backgroundColor: Colors.bg2, borderRadius: 14, padding: 20, alignItems: 'center',
-  },
-  emptyHistoryText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: Colors.ink3, textAlign: 'center' },
+  hero: { backgroundColor: C.ink, padding: 28, paddingBottom: 32 },
+  heroEyebrow: { fontFamily: 'Inter_700Bold', fontSize: 10, color: 'rgba(255,255,255,.55)', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 },
+  heroTitle: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 36, color: '#fff', lineHeight: 40, marginBottom: 8 },
+  heroSub: { fontFamily: 'Inter_400Regular', fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 20 },
+  heroStat: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 40, color: '#fff', lineHeight: 42 },
+  heroStatLabel: { fontFamily: 'Inter_700Bold', fontSize: 9.5, color: 'rgba(255,255,255,.55)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 },
+  card: { backgroundColor: C.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: C.border },
+  sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink },
+  trophyIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,.2)', alignItems: 'center', justifyContent: 'center' },
+  nextEyebrow: { fontFamily: 'Inter_700Bold', fontSize: 9.5, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 },
+  nextTitle: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 18, color: '#fff', lineHeight: 22 },
+  nextSub: { fontFamily: 'Inter_400Regular', fontSize: 12, color: 'rgba(255,255,255,.75)' },
+  startBtn: { marginTop: 14, backgroundColor: '#fff', borderRadius: 10, padding: 12, alignItems: 'center' },
+  startBtnText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.brand },
+  examCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, overflow: 'hidden' },
+  examName: { fontFamily: 'Inter_700Bold', fontSize: 13, color: C.ink },
+  examSessions: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.ink4, marginTop: 1 },
+  examStatLabel: { fontFamily: 'Inter_700Bold', fontSize: 9, color: C.ink4, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 },
+  examScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 24, color: C.ink, lineHeight: 26 },
+  examNextDate: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: C.ink },
+  examCta: { padding: 12, borderTopWidth: 1, backgroundColor: C.bg2 },
+  examCtaText: { fontFamily: 'Inter_700Bold', fontSize: 12 },
+  leaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 8 },
+  leaderRank: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 16, color: C.ink3, width: 36 },
+  leaderName: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: C.ink, flex: 1 },
+  leaderScore: { fontFamily: 'DMSerifDisplay_400Regular', fontSize: 16, color: C.ink },
 });
