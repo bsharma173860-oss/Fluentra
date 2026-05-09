@@ -102,7 +102,7 @@ const tp = StyleSheet.create({
 });
 
 // ── Main ─────────────────────────────────────────────────────────
-export default function ListeningResultsScreen() {
+function ListeningResultsScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
 

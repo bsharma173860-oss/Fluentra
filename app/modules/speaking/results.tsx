@@ -96,7 +96,7 @@ const hp = StyleSheet.create({
 });
 
 // ── Main ─────────────────────────────────────────────────────────
-export default function SpeakingResultsScreen() {
+function SpeakingResultsScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
 
