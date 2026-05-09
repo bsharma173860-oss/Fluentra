@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     const mrr        = proCount * 24 + eliteCount * 120;
 
     // Build monthly cohorts for chart (last 6 months)
-    const months: Record<string, { pro: number; elite: number; mrr: number }> = {};
+    const months = {};
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);

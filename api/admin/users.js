@@ -86,13 +86,13 @@ export default async function handler(req, res) {
       .in('user_id', userIds);
 
     // Build maps
-    const sessionCountMap: Record<string, number> = {};
+    const sessionCountMap = {};
     (writingCounts ?? []).forEach(r => {
       sessionCountMap[r.user_id] = (sessionCountMap[r.user_id] ?? 0) + 1;
     });
 
-    const streakMap: Record<string, number> = {};
-    const languageMap: Record<string, string[]> = {};
+    const streakMap = {};
+    const languageMap = {};
     (streakData ?? []).forEach(r => {
       if ((r.streak_count ?? 0) > (streakMap[r.user_id] ?? 0)) {
         streakMap[r.user_id] = r.streak_count ?? 0;

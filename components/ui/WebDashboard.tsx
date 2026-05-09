@@ -339,7 +339,7 @@ export function WebDashboard({ languages, userName, loading, onAddLanguage }: Pr
 
       {/* ── Scrollable content ── */}
       <ScrollView style={{ flex: 1 }}
-        contentContainerStyle={{ padding: '28px 36px 48px' }}
+        contentContainerStyle={{ padding: '28px 36px 48px' } as any}
         showsVerticalScrollIndicator={false}>
 
         {/* ── Page header ── */}

@@ -114,9 +114,9 @@ function ExerciseItem({
         // Multiple choice
         <View style={ex.opts}>
           {exercise.options!.map(opt => {
-            let bg = Colors.bg2;
-            let border = Colors.border;
-            let textColor = Colors.ink;
+            let bg: string = Colors.bg2;
+            let border: string = Colors.border;
+            let textColor: string = Colors.ink;
             if (answered) {
               if (opt === exercise.answer) {
                 bg = Colors.green_bg; border = Colors.green; textColor = Colors.green;
