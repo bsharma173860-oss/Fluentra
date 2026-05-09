@@ -110,7 +110,10 @@ const TABLE_ROWS = [
 ];
 
 // ── Web (desktop) implementation ─────────────────────────────────────
-if (Platform.OS === 'web') {
+function UpgradePageWebCSS() {
+  const [billing, setBilling] = useState<'monthly'|'yearly'>('yearly');
+  const [openFaq, setOpenFaq] = useState<Record<number, boolean>>({ 0: true, 1: true });
+
   const css = `
     .pricing-root { font-family: 'Inter', sans-serif; background: ${C.bg}; min-height: 100vh; }
     .pricing-topbar { padding: 16px 32px; display: flex; align-items: center; gap: 12; background: ${C.card}; border-bottom: 1px solid ${C.border}; position: sticky; top: 0; z-index: 10; }
@@ -174,11 +177,7 @@ if (Platform.OS === 'web') {
     .cta-btn:hover { opacity: .9; }
   `;
 
-  module.exports = function UpgradePageWeb() {
-    const [billing, setBilling] = useState<'monthly'|'yearly'>('yearly');
-    const [openFaq, setOpenFaq] = useState<Record<number, boolean>>({ 0: true, 1: true });
-
-    return (
+  return (
       <>
         <style dangerouslySetInnerHTML={{ __html: css }} />
         <div className="pricing-root">
@@ -401,15 +400,13 @@ if (Platform.OS === 'web') {
         </div>
       </>
     );
-  };
 }
 
-// ── Native (mobile) implementation ─────────────────────────────────
+// ── Main export ──────────────────────────────────────────────────────
 export default function UpgradePage() {
-  if (Platform.OS === 'web') {
-    const WebPage = require('./index').default;
-    // handled above via module.exports — but for RN web bundler we render here
-    return <UpgradePageNative />;
+  const { width } = useWindowDimensions();
+  if (Platform.OS === 'web' && width >= 768) {
+    return <UpgradePageWebCSS />;
   }
   return <UpgradePageNative />;
 }

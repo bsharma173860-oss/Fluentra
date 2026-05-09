@@ -160,11 +160,7 @@ function ExamStreamsPanel() {
         {/* Rows */}
         <div style={{ padding: '8px 12px 14px' } as any}>
           {stream.runs.map((r, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '72px 1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 10px', borderRadius: 9, cursor: 'pointer' }
-              as any}
-              onMouseEnter={(e: any) => e.currentTarget.style.background = C.bg2}
-              onMouseLeave={(e: any) => e.currentTarget.style.background = 'transparent'}
-            >
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '72px 1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 10px', borderRadius: 9, cursor: 'pointer' } as any} onMouseEnter={(e: any) => e.currentTarget.style.background = C.bg2} onMouseLeave={(e: any) => e.currentTarget.style.background = 'transparent'}>
               <div style={{ fontSize: 11, color: C.ink4, fontWeight: 600 } as any}>{r.date}</div>
               <div style={{ minWidth: 0 } as any}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 } as any}>
