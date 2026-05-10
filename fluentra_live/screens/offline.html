@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Offline · Fluentra</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;background:var(--bg2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px}
+  .wrap{max-width:440px;width:100%;background:#fff;border:1px solid var(--border);border-radius:20px;padding:36px 32px;text-align:center}
+  .ic{width:72px;height:72px;border-radius:50%;background:var(--bg2);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;position:relative}
+  .ic svg{width:32px;height:32px;stroke:var(--ink3);stroke-width:1.8;fill:none}
+  .ic .slash{position:absolute;width:46px;height:2.5px;background:#C0392B;border-radius:2px;transform:rotate(-45deg)}
+  .eyebrow{font-size:11px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;display:inline-flex;align-items:center;gap:6px}
+  .eyebrow .dot{width:7px;height:7px;background:#C0392B;border-radius:50%;animation:p 1.4s infinite}
+  @keyframes p{50%{opacity:.3}}
+  h1{font-family:var(--serif-display);font-size:26px;line-height:1.1;margin:0 0 8px}
+  p{font-size:13px;color:var(--ink3);line-height:1.55;margin:0 0 22px}
+  .available{background:var(--bg);border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;text-align:left;margin-bottom:20px}
+  .available b{font-size:11px;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;font-weight:700;display:block;margin-bottom:10px}
+  .available .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--hairline);font-size:13px;color:var(--ink2)}
+  .available .row:first-of-type{border-top:0;padding-top:0}
+  .available .row .ok{font-size:11px;color:#1A8F4E;font-weight:700}
+  .btns{display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:99px;padding:12px 0;border:0;cursor:pointer;width:100%}
+  .pri{background:var(--brand);color:#fff}
+  .ghost{background:transparent;color:var(--ink3)}
+  .check{font-size:11px;color:var(--ink4);margin-top:14px}
+  .check span{display:inline-flex;align-items:center;gap:4px}
+</style></head><body>
+<div class="wrap">
+  <div class="ic">
+    <svg viewBox="0 0 24 24"><path d="M2 12c5-5 15-5 20 0"/><path d="M5 15c4-4 10-4 14 0"/><path d="M8.5 18c2-2 5-2 7 0"/><circle cx="12" cy="20.5" r=".7" fill="currentColor"/></svg>
+    <span class="slash"></span>
+  </div>
+  <div class="eyebrow"><span class="dot"></span>You're offline</div>
+  <h1>No internet connection.</h1>
+  <p>Check your Wi-Fi or cellular and we'll pick up where you left off — your streak is safe.</p>
+  <div class="available">
+    <b>Still available offline</b>
+    <div class="row"><span>📚 Saved vocab decks</span><span class="ok">✓ 142 cards</span></div>
+    <div class="row"><span>🎧 Downloaded audio</span><span class="ok">✓ 3 lessons</span></div>
+    <div class="row"><span>📖 Today's reading</span><span class="ok">✓ Cached</span></div>
+    <div class="row"><span style="color:var(--ink5)">🎓 AI tutor</span><span style="color:var(--ink5);font-size:11px">Online only</span></div>
+  </div>
+  <div class="btns">
+    <button class="btn pri">↻ Try again</button>
+    <button class="btn ghost">Open offline library →</button>
+  </div>
+  <div class="check"><span>● Last synced 2 min ago</span></div>
+</div>
+</body></html>

@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build": "expo export --platform web",
-    "vercel-build": "expo export --platform web"
+    "vercel-build": "cp -r fluentra_live/. dist && mkdir -p dist"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",

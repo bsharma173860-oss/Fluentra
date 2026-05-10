@@ -1,0 +1,80 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Trial ending · Fluentra</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;background:var(--bg2);padding:36px 24px;font-family:var(--sans);min-height:100vh}
+  .col{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+  .day{font-size:10px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.1em}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;font-variant-numeric:tabular-nums}
+  .p5{background:var(--bg2);color:var(--ink3)}
+  .p6{background:#FFEAC2;color:#A65A00}
+  .p7{background:#FCE6E2;color:#C0392B}
+  h1{font-family:var(--serif-display);font-size:24px;line-height:1.1;margin:0 0 10px;color:var(--ink)}
+  .lede{font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:18px}
+  .recap{background:var(--bg);border:1px solid var(--hairline);border-radius:12px;padding:14px;display:flex;justify-content:space-between;margin-bottom:18px}
+  .recap .it{text-align:center;flex:1}
+  .recap .v{font-family:var(--serif-display);font-size:20px;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+  .recap .l{font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+  .timer{display:flex;gap:6px;margin-bottom:18px;font-variant-numeric:tabular-nums}
+  .timer .t{flex:1;background:var(--ink);color:#fff;border-radius:8px;padding:10px 0;text-align:center}
+  .timer .t b{font-family:var(--serif-display);font-size:22px;font-weight:400;display:block;line-height:1}
+  .timer .t span{font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em}
+  .offer{border:1.5px dashed var(--brand-light);background:var(--brand-soft);border-radius:12px;padding:14px;margin-bottom:18px;font-size:12.5px;color:var(--ink2);line-height:1.45}
+  .offer b{color:var(--brand);font-weight:700}
+  .strike{text-decoration:line-through;color:var(--ink4);margin-right:6px}
+  .footer{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:99px;padding:11px 0;border:0;cursor:pointer;text-align:center}
+  .primary{background:var(--brand);color:#fff}
+  .alarm{background:#C0392B;color:#fff}
+  .ghost{background:transparent;color:var(--ink3);font-size:11px;font-weight:600}
+  .stripe{position:absolute;top:0;left:0;right:0;height:4px}
+  .s5{background:var(--ink5)}
+  .s6{background:#A65A00}
+  .s7{background:#C0392B}
+</style></head><body>
+<div class="col">
+  <!-- DAY 5 -->
+  <div class="card">
+    <div class="stripe s5"></div>
+    <div class="top"><span class="day">Day 5 of 7</span><span class="pill p5">3 days left</span></div>
+    <h1>You're 5 days in. Look how far you've come.</h1>
+    <p class="lede">Most people who finish trial keep going. Your trial ends Sunday — here's what you've already built.</p>
+    <div class="recap">
+      <div class="it"><div class="v">5</div><div class="l">Streak</div></div>
+      <div class="it"><div class="v">86</div><div class="l">Words</div></div>
+      <div class="it"><div class="v">A2+</div><div class="l">Speaking</div></div>
+    </div>
+    <div class="offer">Pick a plan early and lock in <b>$8.99/mo</b> <span class="strike">$14.99</span> — your trial isn't shortened.</div>
+    <div class="footer"><button class="btn primary">See plans</button><button class="btn ghost">Remind me tomorrow</button></div>
+  </div>
+  <!-- DAY 6 -->
+  <div class="card">
+    <div class="stripe s6"></div>
+    <div class="top"><span class="day">Day 6 of 7</span><span class="pill p6">⚠ 1 day, 14h left</span></div>
+    <h1>Last full day to keep your streak.</h1>
+    <p class="lede">Your 6-day streak resets if you don't pick a plan before Sunday 11:59pm. We'd love to keep going with you.</p>
+    <div class="timer">
+      <div class="t"><b>01</b><span>Days</span></div>
+      <div class="t"><b>14</b><span>Hours</span></div>
+      <div class="t"><b>22</b><span>Min</span></div>
+    </div>
+    <div class="offer">Annual is <b>$89.99/yr</b> — that's $7.50/mo. Cancel anytime in the first 30 days for a full refund.</div>
+    <div class="footer"><button class="btn primary">Continue with annual</button><button class="btn ghost">Or pay monthly</button></div>
+  </div>
+  <!-- DAY 7 -->
+  <div class="card">
+    <div class="stripe s7"></div>
+    <div class="top"><span class="day">Day 7 — final</span><span class="pill p7">● 6h 12m left</span></div>
+    <h1 style="color:#7A2A1F">Trial ends tonight at midnight.</h1>
+    <p class="lede">After that your streak, vocab deck, and tutor history go on pause. Pick a plan to keep them.</p>
+    <div class="timer">
+      <div class="t" style="background:#7A2A1F"><b>00</b><span>Days</span></div>
+      <div class="t" style="background:#7A2A1F"><b>06</b><span>Hours</span></div>
+      <div class="t" style="background:#7A2A1F"><b>12</b><span>Min</span></div>
+    </div>
+    <div class="offer" style="border-color:#F4C9C0;background:#FCE6E2;color:#7A2A1F"><b>Final offer:</b> annual at <b>$79.99</b> <span class="strike">$89.99</span> — only valid for the next 6 hours.</div>
+    <div class="footer"><button class="btn alarm">Claim $79.99 annual</button><button class="btn ghost">Continue free (lose Pro)</button></div>
+  </div>
+</div>
+</body></html>
