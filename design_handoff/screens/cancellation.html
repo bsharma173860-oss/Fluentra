@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Cancel · Fluentra</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;background:var(--bg2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px}
+  .wrap{max-width:560px;width:100%;background:#fff;border:1px solid var(--border);border-radius:20px;padding:38px 40px}
+  h1{font-family:var(--serif-display);font-size:30px;line-height:1.05;margin:0 0 8px}
+  .lede{font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:24px}
+  .progress{display:flex;gap:6px;margin-bottom:24px}
+  .progress span{flex:1;height:3px;background:var(--bg2);border-radius:2px}
+  .progress span.on{background:var(--brand)}
+  .progress span.done{background:var(--ink5)}
+  .lose{background:var(--brand-soft);border:1px solid var(--brand-light);border-radius:14px;padding:18px;margin-bottom:18px}
+  .lose b{font-size:12px;color:var(--brand);text-transform:uppercase;letter-spacing:.08em;font-weight:700;display:block;margin-bottom:10px}
+  .lose ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+  .lose li{font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:8px}
+  .lose li::before{content:"×";color:#C0392B;font-weight:700;font-size:16px}
+  .reasons{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+  .r{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:11px;font-size:13px;color:var(--ink2);cursor:pointer}
+  .r.sel{border-color:var(--brand);background:var(--brand-soft);color:var(--ink)}
+  .r .rd{width:16px;height:16px;border:1.5px solid var(--ink5);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .r.sel .rd{border-color:var(--brand)}
+  .r.sel .rd::after{content:"";width:8px;height:8px;background:var(--brand);border-radius:50%}
+  .save{background:linear-gradient(135deg,#FFEAC2,#FFF7E8);border:1px solid #F4E3BC;border-radius:14px;padding:18px;margin-bottom:18px;display:flex;gap:14px;align-items:center}
+  .save .ic{font-size:30px}
+  .save b{font-size:14px;color:var(--ink);display:block;margin-bottom:3px}
+  .save p{font-size:12px;color:var(--ink3);line-height:1.45}
+  .actions{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:8px}
+  .btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:99px;padding:11px 22px;border:0;cursor:pointer}
+  .stay{background:var(--brand);color:#fff}
+  .danger{background:transparent;color:#C0392B;text-decoration:underline;text-underline-offset:3px;font-weight:600;font-size:12px;border:0;cursor:pointer}
+</style></head><body>
+<div class="wrap">
+  <div class="progress"><span class="done"></span><span class="on"></span><span></span></div>
+  <h1>Sorry to see you go, María.</h1>
+  <p class="lede">Before you cancel — a quick question, and one offer if it helps.</p>
+  <div class="lose">
+    <b>You'd lose</b>
+    <ul>
+      <li>23-day Spanish streak</li>
+      <li>1,284 saved vocab words</li>
+      <li>9 hours of tutor history</li>
+      <li>Your B1+ speaking record</li>
+    </ul>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">What's the main reason?</div>
+  <div class="reasons">
+    <label class="r"><span class="rd"></span>Too expensive</label>
+    <label class="r sel"><span class="rd"></span>Not using it enough</label>
+    <label class="r"><span class="rd"></span>Found a better app</label>
+    <label class="r"><span class="rd"></span>Reached my goal</label>
+    <label class="r"><span class="rd"></span>Other</label>
+  </div>
+  <div class="save">
+    <div class="ic">⏸️</div>
+    <div><b>Pause for 2 months instead?</b><p>Keep your streak frozen and your vocab. We'll skip your next 2 charges — no commitment to come back.</p></div>
+  </div>
+  <div class="actions">
+    <button class="btn stay">Pause for 2 months</button>
+    <button class="danger">Cancel anyway →</button>
+  </div>
+</div>
+</body></html>

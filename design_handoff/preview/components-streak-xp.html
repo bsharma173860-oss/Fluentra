@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  /* streak flame */
+  .streak{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#FF6B1A,#C04A06);color:#fff;padding:6px 12px 6px 9px;border-radius:99px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+  .streak svg{width:14px;height:14px;fill:#fff}
+  .streak.cool{background:var(--bg2);color:var(--ink3)}
+  .streak.cool svg{fill:var(--ink4)}
+  /* xp pill */
+  .xp{display:inline-flex;align-items:center;gap:6px;background:#FFEAC2;color:#A65A00;padding:5px 12px;border-radius:99px;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
+  .xp svg{width:12px;height:12px;fill:#A65A00}
+  /* level */
+  .lvl{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);padding:5px 12px 5px 5px;border-radius:99px;font-size:12px;font-weight:600;color:var(--ink2)}
+  .lvl .num{width:22px;height:22px;background:var(--ink);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+  /* CEFR band */
+  .band{display:inline-flex;align-items:baseline;gap:2px;font-family:var(--serif-display);font-size:22px;color:var(--ink);line-height:1}
+  .band sub{font-size:13px;color:var(--ink4);font-family:var(--sans);font-weight:600;margin-left:2px}
+  /* progress ring */
+  .ring{width:48px;height:48px;position:relative;flex-shrink:0}
+  .ring svg{transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:5}
+  .ring .bg{stroke:var(--track-warm)}
+  .ring .fg{stroke:var(--brand);stroke-linecap:round}
+  .ring .v{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+</style></head>
+<body>
+<div class="card">
+  <div class="col" style="gap:10px">
+    <span class="label" style="margin:0">Streak</span>
+    <div class="row">
+      <span class="streak"><svg viewBox="0 0 24 24"><path d="M12 2c1 5 5 7 5 12a5 5 0 1 1-10 0c0-3 2-4 2-7 1 2 3 2 3 4 0-3 0-6 0-9z"/></svg>23 days</span>
+      <span class="streak cool"><svg viewBox="0 0 24 24"><path d="M12 2c1 5 5 7 5 12a5 5 0 1 1-10 0c0-3 2-4 2-7 1 2 3 2 3 4 0-3 0-6 0-9z"/></svg>0</span>
+    </div>
+  </div>
+  <div class="col" style="gap:10px">
+    <span class="label" style="margin:0">XP</span>
+    <div class="row">
+      <span class="xp"><svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9 17 14 19 22 12 17 5 22 7 14 2 9 9 9" stroke="none"/></svg>+45 XP</span>
+      <span class="xp" style="background:var(--brand-soft);color:var(--brand)"><svg viewBox="0 0 24 24" style="fill:var(--brand)"><polygon points="12 2 15 9 22 9 17 14 19 22 12 17 5 22 7 14 2 9 9 9" stroke="none"/></svg>12,840</span>
+    </div>
+  </div>
+  <div class="col" style="gap:10px">
+    <span class="label" style="margin:0">Level / Band</span>
+    <div class="row">
+      <span class="lvl"><span class="num">7</span>Level 7</span>
+      <span class="band">B1<sub>+</sub></span>
+    </div>
+  </div>
+  <div class="col" style="gap:10px">
+    <span class="label" style="margin:0">Daily goal</span>
+    <div class="row">
+      <div class="ring"><svg width="48" height="48"><circle class="bg" cx="24" cy="24" r="20"/><circle class="fg" cx="24" cy="24" r="20" stroke-dasharray="125.6" stroke-dashoffset="38"/></svg><span class="v">70%</span></div>
+      <div class="ring"><svg width="48" height="48"><circle class="bg" cx="24" cy="24" r="20"/><circle class="fg" cx="24" cy="24" r="20" stroke-dasharray="125.6" stroke-dashoffset="0" style="stroke:#1A8F4E"/></svg><span class="v" style="color:#1A8F4E">✓</span></div>
+    </div>
+  </div>
+</div>
+</body></html>

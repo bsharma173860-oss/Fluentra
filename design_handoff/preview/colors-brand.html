@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;background:var(--bg);font-family:var(--sans)}
+  .card{padding:18px 20px;display:flex;gap:12px;align-items:stretch}
+  .big{flex:2;border-radius:var(--r-md);background:var(--brand-grad);color:#fff;padding:18px 20px;display:flex;flex-direction:column;justify-content:space-between}
+  .big h{font-family:var(--serif-display);font-size:24px;line-height:1;display:block}
+  .big .lab{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.85}
+  .big .hex{font-family:ui-monospace,Menlo,monospace;font-size:11px;opacity:.85;text-transform:uppercase}
+  .stack{flex:1;display:flex;flex-direction:column;gap:8px}
+  .sw{flex:1;border-radius:10px;display:flex;align-items:center;padding:8px 12px;justify-content:space-between;border:1px solid var(--border)}
+  .sw .n{font-size:11px;font-weight:700;color:var(--ink2)}
+  .sw .h{font-size:10px;color:var(--ink4);font-family:ui-monospace,Menlo,monospace;text-transform:uppercase}
+</style></head>
+<body>
+<div class="card">
+  <div class="big">
+    <span class="lab">Brand</span>
+    <h>#C04A06</h>
+    <span class="hex">linear-gradient(135°, #C04A06 → #E8732F)</span>
+  </div>
+  <div class="stack">
+    <div class="sw" style="background:#C04A06;border-color:#C04A06"><span class="n" style="color:#fff">brand</span><span class="h" style="color:rgba(255,255,255,.85)">#C04A06</span></div>
+    <div class="sw" style="background:#FFF0EE"><span class="n">brandSoft</span><span class="h">#FFF0EE</span></div>
+    <div class="sw" style="background:#FFE5DE"><span class="n">brandLight</span><span class="h">#FFE5DE</span></div>
+  </div>
+</div>
+</body></html>

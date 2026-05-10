@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .alert{display:flex;gap:12px;padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.45;flex:1;min-width:280px;border:1px solid}
+  .alert .ico{width:18px;height:18px;flex-shrink:0;margin-top:1px}
+  .alert .ico svg{width:18px;height:18px;stroke-width:2;fill:none}
+  .alert .t{font-weight:700;color:var(--ink);margin-bottom:2px;font-size:13px}
+  .alert .b{color:var(--ink2);font-size:12.5px}
+  .alert.info{background:#EEF4FF;border-color:#D6E4FF}
+  .alert.info .ico svg{stroke:#1558B0}
+  .alert.ok{background:#E2F5E9;border-color:#C7EAD3}
+  .alert.ok .ico svg{stroke:#1A8F4E}
+  .alert.warn{background:#FFF7E8;border-color:#F4E3BC}
+  .alert.warn .ico svg{stroke:#A65A00}
+  .alert.err{background:#FCE6E2;border-color:#F4C9C0}
+  .alert.err .ico svg{stroke:#C0392B}
+</style></head>
+<body>
+<div class="card" style="flex-direction:column;align-items:stretch">
+  <div class="alert info"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="17" r=".5"/></svg></span><div><div class="t">New: Live conversation rooms</div><div class="b">Drop into a 20-min B1 Spanish room — 12 active right now.</div></div></div>
+  <div class="alert ok"><span class="ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span><div><div class="t">Speaking score: B1+</div><div class="b">You're past your monthly goal. Set a new one in Settings.</div></div></div>
+  <div class="alert warn"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 2L2 21h20L12 2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17" r=".5"/></svg></span><div><div class="t">Streak at risk</div><div class="b">8 hours left to keep your 23-day streak alive.</div></div></div>
+  <div class="alert err"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><div><div class="t">Microphone blocked</div><div class="b">Allow mic access in your browser to start the speaking lesson.</div></div></div>
+</div>
+</body></html>

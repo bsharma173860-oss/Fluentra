@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .stat{flex:1;min-width:160px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
+  .stat .lab{font-size:10px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .stat .v{font-family:var(--serif-display);font-size:32px;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+  .stat .v sub{font-family:var(--sans);font-size:13px;color:var(--ink4);font-weight:500;margin-left:4px}
+  .stat .delta{font-size:11px;font-weight:700;margin-top:10px;display:inline-flex;align-items:center;gap:4px}
+  .stat .delta.up{color:#1A8F4E}
+  .stat .delta.dn{color:#C0392B}
+  .stat .delta svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.5;fill:none}
+  .stat.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .stat.dark .lab{color:rgba(255,255,255,.5)}
+  .stat.dark .v{color:#fff}
+  .stat.dark .v sub{color:rgba(255,255,255,.6)}
+  /* divider section */
+  .sec{flex:1;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
+  .div-h{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
+  .div-h::before,.div-h::after{content:"";flex:1;height:1px;background:var(--hairline)}
+  .li{padding:8px 0;font-size:13px;color:var(--ink);border-top:1px solid var(--hairline)}
+  .li:first-of-type{border-top:0}
+</style></head>
+<body>
+<div class="card" style="align-items:stretch">
+  <div class="stat">
+    <div class="lab">Streak</div>
+    <div class="v">23<sub>days</sub></div>
+    <div class="delta up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>Personal best</div>
+  </div>
+  <div class="stat dark">
+    <div class="lab">Speaking</div>
+    <div class="v">B1+</div>
+    <div class="delta up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>up from B1</div>
+  </div>
+  <div class="stat">
+    <div class="lab">Words learned</div>
+    <div class="v">1,284</div>
+    <div class="delta up"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>+47 this week</div>
+  </div>
+  <div class="stat">
+    <div class="lab">Avg session</div>
+    <div class="v">18<sub>min</sub></div>
+    <div class="delta dn"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>−2 vs last wk</div>
+  </div>
+  <div class="sec">
+    <div style="font-family:var(--serif-display);font-size:18px;color:var(--ink);margin-bottom:4px">This week</div>
+    <div class="div-h">Mon, Mar 10</div>
+    <div class="li">Lesson 4 — Ordering coffee</div>
+    <div class="li">15 vocab cards reviewed</div>
+    <div class="div-h">Tue, Mar 11</div>
+    <div class="li">Speaking session with Carlos · 12 min</div>
+    <div class="li">Listening: Madrid news clip</div>
+  </div>
+</div>
+</body></html>

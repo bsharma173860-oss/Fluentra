@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .crumbs{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink4)}
+  .crumbs a{color:var(--ink4);text-decoration:none;font-weight:500}
+  .crumbs a:hover{color:var(--brand)}
+  .crumbs .sep{color:var(--ink5)}
+  .crumbs .cur{color:var(--ink);font-weight:700}
+  .pager{display:flex;align-items:center;gap:6px;margin-left:auto}
+  .pg{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#fff;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .pg.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pg.dots{border:0;background:transparent;color:var(--ink4)}
+  .pg svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.5;fill:none}
+  .pginfo{font-size:11.5px;color:var(--ink4);margin-right:8px}
+</style></head>
+<body>
+<div class="card" style="flex-direction:column;align-items:stretch;gap:22px">
+  <nav class="crumbs">
+    <a>Library</a><span class="sep">/</span>
+    <a>Spanish</a><span class="sep">/</span>
+    <a>B1 Conversation</a><span class="sep">/</span>
+    <span class="cur">Lesson 4 — Ordering coffee</span>
+  </nav>
+  <div style="display:flex;align-items:center">
+    <span class="pginfo">Showing 21–40 of 287 lessons</span>
+    <div class="pager">
+      <button class="pg"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button class="pg">1</button>
+      <button class="pg dots">…</button>
+      <button class="pg">3</button>
+      <button class="pg on">4</button>
+      <button class="pg">5</button>
+      <button class="pg dots">…</button>
+      <button class="pg">15</button>
+      <button class="pg"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+  </div>
+</div>
+</body></html>

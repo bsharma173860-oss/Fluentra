@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .empty{flex:1;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:32px 24px;text-align:center}
+  .empty .ico{width:54px;height:54px;background:var(--bg2);border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+  .empty .ico svg{width:24px;height:24px;stroke:var(--ink3);stroke-width:1.6;fill:none}
+  .empty h3{font-family:var(--serif-display);font-weight:400;font-size:18px;color:var(--ink);margin:0 0 4px}
+  .empty p{font-size:12.5px;color:var(--ink4);max-width:240px;margin:0 auto 14px;line-height:1.5}
+  .empty .btn{font-size:12.5px;font-weight:700;background:var(--brand);color:#fff;border:0;padding:8px 16px;border-radius:99px;cursor:pointer}
+  .err{flex:1;min-width:280px;background:#FCE6E2;border:1px solid #F4C9C0;border-radius:14px;padding:24px;text-align:center}
+  .err h3{font-family:var(--sans);font-weight:700;font-size:14px;color:#7A2A1F;margin:0 0 4px}
+  .err p{font-size:12px;color:#9A3D2F;margin:0 0 12px;line-height:1.5}
+  .err .btn{font-size:12px;font-weight:700;background:#7A2A1F;color:#fff;border:0;padding:7px 14px;border-radius:99px;cursor:pointer}
+</style></head>
+<body>
+<div class="card">
+  <div class="empty">
+    <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+    <h3>Your library is empty</h3>
+    <p>Save lessons, vocab decks, or tutor sessions to come back to them later.</p>
+    <button class="btn">Browse the catalog</button>
+  </div>
+  <div class="empty">
+    <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div>
+    <h3>No lessons yet today</h3>
+    <p>Start a 5-minute warmup to keep your 23-day streak going.</p>
+    <button class="btn">Start warmup</button>
+  </div>
+  <div class="err">
+    <h3>Something went wrong</h3>
+    <p>We couldn't load your dashboard. Check your connection and try again.</p>
+    <button class="btn">Reload</button>
+  </div>
+</div>
+</body></html>

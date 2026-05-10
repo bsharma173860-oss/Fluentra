@@ -1,0 +1,206 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<title>Logo Inside Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#F4F1EA; font-family:'Inter', system-ui, sans-serif; color:#1A1814; }
+  .serif { font-family:'Fraunces', Georgia, serif; }
+  .page { padding:48px 56px 80px; max-width:1320px; margin:0 auto; }
+  .head { margin-bottom:36px; }
+  .eyebrow { font-size:11px; font-weight:700; color:#8A7F6F; letter-spacing:.16em; text-transform:uppercase; margin-bottom:8px; }
+  .title { font-family:'Fraunces', serif; font-size:42px; line-height:1.05; letter-spacing:-0.015em; margin:0 0 10px; font-weight:500; }
+  .lede { font-size:14.5px; color:#5A5246; max-width:680px; line-height:1.55; }
+  .grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:18px; }
+  .card { background:#fff; border:1px solid #E5DFD2; border-radius:16px; padding:22px 18px 16px; display:flex; flex-direction:column; align-items:center; gap:14px; box-shadow:0 1px 0 rgba(0,0,0,.02); }
+  .card.current { background:linear-gradient(180deg,#FFF8EE 0%,#fff 60%); border-color:#E0B27288; }
+  .tile { width:96px; height:96px; border-radius:24px; background:linear-gradient(135deg,#D97757 0%, #C56B47 60%, #A85636 100%); display:flex; align-items:center; justify-content:center; box-shadow:0 14px 30px rgba(168,86,54,.32), inset 0 1px 0 rgba(255,255,255,.18); position:relative; overflow:hidden; }
+  .tile::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,.18), transparent 55%); pointer-events:none; }
+  .label { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .lname { font-size:13.5px; font-weight:700; color:#1A1814; letter-spacing:-0.005em; }
+  .lkind { font-size:11px; color:#8A7F6F; letter-spacing:.06em; }
+  .row-mini { display:flex; align-items:center; gap:6px; padding-top:10px; border-top:1px dashed #E5DFD2; width:100%; justify-content:center; }
+  .mini { width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg,#D97757,#A85636); display:flex; align-items:center; justify-content:center; }
+  .mini-1 { width:14px; height:14px; }
+  .pill { font-size:9.5px; font-weight:700; color:#A85636; background:#FFF8EE; border:1px solid #E0B27266; padding:2px 7px; border-radius:99px; letter-spacing:.06em; }
+  .badge-current { font-size:9.5px; font-weight:800; color:#fff; background:#1A8F4E; padding:3px 8px; border-radius:99px; letter-spacing:.08em; }
+  .section { margin-top:48px; padding-top:32px; border-top:1px solid #E5DFD2; }
+  .section-title { font-family:'Fraunces',serif; font-size:22px; margin:0 0 6px; font-weight:500; }
+  .section-sub { font-size:12.5px; color:#8A7F6F; margin-bottom:22px; }
+  .reco { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:24px; }
+  .reco-card { padding:16px 18px; background:#fff; border:1px solid #E5DFD2; border-radius:14px; }
+  .reco-h { font-family:'Fraunces',serif; font-size:15px; font-weight:600; margin-bottom:6px; }
+  .reco-b { font-size:12.5px; color:#5A5246; line-height:1.5; }
+  .keep { color:#1A8F4E; font-weight:700; }
+  .swap { color:#C56B47; font-weight:700; }
+  .skip { color:#8A7F6F; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <div class="eyebrow">Brand · Logo exploration</div>
+    <h1 class="title">Inside-mark options for the orange tile</h1>
+    <p class="lede">Outer tile color is locked (your brand signature). These eight variants explore what lives <em>inside</em> — different metaphors, different geometric weight. Each card shows the full-size tile plus app-icon (22px) and favicon (14px) renderings so you can judge legibility at small sizes.</p>
+  </div>
+
+  <div class="grid">
+    <!-- 01 Current -->
+    <div class="card current">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M5 4 L5 20 M5 4 L17 4 M5 12 L14 12" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="18.5" cy="18.5" r="2.2" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">F-mark + dot</div><div class="lkind">Current · letterform</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 4 L5 20 M5 4 L17 4 M5 12 L14 12" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="18.5" cy="18.5" r="2.4" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 4 L5 20 M5 4 L17 4 M5 12 L14 12" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></svg></div>
+        <span class="badge-current">CURRENT</span>
+      </div>
+    </div>
+
+    <!-- 02 Bilingual brackets -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M9 4 L4 4 L4 20 L9 20" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 4 L20 4 L20 20 L15 20" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="12" r="1.7" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Translation brackets</div><div class="lkind">Two languages, one idea</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 4 L4 4 L4 20 L9 20 M15 4 L20 4 L20 20 L15 20" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="12" cy="12" r="1.8" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M9 4 L4 4 L4 20 L9 20 M15 4 L20 4 L20 20 L15 20" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg></div>
+        <span class="pill">SEMANTIC</span>
+      </div>
+    </div>
+
+    <!-- 03 Speech bubble + dots -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M4 6 C4 4.9 4.9 4 6 4 L18 4 C19.1 4 20 4.9 20 6 L20 14 C20 15.1 19.1 16 18 16 L11 16 L7 20 L7 16 L6 16 C4.9 16 4 15.1 4 14 Z" fill="#fff"/>
+          <circle cx="9" cy="10" r="1.2" fill="#C56B47"/>
+          <circle cx="12" cy="10" r="1.2" fill="#C56B47"/>
+          <circle cx="15" cy="10" r="1.2" fill="#C56B47"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Speech bubble</div><div class="lkind">Conversation-first</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6 C4 4.9 4.9 4 6 4 L18 4 C19.1 4 20 4.9 20 6 L20 14 C20 15.1 19.1 16 18 16 L11 16 L7 20 L7 16 L6 16 C4.9 16 4 15.1 4 14 Z" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 6 C4 4.9 4.9 4 6 4 L18 4 C19.1 4 20 4.9 20 6 L20 14 C20 15.1 19.1 16 18 16 L11 16 L7 20 L7 16 L6 16 C4.9 16 4 15.1 4 14 Z" fill="#fff"/></svg></div>
+        <span class="pill">FRIENDLY</span>
+      </div>
+    </div>
+
+    <!-- 04 Flow / wave -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M3 14 C 6 8, 9 8, 12 12 S 18 16, 21 10" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+          <path d="M3 18 C 6 14, 9 14, 12 16 S 18 18, 21 16" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none" opacity=".6"/>
+          <circle cx="12" cy="6" r="1.6" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Flow lines</div><div class="lkind">Fluency · rhythm</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 14 C 6 8, 9 8, 12 12 S 18 16, 21 10" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="12" cy="6" r="1.8" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M3 14 C 6 8, 9 8, 12 12 S 18 16, 21 10" stroke="#fff" stroke-width="3.6" stroke-linecap="round" fill="none"/></svg></div>
+        <span class="pill">ABSTRACT</span>
+      </div>
+    </div>
+
+    <!-- 05 Open book -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M4 6 L11 8 L11 19 L4 17 Z" fill="#fff"/>
+          <path d="M20 6 L13 8 L13 19 L20 17 Z" fill="#fff"/>
+          <path d="M12 8 L12 19" stroke="#C56B47" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Open book</div><div class="lkind">Study · reading</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6 L11 8 L11 19 L4 17 Z M20 6 L13 8 L13 19 L20 17 Z" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 6 L11 8 L11 19 L4 17 Z M20 6 L13 8 L13 19 L20 17 Z" fill="#fff"/></svg></div>
+        <span class="pill">LITERAL</span>
+      </div>
+    </div>
+
+    <!-- 06 Globe + meridian -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="8" stroke="#fff" stroke-width="2.2" fill="none"/>
+          <path d="M4 12 L20 12" stroke="#fff" stroke-width="2.2"/>
+          <path d="M12 4 C 8 8, 8 16, 12 20 C 16 16, 16 8, 12 4 Z" stroke="#fff" stroke-width="2.2" fill="none"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Globe</div><div class="lkind">World · global</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#fff" stroke-width="2.6" fill="none"/><path d="M4 12 L20 12" stroke="#fff" stroke-width="2.6"/><path d="M12 4 C 8 8, 8 16, 12 20 C 16 16, 16 8, 12 4 Z" stroke="#fff" stroke-width="2.6" fill="none"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#fff" stroke-width="3" fill="none"/><path d="M4 12 L20 12" stroke="#fff" stroke-width="3"/></svg></div>
+        <span class="pill">EXPECTED</span>
+      </div>
+    </div>
+
+    <!-- 07 Spark / star -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3 L13.6 9.2 L20 10.5 L15 14.8 L16.5 21 L12 17.3 L7.5 21 L9 14.8 L4 10.5 L10.4 9.2 Z" fill="#fff"/>
+          <circle cx="12" cy="12" r="1.6" fill="#C56B47"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Spark / star</div><div class="lkind">Achievement · streak</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 3 L13.6 9.2 L20 10.5 L15 14.8 L16.5 21 L12 17.3 L7.5 21 L9 14.8 L4 10.5 L10.4 9.2 Z" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M12 3 L13.6 9.2 L20 10.5 L15 14.8 L16.5 21 L12 17.3 L7.5 21 L9 14.8 L4 10.5 L10.4 9.2 Z" fill="#fff"/></svg></div>
+        <span class="pill">PLAYFUL</span>
+      </div>
+    </div>
+
+    <!-- 08 Crossed strokes -->
+    <div class="card">
+      <div class="tile">
+        <svg width="58" height="58" viewBox="0 0 24 24" fill="none">
+          <path d="M5 5 L19 19" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <path d="M19 5 L5 19" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+          <circle cx="12" cy="12" r="2.2" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="label"><div class="lname">Crossed strokes</div><div class="lkind">Two scripts meeting</div></div>
+      <div class="row-mini">
+        <div class="mini"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 5 L19 19 M19 5 L5 19" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><circle cx="12" cy="12" r="2.4" fill="#fff"/></svg></div>
+        <div class="mini mini-1"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 5 L19 19 M19 5 L5 19" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg></div>
+        <span class="pill">BOLD</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">My take</h2>
+    <p class="section-sub">Three judgement calls based on how each variant survives at favicon size and how well it tells your story.</p>
+    <div class="reco">
+      <div class="reco-card">
+        <div class="reco-h"><span class="keep">KEEP if…</span> the F-mark is yours.</div>
+        <div class="reco-b">If "Fluentra" being F-shaped is intentional brand DNA, the current mark wins. It's the only option that doubles as a wordmark — readable from a tab bar without "Fluentra" next to it.</div>
+      </div>
+      <div class="reco-card">
+        <div class="reco-h"><span class="swap">SWAP to #02 (brackets)</span> if you want meaning.</div>
+        <div class="reco-b">Translation brackets [ ] with a center dot tells the bilingual story without needing language. Holds up at 14px. My pick if you want the inside to <em>mean</em> something specific to a language app.</div>
+      </div>
+      <div class="reco-card">
+        <div class="reco-h"><span class="skip">SKIP #06 / #05</span> — they're too generic.</div>
+        <div class="reco-b">Globe and book are what every other language app already uses (Duolingo, Babbel, Rosetta). Picking either makes you look me-too instead of distinct. Save the differentiation for the inside.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .side{width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:8px}
+  .nav{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;font-size:13px;color:var(--ink2);font-weight:500;cursor:pointer}
+  .nav.on{background:var(--brand-soft);color:var(--brand);font-weight:700}
+  .nav svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0}
+  .nav .ct{margin-left:auto;font-size:10px;background:var(--brand);color:#fff;padding:1px 6px;border-radius:99px;font-weight:700;font-variant-numeric:tabular-nums}
+  .nav.sub{padding-left:39px;font-size:12.5px;color:var(--ink3);font-weight:500}
+  .nav.sub.on{background:transparent;color:var(--brand);font-weight:700}
+  .secl{font-size:10px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;padding:11px 12px 5px}
+  /* mobile bottom tabs */
+  .tabbar{width:300px;background:#fff;border:1px solid var(--border);border-radius:24px;display:flex;justify-content:space-around;align-items:center;padding:10px 8px;box-shadow:var(--shadow-floating)}
+  .tb{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:var(--ink4);font-weight:600;padding:4px 8px;border-radius:8px}
+  .tb.on{color:var(--brand)}
+  .tb svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none}
+  .tb.fab{background:var(--brand);color:#fff;width:46px;height:46px;border-radius:50%;justify-content:center}
+  .tb.fab svg{width:20px;height:20px}
+</style></head>
+<body>
+<div class="card" style="align-items:flex-start">
+  <div class="side">
+    <div class="nav on"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Home</div>
+    <div class="nav"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10"/><polyline points="12 6 12 12 16 14"/></svg>Practice</div>
+    <div class="nav"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Live<span class="ct">3</span></div>
+    <div class="nav"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</div>
+    <div class="secl">Skills</div>
+    <div class="nav sub on">Speaking</div>
+    <div class="nav sub">Listening</div>
+    <div class="nav sub">Reading</div>
+    <div class="nav sub">Writing</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div class="tabbar">
+      <div class="tb on"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Home</div>
+      <div class="tb"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10"/><polyline points="12 6 12 12 16 14"/></svg>Practice</div>
+      <div class="tb fab"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="tb"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Progress</div>
+      <div class="tb"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>You</div>
+    </div>
+    <span style="font-size:11px;color:var(--ink4)">Mobile bottom-tab bar with center FAB</span>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,52 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .q{flex:1;min-width:340px;background:#fff;border:1px solid var(--border);border-radius:18px;padding:22px}
+  .qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .qnum{font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em}
+  .timer{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink2);background:var(--bg2);padding:4px 10px;border-radius:99px;font-variant-numeric:tabular-nums}
+  .timer svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none}
+  .prompt{font-family:var(--serif-display);font-size:20px;color:var(--ink);line-height:1.3;margin-bottom:18px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--border);border-radius:12px;font-size:13px;color:var(--ink2);cursor:pointer;background:#fff}
+  .opt .key{width:22px;height:22px;border-radius:50%;background:var(--bg2);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--ink3);flex-shrink:0}
+  .opt.sel{border-color:var(--brand);background:var(--brand-soft);color:var(--ink)}
+  .opt.sel .key{background:var(--brand);color:#fff}
+  .opt.right{border-color:#1A8F4E;background:#E2F5E9}
+  .opt.right .key{background:#1A8F4E;color:#fff}
+  .opt.wrong{border-color:#C0392B;background:#FCE6E2}
+  .opt.wrong .key{background:#C0392B;color:#fff}
+  /* fill in */
+  .blank{display:inline-block;min-width:130px;border-bottom:2px solid var(--brand);padding:0 6px 2px;margin:0 4px;font-family:var(--serif-display);color:var(--brand)}
+  /* listen prompt */
+  .listen{display:flex;align-items:center;gap:14px;background:var(--bg2);border-radius:14px;padding:14px;margin-bottom:18px}
+  .listen .pp{width:38px;height:38px;background:var(--brand);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .listen .pp svg{width:13px;height:13px;fill:#fff}
+  .listen .wv{flex:1;display:flex;align-items:center;gap:2px;height:24px}
+  .listen .wv span{flex:1;background:var(--ink5);border-radius:2px}
+  .listen .wv span.on{background:var(--brand)}
+  .listen .tt{font-size:11px;color:var(--ink4);font-variant-numeric:tabular-nums;font-weight:600}
+</style></head>
+<body>
+<div class="card" style="align-items:stretch">
+  <div class="q">
+    <div class="qhead"><span class="qnum">Question 4 of 12</span><span class="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>0:38</span></div>
+    <div class="prompt">¿Cómo se dice <em style="color:var(--brand)">"check, please"</em> en un restaurante en Madrid?</div>
+    <div class="opts">
+      <div class="opt"><span class="key">A</span>La cuenta, por favor</div>
+      <div class="opt sel"><span class="key">B</span>El menú, por favor</div>
+      <div class="opt"><span class="key">C</span>Un momento, por favor</div>
+      <div class="opt"><span class="key">D</span>El cambio, por favor</div>
+    </div>
+  </div>
+  <div class="q">
+    <div class="qhead"><span class="qnum">Listen · Question 7</span><span class="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>1:24</span></div>
+    <div class="listen"><span class="pp"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20" stroke="none"/></svg></span><div class="wv"><span class="on" style="height:60%"></span><span class="on" style="height:80%"></span><span class="on" style="height:45%"></span><span style="height:70%"></span><span style="height:90%"></span><span style="height:50%"></span><span style="height:65%"></span><span style="height:35%"></span><span style="height:75%"></span></div><span class="tt">0:08</span></div>
+    <div class="prompt" style="font-size:17px">Type the missing word: "Querría un <span class="blank">_____</span>, por favor."</div>
+    <div class="opts">
+      <div class="opt right"><span class="key">✓</span>cortado</div>
+      <div class="opt wrong"><span class="key">✗</span>cortando</div>
+    </div>
+  </div>
+</div>
+</body></html>

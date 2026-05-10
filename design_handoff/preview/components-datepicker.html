@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .field{flex:1;min-width:180px}
+  .pickbox{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .pickbox svg{width:14px;height:14px;stroke:var(--ink4);stroke-width:2;fill:none}
+  .cal{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;width:240px;font-size:12px}
+  .calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:700;color:var(--ink);font-size:13px}
+  .calhead button{background:var(--bg2);border:0;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;color:var(--ink2)}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+  .dow{font-size:9px;color:var(--ink4);font-weight:700;text-transform:uppercase;padding:4px 0}
+  .day{padding:5px 0;border-radius:6px;color:var(--ink2);cursor:pointer;font-variant-numeric:tabular-nums}
+  .day.muted{color:var(--ink5)}
+  .day.today{font-weight:700;color:var(--brand)}
+  .day.sel{background:var(--brand);color:#fff;font-weight:700}
+  .day.range{background:var(--brand-soft);color:var(--brand);border-radius:0}
+  .day.range.start{border-radius:6px 0 0 6px}
+  .day.range.end{border-radius:0 6px 6px 0}
+</style></head>
+<body>
+<div class="card">
+  <div class="field">
+    <label class="label">Start date</label>
+    <div class="pickbox">Mar 4, 2025<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></div>
+  </div>
+  <div class="field">
+    <label class="label">Lesson time</label>
+    <div class="pickbox">8:00 PM<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></div>
+  </div>
+  <div class="cal">
+    <div class="calhead"><button>‹</button>March 2025<button>›</button></div>
+    <div class="grid">
+      <span class="dow">M</span><span class="dow">T</span><span class="dow">W</span><span class="dow">T</span><span class="dow">F</span><span class="dow">S</span><span class="dow">S</span>
+      <span class="day muted">24</span><span class="day muted">25</span><span class="day muted">26</span><span class="day muted">27</span><span class="day muted">28</span><span class="day">1</span><span class="day">2</span>
+      <span class="day">3</span><span class="day range start sel">4</span><span class="day range">5</span><span class="day range">6</span><span class="day range">7</span><span class="day range">8</span><span class="day range end sel">9</span>
+      <span class="day">10</span><span class="day today">11</span><span class="day">12</span><span class="day">13</span><span class="day">14</span><span class="day">15</span><span class="day">16</span>
+    </div>
+  </div>
+</div>
+</body></html>

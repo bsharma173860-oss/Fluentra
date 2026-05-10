@@ -1,0 +1,166 @@
+/* ==========================================================================
+   Fluentra Design System — Tokens
+   Editorial language-learning brand. Warm off-white surfaces, pure-neutral
+   ink scale, deep-orange brand, four module accents, five language themes.
+   Type: DM Serif Display (editorial) + Inter (UI).
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --bg:        #F9F8F5;   /* Default page bg — warm off-white */
+  --bg2:       #F4F1EB;   /* Secondary surface — chips, subtle panels */
+  --bg3:       #EDEAE3;   /* Tertiary surface — canvas / containing layout */
+  --card:      #FFFFFF;   /* Card / panel background */
+  --paper:     #FFFEFA;   /* Editorial / reading-mode surface */
+
+  /* ── Borders & Hairlines ──────────────────────────────────────────────── */
+  --border:    #EAEAEA;   /* Default card / divider border */
+  --hairline:  #F4F4F4;   /* Subtle internal dividers */
+  --track:     #F2F2F2;   /* Progress bar track (cool) */
+  --track-warm:#F4F4F0;   /* Progress bar track (warm — pairs w/ bg) */
+
+  /* ── Ink scale (text — pure neutral, NOT gray-blue) ───────────────────── */
+  --ink:       #000000;   /* Primary text, headlines */
+  --ink2:      #333333;   /* Body text */
+  --ink3:      #666666;   /* Secondary / supporting */
+  --ink4:      #999999;   /* Muted / metadata */
+  --ink5:      #BBBBBB;   /* Disabled / very muted */
+
+  /* ── Brand ────────────────────────────────────────────────────────────── */
+  --brand:        #C04A06;   /* Primary brand orange — CTAs, focus rings */
+  --brand-soft:   #FFF0EE;   /* Soft-fill button bg */
+  --brand-light:  #FFE5DE;   /* Badge / chip bg */
+  --brand-grad:   linear-gradient(135deg, #C04A06, #E8732F);
+
+  /* ── Module accents (one per skill) ───────────────────────────────────── */
+  --speaking:        #5B4EFF;   /* purple */
+  --speaking-bg:     #EEEDFF;
+  --writing:         #A65A00;   /* gold */
+  --writing-bg:      #FFEAC2;
+  --listening:       #1A8F4E;   /* green */
+  --listening-bg:    #E2F5E9;
+  --reading:         #C04A06;   /* orange = brand */
+  --reading-bg:      #FFE5DE;
+
+  /* ── Language themes ──────────────────────────────────────────────────── */
+  --es-bg: #FFF0EE;  --es-accent: #C04A06;  --es-accent-light: #FFE5DE;
+  --ja-bg: #FFF0F5;  --ja-accent: #C84070;  --ja-accent-light: #FFE0EC;
+  --fr-bg: #EEF4FF;  --fr-accent: #1558B0;  --fr-accent-light: #DDEEFF;
+  --de-bg: #FFF7E8;  --de-accent: #A65A00;  --de-accent-light: #FFEAC2;
+  --en-bg: #EEEDFF;  --en-accent: #5B4EFF;  --en-accent-light: #DDDBFF;
+
+  /* ── Radii ────────────────────────────────────────────────────────────── */
+  --r-pill: 99px;
+  --r-lg:   18px;   /* Hero panels, banners */
+  --r-md:   16px;   /* Standard cards */
+  --r-sm:   14px;   /* Inner cards, list items */
+  --r-xs:   10px;   /* Buttons, small surfaces */
+  --r-tile: 9px;    /* Module icon swatches */
+
+  /* ── Shadows (system is shadow-light — prefer hairline borders) ───────── */
+  --shadow-phone:    0 30px 80px rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.04);
+  --shadow-floating: 0 4px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  --shadow-sticky:   0 1px 0 rgba(0,0,0,.06);
+
+  /* ── Spacing (4px grid) ───────────────────────────────────────────────── */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;
+  --s-5: 20px;  --s-6: 24px;  --s-7: 28px;  --s-8: 32px;
+  --s-9: 36px;  --s-10:40px;  --s-12:48px;
+
+  /* ── Type families ────────────────────────────────────────────────────── */
+  --serif-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --sans:          "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  /* ── Type scale (semantic) ────────────────────────────────────────────── */
+  --t-hero:     62px;   /* Marketing h1 (38–62 range) */
+  --t-page:     34px;   /* Page title — section level 0 */
+  --t-section1: 22px;   /* Section title — level 1 */
+  --t-section2: 17px;   /* Sub-section title — level 2 */
+  --t-card:     15px;   /* Card title (13–15) */
+  --t-body:     14px;
+  --t-body-sm:  13px;
+  --t-eyebrow:  11px;
+  --t-meta:     12px;
+  --t-chip:     11px;
+  --t-btn-md:   13px;
+  --t-btn-lg:   14.5px;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease-fluid: cubic-bezier(.2,.8,.2,1);
+  --dur-hover:  200ms;
+  --dur-state:  400ms;
+  --dur-ring:   800ms;
+}
+
+/* ==========================================================================
+   Semantic element styles
+   Apply these to bare HTML; they encode the editorial type voice.
+   ========================================================================== */
+
+html, body {
+  background: var(--bg);
+  color: var(--ink2);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif-display);
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+h1 { font-size: var(--t-page);     line-height: 1.1; }   /* page-level */
+h2 { font-size: var(--t-section1); line-height: 1.1; }   /* section */
+h3 { font-size: var(--t-section2); line-height: 1.2; font-family: var(--sans); font-weight: 700; }
+
+.eyebrow {
+  font-family: var(--sans);
+  font-size: var(--t-eyebrow);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink4);
+}
+
+.hero {
+  font-family: var(--serif-display);
+  font-weight: 400;
+  font-size: var(--t-hero);
+  line-height: 1.05;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+p { margin: 0; color: var(--ink2); }
+.muted { color: var(--ink3); }
+.metadata { font-size: var(--t-meta); color: var(--ink4); }
+
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code, kbd, samp {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  background: var(--bg2);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+::selection { background: var(--brand-light); color: var(--ink); }
+
+/* ── Numbers (streaks, stats) — tabular ──────────────────────────────────── */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ── Focus ring (visible only on keyboard) ───────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

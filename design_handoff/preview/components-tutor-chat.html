@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .chat{flex:1;min-width:340px;max-width:480px;background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .msg{display:flex;gap:10px;align-items:flex-end;max-width:85%}
+  .msg .av{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+  .msg.me{margin-left:auto;flex-direction:row-reverse}
+  .msg.me .av{background:var(--ink);font-size:11px}
+  .bub{padding:11px 14px;border-radius:16px;font-size:13px;line-height:1.45;color:var(--ink2);background:var(--bg2)}
+  .msg.me .bub{background:var(--brand);color:#fff;border-bottom-right-radius:6px}
+  .msg.tutor .bub{background:var(--bg2);border-bottom-left-radius:6px}
+  .bub .corr{display:block;font-size:11px;color:var(--ink4);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-style:italic}
+  .bub .hl{background:#FFEAC2;color:#A65A00;padding:0 3px;border-radius:3px}
+  .bub .ok{background:#E2F5E9;color:#1A8F4E;padding:0 3px;border-radius:3px}
+  .typing{display:inline-flex;align-items:center;gap:4px;padding:14px 16px}
+  .typing span{width:6px;height:6px;background:var(--ink4);border-radius:50%;animation:bb 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}
+  .typing span:nth-child(3){animation-delay:.3s}
+  @keyframes bb{50%{transform:translateY(-4px);opacity:.4}}
+  .actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+  .actions button{font-family:inherit;font-size:11px;font-weight:600;background:#fff;border:1px solid var(--border);padding:5px 10px;border-radius:99px;color:var(--ink3);cursor:pointer}
+</style></head>
+<body>
+<div class="card" style="align-items:stretch">
+  <div class="chat">
+    <div class="msg tutor"><span class="av">F</span><div class="bub">¡Hola María! Today let's practice ordering at a café. Imagine you walk into a place in Madrid — what do you say first?<div class="corr">Reply in Spanish · I'll correct gently</div></div></div>
+    <div class="msg me"><div class="bub">Hola, querría <span class="hl">un cortado</span> y <span class="hl">una tostada con tomate</span>, <span class="ok">por favor</span>.</div><span class="av">M</span></div>
+    <div class="msg tutor"><span class="av">F</span><div class="bub">Perfect grammar! In Madrid you'd more likely say <em>"me pones"</em> instead of <em>"querría"</em> — it's friendlier with baristas. Try: "Hola, ¿me pones un cortado…"<div class="actions"><button>🔊 Hear it</button><button>Save phrase</button><button>Why?</button></div></div></div>
+    <div class="msg tutor"><span class="av">F</span><div class="typing"><span></span><span></span><span></span></div></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .item{flex:1;min-width:240px}
+  .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .v{font-family:var(--serif-display);font-size:22px;color:var(--ink)}
+  .track{height:6px;background:var(--track-warm);border-radius:99px;position:relative}
+  .fill{height:100%;background:var(--brand);border-radius:99px;position:relative}
+  .knob{position:absolute;top:50%;right:-9px;transform:translateY(-50%);width:18px;height:18px;background:#fff;border:1.5px solid var(--brand);border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .ticks{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--ink4);font-variant-numeric:tabular-nums}
+</style></head>
+<body>
+<div class="card">
+  <div class="item">
+    <div class="top"><span class="label" style="margin:0">Daily goal</span><span class="v">20 min</span></div>
+    <div class="track"><div class="fill" style="width:50%"><span class="knob"></span></div></div>
+    <div class="ticks"><span>5</span><span>15</span><span>30</span><span>60+</span></div>
+  </div>
+  <div class="item">
+    <div class="top"><span class="label" style="margin:0">Tutor pace</span><span class="v">Slow</span></div>
+    <div class="track"><div class="fill" style="width:25%"><span class="knob"></span></div></div>
+    <div class="ticks"><span>Slow</span><span>Normal</span><span>Fast</span><span>Native</span></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .crumbs{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink3)}
+  .crumbs a{color:var(--ink3);text-decoration:none}
+  .crumbs a:hover{color:var(--brand)}
+  .crumbs .sep{color:var(--ink5);font-size:11px}
+  .crumbs .here{color:var(--ink);font-weight:600}
+  .pg{display:flex;gap:4px;align-items:center}
+  .pg button{width:32px;height:32px;border:1px solid var(--border);background:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;font-variant-numeric:tabular-nums}
+  .pg button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .pg button.dis{color:var(--ink5);cursor:not-allowed;background:var(--bg2)}
+  .pg .gap{padding:0 4px;color:var(--ink4)}
+  .pg svg{width:12px;height:12px;stroke:currentColor;stroke-width:2.5;fill:none}
+  .info{font-size:11px;color:var(--ink4);margin-left:8px}
+</style></head>
+<body>
+<div class="card" style="flex-direction:column;align-items:flex-start;gap:18px">
+  <nav class="crumbs">
+    <a>Library</a><span class="sep">/</span>
+    <a>Spanish</a><span class="sep">/</span>
+    <a>B1</a><span class="sep">/</span>
+    <span class="here">Lesson 4 — Ordering coffee</span>
+  </nav>
+  <div class="pg">
+    <button class="dis"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button>1</button>
+    <button class="on">2</button>
+    <button>3</button>
+    <button>4</button>
+    <span class="gap">…</span>
+    <button>12</button>
+    <button><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <span class="info">Showing 21–40 of 234</span>
+  </div>
+</div>
+</body></html>

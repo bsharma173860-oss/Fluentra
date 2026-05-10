@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;background:var(--bg);font-family:var(--sans)}
+  .card{padding:18px 22px;display:flex;align-items:center;gap:18px}
+  .lang-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;width:280px}
+  .flag{width:42px;height:42px;border-radius:10px;background:#FFF0EE;display:grid;place-items:center;font-size:24px}
+  .meta{flex:1;min-width:0}
+  .top{display:flex;align-items:center;gap:6px}
+  .native{font-size:14px;font-weight:700;color:#000}
+  .level{font-size:10px;font-weight:700;letter-spacing:.04em;background:#FFE5DE;color:#C04A06;padding:2px 7px;border-radius:99px}
+  .english{font-size:12px;color:#666;margin-top:1px}
+  .bar{margin-top:9px;height:4px;border-radius:99px;background:#F2F2F2;overflow:hidden}
+  .fill{height:100%;background:#C04A06;width:62%;border-radius:99px}
+  .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .streak{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#C04A06}
+  .streak svg{width:13px;height:13px;stroke:#C04A06;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .exam{font-size:9.5px;color:#999;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+
+  .pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:99px;padding:6px 12px 6px 6px}
+  .pill .flag{width:24px;height:24px;border-radius:50%;font-size:14px}
+  .pill .n{font-size:12px;font-weight:600;color:#000}
+  .pill .l{font-size:10px;font-weight:700;color:#C04A06;background:#FFE5DE;padding:2px 6px;border-radius:99px}
+</style></head>
+<body>
+<div class="card">
+  <div class="lang-card">
+    <div class="flag">🇪🇸</div>
+    <div class="meta">
+      <div class="top"><div class="native">Español</div><div class="level">B1</div></div>
+      <div class="english">Spanish</div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+    <div class="right">
+      <div class="streak"><svg viewBox="0 0 24 24"><path d="M12 3s5 4 5 9a5 5 0 0 1-10 0c0-3 2-4 2-7 2 1 3 3 3 5 1-1 0-3 0-7z"/></svg>23</div>
+      <div class="exam">DELE</div>
+    </div>
+  </div>
+  <div class="pill">
+    <div class="flag">🇯🇵</div>
+    <div class="n">日本語</div>
+    <div class="l" style="background:#FFE0EC;color:#C84070">A2</div>
+  </div>
+</div>
+</body></html>

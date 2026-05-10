@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .av{width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;border:2px solid #fff;box-shadow:0 0 0 1px var(--border)}
+  .av.lg{width:54px;height:54px;font-size:18px}
+  .av.sm{width:28px;height:28px;font-size:11px}
+  .av.img{background:linear-gradient(135deg,#C04A06,#E8732F)}
+  .av.alt1{background:#1A8F4E}
+  .av.alt2{background:#5B4EFF}
+  .av.alt3{background:#C84070}
+  .av .dot{position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;background:#1A8F4E;border:2px solid #fff;border-radius:50%}
+  .stack{display:flex}
+  .stack .av{margin-left:-8px}
+  .stack .av:first-child{margin-left:0}
+  .stack .more{background:var(--bg2);color:var(--ink3);font-size:11px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px}
+  .b-brand{background:var(--brand-soft);color:var(--brand)}
+  .b-new{background:var(--ink);color:#fff}
+  .b-pro{background:#FFEAC2;color:#A65A00}
+  .b-live{background:#FCE6E2;color:#C0392B}
+  .b-live .pulse{width:6px;height:6px;background:#C0392B;border-radius:50%;animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+  .ct{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#C0392B;color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:0 5px;font-variant-numeric:tabular-nums}
+  .cell{position:relative;display:inline-block}
+</style></head>
+<body>
+<div class="card">
+  <div class="col" style="gap:12px">
+    <div class="row">
+      <span class="cell"><span class="av sm">M</span></span>
+      <span class="cell"><span class="av">M</span></span>
+      <span class="cell"><span class="av lg img">M</span></span>
+      <span class="cell"><span class="av alt1">C</span><span class="dot"></span></span>
+    </div>
+    <div class="stack">
+      <span class="av sm img">M</span><span class="av sm alt1">C</span><span class="av sm alt2">L</span><span class="av sm alt3">P</span><span class="av sm more">+8</span>
+    </div>
+  </div>
+  <div class="col" style="gap:8px">
+    <div class="row">
+      <span class="badge b-brand">B1+</span>
+      <span class="badge b-new">NEW</span>
+      <span class="badge b-pro">PRO</span>
+      <span class="badge b-live"><span class="pulse"></span>LIVE</span>
+    </div>
+    <div class="row" style="gap:18px">
+      <span class="cell">Library<span class="ct" style="position:relative;top:-1px;margin-left:6px">3</span></span>
+      <span class="cell">Tutor<span class="ct" style="position:relative;top:-1px;margin-left:6px">12</span></span>
+      <span class="cell">Inbox<span class="ct" style="position:relative;top:-1px;margin-left:6px">99+</span></span>
+    </div>
+  </div>
+</div>
+</body></html>

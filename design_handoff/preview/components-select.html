@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .field{flex:1;min-width:220px}
+  .select{width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 38px 10px 12px;font-size:13px;color:var(--ink);font-family:inherit;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
+  .menu{background:#fff;border:1px solid var(--border);border-radius:12px;width:200px;padding:6px;box-shadow:var(--shadow-floating)}
+  .opt{padding:8px 10px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .opt.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .opt .dot{width:18px;height:18px;border-radius:50%;background:var(--bg2);font-size:11px;display:flex;align-items:center;justify-content:center}
+  .check{width:14px;height:14px;margin-left:auto;stroke:currentColor;stroke-width:2.5;fill:none}
+</style></head>
+<body>
+<div class="card">
+  <div class="field">
+    <label class="label">Native language</label>
+    <select class="select"><option>English</option></select>
+  </div>
+  <div class="field">
+    <label class="label">Time zone</label>
+    <select class="select"><option>Europe / Madrid (CET)</option></select>
+  </div>
+  <div class="menu">
+    <div class="opt"><span class="dot">🇪🇸</span>Spanish</div>
+    <div class="opt active"><span class="dot">🇫🇷</span>French<svg class="check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="opt"><span class="dot">🇯🇵</span>Japanese</div>
+    <div class="opt"><span class="dot">🇩🇪</span>German</div>
+  </div>
+</div>
+</body></html>

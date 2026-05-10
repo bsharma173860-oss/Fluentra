@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .panel{flex:1;min-width:280px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
+  .sk{background:linear-gradient(90deg,#EEEAE3 0%,#F4F1EB 50%,#EEEAE3 100%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .row:last-child{margin-bottom:0}
+  .av{width:40px;height:40px;border-radius:50%;flex-shrink:0}
+  .lines{flex:1;display:flex;flex-direction:column;gap:6px}
+  .l1{height:11px;width:60%}
+  .l2{height:9px;width:85%}
+  .l3{height:9px;width:40%}
+  .spinner{width:24px;height:24px;border:2.5px solid var(--bg2);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .center{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px}
+  .center .lab{font-size:12px;color:var(--ink3);margin-top:10px;font-weight:500}
+  .bar{height:140px;display:flex;align-items:flex-end;gap:8px;margin-top:14px}
+  .bar span{flex:1;border-radius:4px}
+</style></head>
+<body>
+<div class="card">
+  <div class="panel">
+    <div class="row"><span class="sk av"></span><div class="lines"><span class="sk l1"></span><span class="sk l2"></span></div></div>
+    <div class="row"><span class="sk av"></span><div class="lines"><span class="sk l1"></span><span class="sk l2"></span></div></div>
+    <div class="row"><span class="sk av"></span><div class="lines"><span class="sk l1"></span><span class="sk l3"></span></div></div>
+  </div>
+  <div class="panel">
+    <span class="sk" style="height:14px;width:120px;display:block;margin-bottom:14px"></span>
+    <div class="bar">
+      <span class="sk" style="height:40%"></span><span class="sk" style="height:75%"></span><span class="sk" style="height:55%"></span><span class="sk" style="height:90%"></span><span class="sk" style="height:30%"></span><span class="sk" style="height:65%"></span><span class="sk" style="height:80%"></span>
+    </div>
+  </div>
+  <div class="panel center">
+    <div class="spinner"></div>
+    <div class="lab">Grading your essay…</div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;background:var(--bg);font-family:var(--sans)}
+  .card{padding:18px 22px;display:flex;align-items:center;gap:14px}
+  .feature{flex:1;border-radius:16px;border:1px solid var(--border);background:#fff;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+  .feature.accent::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#C04A06}
+  .tile{width:36px;height:36px;border-radius:9px;display:grid;place-items:center}
+  .tile svg{width:18px;height:18px;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;stroke:currentColor}
+  .ttl{font-size:13px;font-weight:700;color:#000}
+  .body{font-size:12px;color:#666;line-height:1.5;text-wrap:pretty}
+</style></head>
+<body>
+<div class="card">
+  <div class="feature accent">
+    <div class="tile" style="background:#FFE5DE;color:#C04A06"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2zM20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2z"/></svg></div>
+    <div class="ttl">Reading</div>
+    <div class="body">Stories, news, and exam-aligned passages with comprehension checks.</div>
+  </div>
+  <div class="feature">
+    <div class="tile" style="background:#EEEDFF;color:#5B4EFF"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+    <div class="ttl">Speaking</div>
+    <div class="body">Real-time AI conversation tutor that scores fluency and pronunciation.</div>
+  </div>
+  <div class="feature">
+    <div class="tile" style="background:#E2F5E9;color:#1A8F4E"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 18 0v3a2 2 0 0 1-2 2h-1v-6h3M3 12v3a2 2 0 0 0 2 2h1v-6H3"/></svg></div>
+    <div class="ttl">Listening</div>
+    <div class="body">Native-speaker audio at adaptive speeds with click-to-translate transcripts.</div>
+  </div>
+</div>
+</body></html>

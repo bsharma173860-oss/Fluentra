@@ -1,0 +1,91 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Pricing</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body{margin:0;padding:48px 20px;display:flex;justify-content:center}
+.wrap{max-width:920px;width:100%}
+.eye{font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.12em;text-align:center}
+h1{font-family:var(--serif-display);font-weight:400;font-size:46px;text-align:center;margin:8px 0 12px;line-height:1.05}
+.sub{font-size:15px;color:var(--ink3);text-align:center;margin-bottom:24px}
+.toggle{display:inline-flex;background:var(--bg2);border-radius:99px;padding:4px;margin:0 auto 32px;display:flex;width:fit-content;margin-left:auto;margin-right:auto}
+.toggle button{border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:600;padding:8px 18px;border-radius:99px;cursor:pointer;color:var(--ink3);display:flex;align-items:center;gap:8px}
+.toggle button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.toggle .save{background:#1A8F4E;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}
+.plans{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.plan{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;display:flex;flex-direction:column}
+.plan.best{border:2px solid var(--brand);position:relative;transform:translateY(-8px)}
+.plan.best::before{content:"BEST VALUE";position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;border-radius:99px;letter-spacing:.1em}
+.plan h3{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}
+.plan .price{font-family:var(--serif-display);font-size:42px;color:var(--ink);line-height:1}
+.plan .price sub{font-family:var(--sans);font-size:13px;color:var(--ink4);font-weight:600;margin-left:2px;font-variant-numeric:tabular-nums}
+.plan .strike{font-size:12px;color:var(--ink5);text-decoration:line-through;margin-top:4px;font-variant-numeric:tabular-nums}
+.plan .saved{font-size:11px;color:#1A8F4E;font-weight:700;margin-top:4px}
+.plan .desc{font-size:12.5px;color:var(--ink3);margin:14px 0 18px;line-height:1.5;border-bottom:1px solid var(--hairline);padding-bottom:18px}
+.plan ul{list-style:none;padding:0;margin:0;flex:1}
+.plan li{font-size:12.5px;color:var(--ink2);padding:6px 0;display:flex;gap:8px}
+.plan li .ck{color:#1A8F4E;font-weight:700;flex-shrink:0}
+.plan li.no{color:var(--ink5)}
+.plan li.no .ck{color:var(--ink5)}
+.plan button{font-family:inherit;font-size:13px;font-weight:700;border:0;padding:12px;border-radius:99px;cursor:pointer;margin-top:16px}
+.plan .b-free{background:var(--bg2);color:var(--ink2)}
+.plan .b-pro{background:var(--brand);color:#fff}
+.plan .b-team{background:var(--ink);color:#fff}
+.fp{text-align:center;font-size:11px;color:var(--ink4);margin-top:24px}
+</style></head>
+<body>
+<div class="wrap">
+<div class="eye">Pricing</div>
+<h1>Pay for fluency, not flashcards.</h1>
+<p class="sub">Reading & vocab are free forever. Pay only for tutor time and Live rooms.</p>
+<div class="toggle"><button>Monthly</button><button class="on">Annual <span class="save">SAVE 30%</span></button></div>
+<div class="plans">
+<div class="plan">
+<h3>Free</h3>
+<div class="price">$0<sub>/mo</sub></div>
+<p class="desc">Vocab, reading, and one daily lesson. Forever.</p>
+<ul>
+<li><span class="ck">✓</span>5 lessons / day</li>
+<li><span class="ck">✓</span>Vocab flashcards (SRS)</li>
+<li><span class="ck">✓</span>Reading library</li>
+<li><span class="ck">✓</span>Streaks + progress</li>
+<li class="no"><span class="ck">×</span>AI tutor</li>
+<li class="no"><span class="ck">×</span>Live rooms</li>
+<li class="no"><span class="ck">×</span>Speaking & writing scoring</li>
+</ul>
+<button class="b-free">Stay free</button>
+</div>
+<div class="plan best">
+<h3>Pro</h3>
+<div class="price">$9.99<sub>/mo</sub></div>
+<div class="strike">$14.99 / month if billed monthly</div>
+<div class="saved">Save $60 a year</div>
+<p class="desc">Everything you need to actually become fluent.</p>
+<ul>
+<li><span class="ck">✓</span>Unlimited lessons</li>
+<li><span class="ck">✓</span>Unlimited AI tutor</li>
+<li><span class="ck">✓</span>4 Live rooms / week</li>
+<li><span class="ck">✓</span>Speaking + writing scoring</li>
+<li><span class="ck">✓</span>Offline mode</li>
+<li><span class="ck">✓</span>The 90-day B1 guarantee</li>
+<li><span class="ck">✓</span>Priority support</li>
+</ul>
+<button class="b-pro">Start 7-day free trial</button>
+</div>
+<div class="plan">
+<h3>Team</h3>
+<div class="price">$7<sub>/seat/mo</sub></div>
+<div class="strike">$10 / seat / month monthly</div>
+<p class="desc">For schools, language departments, and remote teams of 5+.</p>
+<ul>
+<li><span class="ck">✓</span>Everything in Pro</li>
+<li><span class="ck">✓</span>Admin dashboard</li>
+<li><span class="ck">✓</span>SSO / SAML</li>
+<li><span class="ck">✓</span>Cohort progress reports</li>
+<li><span class="ck">✓</span>Custom Live rooms</li>
+<li><span class="ck">✓</span>Dedicated CSM</li>
+</ul>
+<button class="b-team">Contact sales</button>
+</div>
+</div>
+<div class="fp">Cancel anytime · Money back in 30 days · No card needed for the trial</div>
+</div>
+</body></html>

@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .fc{flex:1;min-width:240px;max-width:280px;background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;text-align:center;position:relative;overflow:hidden}
+  .fc::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--brand)}
+  .fc .pos{font-size:10px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+  .fc .word{font-family:var(--serif-display);font-size:30px;color:var(--ink);line-height:1.1}
+  .fc .ipa{font-size:12px;color:var(--ink4);margin-top:4px;font-style:italic}
+  .fc .def{font-size:13px;color:var(--ink2);margin-top:14px;line-height:1.5;border-top:1px solid var(--hairline);padding-top:14px}
+  .fc.back{background:var(--brand-soft);border-color:var(--brand-light)}
+  .fc.back::before{background:var(--brand)}
+  .fc .ex{font-size:12px;color:var(--ink3);font-style:italic;margin-top:8px}
+  .fc-actions{display:flex;gap:6px;margin-top:18px}
+  .fc-actions button{flex:1;font-family:inherit;font-size:11px;font-weight:700;border:1px solid var(--border);background:#fff;padding:8px 0;border-radius:99px;color:var(--ink2);cursor:pointer}
+  .fc-actions .hard{border-color:#F4C9C0;color:#C0392B}
+  .fc-actions .easy{border-color:#C7EAD3;color:#1A8F4E}
+  .meter{display:flex;gap:3px;margin-top:14px}
+  .meter span{flex:1;height:3px;background:var(--bg2);border-radius:2px}
+  .meter span.on{background:var(--brand)}
+</style></head>
+<body>
+<div class="card" style="align-items:stretch">
+  <div class="fc">
+    <div class="pos">Noun · masculine</div>
+    <div class="word">cortado</div>
+    <div class="ipa">/kor·ˈta·ðo/</div>
+    <div class="def" style="border-top:0;padding-top:0;color:var(--ink5);font-style:italic">Tap to reveal</div>
+    <div class="meter"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+  </div>
+  <div class="fc back">
+    <div class="pos">Noun · masculine</div>
+    <div class="word">cortado</div>
+    <div class="ipa">/kor·ˈta·ðo/</div>
+    <div class="def">An espresso "cut" with a small amount of warm milk — Spain's answer to a macchiato.</div>
+    <div class="ex">"Querría un cortado, por favor."</div>
+    <div class="fc-actions"><button class="hard">Again</button><button>Hard</button><button>Good</button><button class="easy">Easy</button></div>
+  </div>
+</div>
+</body></html>

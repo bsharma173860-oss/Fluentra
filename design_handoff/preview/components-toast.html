@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .toast{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;min-width:260px;box-shadow:var(--shadow-floating)}
+  .toast .ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .toast .ico.ok{background:#1A8F4E}
+  .toast .ico.warn{background:#A65A00}
+  .toast .ico.err{background:#C0392B}
+  .toast .ico.info{background:var(--brand)}
+  .toast .ico svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none}
+  .toast .t{flex:1}
+  .toast .x{color:var(--ink5);cursor:pointer;font-size:18px;line-height:1}
+  .toast a{color:#fff;text-decoration:underline;font-weight:600;margin-left:6px}
+</style></head>
+<body>
+<div class="card" style="flex-direction:column;align-items:flex-start;gap:10px">
+  <div class="toast"><span class="ico ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span><span class="t">Lesson saved to library</span><span class="x">×</span></div>
+  <div class="toast"><span class="ico info"><svg viewBox="0 0 24 24"><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="17" r=".5"/></svg></span><span class="t">Tutor session starts in 5 minutes <a>Join now</a></span><span class="x">×</span></div>
+  <div class="toast"><span class="ico err"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span class="t">Couldn't reach the speaking grader. <a>Retry</a></span><span class="x">×</span></div>
+</div>
+</body></html>

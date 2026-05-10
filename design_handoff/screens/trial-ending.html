@@ -1,0 +1,98 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Fluentra — Trial ending</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;background:var(--bg3);min-height:100vh;padding:36px 24px;font-family:var(--sans)}
+  h1{font-family:var(--serif-display);font-weight:400;font-size:28px;color:var(--ink);text-align:center;margin:0 0 4px}
+  .sub{text-align:center;color:var(--ink4);font-size:13px;margin-bottom:32px}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1180px;margin:0 auto}
+  .banner{background:#fff;border:1px solid var(--border);border-radius:18px;padding:24px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+  .banner .accent{position:absolute;top:0;left:0;right:0;height:5px}
+  .banner.d5 .accent{background:#FFEAC2}
+  .banner.d6 .accent{background:#E8732F}
+  .banner.d7 .accent{background:#C0392B}
+  .stage{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+  .d5 .stage{color:#A65A00}
+  .d6 .stage{color:#C04A06}
+  .d7 .stage{color:#C0392B}
+  .h2{font-family:var(--serif-display);font-size:22px;color:var(--ink);line-height:1.2}
+  .body{font-size:13px;color:var(--ink3);line-height:1.55}
+  .stats{display:flex;gap:14px;background:var(--bg);border:1px solid var(--hairline);border-radius:12px;padding:12px}
+  .stat{flex:1;text-align:center}
+  .stat .v{font-family:var(--serif-display);font-size:22px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+  .stat .l{font-size:9.5px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+  .countdown{display:flex;align-items:center;gap:10px;background:var(--bg2);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--ink2)}
+  .countdown svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0}
+  .countdown b{color:var(--ink);font-weight:700}
+  .d7 .countdown{background:#FCE6E2;color:#7A2A1F}
+  .d7 .countdown b{color:#7A2A1F}
+  .actions{display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:99px;padding:11px 16px;border:0;cursor:pointer;text-align:center}
+  .primary{background:var(--brand);color:#fff}
+  .d6 .primary,.d7 .primary{background:var(--ink)}
+  .secondary{background:transparent;color:var(--ink2);border:1.5px solid var(--border)}
+  .offer{font-size:11px;color:var(--ink4);text-align:center;margin-top:2px}
+  .save{display:inline-flex;background:#FFEAC2;color:#A65A00;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;margin-bottom:6px;align-self:flex-start}
+</style></head>
+<body>
+<h1>Trial ending warnings</h1>
+<p class="sub">Three escalating banners served on day 5, 6, 7 of the 7-day free trial</p>
+<div class="row">
+
+  <div class="banner d5">
+    <span class="accent"></span>
+    <div class="stage">Day 5 · Heads-up</div>
+    <div class="h2">Your trial ends Sunday.</div>
+    <div class="body">You've built a 5-day streak and 142 vocab cards. Two days left to lock in your progress.</div>
+    <div class="stats">
+      <div class="stat"><div class="v">5d</div><div class="l">Streak</div></div>
+      <div class="stat"><div class="v">142</div><div class="l">Words</div></div>
+      <div class="stat"><div class="v">A2+</div><div class="l">Speaking</div></div>
+    </div>
+    <div class="countdown"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg><span><b>2 days, 14 hours</b> remaining</span></div>
+    <div class="actions">
+      <button class="btn primary">Continue with Pro — $14.99/mo</button>
+      <button class="btn secondary">Compare plans</button>
+    </div>
+    <div class="offer">Cancel anytime · 30-day money-back guarantee</div>
+  </div>
+
+  <div class="banner d6">
+    <span class="accent"></span>
+    <div class="stage">Day 6 · 24 hours left</div>
+    <div class="h2">Don't lose your streak tomorrow.</div>
+    <div class="body">When the trial ends, your progress freezes — your streak resets to 0 if you don't subscribe within 48 hours.</div>
+    <span class="save">SAVE 20% — TODAY ONLY</span>
+    <div class="stats">
+      <div class="stat"><div class="v">6d</div><div class="l">Streak</div></div>
+      <div class="stat"><div class="v">186</div><div class="l">Words</div></div>
+      <div class="stat"><div class="v">B1</div><div class="l">Speaking</div></div>
+    </div>
+    <div class="countdown"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg><span><b>23h 04m</b> remaining</span></div>
+    <div class="actions">
+      <button class="btn primary">Claim 20% off — $11.99/mo</button>
+      <button class="btn secondary">Switch to annual (save $60)</button>
+    </div>
+    <div class="offer">Discount applies to first year</div>
+  </div>
+
+  <div class="banner d7">
+    <span class="accent"></span>
+    <div class="stage">Day 7 · Final hours</div>
+    <div class="h2">7 days. 218 words. Don't stop now.</div>
+    <div class="body">Your trial ends at midnight tonight. Subscribe to keep your streak alive — otherwise it resets at 6 AM tomorrow.</div>
+    <div class="stats">
+      <div class="stat"><div class="v">7d</div><div class="l">Streak</div></div>
+      <div class="stat"><div class="v">218</div><div class="l">Words</div></div>
+      <div class="stat"><div class="v">B1</div><div class="l">Speaking</div></div>
+    </div>
+    <div class="countdown"><svg viewBox="0 0 24 24"><path d="M12 2L2 21h20L12 2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17" r=".5"/></svg><span><b>4h 22m</b> until streak resets</span></div>
+    <div class="actions">
+      <button class="btn primary">Keep my streak — $14.99/mo</button>
+      <button class="btn secondary">I'll think about it</button>
+    </div>
+    <div class="offer">Cancellation later: 1-click in Settings</div>
+  </div>
+
+</div>
+</body></html>

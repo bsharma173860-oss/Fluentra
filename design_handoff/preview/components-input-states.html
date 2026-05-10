@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .field{flex:1;min-width:200px}
+  .input{width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink);font-family:inherit}
+  .input::placeholder{color:var(--ink4)}
+  .input.focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-light)}
+  .input.error{border-color:#C0392B;box-shadow:0 0 0 3px #FCE6E2}
+  .help{font-size:11px;color:var(--ink4);margin-top:5px}
+  .help.err{color:#C0392B}
+  textarea.input{resize:none;min-height:74px;font-family:inherit}
+  .count{font-size:11px;color:var(--ink4);text-align:right;margin-top:4px;font-variant-numeric:tabular-nums}
+</style></head>
+<body>
+<div class="card">
+  <div class="field">
+    <label class="label">Email</label>
+    <input class="input" placeholder="maria@example.com">
+    <div class="help">We'll never share it.</div>
+  </div>
+  <div class="field">
+    <label class="label">Daily goal</label>
+    <input class="input focus" value="20 minutes">
+    <div class="help">Active.</div>
+  </div>
+  <div class="field">
+    <label class="label">Password</label>
+    <input class="input error" type="password" value="abc">
+    <div class="help err">Must be at least 8 characters.</div>
+  </div>
+  <div class="field" style="flex:2;min-width:280px">
+    <label class="label">Why are you learning?</label>
+    <textarea class="input" maxlength="120">I'm moving to Madrid in March and want to order coffee without panicking.</textarea>
+    <div class="count">73 / 120</div>
+  </div>
+</div>
+</body></html>
