@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Fluentra — Web App Redesign</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluentra — Speak it. Score it. Own it.</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -20,17 +23,27 @@ button:focus-visible{outline:2px solid #C04A06;outline-offset:2px}
 <body>
 <div id="root"></div>
 
-<!-- Supabase JS SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- Supabase JS SDK (unpkg, synchronous — no async/defer) -->
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <!-- Fluentra backend config -->
 <script>
   window.SUPABASE_URL      = 'https://kbjqmhviuryakfzhhoaz.supabase.co';
   window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianFtaHZpdXJ5YWtmemhob2F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTQzNjgsImV4cCI6MjA4OTc3MDM2OH0.Be6sLoc1XRDosJ3XejpD48FarJpb06ZtQCFSuzaz5zY';
   window.API_URL           = 'https://fluentra-kappa.vercel.app/api';
-  // Initialise Supabase client once SDK is loaded
-  if (typeof supabase !== 'undefined') {
-    window.supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+  // Initialise Supabase client — called immediately and on DOMContentLoaded as fallback
+  function _initSupabase() {
+    if (window.supabaseClient) return; // already initialised
+    var lib = window.supabase; // UMD export name
+    if (lib && lib.createClient) {
+      window.supabaseClient = lib.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      console.log('[Fluentra] Supabase ready ✓');
+    }
   }
+  _initSupabase();
+  document.addEventListener('DOMContentLoaded', _initSupabase);
+  // Auth forms call this before using the client, in case they load before DOMContentLoaded
+  window._initSupabase = _initSupabase;
 </script>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>

@@ -94,20 +94,34 @@ function LoginCard() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
+  const getClient = () => {
+    if (window._initSupabase) window._initSupabase();
+    return window.supabaseClient;
+  };
+
   const handleSignIn = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     if (!email || !pw) { setError('Please enter your email and password.'); return; }
     setLoading(true); setError('');
-    const { error: err } = await sb.auth.signInWithPassword({ email, password: pw });
+    const { data, error: err } = await sb.auth.signInWithPassword({ email, password: pw });
     setLoading(false);
-    if (err) setError(err.message);
+    if (err) {
+      // Surface a friendlier message for the most common errors
+      if (err.message.includes('Invalid login credentials')) {
+        setError('Wrong email or password. Check your details and try again.');
+      } else if (err.message.includes('Email not confirmed')) {
+        setError('Please confirm your email first — check your inbox for a verification link.');
+      } else {
+        setError(err.message);
+      }
+    }
     // On success the onAuthStateChange listener in App navigates to dashboard
   };
 
   const handleGoogle = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     const { error: err } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
     if (err) setError(err.message);
   };
@@ -161,19 +175,32 @@ function LoginMobile() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
+  const getClient = () => {
+    if (window._initSupabase) window._initSupabase();
+    return window.supabaseClient;
+  };
+
   const handleSignIn = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     if (!email || !pw) { setError('Please enter your email and password.'); return; }
     setLoading(true); setError('');
     const { error: err } = await sb.auth.signInWithPassword({ email, password: pw });
     setLoading(false);
-    if (err) setError(err.message);
+    if (err) {
+      if (err.message.includes('Invalid login credentials')) {
+        setError('Wrong email or password. Check your details and try again.');
+      } else if (err.message.includes('Email not confirmed')) {
+        setError('Please confirm your email first — check your inbox.');
+      } else {
+        setError(err.message);
+      }
+    }
   };
 
   const handleGoogle = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     const { error: err } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
     if (err) setError(err.message);
   };
@@ -221,9 +248,11 @@ function SignupCard() {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState(false);
 
+  const getClient = () => { if (window._initSupabase) window._initSupabase(); return window.supabaseClient; };
+
   const handleSignUp = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     if (!name || !email || !pw) { setError('Please fill in all fields.'); return; }
     if (pw.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true); setError('');
@@ -237,8 +266,8 @@ function SignupCard() {
   };
 
   const handleGoogle = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     const { error: err } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
     if (err) setError(err.message);
   };
@@ -306,9 +335,11 @@ function SignupMobile() {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState(false);
 
+  const getClient = () => { if (window._initSupabase) window._initSupabase(); return window.supabaseClient; };
+
   const handleSignUp = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     if (!name || !email || !pw) { setError('Please fill in all fields.'); return; }
     if (pw.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true); setError('');
@@ -322,8 +353,8 @@ function SignupMobile() {
   };
 
   const handleGoogle = async () => {
-    const sb = window.supabaseClient;
-    if (!sb) { setError('Backend not available.'); return; }
+    const sb = getClient();
+    if (!sb) { setError('Auth service not loaded yet — please wait a moment and try again.'); return; }
     const { error: err } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
     if (err) setError(err.message);
   };
