@@ -115,6 +115,14 @@ export const T = {
   listeningBg:'#E2F5E9',
   reading:    '#C04A06',
   readingBg:  '#FFE5DE',
+  // Semantic state
+  danger:     '#C0392B',
+  dangerBg:   '#FCE6E2',
+  dangerDark: '#7A2A1F',
+  success:    '#1A8F4E',
+  successBg:  '#E2F5E9',
+  warning:    '#A65A00',
+  warningBg:  '#FFEAC2',
   // Typography
   serif: 'DMSerifDisplay_400Regular' as const,
   sans:  'Inter_400Regular' as const,
