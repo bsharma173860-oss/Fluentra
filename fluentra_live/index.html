@@ -23,8 +23,8 @@ button:focus-visible{outline:2px solid #C04A06;outline-offset:2px}
 <body>
 <div id="root"></div>
 
-<!-- Supabase JS SDK (unpkg, synchronous — no async/defer) -->
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- Supabase JS SDK — served locally, always available -->
+<script src="assets/supabase.min.js"></script>
 <!-- Fluentra backend config -->
 <script>
   window.SUPABASE_URL      = 'https://kbjqmhviuryakfzhhoaz.supabase.co';
@@ -34,15 +34,23 @@ button:focus-visible{outline:2px solid #C04A06;outline-offset:2px}
   // Initialise Supabase client — called immediately and on DOMContentLoaded as fallback
   function _initSupabase() {
     if (window.supabaseClient) return; // already initialised
-    var lib = window.supabase; // UMD export name
+    var lib = window.supabase; // UMD bundle exports as window.supabase
     if (lib && lib.createClient) {
-      window.supabaseClient = lib.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-      console.log('[Fluentra] Supabase ready ✓');
+      window.supabaseClient = lib.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        }
+      });
+      console.log('[Fluentra] Supabase ready ✓', window.SUPABASE_URL);
+    } else {
+      console.warn('[Fluentra] Supabase SDK not found yet, will retry on DOMContentLoaded');
     }
   }
   _initSupabase();
   document.addEventListener('DOMContentLoaded', _initSupabase);
-  // Auth forms call this before using the client, in case they load before DOMContentLoaded
+  // Auth forms call this before using the client
   window._initSupabase = _initSupabase;
 </script>
 
