@@ -1,4 +1,5 @@
 {
+  "buildCommand": "mkdir -p dist && cp -r fluentra_live/. dist",
   "outputDirectory": "dist",
   "functions": {
     "api/**/*.js": {
