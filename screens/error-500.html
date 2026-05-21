@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><title>500 · Fluentra</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}
+  .num{font-family:var(--serif-display);font-size:160px;line-height:.9;color:#7A2A1F;margin-bottom:6px;letter-spacing:-0.02em}
+  .eyebrow{font-size:11px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
+  h1{font-family:var(--serif-display);font-size:32px;line-height:1.1;margin:0 0 12px;max-width:520px}
+  p{font-size:14px;color:var(--ink3);max-width:440px;margin:0 0 26px;line-height:1.55}
+  .status{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;gap:14px;align-items:center;margin-bottom:26px;text-align:left}
+  .dot{width:8px;height:8px;background:#C0392B;border-radius:50%;animation:p 1.4s infinite}
+  @keyframes p{50%{opacity:.3}}
+  .status b{font-size:12.5px;color:var(--ink);display:block}
+  .status span{font-size:11px;color:var(--ink4)}
+  .btns{display:flex;gap:10px;margin-bottom:24px}
+  .btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:99px;padding:11px 20px;border:0;cursor:pointer}
+  .pri{background:var(--brand);color:#fff}
+  .out{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+  .meta{font-size:11px;color:var(--ink4);font-family:ui-monospace,monospace;background:var(--bg2);padding:8px 14px;border-radius:8px}
+</style></head><body>
+<div class="num">500</div>
+<div class="eyebrow">● Server error</div>
+<h1>Something broke on our end.</h1>
+<p>Our team has been notified automatically. Try again in a moment — your progress is safe.</p>
+<div class="status">
+  <span class="dot"></span>
+  <div><b>Investigating · started 2 min ago</b><span>Tutor service · partial outage</span></div>
+</div>
+<div class="btns"><button class="btn pri">↻ Retry</button><button class="btn out">View status page</button></div>
+<div class="meta">request_id: 7c4f-a91b-3e02 · 2025-03-11 14:24:18 UTC</div>
+</body></html>

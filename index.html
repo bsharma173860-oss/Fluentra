@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fluentra — Web App Redesign</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<style>
+  /* ── Pre-React splash — shown the instant the page loads, before any JSX */
+  #__pre_splash{position:fixed;inset:0;z-index:9999;background:#F9F8F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-family:'Inter',sans-serif;transition:opacity .35s ease;}
+  #__pre_splash.gone{opacity:0;pointer-events:none;}
+  #__pre_splash .brand{display:flex;align-items:center;gap:12px;animation:psRise .6s ease-out both;}
+  #__pre_splash .mark{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#C04A06,#E8732F);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 32px rgba(192,74,6,.25);}
+  #__pre_splash .word{font-family:'DM Serif Display',Georgia,serif;font-size:42px;color:#1A1A1A;letter-spacing:-.01em;line-height:1;}
+  #__pre_splash .tag{font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-size:15px;color:#C04A06;letter-spacing:.04em;animation:psRise .6s ease-out .15s both;}
+  @keyframes psRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#EDEAE3;color:#111;-webkit-font-smoothing:antialiased;overflow:hidden}
+#root{height:100%}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible{outline:2px solid #C04A06;outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
+.hide-scroll::-webkit-scrollbar{display:none}
+.hide-scroll{scrollbar-width:none}
+</style>
+</head>
+<body>
+<div id="__pre_splash">
+  <div class="brand">
+    <div class="mark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 17c0-5 3-8 7-8s7 3 7 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5 12c0-5 3-8 7-8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/><circle cx="12" cy="20" r="1.6" fill="currentColor"/></svg></div>
+    <div class="word">Fluentra</div>
+  </div>
+  <div class="tag">Speak it. Score it. Own it.</div>
+</div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="redesign/_kit.jsx"></script>
+<script type="text/babel" src="redesign/_lang_packs.jsx"></script>
+<script type="text/babel" src="redesign/web/_shell.jsx"></script>
+<script type="text/babel" src="redesign/web/echo_card.jsx"></script>
+<script type="text/babel" src="redesign/mobile/echo_card_mobile.jsx"></script>
+<script type="text/babel" src="redesign/web/page_dashboard.jsx"></script>
+<script type="text/babel" src="redesign/web/page_lang_detail.jsx"></script>
+<script type="text/babel" src="redesign/web/page_practice.jsx"></script>
+<script type="text/babel" src="redesign/web/page_library.jsx"></script>
+<script type="text/babel" src="redesign/web/page_progress.jsx"></script>
+<script type="text/babel" src="redesign/web/page_exams.jsx"></script>
+<script type="text/babel" src="redesign/web/page_add_language.jsx"></script>
+<script type="text/babel" src="redesign/web/page_mock_test.jsx"></script>
+
+<script type="text/babel" src="redesign/mobile/_shell.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_dashboard.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_lang.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_practice.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_library.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_progress.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_exams.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_sessions.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_aux_w4.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_aux_w4_tier2.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_part1.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_part2.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_batch1.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_batch2.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_batch3.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_batch4.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_batch5.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_batch6.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_examentry.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_runners.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_v5_exambook.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_more1.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_w5_account.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_w5_screens.jsx"></script>
+<script type="text/babel" src="redesign/auth/auth.jsx"></script>
+<script type="text/babel" src="redesign/web/page_sessions.jsx"></script>
+<script type="text/babel" src="redesign/web/page_exam_screens.jsx"></script>
+<script type="text/babel" src="redesign/web/page_settings.jsx"></script>
+<script type="text/babel" src="redesign/web/page_module_results.jsx"></script>
+<script type="text/babel" src="redesign/web/page_leaderboard.jsx"></script>
+<script type="text/babel" src="redesign/web/page_states.jsx"></script>
+<script type="text/babel" src="redesign/web/page_prelaunch.jsx"></script>
+<script type="text/babel" src="redesign/web/page_onboarding.jsx"></script>
+<script type="text/babel" src="redesign/web/page_tutor.jsx"></script>
+<script type="text/babel" src="redesign/web/page_pricing.jsx"></script>
+<script type="text/babel" src="redesign/web/page_notifications.jsx"></script>
+<script type="text/babel" src="redesign/web/page_vocab.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_vocab.jsx"></script>
+<script type="text/babel" src="redesign/web/page_marketing.jsx"></script>
+<script type="text/babel" src="redesign/web/page_search.jsx"></script>
+<script type="text/babel" src="redesign/web/page_achievements.jsx"></script>
+<script type="text/babel" src="redesign/web/page_friends.jsx"></script>
+<script type="text/babel" src="redesign/web/page_course.jsx"></script>
+<script type="text/babel" src="redesign/web/page_grammar.jsx"></script>
+<script type="text/babel" src="redesign/web/page_help.jsx"></script>
+<script type="text/babel" src="redesign/web/page_auth_extra.jsx"></script>
+<script type="text/babel" src="redesign/web/page_tutor_extra.jsx"></script>
+<script type="text/babel" src="redesign/web/page_exam_extra.jsx"></script>
+<script type="text/babel" src="redesign/web/page_content_extra.jsx"></script>
+<script type="text/babel" src="redesign/web/page_social_extra.jsx"></script>
+<script type="text/babel" src="redesign/web/page_ai_exam.jsx"></script>
+<script type="text/babel" src="redesign/web/page_monetization.jsx"></script>
+<script type="text/babel" src="redesign/mobile/page_monetization.jsx"></script>
+<script type="text/babel" src="redesign/web/page_checkout.jsx"></script>
+<script type="text/babel" src="redesign/web/page_new_today.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const WEB_PAGES = {
+  dashboard: () => <DashboardPage/>,
+  lang:      () => <LangDetailPage/>,
+  practice:  () => <PracticePage/>,
+  library:   () => <LibraryPage/>,
+  progress:  () => <ProgressPage/>,
+  exams:     () => <ExamsPage/>,
+  auth_login:      () => <AuthLoginDesktop/>,
+  auth_signup:     () => <AuthSignupDesktop/>,
+  auth_onboarding: () => <AuthOnboardingDesktop/>,
+  reading:   () => <ReadingSession/>,
+  listening: () => <ListeningSession/>,
+  speaking:  () => <SpeakingSession/>,
+  writing:   () => <WritingSession/>,
+  exam_entry:  () => <ExamEntry/>,
+  exam_runner: () => <FullExamRunner/>,
+  exam_results:() => <ExamResults/>,
+  monthly_runner:  () => <MonthlyExamRunner/>,
+  monthly_results: () => <MonthlyExamResults/>,
+  mock_runner:     () => <MockExamRunner/>,
+  mock_results:    () => <MockExamResults/>,
+  practice_runner: () => <PracticeExamRunner/>,
+  practice_results:() => <PracticeExamResults/>,
+  settings:    () => <SettingsPage/>,
+  mod_results: () => <ModuleResultsPage/>,
+  leaderboard: () => <LeaderboardPage/>,
+  states:      () => <StatesPage/>,
+  prelaunch:   () => <PrelaunchPage/>,
+  onboarding:  () => <OnboardingPage/>,
+  tutor:       () => <TutorPage/>,
+  pricing:     () => <PricingPage/>,
+  notifications: () => <NotificationsPage/>,
+  vocab:       () => <VocabPage/>,
+  marketing:   () => <MarketingPage/>,
+  search:      () => <SearchPage/>,
+  achievements:() => <AchievementsPage/>,
+  friends:     () => <FriendsPage/>,
+  course:      () => <CourseOverviewPage/>,
+  grammar:     () => <GrammarPage/>,
+  help:        () => <HelpPage/>,
+  otp:           () => <OTPPage/>,
+  forgot_pw:     () => <ForgotPwPage/>,
+  lesson_detail: () => <LessonDetailPage/>,
+  article:       () => <ArticleReaderPage/>,
+  tutor_call:    () => <TutorCallPage/>,
+  tutor_history: () => <TutorHistoryPage/>,
+  exam_book:     () => <ExamBookPage/>,
+  exam_history:  () => <ExamHistoryPage/>,
+  public_profile:() => <PublicProfilePage/>,
+  dm_thread:     () => <DMThreadPage/>,
+  activity_feed: () => <ActivityFeedPage/>,
+  phrasebook:    () => <PhrasebookPage/>,
+  phrasebook_practice: () => <PhrasebookPracticePage/>,
+  receipts:      () => <ReceiptsPage/>,
+  refer:         () => <ReferPage/>,
+  add_language:  () => <AddLanguagePage/>,
+  mock_test:     () => <MockTestPage/>,
+  ai_generating: () => <AIGenerating/>,
+  ai_grading:    () => <AIWritingGrading/>,
+  mic_check:     () => <MicCheckPage/>,
+  ai_speaking:   () => <AISpeakingSession/>,
+  ai_listening_pre: () => <AIListeningPre/>,
+  ai_reading_pre:   () => <AIReadingPre/>,
+  rate_limit:    () => <RateLimitModal/>,
+  exam_unlock:   () => <ExamUnlockModal/>,
+  streak:        () => <StreakCalendarPage/>,
+  unlock_day9:        () => <UnlockDay9Page/>,
+  exam_preview:       () => <ExamPreviewPage/>,
+  streak_countdown:   () => <StreakCountdownPage/>,
+  pre_exam_ready:     () => <PreExamReadyPage/>,
+  post_exam_upsell:   () => <PostExamUpsellPage/>,
+  milestones_reel:    () => <MilestonesReelPage/>,
+  checkout:           () => <CheckoutPage/>,
+  // ── New today ────────────────────────────────────────────────
+  new_guarantee:       () => <NewGuaranteePage/>,
+  new_trial_warns:     () => <NewTrialWarnsPage/>,
+  new_payment_success: () => <NewPaymentSuccess/>,
+  new_cancel:          () => <NewCancelPage/>,
+  new_404:             () => <NewError404/>,
+  new_500:             () => <NewError500/>,
+  new_offline:         () => <NewOfflinePage/>,
+};
+const MOBILE_PAGES = {
+  dashboard: () => <MDashboard/>,
+  lang:      () => <MLangDetail/>,
+  practice:  () => <MPractice/>,
+  library:   () => <MLibrary/>,
+  progress:  () => <MProgress/>,
+  exams:     () => <MExams/>,
+  auth_login:      () => <MobileFrame><MobileBody><LoginMobile/></MobileBody></MobileFrame>,
+  auth_signup:     () => <MobileFrame><MobileBody><SignupMobile/></MobileBody></MobileFrame>,
+  auth_onboarding: () => <AuthOnboardingMobile/>,
+  reading:   () => <MReadingSession/>,
+  listening: () => <MListeningSession/>,
+  speaking:  () => <MSpeakingSession/>,
+  writing:   () => <MWritingSession/>,
+  exam_entry:  () => <MExamEntryPageV5/>,
+  exam_runner: () => <MFullRunnerV5/>,
+  exam_results:() => <MFullResultsV5/>,
+  monthly_runner:  () => <MMonthlyRunnerV5/>,
+  monthly_results: () => <MMonthlyResultsV5/>,
+  mock_runner:     () => <MMockRunnerV5/>,
+  mock_results:    () => <MMockResultsV5/>,
+  practice_runner: () => <MPracticeRunnerV5/>,
+  practice_results:() => <MPracticeResultsV5/>,
+  settings:    () => <MSettingsPageV5/>,
+  mod_results: () => <MModuleResultsPageV5/>,
+  leaderboard: () => <MLeaderboardPageV5/>,
+  states:      () => <MStatesPageV5/>,
+  prelaunch:   () => <MPrelaunchPage/>,
+  onboarding:  () => <MOnboardingPageV5/>,
+  tutor:       () => <MTutorPageV5/>,
+  pricing:     () => <MPricingPageV5/>,
+  notifications: () => <MNotificationsPageV5/>,
+  vocab:       () => <MVocabPageV5/>,
+  marketing:   () => <MMarketingPageV5/>,
+  search:      () => <MSearchPageV5/>,
+  achievements:() => <MAchievementsPageV5/>,
+  friends:     () => <MFriendsPageV5/>,
+  course:      () => <MCoursePageV5/>,
+  grammar:     () => <MGrammarPageV5/>,
+  help:        () => <MHelpPageV5/>,
+  otp:           () => <MOTPPageV5/>,
+  forgot_pw:     () => <MForgotPwPageV5/>,
+  lesson_detail: () => <MLessonDetailV5/>,
+  article:       () => <MArticleReaderPageV5/>,
+  tutor_call:    () => <MTutorCallPageV5/>,
+  tutor_history: () => <MTutorHistoryPageV5/>,
+  exam_book:     () => <MExamBookPageV5/>,
+  exam_history:  () => <MExamHistoryPageV5/>,
+  public_profile:() => <MPublicProfilePageV5/>,
+  dm_thread:     () => <MDMThreadPageV5/>,
+  activity_feed: () => <MActivityFeedPageV5/>,
+  phrasebook:    () => <MPhrasebookPageV5/>,
+  phrasebook_practice: () => <MPhrasebookPractice/>,
+  receipts:      () => <MReceiptsPageV5/>,
+  refer:         () => <MReferPageV5/>,
+  add_language:  () => <MAddLanguageV5/>,
+  mock_test:     () => <MMockTestPageV5/>,
+  ai_generating: () => <MAIGeneratingPageV5/>,
+  ai_grading:    () => <MAIGradingPageV5/>,
+  mic_check:     () => <MMicCheckPageV5/>,
+  ai_speaking:   () => <MAISpeakingPageV5/>,
+  ai_listening_pre: () => <MAIListeningPrePageV5/>,
+  ai_reading_pre:   () => <MAIReadingPrePageV5/>,
+  rate_limit:    () => <MRateLimitPageV5/>,
+  exam_unlock:   () => <MExamUnlockPageV5/>,
+  streak:        () => <MStreakCalendarPageV5/>,
+  unlock_day9:        () => <MUnlockDay9PageV5/>,
+  exam_preview:       () => <MExamPreviewPageV5/>,
+  streak_countdown:   () => <MStreakCountdownPageV5/>,
+  pre_exam_ready:     () => <MPreExamReadyPageV5/>,
+  post_exam_upsell:   () => <MPostExamUpsellPageV5/>,
+  milestones_reel:    () => <MMilestonesReelPageV5/>,
+  checkout:           () => <MCheckoutPageV5/>,
+  // ── New today ────────────────────────────────────────────────
+  new_guarantee:       () => <MNewGuaranteePage/>,
+  new_trial_warns:     () => <MNewTrialWarnsPage/>,
+  new_payment_success: () => <MNewPaymentSuccess/>,
+  new_cancel:          () => <MNewCancelPage/>,
+  new_404:             () => <MNewError404/>,
+  new_500:             () => <MNewError500/>,
+  new_offline:         () => <MNewOfflinePage/>,
+};
+
+const PAGES = [
+  { id:'dashboard', label:'Dashboard' },
+  { id:'lang',      label:'Language' },
+  { id:'practice',  label:'Practice' },
+  { id:'library',   label:'Library' },
+  { id:'progress',  label:'Progress' },
+  { id:'exams',     label:'Exams' },
+  { id:'auth_login',      label:'Login' },
+  { id:'auth_signup',     label:'Signup' },
+  { id:'auth_onboarding', label:'Onboarding' },
+  { id:'reading',   label:'Reading' },
+  { id:'listening', label:'Listening' },
+  { id:'speaking',  label:'Speaking' },
+  { id:'writing',      label:'Writing' },
+  { id:'exam_entry',   label:'Exam Entry' },
+  { id:'exam_runner',  label:'Exam Runner' },
+  { id:'exam_results', label:'Results' },
+  { id:'monthly_runner',  label:'Monthly · Runner' },
+  { id:'monthly_results', label:'Monthly · Results' },
+  { id:'mock_runner',     label:'Mock · Runner' },
+  { id:'mock_results',    label:'Mock · Results' },
+  { id:'practice_runner', label:'Practice · Runner' },
+  { id:'practice_results',label:'Practice · Results' },
+  { id:'settings',     label:'Settings' },
+  { id:'mod_results',  label:'Module results' },
+  { id:'leaderboard',  label:'Leaderboard' },
+  { id:'states',       label:'Empty / Error states' },
+  { id:'onboarding',   label:'Onboarding flow' },
+  { id:'tutor',        label:'AI Tutor chat' },
+  { id:'pricing',      label:'Pricing / Paywall' },
+  { id:'notifications',label:'Notifications' },
+  { id:'vocab',        label:'Vocabulary' },
+  { id:'marketing',    label:'Marketing' },
+  { id:'search',       label:'Search' },
+  { id:'achievements', label:'Achievements' },
+  { id:'friends',      label:'Friends' },
+  { id:'course',       label:'Course' },
+  { id:'grammar',      label:'Grammar' },
+  { id:'help',         label:'Help' },
+  { id:'otp',           label:'Email verification' },
+  { id:'forgot_pw',     label:'Forgot password' },
+  { id:'lesson_detail', label:'Lesson detail' },
+  { id:'article',       label:'Article reader' },
+  { id:'tutor_call',    label:'Tutor voice call' },
+  { id:'tutor_history', label:'Tutor history' },
+  { id:'exam_book',     label:'Exam booking' },
+  { id:'exam_history',  label:'Exam history' },
+  { id:'public_profile',label:'Public profile' },
+  { id:'dm_thread',     label:'DM thread' },
+  { id:'activity_feed', label:'Activity feed' },
+  { id:'phrasebook',    label:'Phrasebook' },
+  { id:'receipts',      label:'Receipts' },
+  { id:'refer',         label:'Refer a friend' },
+  { id:'add_language',  label:'Add language' },
+  { id:'mock_test',     label:'Mock test' },
+  { id:'ai_generating', label:'AI generating' },
+  { id:'ai_grading',    label:'AI grading' },
+  { id:'mic_check',     label:'Mic check' },
+  { id:'ai_speaking',   label:'AI speaking' },
+  { id:'ai_listening_pre', label:'Listening pre' },
+  { id:'ai_reading_pre',   label:'Reading pre' },
+  { id:'rate_limit',    label:'Rate limit' },
+  { id:'exam_unlock',   label:'Exam unlock' },
+  { id:'streak',        label:'Streak calendar' },
+  { id:'unlock_day9',      label:'💸 Day 9 unlock' },
+  { id:'exam_preview',     label:'💸 Exam preview' },
+  { id:'streak_countdown', label:'💸 Streak countdown' },
+  { id:'pre_exam_ready',   label:'💸 Pre-exam ready' },
+  { id:'post_exam_upsell', label:'💸 Post-exam upsell' },
+  { id:'milestones_reel',  label:'💸 Milestones reel' },
+  { id:'checkout',         label:'💳 Checkout' },
+  // ── New today (7) ───────────────────────────────────────────
+  { id:'new_guarantee',       label:'🆕 Score guarantee',  isNew:true },
+  { id:'new_trial_warns',     label:'🆕 Trial D5/6/7',     isNew:true },
+  { id:'new_payment_success', label:'🆕 Payment success',  isNew:true },
+  { id:'new_cancel',          label:'🆕 Cancellation',     isNew:true },
+  { id:'new_404',             label:'🆕 404',              isNew:true },
+  { id:'new_500',             label:'🆕 500',              isNew:true },
+  { id:'new_offline',         label:'🆕 Offline',          isNew:true },
+];
+
+function Splash() {
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:9999, background:T.bg, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:18, animation:'splashFade .35s ease-out forwards', animationDelay:'1.4s' }}>
+      <style>{`@keyframes splashFade{to{opacity:0;visibility:hidden}}@keyframes splashRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <div style={{ display:'flex', alignItems:'center', gap:12, animation:'splashRise .6s ease-out both' }}>
+        <div style={{ width:54, height:54, borderRadius:14, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 14px 32px ${T.brand}40` }}>{Icon.brandmark({ width:30, height:30 })}</div>
+        <div style={{ fontFamily:T.serif, fontSize:42, color:T.ink, letterSpacing:'-.01em' }}>Fluentra</div>
+      </div>
+      <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:15, color:T.brand, letterSpacing:'.04em', animation:'splashRise .6s ease-out .15s both' }}>Speak it. Score it. Own it.</div>
+    </div>
+  );
+}
+
+function App() {
+  const [page, setPage] = useState('dashboard');
+  const [history, setHistory] = useState([]);
+  const [device, setDevice] = useState('desktop'); // desktop | mobile
+  const [splashGone, setSplashGone] = useState(false);
+  const [langCode, setLangCode] = useState(window.__langCode || 'en');
+  const [navTick, setNavTick] = useState(0); // bumps every nav so same-page re-mounts cleanly
+  useEffect(() => { const t = setTimeout(() => setSplashGone(true), 2000); return () => clearTimeout(t); }, []);
+
+  // Global navigation handle — any button anywhere can call window.__nav('exams') etc.
+  // Also scrolls the canvas to top on nav.
+  useEffect(() => {
+    window.__nav = (id, opts = {}) => {
+      if (!id) return;
+      setHistory(h => [...h, page]);
+      if (opts.langCode) { window.__langCode = opts.langCode; setLangCode(opts.langCode); }
+      if (window.__langCode && id === 'lang') setLangCode(window.__langCode);
+      setPage(id);
+      setNavTick(t => t + 1);
+      requestAnimationFrame(() => {
+        document.querySelectorAll('[data-app-scroll]').forEach(el => { el.scrollTop = 0; });
+      });
+    };
+    window.__back = () => {
+      setHistory(h => {
+        if (h.length === 0) return h;
+        const prev = h[h.length - 1];
+        setPage(prev);
+        return h.slice(0, -1);
+      });
+    };
+    return () => { delete window.__nav; delete window.__back; };
+  }, [page]);
+
+  // Safety-net delegate: any <button data-nav="page"> inside the frame navigates.
+  // Also: any <a data-nav="page">. Lets pages declare destinations without prop drilling.
+  useEffect(() => {
+    const handler = (e) => {
+      const el = e.target.closest('[data-nav]');
+      if (!el) return;
+      const target = el.getAttribute('data-nav');
+      if (!target) return;
+      const langCode = el.getAttribute('data-lang');
+      if (langCode) window.__langCode = langCode;
+      const profileId = el.getAttribute('data-profile');
+      if (profileId) window.__profileId = profileId;
+      e.preventDefault();
+      window.__nav(target);
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+  const [vp, setVp] = useState({ w: window.innerWidth, h: window.innerHeight });
+  useEffect(() => {
+    const r = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', r); return () => window.removeEventListener('resize', r);
+  }, []);
+
+  const isMobile = device === 'mobile';
+  const W = isMobile ? 390 : vp.w;       // desktop now fills the browser width
+  const H = isMobile ? 844 : vp.h;       // and the full viewport height
+  const margin = 48 + 100;
+  const scale = isMobile ? Math.min(1, (vp.w - 80) / 390, (vp.h - margin) / 844) : 1;
+
+  const renderFrame = () => {
+    if (isMobile) {
+      return (
+        <MobileFrame>
+          {MOBILE_PAGES[page]()}
+        </MobileFrame>
+      );
+    }
+    const fullBleed = page === 'marketing' || page === 'auth_login' || page === 'auth_signup' || page === 'auth_onboarding' || page === 'otp' || page === 'forgot_pw' || page.startsWith('new_');
+    return (
+      <div style={{ width:W, height:H, background:'#F9F8F5', overflow:'hidden', display:'flex' }}>
+        {!fullBleed && <WebSidebar active={page === 'lang' ? 'home' : page} activeLang={page === 'lang' ? langCode : null} onNav={(id) => window.__nav(id)}/>}
+        <div key={page + '-' + langCode + '-' + navTick} style={{ flex:1, display:'flex', minWidth:0 }}>{WEB_PAGES[page]()}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', background: isMobile ? '#EDEAE3' : '#F9F8F5', padding: isMobile ? '40px 40px 40px' : '0', overflow:'auto' }}>
+      {!splashGone && <Splash/>}
+      <div style={{ width:W*scale, height:H*scale, flexShrink:0 }}>
+        <div style={{ width:W, height:H, transform:`scale(${scale})`, transformOrigin:'top left' }}>
+          {renderFrame()}
+        </div>
+      </div>
+
+      {/* Toolbar removed for production deploy. To re-enable for preview, re-add the toolbar + what's-new strip blocks. */}
+    </div>
+  );
+}
+
+let __mounted = false;
+const __mount = () => {
+  if (__mounted) return;
+  if (!window.App || !window.DashboardPage || !window.MDashboard) return;
+  __mounted = true;
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  // Fade out pre-splash now that React has mounted
+  setTimeout(() => {
+    const ps = document.getElementById('__pre_splash');
+    if (ps) { ps.classList.add('gone'); setTimeout(() => ps.remove(), 400); }
+  }, 1400);
+};
+const __tick = () => { __mount(); if (!__mounted) setTimeout(__tick, 50); };
+__tick();
+setTimeout(__mount, 1500);
+setTimeout(__mount, 3000);
+</script>
+</body>
+</html>

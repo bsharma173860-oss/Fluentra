@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8"><title>500</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;background:var(--bg)}
+.wrap{max-width:460px}
+.icon{width:84px;height:84px;border-radius:50%;background:#FCE6E2;color:#C0392B;margin:0 auto 22px;display:flex;align-items:center;justify-content:center}
+.icon svg{width:32px;height:32px;stroke:#C0392B;stroke-width:2;fill:none}
+.lab{font-size:11px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+h1{font-family:var(--serif-display);font-weight:400;font-size:32px;margin:0 0 10px;line-height:1.15}
+.sub{font-size:14px;color:var(--ink3);margin-bottom:24px;line-height:1.5}
+.box{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;text-align:left;margin-bottom:24px}
+.box .row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;color:var(--ink3);border-top:1px solid var(--hairline)}
+.box .row:first-child{border-top:0}
+.box .row b{color:var(--ink2);font-family:ui-monospace,monospace;font-size:11px}
+.cta{display:flex;gap:8px;justify-content:center}
+.cta button{font-family:inherit;font-size:13px;font-weight:700;border:0;padding:11px 18px;border-radius:99px;cursor:pointer}
+.p{background:var(--brand);color:#fff}
+.g{background:transparent;color:var(--ink2);border:1px solid var(--border)!important}
+.help{margin-top:24px;font-size:12px;color:var(--ink4)}
+.help a{color:var(--brand)}
+</style></head>
+<body>
+<div class="wrap">
+<div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 21h20L12 2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17" r=".5"/></svg></div>
+<div class="lab">Server error · 500</div>
+<h1>Something broke on our end.</h1>
+<p class="sub">Not your fault. Our team has been pinged automatically — we're already looking. Try again in a minute, or come back later.</p>
+<div class="box">
+<div class="row"><span>Status</span><b>500 — internal</b></div>
+<div class="row"><span>Request ID</span><b>fl_2k4_a8f9c3</b></div>
+<div class="row"><span>Time</span><b>11:42:08 UTC</b></div>
+</div>
+<div class="cta">
+<button class="p">Try again</button>
+<button class="g">Back to dashboard</button>
+</div>
+<div class="help">If this keeps happening, send the request ID to <a>support@fluentra.app</a></div>
+</div>
+</body></html>

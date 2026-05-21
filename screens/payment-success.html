@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Welcome to Pro · Fluentra</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;background:linear-gradient(180deg,#FFF0EE 0%, var(--bg) 60%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px}
+  .wrap{max-width:540px;width:100%;text-align:center;position:relative}
+  .confetti{position:absolute;inset:-40px -60px;pointer-events:none}
+  .confetti span{position:absolute;width:8px;height:8px;border-radius:1px}
+  .check{width:80px;height:80px;border-radius:50%;background:#1A8F4E;color:#fff;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 40px rgba(26,143,78,.3)}
+  .check svg{width:34px;height:34px;stroke:#fff;stroke-width:3;fill:none}
+  .eyebrow{font-size:11px;font-weight:700;color:#1A8F4E;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+  h1{font-family:var(--serif-display);font-size:42px;line-height:1.05;margin:0 0 14px;color:var(--ink)}
+  h1 em{font-style:italic;color:var(--brand)}
+  .lede{font-size:14px;color:var(--ink3);line-height:1.5;margin:0 auto 28px;max-width:380px}
+  .receipt{background:#fff;border:1px solid var(--border);border-radius:16px;text-align:left;overflow:hidden;margin-bottom:24px}
+  .receipt .h{padding:16px 22px;border-bottom:1px solid var(--hairline);display:flex;justify-content:space-between;align-items:center}
+  .receipt .h b{font-size:13px;color:var(--ink)}
+  .receipt .h span{font-size:11px;color:var(--ink4);font-family:ui-monospace,monospace}
+  .receipt .row{padding:11px 22px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink2);border-bottom:1px solid var(--hairline)}
+  .receipt .row:last-of-type{border:0}
+  .receipt .row b{color:var(--ink);font-weight:600}
+  .receipt .total{padding:14px 22px;background:var(--bg2);font-family:var(--serif-display);font-size:18px;color:var(--ink);display:flex;justify-content:space-between}
+  .receipt .total span{font-variant-numeric:tabular-nums}
+  .next{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+  .nx{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;text-align:left;cursor:pointer}
+  .nx .ic{width:30px;height:30px;border-radius:9px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:14px}
+  .nx b{font-size:12.5px;color:var(--ink);display:block}
+  .nx p{font-size:11px;color:var(--ink4);margin-top:2px;line-height:1.4}
+  .btn{font-family:inherit;font-size:14px;font-weight:700;border-radius:99px;padding:13px 28px;border:0;cursor:pointer;background:var(--brand);color:#fff}
+  .meta{font-size:11px;color:var(--ink4);margin-top:14px}
+  .meta a{color:var(--ink3);text-decoration:underline}
+</style></head><body>
+<div class="wrap">
+  <div class="confetti">
+    <span style="background:#C04A06;top:10%;left:8%;transform:rotate(20deg)"></span>
+    <span style="background:#1A8F4E;top:18%;right:12%;transform:rotate(-15deg);width:6px;height:14px"></span>
+    <span style="background:#5B4EFF;top:60%;left:4%;transform:rotate(45deg)"></span>
+    <span style="background:#A65A00;top:72%;right:6%;transform:rotate(10deg);width:6px;height:6px;border-radius:50%"></span>
+    <span style="background:#C84070;top:30%;right:4%;width:10px;height:10px;border-radius:50%"></span>
+    <span style="background:#E8732F;top:84%;left:30%;transform:rotate(-30deg)"></span>
+  </div>
+  <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <div class="eyebrow">Payment confirmed</div>
+  <h1>Welcome to <em>Fluentra Pro</em>, María.</h1>
+  <p class="lede">Your annual plan is active. We've sent a receipt to maria@example.com.</p>
+  <div class="receipt">
+    <div class="h"><b>Receipt</b><span>#FLU-2025-08412</span></div>
+    <div class="row"><span>Plan</span><b>Pro · Annual</b></div>
+    <div class="row"><span>Payment</span><b>Visa ··· 4242</b></div>
+    <div class="row"><span>Renews</span><b>Mar 11, 2026</b></div>
+    <div class="total"><span>Total charged</span><span>$89.99</span></div>
+  </div>
+  <div class="next">
+    <div class="nx"><div class="ic">🎓</div><b>Pick up Lesson 4</b><p>Ordering coffee · 12 min</p></div>
+    <div class="nx"><div class="ic">🎁</div><b>Refer a friend</b><p>Both get 30 days free</p></div>
+  </div>
+  <button class="btn">Back to my dashboard →</button>
+  <div class="meta">Need help? <a>Contact support</a> · <a>Manage billing</a></div>
+</div>
+</body></html>
