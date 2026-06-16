@@ -53,11 +53,6 @@ const T = /* tokens */ {
 };
 
 // ── Languages ─────────────────────────────────────────────────
-// Default starter languages (4 stock). New users see these on first load;
-// anyone who removes one or adds another via the Add Language flow ends up
-// with a different list. The current list lives on window.__userLangCodes
-// (an array of codes) so any page can read it.
-const STARTER_CODES = ['en', 'es', 'ja', 'fr'];
 const LANGUAGES = [
   { code:'en', native:'English',  english:'English',  streak:23, level:'B2', exam:'IELTS', flag:'en' },
   { code:'es', native:'Español',  english:'Spanish',  streak:14, level:'B1', exam:'DELE',  flag:'es' },
@@ -68,43 +63,12 @@ const LANGUAGES = [
 // Languages the user adds at runtime via the Add Language flow.
 // Stored on window so any page can read/append. Cleared on page reload —
 // when the backend is wired, swap this for a Supabase-backed user.languages.
-// Languages the user has on their account. First visit → 4 starters.
-// Once user removes/adds we persist the code list in localStorage so refresh
-// keeps the choice. Backend swap-in: replace with Supabase user.languages.
-if (typeof window !== 'undefined' && !window.__userLangCodes) {
-  try {
-    const saved = localStorage.getItem('__fluentra_user_langs');
-    window.__userLangCodes = saved ? JSON.parse(saved) : [...STARTER_CODES];
-  } catch { window.__userLangCodes = [...STARTER_CODES]; }
-}
 if (typeof window !== 'undefined' && !window.__addedLangs) window.__addedLangs = [];
 
-function saveUserLangs() {
-  if (typeof window === 'undefined') return;
-  try { localStorage.setItem('__fluentra_user_langs', JSON.stringify(window.__userLangCodes || [])); } catch {}
-}
-
-function addUserLang(code) {
-  if (typeof window === 'undefined') return;
-  if (!window.__userLangCodes.includes(code)) {
-    window.__userLangCodes = [...window.__userLangCodes, code];
-    saveUserLangs();
-  }
-}
-
-function removeUserLang(code) {
-  if (typeof window === 'undefined') return;
-  window.__userLangCodes = window.__userLangCodes.filter(c => c !== code);
-  saveUserLangs();
-}
-
-// Merged view: only languages the user has chosen + anything added at runtime.
+// Merged view: stock 4 + anything the user added. Always read this in UI.
 function userLanguages() {
   if (typeof window === 'undefined') return LANGUAGES;
-  const codes = window.__userLangCodes || STARTER_CODES;
-  const all = [...LANGUAGES, ...(window.__addedLangs || [])];
-  // Preserve the order in __userLangCodes so newly-added langs land at the end.
-  return codes.map(c => all.find(l => l.code === c)).filter(Boolean);
+  return [...LANGUAGES, ...(window.__addedLangs || [])];
 }
 
 // Look up a language by code across stock + user-added.
@@ -572,6 +536,6 @@ function langTheme(code) { return T[code] || { bg:T.bg2, accent:T.ink, accentLig
 
 Object.assign(window, {
   T, LANGUAGES, USER, Flag, Icon, Ring, EXAMS, examFor, CATALOG_EXAMS, langPack,
-  userLanguages, langByCode, addUserLang, removeUserLang, STARTER_CODES,
+  userLanguages, langByCode,
   PhoneFrame, PhoneTabBar, PhoneHeader, SectionHead, Card, Btn, Chip, Bar, langTheme,
 });

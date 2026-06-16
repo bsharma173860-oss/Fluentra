@@ -29,17 +29,14 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
         ))}
       </div>
 
-      {/* Languages — scrollable when many added so it never crowds menu/footer */}
-      <div style={{ margin:'24px 8px 8px', fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <span>Languages</span>
-        <span style={{ fontSize:9.5, color:T.ink5, fontWeight:600, letterSpacing:'.04em', textTransform:'none' }}>{userLanguages().length}</span>
-      </div>
-      <div className="hide-scroll" style={{ display:'flex', flexDirection:'column', gap:1, maxHeight:200, overflowY:'auto', overflowX:'hidden', flexShrink:0 }}>
+      {/* Languages */}
+      <div style={{ margin:'24px 8px 8px', fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase' }}>Languages</div>
+      <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
         {userLanguages().map(l => {
           const a = activeLang === l.code;
           const t = langTheme(l.code);
           return (
-            <button key={l.code} onClick={() => { window.__langCode = l.code; nav('lang'); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:9, fontSize:13, color: a ? T.ink : T.ink2, background: a ? t.accentLight : 'transparent', cursor:'pointer', textAlign:'left', flexShrink:0 }}>
+            <button key={l.code} onClick={() => { window.__langCode = l.code; nav('lang'); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:9, fontSize:13, color: a ? T.ink : T.ink2, background: a ? t.accentLight : 'transparent', cursor:'pointer', textAlign:'left' }}>
               <Flag code={l.code} w={20} h={14} radius={3}/>
               <span style={{ flex:1, fontWeight: a ? 700 : 500 }}>{l.english}</span>
               <span style={{ display:'flex', alignItems:'center', gap:3, color:t.accent, fontSize:11, fontWeight:700 }}>
@@ -48,10 +45,10 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
             </button>
           );
         })}
+        <button onClick={() => nav('add_language')} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:9, fontSize:12, color:T.ink4, cursor:'pointer', textAlign:'left' }}>
+          {Icon.addLang()} Add language
+        </button>
       </div>
-      <button onClick={() => nav('add_language')} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', marginTop:4, borderRadius:9, fontSize:12, color:T.ink4, cursor:'pointer', textAlign:'left', flexShrink:0 }}>
-        {Icon.addLang()} Add language
-      </button>
 
       {/* Spacer + footer */}
       <div style={{ marginTop:'auto', display:'flex', flexDirection:'column', gap:10 }}>

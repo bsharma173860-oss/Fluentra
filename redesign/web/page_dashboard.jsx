@@ -81,6 +81,14 @@ function TodayItem({ ic, label, meta, color, bg, done }) {
 }
 
 function DashboardPage() {
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  React.useEffect(() => {
+    // Re-render once real user data lands
+    if (window.FL) {
+      window.FL.fetchProfile().then(() => forceUpdate());
+      window.FL.fetchLanguages().then(() => forceUpdate());
+    }
+  }, []);
   const langs = userLanguages();
   const longestStreak = langs.length ? Math.max(...langs.map(l => l.streak)) : 0;
   const justAdded = (typeof window !== 'undefined') ? window.__justAddedLang : null;
@@ -124,7 +132,7 @@ function DashboardPage() {
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px 40px' }}>
         <PageHeader
-          eyebrow={`${greet}, María`}
+          eyebrow={`${greet}, ${(window.__user && window.__user.firstName) || 'there'}`}
           title="Keep the streaks alive."
           right={
             <div style={{ display:'flex', gap:24, alignItems:'center' }}>
@@ -195,13 +203,8 @@ function DashboardPage() {
           );
         })()}
 
-        {/* Adaptive layout: when user has 1–2 languages the right rail stays;
-            with 3+ we go single-column so the language grid fills the canvas. */}
-        {(() => {
-          const wide = langs.length >= 3;
-          const cols = langs.length <= 1 ? '1fr' : langs.length === 2 ? '1fr 1fr' : 'repeat(3, 1fr)';
-          return (
-        <div style={{ display:'grid', gridTemplateColumns: wide ? '1fr' : '1fr 320px', gap:24 }}>
+        {/* Two-col layout: cards + today panel */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:24 }}>
           {/* Languages */}
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
@@ -210,91 +213,15 @@ function DashboardPage() {
                 {Icon.plus ? Icon.plus({ width:11, height:11 }) : '+'} Add language
               </button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns: cols, gap:18 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18 }}>
               {langs.map(l => <DashLangCard key={l.code} lang={l} freshlyAdded={l.code === justAdded}/>)}
             </div>
-
-            {/* Wide-mode utility row — keeps streak/friends/tutor/quick-links accessible
-                even when the right rail collapses (3+ languages). */}
-            {wide && (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14, marginTop:22 }}>
-                {/* Streak */}
-                <Card padding={16} style={{ background:T.bg2, border:`1px solid ${T.border}` }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:10 }}>
-                    <div style={{ width:26, height:26, borderRadius:13, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.flame({ width:12, height:12 })}</div>
-                    <div style={{ fontSize:11.5, fontWeight:700, color:T.ink }}>This week</div>
-                  </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:3 }}>
-                    {['M','T','W','T','F','S','S'].map((d,i) => {
-                      const done = i < 4, today = i === 4;
-                      return (
-                        <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-                          <div style={{ width:'100%', aspectRatio:'1', maxWidth:24, borderRadius:6, background: done ? T.brand : today ? T.brandLight : T.card, border:`1.5px solid ${today ? T.brand : T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color: done ? '#fff' : today ? T.brand : T.ink5, fontWeight:700, fontSize:9 }}>
-                            {done ? Icon.check({ width:8, height:8 }) : i+1}
-                          </div>
-                          <div style={{ fontSize:8.5, color: today ? T.brand : T.ink4, fontWeight: today ? 700 : 500 }}>{d}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ marginTop:10, fontSize:10.5, color:T.ink3, textAlign:'center' }}>4-day streak</div>
-                </Card>
-
-                {/* Friends */}
-                <Card padding={16}>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Friends today</div>
-                    <button data-nav="friends" style={{ fontSize:10, color:T.ink4, fontWeight:600, cursor:'pointer' }}>All →</button>
-                  </div>
-                  {[
-                    { name:'Liam', avatar:'L', color:'#7B4BC4', mins:22, action:'practiced French' },
-                    { name:'Yui',  avatar:'Y', color:'#1F8A5B', mins:18, action:'JLPT mock' },
-                    { name:'Anna', avatar:'A', color:'#D97757', mins:14, action:'31-day streak' },
-                  ].map((f,i,all) => (
-                    <button key={f.name} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', textAlign:'left', background:'transparent', cursor:'pointer' }}>
-                      <div style={{ width:24, height:24, borderRadius:12, background:f.color, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:11, flexShrink:0 }}>{f.avatar}</div>
-                      <div style={{ flex:1, minWidth:0, fontSize:11, color:T.ink, lineHeight:1.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}><b>{f.name}</b> · {f.action}</div>
-                    </button>
-                  ))}
-                </Card>
-
-                {/* Tutor shortcut */}
-                <button data-nav="tutor" style={{ background:T.ink, color:'#fff', borderRadius:14, padding:'16px', display:'flex', flexDirection:'column', justifyContent:'space-between', textAlign:'left', cursor:'pointer', minHeight:140 }}>
-                  <div style={{ width:32, height:32, borderRadius:9, background:'rgba(255,255,255,.1)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>{Icon.message({ width:14, height:14 })}</div>
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#fff' }}>Ask the AI tutor</div>
-                    <div style={{ fontSize:10.5, color:'rgba(255,255,255,.65)', marginTop:2 }}>Grammar, vocab, conversation</div>
-                  </div>
-                </button>
-
-                {/* Quick links */}
-                <Card padding={14}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>Quick links</div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:5 }}>
-                    {[
-                      { id:'friends',      label:'Friends',    ic:'users' },
-                      { id:'leaderboard',  label:'Ranks',      ic:'bars' },
-                      { id:'notifications',label:'Inbox',      ic:'message' },
-                      { id:'progress',     label:'Progress',   ic:'trophy' },
-                      { id:'pricing',      label:'Plan',       ic:'flame' },
-                      { id:'settings',     label:'Settings',   ic:'pen' },
-                    ].map(q => (
-                      <button key={q.id} data-nav={q.id} style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 8px', borderRadius:7, background:T.bg2, border:`1px solid ${T.hairline}`, fontSize:10.5, color:T.ink2, fontWeight:600, textAlign:'left', cursor:'pointer' }}>
-                        <span style={{ color:T.ink4 }}>{Icon[q.ic] ? Icon[q.ic]({ width:10, height:10 }) : null}</span>
-                        {q.label}
-                      </button>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            )}
 
             {/* Recent attempts — split by exam mode so backend stream is obvious */}
             <RecentAttemptsPanel/>
           </div>
 
-          {/* Today panel — only when there's room (1–2 languages) */}
-          {!wide && (
+          {/* Today panel */}
           <aside style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {/* Streak preview — moved up since hero now handles "what to do next" */}
             <Card padding={18} style={{ background: T.bg2, border:`1px solid ${T.border}` }}>
@@ -370,10 +297,7 @@ function DashboardPage() {
               </div>
             </Card>
           </aside>
-          )}
         </div>
-          );
-        })()}
       </div>
     </div>
   );

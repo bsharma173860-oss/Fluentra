@@ -593,6 +593,8 @@ function WritingSession() {
   const [task, setTask] = useState('task2');
   const [wordCount, setWordCount] = useState(0);
   const [text, setText] = useState('');
+  const [grading, setGrading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const TARGET = task === 'task1' ? 150 : 250;
   const handleChange = (e) => {
     const val = e.target.value;
@@ -600,6 +602,19 @@ function WritingSession() {
     setWordCount(val.trim() ? val.trim().split(/\s+/).length : 0);
   };
   const pct = Math.min(100, (wordCount / TARGET) * 100);
+
+  const handleGrade = async (thenNav) => {
+    if (!text.trim() || wordCount < 10) return;
+    if (!window.FL) { thenNav && window.__nav && window.__nav('mod_results'); return; }
+    setGrading(true);
+    try {
+      const lang = (window.__userLanguages && window.__userLanguages[0] && window.__userLanguages[0].code) || 'en';
+      const res = await window.FL.gradeWriting(task, text, lang);
+      if (res && !res.error) setFeedback(res);
+    } catch(e) { /* non-blocking */ }
+    setGrading(false);
+    if (thenNav) window.__nav && window.__nav('mod_results');
+  };
   const _w = _sc('writing');
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -674,8 +689,8 @@ function WritingSession() {
               {wordCount >= TARGET && <Chip label="Min. reached ✓" accent={T.listening.c} bg={T.listening.bg} style={{ fontSize:10 }}/>}
             </div>
             <div style={{ display:'flex', gap:8 }}>
-              <Btn label="Get AI feedback" variant="outline" accent={T.writing.c} size="sm" icon={Icon.spark({ width:12, height:12 })}/>
-              <Btn label="Submit essay" nav="mod_results" accent={T.writing.c} size="sm" iconRight={Icon.arrow({ width:11, height:11 })}/>
+              <Btn label={grading ? 'Grading…' : 'Get AI feedback'} variant="outline" accent={T.writing.c} size="sm" icon={Icon.spark({ width:12, height:12 })} onClick={() => handleGrade(false)}/>
+              <Btn label="Submit essay" accent={T.writing.c} size="sm" iconRight={Icon.arrow({ width:11, height:11 })} onClick={() => handleGrade(true)}/>
             </div>
           </div>
         </div>

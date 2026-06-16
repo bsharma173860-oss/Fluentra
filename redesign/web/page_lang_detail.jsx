@@ -583,50 +583,42 @@ function StudyTab({ lang }) {
           </div>
         </Card>
 
-        {/* Grammar — brand-orange themed feature card */}
-        <Card padding={0} style={{ background:`linear-gradient(160deg, ${T.brandSoft} 0%, #fff 60%)`, border:`1px solid ${T.brandLight}`, overflow:'hidden' }}>
-          <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.brandLight}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(255,255,255,.6)' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:34, height:34, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 12px ${T.brand}44` }}>{Icon.pen({ width:14, height:14 })}</div>
-              <div>
-                <div style={{ fontSize:10, color:T.brand, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Grammar</div>
-                <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Active topics</div>
-              </div>
+        {/* Grammar */}
+        <Card padding={22}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+            <div>
+              <div style={{ fontSize:10, color:T.writing.c, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Grammar</div>
+              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Active topics</div>
             </div>
-            <button data-nav="grammar" style={{ fontSize:11.5, color:T.brand, fontWeight:700, cursor:'pointer' }}>All topics →</button>
+            <button data-nav="grammar" style={{ fontSize:11.5, color:T.ink3, fontWeight:600, cursor:'pointer' }}>All topics →</button>
           </div>
-          <div style={{ padding:'14px 22px 18px' }}>
-            {c.grammar.map((g,i) => (
-              <button key={g} data-nav="grammar" style={{ display:'flex', alignItems:'center', gap:11, width:'100%', padding:'10px 0', borderBottom: i < c.grammar.length-1 ? `1px solid ${T.brandLight}80` : 'none', textAlign:'left', cursor:'pointer', background:'transparent' }}>
-                <div style={{ width:26, height:26, borderRadius:7, background:'#fff', color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:`1px solid ${T.brandLight}` }}>{Icon.pen({ width:11, height:11 })}</div>
-                <div style={{ flex:1, fontSize:12.5, fontWeight:600, color:T.ink }}>{g}</div>
-                {Icon.chev({ width:12, height:12, style:{ color:T.brand } })}
-              </button>
-            ))}
-          </div>
+          {c.grammar.map((g,i) => (
+            <button key={g} data-nav="grammar" style={{ display:'flex', alignItems:'center', gap:11, width:'100%', padding:'10px 0', borderBottom: i < c.grammar.length-1 ? `1px solid ${T.hairline}` : 'none', textAlign:'left', cursor:'pointer', background:'transparent' }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:T.writing.bg, color:T.writing.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.pen({ width:12, height:12 })}</div>
+              <div style={{ flex:1, fontSize:12.5, fontWeight:600, color:T.ink }}>{g}</div>
+              {Icon.chev({ width:12, height:12, style:{ color:T.ink5 } })}
+            </button>
+          ))}
         </Card>
       </div>
 
-      {/* Vocab decks — brand-orange themed feature card */}
-      <Card padding={0} style={{ background:`linear-gradient(170deg, #fff 0%, ${T.brandSoft} 100%)`, border:`1px solid ${T.brandLight}`, overflow:'hidden' }}>
-        <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.brandLight}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(255,255,255,.6)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 12px ${T.brand}44` }}>{Icon.book({ width:14, height:14 })}</div>
-            <div>
-              <div style={{ fontSize:10, color:T.brand, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Vocabulary</div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Your decks</div>
-            </div>
+      {/* Vocab decks */}
+      <Card padding={0}>
+        <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <div style={{ fontSize:10, color:T.reading.c, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Vocabulary</div>
+            <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Your decks</div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             <Btn label="New deck" nav="vocab" variant="outline" size="sm"/>
-            <Btn label="Practice all" nav="vocab" accent={T.brand} size="sm"/>
+            <Btn label="Practice all" nav="vocab" accent={T.reading.c} size="sm"/>
           </div>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:0 }}>
           {c.vocab.decks.map((d, i) => (
-            <button key={d.name} data-nav="vocab" style={{ padding:'18px 22px', textAlign:'left', cursor:'pointer', borderRight: i < c.vocab.decks.length - 1 ? `1px solid ${T.brandLight}80` : 'none', background:'transparent', display:'flex', flexDirection:'column', gap:8 }}>
+            <button key={d.name} data-nav="vocab" style={{ padding:'18px 22px', textAlign:'left', cursor:'pointer', borderRight: i < c.vocab.decks.length - 1 ? `1px solid ${T.hairline}` : 'none', background:'transparent', display:'flex', flexDirection:'column', gap:8 }}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:9, background:'#fff', color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${T.brandLight}` }}>{Icon.book({ width:13, height:13 })}</div>
+                <div style={{ width:32, height:32, borderRadius:9, background:T.reading.bg, color:T.reading.c, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.book({ width:13, height:13 })}</div>
                 <div style={{ fontSize:13, fontWeight:700, color:T.ink, lineHeight:1.25 }}>{d.name}</div>
               </div>
               <div style={{ display:'flex', gap:14, marginTop:4 }}>

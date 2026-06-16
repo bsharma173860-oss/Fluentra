@@ -84,6 +84,30 @@ function AuthLogo({ size='md' }) {
   );
 }
 
+// ── Shared: error / success banner ────────────────────────────
+function AuthAlert({ msg, type='error' }) {
+  if (!msg) return null;
+  const bg = type === 'success' ? '#E8F8EE' : '#FFF0EE';
+  const color = type === 'success' ? '#0D6E55' : '#C0392B';
+  return (
+    <div style={{ fontSize:12.5, color, background:bg, borderRadius:10, padding:'10px 14px', lineHeight:1.5 }}>{msg}</div>
+  );
+}
+
+function friendlyError(err) {
+  if (!err) return 'Something went wrong — please try again.';
+  var m = err.message || String(err);
+  if (m.includes('Invalid login credentials') || m.includes('invalid_credentials'))
+    return 'Wrong email or password. Please check and try again.';
+  if (m.includes('Email not confirmed'))
+    return 'Please confirm your email — check your inbox for a verification link.';
+  if (m.includes('User already registered'))
+    return 'An account with this email already exists. Try signing in instead.';
+  if (m.includes('Password should be'))
+    return 'Password must be at least 6 characters.';
+  return m;
+}
+
 // ══════════════════════════════════════════════════════════════
 // LOGIN — desktop card + mobile screen
 // ══════════════════════════════════════════════════════════════
@@ -91,6 +115,25 @@ function LoginCard() {
   const [email, setEmail] = React.useState('');
   const [pw, setPw] = React.useState('');
   const [showPw, setShowPw] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleSignIn = async () => {
+    if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
+    if (!email || !pw) { setError('Please enter your email and password.'); return; }
+    setLoading(true); setError('');
+    const { error: err } = await window.FL.auth.signIn(email, pw);
+    setLoading(false);
+    if (err) setError(friendlyError(err));
+    // On success onAuthStateChange in backend.js navigates to dashboard
+  };
+
+  const handleGoogle = async () => {
+    if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
+    const { error: err } = await window.FL.auth.signInWithGoogle();
+    if (err) setError(friendlyError(err));
+  };
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
       <AuthLogo/>
@@ -101,7 +144,7 @@ function LoginCard() {
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-        <SocialBtn icon={<GoogleIcon/>} label="Continue with Google"/>
+        <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={handleGoogle}/>
         <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple"/>
       </div>
 
@@ -115,14 +158,16 @@ function LoginCard() {
               {showPw ? 'Hide' : 'Show'}
             </button>
           }
-          hint={<a href="#" style={{ fontSize:11.5, color:T.brand, fontWeight:600, textDecoration:'none' }}>Forgot?</a>}
+          hint={<a href="#" onClick={e => { e.preventDefault(); window.__nav && window.__nav('forgot_pw'); }} style={{ fontSize:11.5, color:T.brand, fontWeight:600, textDecoration:'none' }}>Forgot?</a>}
         />
       </div>
 
-      <Btn label="Sign in" fullWidth accent={T.brand} size="lg"/>
+      <AuthAlert msg={error}/>
+
+      <Btn label={loading ? 'Signing in…' : 'Sign in →'} fullWidth accent={T.brand} size="lg" onClick={handleSignIn}/>
 
       <div style={{ textAlign:'center', fontSize:13, color:T.ink3 }}>
-        No account? <span style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign up free</span>
+        No account? <span onClick={() => window.__nav && window.__nav('auth_signup')} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign up free</span>
       </div>
 
       <div style={{ fontSize:11, color:T.ink5, textAlign:'center', lineHeight:1.5 }}>
@@ -135,6 +180,18 @@ function LoginCard() {
 function LoginMobile() {
   const [email, setEmail] = React.useState('');
   const [pw, setPw] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleSignIn = async () => {
+    if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
+    if (!email || !pw) { setError('Please enter your email and password.'); return; }
+    setLoading(true); setError('');
+    const { error: err } = await window.FL.auth.signIn(email, pw);
+    setLoading(false);
+    if (err) setError(friendlyError(err));
+  };
+
   return (
     <>
       <MobileBody>
@@ -146,19 +203,20 @@ function LoginMobile() {
             <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:11.5, color:T.brand, marginTop:6, letterSpacing:'.02em' }}>Speak it. Score it. Own it.</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            <SocialBtn icon={<GoogleIcon/>} label="Continue with Google"/>
+            <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={() => window.FL && window.FL.auth.signInWithGoogle()}/>
             <SocialBtn icon={<AppleIcon color="#000"/>} label="Continue with Apple"/>
           </div>
           <OrDivider/>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <Field label="Email" type="email" placeholder="you@example.com" value={email} onChange={setEmail}/>
             <Field label="Password" type="password" placeholder="••••••••" value={pw} onChange={setPw}
-              right={<a href="#" style={{ fontSize:11.5, color:T.brand, fontWeight:600, textDecoration:'none' }}>Forgot?</a>}
+              right={<a href="#" onClick={e => { e.preventDefault(); window.__nav && window.__nav('forgot_pw'); }} style={{ fontSize:11.5, color:T.brand, fontWeight:600, textDecoration:'none' }}>Forgot?</a>}
             />
           </div>
-          <Btn label="Sign in" fullWidth accent={T.brand} size="lg"/>
+          <AuthAlert msg={error}/>
+          <Btn label={loading ? 'Signing in…' : 'Sign in →'} fullWidth accent={T.brand} size="lg" onClick={handleSignIn}/>
           <div style={{ textAlign:'center', fontSize:13, color:T.ink3 }}>
-            No account? <span style={{ color:T.brand, fontWeight:700 }}>Sign up free</span>
+            No account? <span onClick={() => window.__nav && window.__nav('auth_signup')} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign up free</span>
           </div>
         </div>
       </MobileBody>
@@ -173,6 +231,33 @@ function SignupCard() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [pw, setPw] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [done, setDone] = React.useState(false);
+
+  const handleSignUp = async () => {
+    if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
+    if (!name || !email || !pw) { setError('Please fill in all fields.'); return; }
+    if (pw.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    setLoading(true); setError('');
+    const { error: err } = await window.FL.auth.signUp(email, pw, name);
+    setLoading(false);
+    if (err) setError(friendlyError(err));
+    else setDone(true);
+  };
+
+  if (done) return (
+    <div style={{ display:'flex', flexDirection:'column', gap:20, alignItems:'center', textAlign:'center', paddingTop:32 }}>
+      <AuthLogo/>
+      <div style={{ fontSize:40 }}>📬</div>
+      <div style={{ fontSize:20, fontWeight:700, color:T.ink }}>Check your inbox</div>
+      <div style={{ fontSize:13.5, color:T.ink3, lineHeight:1.6, maxWidth:320 }}>
+        We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then sign in.
+      </div>
+      <Btn label="Go to sign in" fullWidth accent={T.brand} size="lg" onClick={() => window.__nav && window.__nav('auth_login')}/>
+    </div>
+  );
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:22 }}>
       <AuthLogo/>
@@ -183,7 +268,7 @@ function SignupCard() {
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-        <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google"/>
+        <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={() => window.FL && window.FL.auth.signInWithGoogle()}/>
         <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple"/>
       </div>
 
@@ -207,10 +292,11 @@ function SignupCard() {
         </div>
       </div>
 
-      <Btn label="Create account" fullWidth accent={T.brand} size="lg"/>
+      <AuthAlert msg={error}/>
+      <Btn label={loading ? 'Creating account…' : 'Create account'} fullWidth accent={T.brand} size="lg" onClick={handleSignUp}/>
 
       <div style={{ textAlign:'center', fontSize:13, color:T.ink3 }}>
-        Already have an account? <span style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign in</span>
+        Already have an account? <span onClick={() => window.__nav && window.__nav('auth_login')} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign in</span>
       </div>
     </div>
   );
@@ -220,6 +306,33 @@ function SignupMobile() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [pw, setPw] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [done, setDone] = React.useState(false);
+
+  const handleSignUp = async () => {
+    if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
+    if (!name || !email || !pw) { setError('Please fill in all fields.'); return; }
+    if (pw.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    setLoading(true); setError('');
+    const { error: err } = await window.FL.auth.signUp(email, pw, name);
+    setLoading(false);
+    if (err) setError(friendlyError(err));
+    else setDone(true);
+  };
+
+  if (done) return (
+    <MobileBody>
+      <div style={{ display:'flex', flexDirection:'column', gap:18, alignItems:'center', textAlign:'center', paddingTop:32, paddingBottom:40 }}>
+        <AuthLogo size="sm"/>
+        <div style={{ fontSize:36 }}>📬</div>
+        <div style={{ fontSize:18, fontWeight:700, color:T.ink }}>Check your inbox</div>
+        <div style={{ fontSize:13, color:T.ink3, lineHeight:1.6 }}>Confirmation link sent to <strong>{email}</strong></div>
+        <Btn label="Go to sign in" fullWidth accent={T.brand} size="lg" onClick={() => window.__nav && window.__nav('auth_login')}/>
+      </div>
+    </MobileBody>
+  );
+
   return (
     <MobileBody>
       <div style={{ display:'flex', flexDirection:'column', gap:22, paddingBottom:40 }}>
@@ -229,7 +342,7 @@ function SignupMobile() {
           <div style={{ fontSize:13, color:T.ink3 }}>Free forever on your first language</div>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google"/>
+          <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={() => window.FL && window.FL.auth.signInWithGoogle()}/>
           <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple"/>
         </div>
         <OrDivider/>
@@ -238,9 +351,10 @@ function SignupMobile() {
           <Field label="Email" type="email" placeholder="you@example.com" value={email} onChange={setEmail}/>
           <Field label="Password" type="password" placeholder="8+ characters" value={pw} onChange={setPw}/>
         </div>
-        <Btn label="Create account" fullWidth accent={T.brand} size="lg"/>
+        <AuthAlert msg={error}/>
+        <Btn label={loading ? 'Creating account…' : 'Create account'} fullWidth accent={T.brand} size="lg" onClick={handleSignUp}/>
         <div style={{ textAlign:'center', fontSize:13, color:T.ink3 }}>
-          Already have one? <span style={{ color:T.brand, fontWeight:700 }}>Sign in</span>
+          Already have one? <span onClick={() => window.__nav && window.__nav('auth_login')} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign in</span>
         </div>
         <div style={{ fontSize:10.5, color:T.ink5, textAlign:'center', lineHeight:1.5 }}>
           By signing up you agree to our <span style={{ color:T.ink4 }}>Terms</span> &amp; <span style={{ color:T.ink4 }}>Privacy</span>.
@@ -283,9 +397,40 @@ function OnboardingCard() {
   const [exam, setExam] = React.useState('IELTS');
   const [score, setScore] = React.useState(7.0);
   const [native, setNative] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
   const selExam = AUTH_EXAMS.find(e => e.key === exam) || AUTH_EXAMS[0];
   const STEPS = ['Your exam', 'Target score', 'Native language'];
   const canNext = step === 0 ? !!exam : step === 1 ? true : native.trim().length > 0;
+
+  const handleFinish = async () => {
+    if (!canNext) return;
+    if (step < 2) { setStep(s => s + 1); return; }
+    // Save to Supabase profiles table
+    if (!window.FL || !window.FL.client) { window.__nav && window.__nav('dashboard'); return; }
+    setLoading(true); setError('');
+    try {
+      const { data: { user } } = await window.FL.client.auth.getUser();
+      if (user) {
+        await window.FL.client.from('profiles').upsert({
+          id: user.id,
+          target_exam: exam,
+          target_score: score,
+          native_language: native,
+          updated_at: new Date().toISOString(),
+        });
+        // Also add to user_languages
+        await window.FL.client.from('user_languages').upsert({
+          user_id: user.id,
+          language_code: exam === 'DELF' ? 'fr' : exam === 'DELE' ? 'es' : exam === 'JLPT' ? 'ja' : 'en',
+          exam_type: exam,
+          level: 'A2',
+        }, { onConflict: 'user_id,language_code' });
+      }
+    } catch(e) { /* non-blocking */ }
+    setLoading(false);
+    window.__nav && window.__nav('dashboard');
+  };
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0, height:'100%' }}>
@@ -355,15 +500,18 @@ function OnboardingCard() {
       </div>
 
       {/* CTA */}
-      <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:24 }}>
-        {step > 0 && (
-          <button onClick={() => setStep(s => s - 1)} style={{ width:44, height:44, borderRadius:12, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2 }}>
-            {Icon.arrowL({ width:16, height:16 })}
-          </button>
-        )}
-        <Btn label={step < 2 ? 'Continue' : 'Start learning'} iconRight={Icon.arrow({ width:13, height:13 })} fullWidth accent={T.brand} size="lg"
-          style={{ opacity: canNext ? 1 : .45 }}
-          onClick={() => { if (canNext && step < 2) setStep(s => s + 1); }}/>
+      <div style={{ display:'flex', flexDirection:'column', gap:10, marginTop:24 }}>
+        <AuthAlert msg={error}/>
+        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+          {step > 0 && (
+            <button onClick={() => setStep(s => s - 1)} style={{ width:44, height:44, borderRadius:12, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2 }}>
+              {Icon.arrowL({ width:16, height:16 })}
+            </button>
+          )}
+          <Btn label={loading ? 'Saving…' : step < 2 ? 'Continue' : 'Start learning'} iconRight={Icon.arrow({ width:13, height:13 })} fullWidth accent={T.brand} size="lg"
+            style={{ opacity: canNext ? 1 : .45 }}
+            onClick={handleFinish}/>
+        </div>
       </div>
     </div>
   );
@@ -439,18 +587,46 @@ function AuthOnboardingDesktop() {
 
 // Mobile auth screens
 function AuthLoginMobile() {
-  return <MobileFrame><MobileBody><LoginMobile/></MobileBody></MobileFrame>;
+  return <MobileFrame><LoginMobile/></MobileFrame>;
 }
 function AuthSignupMobile() {
-  return <MobileFrame><MobileBody><SignupMobile/></MobileBody></MobileFrame>;
+  return <MobileFrame><SignupMobile/></MobileFrame>;
 }
 function AuthOnboardingMobile() {
   const [step, setStep] = React.useState(0);
   const [exam, setExam] = React.useState('IELTS');
   const [score, setScore] = React.useState(7.0);
   const [native, setNative] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
   const selExam = AUTH_EXAMS.find(e => e.key === exam) || AUTH_EXAMS[0];
   const canNext = step === 0 ? !!exam : step === 1 ? true : native.trim().length > 0;
+
+  const handleFinish = async () => {
+    if (!canNext) return;
+    if (step < 2) { setStep(s => s + 1); return; }
+    if (!window.FL || !window.FL.client) { window.__nav && window.__nav('dashboard'); return; }
+    setLoading(true);
+    try {
+      const { data: { user } } = await window.FL.client.auth.getUser();
+      if (user) {
+        await window.FL.client.from('profiles').upsert({
+          id: user.id,
+          target_exam: exam,
+          target_score: score,
+          native_language: native,
+          updated_at: new Date().toISOString(),
+        });
+        await window.FL.client.from('user_languages').upsert({
+          user_id: user.id,
+          language_code: exam === 'DELF' ? 'fr' : exam === 'DELE' ? 'es' : exam === 'JLPT' ? 'ja' : 'en',
+          exam_type: exam,
+          level: 'A2',
+        }, { onConflict: 'user_id,language_code' });
+      }
+    } catch(e) { /* non-blocking */ }
+    setLoading(false);
+    window.__nav && window.__nav('dashboard');
+  };
 
   return (
     <MobileFrame>
@@ -508,9 +684,9 @@ function AuthOnboardingMobile() {
               {Icon.arrowL({ width:16, height:16 })}
             </button>
           )}
-          <Btn label={step < 2 ? 'Continue' : 'Start learning'} iconRight={Icon.arrow({ width:13, height:13 })} fullWidth accent={T.brand} size="lg"
+          <Btn label={loading ? 'Saving…' : step < 2 ? 'Continue' : 'Start learning'} iconRight={Icon.arrow({ width:13, height:13 })} fullWidth accent={T.brand} size="lg"
             style={{ opacity: canNext ? 1 : .45 }}
-            onClick={() => { if (canNext && step < 2) setStep(s => s + 1); }}/>
+            onClick={handleFinish}/>
         </div>
       </MobileBody>
     </MobileFrame>

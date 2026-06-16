@@ -54,16 +54,14 @@ function NotifItem({ n, onClick, compact }) {
 function NotificationsPage() {
   const [filter, setFilter] = useStateN('all');
   const [selected, setSelected] = useStateN(NOTIFS[0]);
-  const [list, setList] = useStateN(NOTIFS);
-  const [toast, setToast] = useStateN('');
-  const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 2000); };
-  const filtered = list.filter(n => filter === 'all' ? true : filter === 'unread' ? n.unread : filter === 'system' ? n.type === 'system' : filter === 'mentions' ? n.type === 'social' : false);
 
-  function markAllRead() { setList(L => L.map(n => ({ ...n, unread:false }))); flash('All marked as read'); }
-  function togglePin(id) { setList(L => L.map(n => n.id === id ? { ...n, pinned: !n.pinned } : n)); setSelected(s => s.id === id ? { ...s, pinned: !s.pinned } : s); }
-  function archive(id) { setList(L => L.filter(n => n.id !== id)); flash('Archived'); }
-  function del(id) { setList(L => L.filter(n => n.id !== id)); flash('Deleted'); }
-  function snooze(id) { setList(L => L.map(n => n.id === id ? { ...n, unread:false, when:'snoozed 24h' } : n)); flash('Snoozed for 24 hours'); }
+  const filtered = NOTIFS.filter(n => {
+    if (filter === 'all') return true;
+    if (filter === 'unread') return n.unread;
+    if (filter === 'system') return n.type === 'system';
+    if (filter === 'mentions') return n.type === 'social';
+    return false;
+  });
 
   const a = ACCENTS[selected.accent] || ACCENTS.brand;
 
@@ -75,8 +73,8 @@ function NotificationsPage() {
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
             <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink }}>Notifications</div>
             <div style={{ display:'flex', gap:6 }}>
-              <button onClick={markAllRead} style={{ padding:'7px 11px', borderRadius:8, border:`1px solid ${T.border}`, background:T.card, fontSize:11.5, color:T.ink2, fontWeight:600, cursor:'pointer' }}>Mark all read</button>
-              <button onClick={() => (window.__nav||(()=>{}))('settings')} title="Settings" style={{ width:32, height:32, borderRadius:8, border:`1px solid ${T.border}`, background:T.card, color:T.ink3, cursor:'pointer' }}>⋯</button>
+              <button style={{ padding:'7px 11px', borderRadius:8, border:`1px solid ${T.border}`, background:T.card, fontSize:11.5, color:T.ink2, fontWeight:600, cursor:'pointer' }}>Mark all read</button>
+              <button style={{ width:32, height:32, borderRadius:8, border:`1px solid ${T.border}`, background:T.card, color:T.ink3 }}>⋯</button>
             </div>
           </div>
           <div style={{ display:'flex', gap:5, overflowX:'auto' }}>
@@ -101,9 +99,9 @@ function NotificationsPage() {
             <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.2 }}>{selected.title}</div>
           </div>
           <div style={{ display:'flex', gap:6 }}>
-            <button onClick={() => togglePin(selected.id)} title="Pin" style={{ width:34, height:34, borderRadius:9, background: selected.pinned ? T.brandLight : T.card, border:`1px solid ${T.border}`, color: selected.pinned ? T.brand : T.ink3, cursor:'pointer' }}>📌</button>
-            <button onClick={() => archive(selected.id)} title="Archive" style={{ width:34, height:34, borderRadius:9, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, cursor:'pointer' }}>📁</button>
-            <button onClick={() => del(selected.id)} title="Delete" style={{ width:34, height:34, borderRadius:9, background:T.card, border:`1px solid ${T.border}`, color:'#C0392B', cursor:'pointer' }}>🗑</button>
+            <button style={{ width:34, height:34, borderRadius:9, background:T.card, border:`1px solid ${T.border}`, color:T.ink3 }}>📌</button>
+            <button style={{ width:34, height:34, borderRadius:9, background:T.card, border:`1px solid ${T.border}`, color:T.ink3 }}>📁</button>
+            <button style={{ width:34, height:34, borderRadius:9, background:T.card, border:`1px solid ${T.border}`, color:T.ink3 }}>🗑</button>
           </div>
         </div>
         <div style={{ flex:1, padding:'30px 32px' }}>
@@ -140,7 +138,7 @@ function NotificationsPage() {
             {selected.cta && (
               <div style={{ display:'flex', gap:10, marginTop:8 }}>
                 <Btn label={selected.cta} accent={a.c} nav={selected.nav}/>
-                <button onClick={() => snooze(selected.id)} style={{ padding:'10px 16px', borderRadius:10, background:T.card, border:`1px solid ${T.border}`, fontSize:13, color:T.ink2, fontWeight:600, cursor:'pointer' }}>Snooze for a day</button>
+                <button style={{ padding:'10px 16px', borderRadius:10, background:T.card, border:`1px solid ${T.border}`, fontSize:13, color:T.ink2, fontWeight:600, cursor:'pointer' }}>Snooze for a day</button>
               </div>
             )}
           </div>
@@ -149,7 +147,7 @@ function NotificationsPage() {
         {/* Settings nudge */}
         <div style={{ padding:'14px 32px', borderTop:`1px solid ${T.border}`, background:T.bg2, fontSize:12, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <span>Getting too many? Adjust which notifications you receive.</span>
-          <button onClick={() => (window.__nav||(()=>{}))('settings')} style={{ fontSize:12, color:T.brand, fontWeight:700, cursor:'pointer', background:'transparent', border:'none' }}>Notification settings →</button>
+          <button style={{ fontSize:12, color:T.brand, fontWeight:700, cursor:'pointer' }}>Notification settings →</button>
         </div>
       </div>
     </div>
@@ -166,7 +164,7 @@ function MNotificationsPage() {
       <div style={{ padding:'12px 16px 10px', borderBottom:`1px solid ${T.hairline}` }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
           <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink }}>Inbox</div>
-          <button onClick={markAllRead} style={{ fontSize:11.5, color:T.brand, fontWeight:700, background:'transparent', border:'none', cursor:'pointer' }}>Mark all read</button>
+          <button style={{ fontSize:11.5, color:T.brand, fontWeight:700 }}>Mark all read</button>
         </div>
         <div style={{ display:'flex', gap:5, overflowX:'auto' }}>
           {NOTIF_FILTERS.slice(0, 4).map(f => {

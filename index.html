@@ -2,21 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Fluentra — Web App Redesign</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluentra — Speak it. Score it. Own it.</title>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/icon.png">
-<style>
-  /* ── Pre-React splash — shown the instant the page loads, before any JSX */
-  #__pre_splash{position:fixed;inset:0;z-index:9999;background:#F9F8F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-family:'Inter',sans-serif;transition:opacity .35s ease;}
-  #__pre_splash.gone{opacity:0;pointer-events:none;}
-  #__pre_splash .brand{display:flex;align-items:center;gap:12px;animation:psRise .6s ease-out both;}
-  #__pre_splash .mark{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#C04A06,#E8732F);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 32px rgba(192,74,6,.25);}
-  #__pre_splash .word{font-family:'DM Serif Display',Georgia,serif;font-size:42px;color:#1A1A1A;letter-spacing:-.01em;line-height:1;}
-  #__pre_splash .tag{font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-size:15px;color:#C04A06;letter-spacing:.04em;animation:psRise .6s ease-out .15s both;}
-  @keyframes psRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:'Inter',sans-serif;background:#EDEAE3;color:#111;-webkit-font-smoothing:antialiased;overflow:hidden}
@@ -27,17 +19,77 @@ button:focus-visible{outline:2px solid #C04A06;outline-offset:2px}
 ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
 .hide-scroll::-webkit-scrollbar{display:none}
 .hide-scroll{scrollbar-width:none}
+
+/* ── Instant HTML splash — shows before any JS runs ──────────── */
+#fl-splash{
+  position:fixed;inset:0;z-index:99999;
+  background:#F6F4EE;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+}
+#fl-splash .fl-logo{display:flex;align-items:center;gap:14px}
+#fl-splash .fl-icon{
+  width:58px;height:58px;border-radius:16px;
+  background:linear-gradient(135deg,#C04A06,#E8732F);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 14px 32px rgba(192,74,6,.35);
+  animation:flRise .55s cubic-bezier(.22,1,.36,1) both;
+}
+#fl-splash .fl-name{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-size:44px;color:#0E0D0B;letter-spacing:-.015em;line-height:1;
+  animation:flRise .55s cubic-bezier(.22,1,.36,1) .07s both;
+}
+#fl-splash .fl-tag{
+  font-family:'DM Serif Display',Georgia,serif;
+  font-style:italic;font-size:15px;color:#C04A06;letter-spacing:.05em;
+  animation:flRise .55s cubic-bezier(.22,1,.36,1) .16s both;
+}
+#fl-splash .fl-dots{display:flex;gap:7px;animation:flRise .4s ease .35s both}
+#fl-splash .fl-dot{
+  width:7px;height:7px;border-radius:50%;background:#C04A0644;
+  animation:flPulse 1.1s ease-in-out infinite;
+}
+#fl-splash .fl-dot:nth-child(2){animation-delay:.18s}
+#fl-splash .fl-dot:nth-child(3){animation-delay:.36s}
+@keyframes flRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes flPulse{0%,100%{background:#C04A0633}50%{background:#C04A06AA}}
+/* Fade-out triggered by JS setting data-fl-ready on <body> */
+body[data-fl-ready] #fl-splash{
+  animation:flOut .4s ease-out .05s forwards;
+  pointer-events:none;
+}
+@keyframes flOut{to{opacity:0;visibility:hidden}}
 </style>
 </head>
 <body>
-<div id="__pre_splash">
-  <div class="brand">
-    <div class="mark"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 17c0-5 3-8 7-8s7 3 7 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5 12c0-5 3-8 7-8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/><circle cx="12" cy="20" r="1.6" fill="currentColor"/></svg></div>
-    <div class="word">Fluentra</div>
+
+<!-- ── Instant splash — visible before any script runs ────────── -->
+<div id="fl-splash">
+  <div class="fl-logo">
+    <div class="fl-icon">
+      <!-- Fluentra brandmark SVG -->
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+        <path d="M5 17c0-5 3-8 7-8s7 3 7 8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M5 12c0-5 3-8 7-8" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>
+        <circle cx="12" cy="20" r="1.6" fill="#fff"/>
+      </svg>
+    </div>
+    <span class="fl-name">Fluentra</span>
   </div>
-  <div class="tag">Speak it. Score it. Own it.</div>
+  <span class="fl-tag">Speak it. Score it. Own it.</span>
+  <div class="fl-dots">
+    <div class="fl-dot"></div>
+    <div class="fl-dot"></div>
+    <div class="fl-dot"></div>
+  </div>
 </div>
+
 <div id="root"></div>
+
+<!-- Supabase JS SDK (local bundle — no CDN dependency) -->
+<script src="assets/supabase.min.js"></script>
+<!-- Fluentra backend integration -->
+<script src="redesign/backend.js"></script>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -476,11 +528,9 @@ const __mount = () => {
   if (!window.App || !window.DashboardPage || !window.MDashboard) return;
   __mounted = true;
   ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-  // Fade out pre-splash now that React has mounted
-  setTimeout(() => {
-    const ps = document.getElementById('__pre_splash');
-    if (ps) { ps.classList.add('gone'); setTimeout(() => ps.remove(), 400); }
-  }, 1400);
+  // Dismiss HTML splash once React is in the DOM
+  // (backend.js also sets this after session check, whichever is later)
+  setTimeout(() => document.body.setAttribute('data-fl-ready', '1'), 800);
 };
 const __tick = () => { __mount(); if (!__mounted) setTimeout(__tick, 50); };
 __tick();
