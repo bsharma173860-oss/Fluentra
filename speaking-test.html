@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Fluentra · Speaking Engine (live)</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--ink:#f2f4f8;--ink2:#aab2c0;--ink3:#6b7280;--brand:#6c8cff;--good:#4ade80;--line:#262b35}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;padding:24px}
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px} .sub{color:var(--ink3);font-size:13px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  label{display:block;font-size:12px;color:var(--ink2);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+  input,select{width:100%;background:#0d0f14;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 12px;font-size:14px}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  button{border:0;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:600;cursor:pointer}
+  .rec{background:var(--brand);color:#fff;width:100%}.rec.recording{background:#ef4444}
+  .band{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:var(--brand);color:#fff;font-size:22px;font-weight:700}
+  .crit{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .crit b{color:var(--ink)} .crit span{color:var(--ink2)}
+  .corr{background:#0d0f14;border-radius:9px;padding:10px;margin:8px 0;font-size:14px}
+  .corr .o{color:#fca5a5;text-decoration:line-through}.corr .b{color:var(--good)}.corr .w{color:var(--ink3);font-size:13px;display:block;margin-top:3px}
+  .muted{color:var(--ink3);font-size:13px}
+  .err{color:#fca5a5;font-size:13px;white-space:pre-wrap}
+  .tx{background:#0d0f14;border-radius:9px;padding:10px;font-style:italic;color:var(--ink2)}
+  #out{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fluentra · Speaking Engine <span style="color:var(--good);font-size:12px">● live</span></h1>
+  <div class="sub">Real pipeline: your voice → Whisper → Claude examiner → spoken reply. Not a mockup.</div>
+
+  <div class="card">
+    <div class="row">
+      <div><label>Exam</label>
+        <select id="exam"><option>IELTS</option><option>TOEFL</option><option>PTE</option><option>Citizenship interview</option></select>
+      </div>
+      <div><label>Target level</label>
+        <select id="level"><option>A2</option><option>B1</option><option selected>B2</option><option>C1</option></select>
+      </div>
+    </div>
+    <label>Question / prompt</label>
+    <input id="q" value="Describe your hometown and what you like about it."/>
+    <div style="height:14px"></div>
+    <button id="rec" class="rec">● Hold to record your answer — tap to start</button>
+    <div id="status" class="muted" style="margin-top:8px"></div>
+  </div>
+
+  <div id="out">
+    <div class="card">
+      <label>What you said (Whisper)</label>
+      <div id="transcript" class="tx"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <div class="band" id="band">–</div>
+        <div><div style="font-weight:600">Overall band</div><div class="muted" id="pron"></div></div>
+      </div>
+      <div id="crits"></div>
+    </div>
+    <div class="card">
+      <label>Strengths</label><ul id="strengths" style="margin:6px 0 0;padding-left:18px;color:var(--ink2)"></ul>
+    </div>
+    <div class="card">
+      <label>Corrections</label><div id="corrections"></div>
+    </div>
+    <div class="card">
+      <label>Model answer</label><div id="model" class="muted"></div>
+    </div>
+    <div class="card">
+      <label>Examiner follow-up</label>
+      <div id="reply" style="color:var(--ink)"></div>
+      <audio id="replyAudio" controls style="width:100%;margin-top:10px;display:none"></audio>
+    </div>
+  </div>
+
+  <div id="error" class="card err" style="display:none"></div>
+</div>
+
+<script>
+let mediaRecorder, chunks = [], recording = false;
+const $ = id => document.getElementById(id);
+const status = m => $('status').textContent = m;
+
+$('rec').onclick = async () => {
+  if (!recording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = () => { stream.getTracks().forEach(t => t.stop()); evaluate(); };
+      mediaRecorder.start();
+      recording = true;
+      $('rec').classList.add('recording');
+      $('rec').textContent = '■ Recording… tap to stop & evaluate';
+      status('Listening…');
+    } catch (e) { status('Mic access denied: ' + e.message); }
+  } else {
+    recording = false;
+    $('rec').classList.remove('recording');
+    $('rec').textContent = '● Record again';
+    mediaRecorder.stop();
+  }
+};
+
+async function evaluate() {
+  status('Transcribing & grading… (a few seconds)');
+  $('error').style.display = 'none';
+  const blob = new Blob(chunks, { type: 'audio/webm' });
+  const audioBase64 = await new Promise(r => {
+    const fr = new FileReader();
+    fr.onloadend = () => r(fr.result.split(',')[1]);
+    fr.readAsDataURL(blob);
+  });
+  try {
+    const resp = await fetch('/api/speaking-eval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioBase64, mimeType: 'audio/webm',
+        exam: $('exam').value, part: 'Part 1',
+        question: $('q').value, targetLevel: $('level').value, speak: true,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) throw new Error((data.error || 'error') + (data.detail ? '\n' + data.detail : ''));
+    if (!data.evaluation) { status(data.note || 'No speech detected.'); return; }
+    render(data);
+    status('Done.');
+  } catch (e) {
+    status('');
+    $('error').style.display = 'block';
+    $('error').textContent = 'Failed: ' + e.message;
+  }
+}
+
+function render({ transcript, evaluation: ev, replyAudioBase64 }) {
+  $('out').style.display = 'block';
+  $('transcript').textContent = transcript;
+  $('band').textContent = ev.overall_band;
+  $('pron').textContent = ev.pronunciation_note || '';
+  $('crits').innerHTML = Object.entries(ev.criteria || {}).map(([k, v]) =>
+    `<div class="crit"><span>${k.replace(/_/g, ' ')}</span><b>${v}</b></div>`).join('');
+  $('strengths').innerHTML = (ev.strengths || []).map(s => `<li>${esc(s)}</li>`).join('');
+  $('corrections').innerHTML = (ev.corrections || []).map(c =>
+    `<div class="corr"><span class="o">${esc(c.original)}</span> → <span class="b">${esc(c.better)}</span><span class="w">${esc(c.why)}</span></div>`).join('') || '<div class="muted">No major errors.</div>';
+  $('model').textContent = ev.model_answer || '';
+  $('reply').textContent = ev.examiner_reply || '';
+  const au = $('replyAudio');
+  if (replyAudioBase64) { au.src = 'data:audio/mp3;base64,' + replyAudioBase64; au.style.display = 'block'; au.play().catch(()=>{}); }
+  else au.style.display = 'none';
+}
+function esc(s){ return String(s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+</script>
+</body>
+</html>
