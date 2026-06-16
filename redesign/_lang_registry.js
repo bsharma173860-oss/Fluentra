@@ -53,21 +53,6 @@
     { code:'id', name:'Indonesian', native:'Bahasa Indonesia', script:'Latin',      region:'Asia',     exams:['UKBI'],                                  modules:FULL },
     { code:'vi', name:'Vietnamese', native:'Tiếng Việt',       script:'Latin',      region:'Asia',     exams:['Vietnamese proficiency'],                modules:FULL },
 
-    // ── Text only (audio omitted: STT/TTS not reliable enough yet) ────────
-    { code:'th', name:'Thai',       native:'ไทย',              script:'Thai',       region:'Asia',     exams:['CU-TFL'],                                modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'he', name:'Hebrew',     native:'עברית',            script:'Hebrew',     region:'Mideast',  exams:['Bar-Ilan proficiency'],                  modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'fa', name:'Persian',    native:'فارسی',            script:'Arabic',     region:'Mideast',  exams:['AMFA'],                                  modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'ur', name:'Urdu',       native:'اردو',             script:'Arabic',     region:'Asia',     exams:['CIIL'],                                  modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'bn', name:'Bengali',    native:'বাংলা',            script:'Bengali',    region:'Asia',     exams:['CIIL'],                                  modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'ta', name:'Tamil',      native:'தமிழ்',            script:'Tamil',      region:'Asia',     exams:['CIIL'],                                  modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'ca', name:'Catalan',    native:'Català',           script:'Latin',      region:'Europe',   exams:['CPNL','CCSE'],                           modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'eu', name:'Basque',     native:'Euskara',          script:'Latin',      region:'Europe',   exams:['EGA'],                                   modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'cy', name:'Welsh',      native:'Cymraeg',          script:'Latin',      region:'Europe',   exams:['WJEC'],                                  modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'ga', name:'Irish',      native:'Gaeilge',          script:'Latin',      region:'Europe',   exams:['TEG'],                                   modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'is', name:'Icelandic',  native:'Íslenska',         script:'Latin',      region:'Europe',   exams:['Íslenskupróf'],                          modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'et', name:'Estonian',   native:'Eesti',            script:'Latin',      region:'Europe',   exams:['Tasemeeksam'],                           modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'hr', name:'Croatian',   native:'Hrvatski',         script:'Latin',      region:'Europe',   exams:['Croaticum'],                             modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
-    { code:'bg', name:'Bulgarian',  native:'Български',         script:'Cyrillic',   region:'Europe',   exams:['ECL Bulgarian'],                         modules:TEXT, audioNote:'Audio modules coming once speech quality is verified.' },
   ];
 
   // mark status + index by code
