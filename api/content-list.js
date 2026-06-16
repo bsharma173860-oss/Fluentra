@@ -30,7 +30,8 @@ module.exports = async function handler(req, res) {
     if (q.difficulty) params.push('difficulty=eq.' + encodeURIComponent(q.difficulty));
     var limit = Math.min(parseInt(q.limit, 10) || 20, 100);
     params.push('limit=' + limit);
-    params.push('select=id,lang,type,difficulty,exam,title,created_at');
+    if (q.full) params.push('select=*');
+    else params.push('select=id,lang,type,difficulty,exam,title,created_at');
 
     var url = SB_URL + '/rest/v1/content?' + params.join('&');
     var r = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });

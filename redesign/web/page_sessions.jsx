@@ -338,61 +338,137 @@ function SessionHeader({ title, module, progress, timeLeft, onExit, color }) {
 // READING SESSION
 // ═══════════════════════════════════════════════════════════
 function ReadingSession() {
-  const [answered, setAnswered] = useState({});
-  const [progress, setProgress] = useState(18);
-  const _r = _sc('reading');
-  const questions = _r.questions;
-  const passage = _r.passage;
+  const [loading, setLoading]   = React.useState(true);
+  const [data, setData]         = React.useState(null);
+  const [contentId, setContentId] = React.useState(null);
+  const [answered, setAnswered] = React.useState({});
+  const [submitted, setSubmitted] = React.useState(false);
+  const [scorePct, setScorePct] = React.useState(0);
+  const [err, setErr]           = React.useState('');
+  const lang = window.__langCode || 'en';
+
+  React.useEffect(function () {
+    var cancelled = false;
+    (async function () {
+      try {
+        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=reading&full=1&limit=8');
+        var list = await lr.json();
+        var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
+        if (!item) {
+          var gr = await fetch('/api/generate-content', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: 'medium' }),
+          });
+          var gen = await gr.json();
+          if (gen.error) throw new Error(gen.error);
+          item = gen.content;
+        }
+        if (cancelled) return;
+        setData(item.payload); setContentId(item.id); setLoading(false);
+      } catch (e) {
+        if (!cancelled) { setErr('Could not load a reading: ' + (e.message || e)); setLoading(false); }
+      }
+    })();
+    return function () { cancelled = true; };
+  }, []);
+
+  function choose(qi, oi) {
+    if (submitted) return;
+    setAnswered(function (a) { var n = Object.assign({}, a); n[qi] = oi; return n; });
+  }
+
+  function submit() {
+    var qs = (data && data.questions) || [];
+    var correct = 0;
+    qs.forEach(function (q, i) { if (answered[i] === q.answer) correct++; });
+    var pct = qs.length ? Math.round((correct / qs.length) * 100) : 0;
+    setScorePct(pct); setSubmitted(true);
+    window.__lastReadingResult = { module: 'reading', lang: lang, scorePct: pct, correct: correct, total: qs.length };
+    try {
+      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
+      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      if (token) {
+        fetch('/api/save-result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module: 'reading', correct: correct, total: qs.length, answered: answered } }),
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  if (loading) {
+    return (
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:14, background:T.bg }}>
+        <div style={{ display:'flex', gap:6 }}>{[0,1,2].map(function(i){ return <span key={i} style={{ width:9, height:9, borderRadius:5, background:T.reading.c, animation:'rdb 1s '+(i*0.15)+'s infinite' }}/>; })}</div>
+        <div style={{ fontSize:14, color:T.ink3 }}>Preparing a {lang.toUpperCase()} reading\u2026</div>
+        <style>{`@keyframes rdb{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}`}</style>
+      </div>
+    );
+  }
+  if (err || !data) {
+    return (
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center', color:T.ink3, background:T.bg }}>
+        <div>{err || 'No reading available.'}<br/><span style={{ fontSize:12, color:T.ink4 }}>Check the content-engine env vars are set in Vercel.</span></div>
+      </div>
+    );
+  }
+
+  var questions = data.questions || [];
+  var answeredCount = Object.keys(answered).length;
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-      <SessionHeader title={_r.title} module={`${_modPrefix()} ${_modLabel("Reading")}`} progress={progress} timeLeft={2180} color={T.reading.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
+      <SessionHeader title={data.title || _modLabel("Reading")} module={`${_modPrefix()} ${_modLabel("Reading")}`} progress={submitted ? 100 : Math.round((answeredCount/Math.max(1,questions.length))*100)} timeLeft={2180} color={T.reading.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
       <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 1fr', overflow:'hidden' }}>
-        {/* Passage */}
         <div style={{ overflow:'auto', padding:'28px 32px', borderRight:`1px solid ${T.border}`, background:T.bg }}>
-          <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:14 }}>{_r.passageLabel}</div>
+          <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:14 }}>Passage</div>
           <div style={{ fontSize:14.5, lineHeight:1.85, color:T.ink2, fontFamily:"Georgia,'DM Serif Display',serif", textWrap:'pretty' }}>
-            {passage.split('\n\n').map((para, i) => (
-              <p key={i} style={{ marginBottom:20 }}>{para}</p>
-            ))}
+            {String(data.passage||'').split('\n\n').map(function(para,i){ return <p key={i} style={{ marginBottom:20 }}>{para}</p>; })}
           </div>
         </div>
-        {/* Questions */}
         <div style={{ overflow:'auto', padding:'28px 32px', background:T.card }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>{_r.qLabel}</div>
-            <Chip label={`${Object.keys(answered).length}/5`} accent={T.reading.c} bg={T.reading.bg} style={{ fontSize:10 }}/>
+            <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Questions</div>
+            <Chip label={`${answeredCount}/${questions.length}`} accent={T.reading.c} bg={T.reading.bg} style={{ fontSize:10 }}/>
           </div>
+          {submitted && (
+            <div style={{ marginBottom:18, padding:16, borderRadius:14, background:T.reading.bg, border:`1px solid ${T.reading.c}44`, textAlign:'center' }}>
+              <div style={{ fontSize:30, fontWeight:800, color:T.reading.c }}>{scorePct}%</div>
+              <div style={{ fontSize:12.5, color:T.ink2 }}>Graded automatically \u00b7 {questions.filter(function(q,i){return answered[i]===q.answer;}).length}/{questions.length} correct</div>
+            </div>
+          )}
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-            {questions.map(q => (
-              <div key={q.n} style={{ padding:18, borderRadius:14, border:`1px solid ${answered[q.n] ? T.reading.c+'44' : T.border}`, background:answered[q.n]?T.reading.bg:T.card, transition:'all .2s' }}>
-                <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
-                  <div style={{ width:24, height:24, borderRadius:12, background:answered[q.n]?T.reading.c:T.bg3, color:answered[q.n]?'#fff':T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>{q.n}</div>
-                  <div>
-                    <div style={{ fontSize:10, color:T.reading.c, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>{q.type}</div>
-                    <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.5 }}>{q.stem}</div>
+            {questions.map(function(q, qi){
+              return (
+                <div key={qi} style={{ padding:18, borderRadius:14, border:`1px solid ${answered[qi]!==undefined ? T.reading.c+'44' : T.border}`, background:answered[qi]!==undefined?T.reading.bg:T.card }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
+                    <div style={{ width:24, height:24, borderRadius:12, background:answered[qi]!==undefined?T.reading.c:T.bg3, color:answered[qi]!==undefined?'#fff':T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>{qi+1}</div>
+                    <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.5 }}>{q.q}</div>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:7, paddingLeft:34 }}>
+                    {(q.options||[]).map(function(opt, oi){
+                      var chosen = answered[qi] === oi;
+                      var isCorrect = submitted && oi === q.answer;
+                      var isWrong = submitted && chosen && oi !== q.answer;
+                      var border = isCorrect ? '#16a34a' : isWrong ? '#dc2626' : chosen ? T.reading.c : T.border;
+                      var bg = isCorrect ? '#16a34a18' : isWrong ? '#dc262618' : chosen ? T.reading.bg : 'transparent';
+                      return (
+                        <button key={oi} onClick={function(){ choose(qi, oi); }}
+                          style={{ padding:'9px 14px', borderRadius:9, border:`1.5px solid ${border}`, background:bg, fontSize:13, fontWeight:chosen?700:400, color:T.ink, textAlign:'left', cursor:submitted?'default':'pointer' }}>
+                          {opt}{isCorrect ? '  \u2713' : ''}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                {q.options ? (
-                  <div style={{ display:'flex', flexDirection:'column', gap:7, paddingLeft:34 }}>
-                    {q.options.map(opt => (
-                      <button key={opt} onClick={() => { setAnswered(a => ({...a,[q.n]:opt})); setProgress(p => Math.min(100, p + 16)); }}
-                        style={{ padding:'9px 14px', borderRadius:9, border:`1.5px solid ${answered[q.n]===opt?T.reading.c:T.border}`, background:answered[q.n]===opt?T.reading.bg:'transparent', fontSize:13, fontWeight:answered[q.n]===opt?700:400, color:answered[q.n]===opt?T.reading.c:T.ink, textAlign:'left', cursor:'pointer', transition:'all .15s' }}>
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ paddingLeft:34 }}>
-                    <input placeholder={_r.placeholder} onChange={() => { setAnswered(a=>({...a,[q.n]:'filled'})); setProgress(p=>Math.min(100,p+16)); }}
-                      style={{ width:'100%', padding:'10px 14px', borderRadius:9, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div style={{ marginTop:24 }}>
-            <Btn label={_r.submit} nav="mod_results" accent={T.reading.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })}/>
+            {!submitted
+              ? <Btn label="Submit & grade" accent={T.reading.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })} onClick={submit}/>
+              : <Btn label="See full results" nav="mod_results" accent={T.reading.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })}/>}
           </div>
         </div>
       </div>
