@@ -16,7 +16,7 @@ function AIGenerating({ skill, onReady }) {
     writing:   ['Connecting to Claude…', `Generating fresh ${exam} prompt…`, 'Personalizing for your level…', 'Ready'],
     reading:   ['Connecting to Claude…', `Generating ${lang.english} passage (600–900 words)…`, 'Building question set…', 'Ready'],
     listening: ['Connecting to Claude…', 'Writing dialogue script…', 'Synthesizing voice with ElevenLabs…', 'Ready'],
-    speaking:  ['Connecting to OpenAI Realtime…', 'Calibrating examiner voice…', 'Ready'],
+    speaking:  ['Preparing your AI examiner…', 'Loading exam rubric…', 'Ready'],
   }[skill] || ['Loading…','Ready'];
 
   useEffectAI(() => {
@@ -134,17 +134,75 @@ function MicCheckPage() {
 
 // ── 4. AI SPEAKING SESSION (real-time conversation) ───────────
 function AISpeakingSession() {
-  // turn = 'ai' | 'user' | 'processing' | 'done'
+  // turn = 'ai' | 'user' | 'processing'  — REAL pipeline (Whisper + Claude + TTS via /api/speaking-eval)
   const [turn, setTurn] = useStateAI('ai');
   const [exchange, setExchange] = useStateAI(0);
-  const _s = (typeof _sc === 'function') ? _sc('speaking') : { questionLabel:'Question', recording:'Recording…' };
-  const exchanges = [
-    { ai: "Hello, I'm your AI examiner today. Let's start with something familiar — tell me about your hometown. What do you like most about it?", topic:'Part 1 · Familiar topics' },
-    { ai: "Interesting! And how has your hometown changed in the last few years? Do you think those changes have been positive?", topic:'Part 1 · Follow-up' },
-    { ai: "Now I'd like you to talk about a place you'd like to visit. You'll have one minute to prepare — speak for 1-2 minutes when ready.", topic:'Part 2 · Long turn' },
-    { ai: "Thank you. Final part — let's discuss travel and tourism more broadly. Do you think tourism has more positive or negative effects on local communities?", topic:'Part 3 · Discussion' },
-  ];
-  const cur = exchanges[exchange] || exchanges[0];
+  const [aiPrompt, setAiPrompt] = useStateAI("Hello, I'm your AI examiner today. Let's start with something familiar — tell me about your hometown. What do you like most about it?");
+  const [topic, setTopic] = useStateAI('Part 1 · Familiar topics');
+  const [transcript, setTranscript] = useStateAI('');
+  const [err, setErr] = useStateAI('');
+  const MAX_EXCHANGES = 4;
+
+  const recRef = useRefAI(null), chunksRef = useRefAI([]), audioRef = useRefAI(null);
+  const examName = (window.__examCtx && window.__examCtx.exam) || 'IELTS';
+
+  async function startRecording() {
+    setErr('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = function () { stream.getTracks().forEach(function (t) { t.stop(); }); evaluateAnswer(); };
+      recRef.current = mr;
+      mr.start();
+      setTurn('user');
+    } catch (e) {
+      setErr('Microphone access is needed to answer. ' + (e.message || ''));
+    }
+  }
+
+  function stopRecording() {
+    setTurn('processing');
+    try { if (recRef.current && recRef.current.state !== 'inactive') recRef.current.stop(); } catch (e) {}
+  }
+
+  async function evaluateAnswer() {
+    try {
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const audioBase64 = await new Promise(function (resolve) {
+        const fr = new FileReader();
+        fr.onloadend = function () { resolve(String(fr.result).split(',')[1]); };
+        fr.readAsDataURL(blob);
+      });
+      const resp = await fetch('/api/speaking-eval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioBase64: audioBase64, mimeType: 'audio/webm', exam: examName, part: topic, question: aiPrompt, targetLevel: 'B2', speak: true }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || 'evaluation failed');
+      if (!data.evaluation) { setErr(data.note || 'No speech detected — please try again.'); setTurn('ai'); return; }
+      setTranscript(data.transcript || '');
+      window.__fluentraSpeaking = window.__fluentraSpeaking || [];
+      window.__fluentraSpeaking.push({ question: aiPrompt, transcript: data.transcript, evaluation: data.evaluation });
+      if (data.replyAudioBase64 && audioRef.current) {
+        audioRef.current.src = 'data:audio/mp3;base64,' + data.replyAudioBase64;
+        audioRef.current.play().catch(function () {});
+      }
+      if (exchange < MAX_EXCHANGES - 1) {
+        setAiPrompt(data.evaluation.examiner_reply || "Thank you. Let's move on to the next question.");
+        setTopic('Follow-up · part ' + (exchange + 2));
+        setExchange(function (e) { return e + 1; });
+        setTurn('ai');
+      } else {
+        window.__nav && window.__nav('ai_speaking_results');
+      }
+    } catch (e) {
+      setErr('Something went wrong: ' + (e.message || e) + '. Please try again.');
+      setTurn('ai');
+    }
+  }
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background: turn === 'ai' ? `linear-gradient(160deg, ${T.speaking.bg}, ${T.bg})` : T.bg }}>
@@ -153,22 +211,23 @@ function AISpeakingSession() {
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <button data-nav="exams" style={{ width:32, height:32, borderRadius:8, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', background:T.bg2 }}>{Icon.x({ width:13, height:13 })}</button>
           <div>
-            <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Live · OpenAI Realtime</div>
-            <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginTop:2 }}>{cur.topic}</div>
+            <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Live · Whisper + Claude</div>
+            <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginTop:2 }}>{topic}</div>
           </div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px', background:T.card, border:`1px solid ${T.border}`, borderRadius:99 }}>
-            <span style={{ width:6, height:6, borderRadius:3, background:'#EF4444', animation:'recpulse 1.2s ease-in-out infinite' }}/>
-            <span style={{ fontSize:11, fontWeight:700, color:T.ink2, fontFamily:'monospace' }}>02:14</span>
-          </div>
-          <div style={{ fontSize:11.5, color:T.ink4 }}>Exchange {exchange+1} / 4</div>
+          {turn === 'user' && (
+            <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px', background:T.card, border:`1px solid ${T.border}`, borderRadius:99 }}>
+              <span style={{ width:6, height:6, borderRadius:3, background:'#EF4444', animation:'recpulse 1.2s ease-in-out infinite' }}/>
+              <span style={{ fontSize:11, fontWeight:700, color:T.ink2 }}>REC</span>
+            </div>
+          )}
+          <div style={{ fontSize:11.5, color:T.ink4 }}>Exchange {exchange+1} / {MAX_EXCHANGES}</div>
         </div>
       </div>
 
       {/* Main stage */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:40, gap:34 }}>
-        {/* AI orb / user mic */}
         <div style={{ position:'relative', width:200, height:200, display:'flex', alignItems:'center', justifyContent:'center' }}>
           {turn === 'ai' && (
             <>
@@ -191,7 +250,7 @@ function AISpeakingSession() {
           {turn === 'processing' && (
             <div style={{ width:108, height:108, borderRadius:54, background:T.bg2, border:`3px dashed ${T.ink5}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink4 }}>
               <div style={{ display:'flex', gap:5 }}>
-                {[0,1,2].map(i => <span key={i} style={{ width:8, height:8, borderRadius:4, background:T.ink4, animation:`procbounce 1s ${i*.15}s infinite` }}/>)}
+                {[0,1,2].map(function (i) { return <span key={i} style={{ width:8, height:8, borderRadius:4, background:T.ink4, animation:`procbounce 1s ${i*.15}s infinite` }}/>; })}
               </div>
             </div>
           )}
@@ -199,48 +258,44 @@ function AISpeakingSession() {
 
         <div style={{ textAlign:'center', maxWidth:640 }}>
           <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:12 }}>
-            {turn === 'ai' ? 'Examiner is speaking' : turn === 'user' ? 'Your turn — speak now' : turn === 'processing' ? 'Processing your response' : 'Done'}
+            {turn === 'ai' ? 'Examiner' : turn === 'user' ? 'Your turn — recording' : 'Evaluating your response'}
           </div>
           {turn === 'ai' && (
-            <div style={{ fontFamily:T.serif, fontSize:26, color:T.ink, lineHeight:1.4, textWrap:'balance' }}>"{cur.ai}"</div>
+            <div style={{ fontFamily:T.serif, fontSize:26, color:T.ink, lineHeight:1.4, textWrap:'balance' }}>"{aiPrompt}"</div>
           )}
           {turn === 'user' && (
             <>
-              <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.4, marginBottom:18 }}>Listening to your answer…</div>
+              <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.4, marginBottom:18 }}>Recording your answer — tap Done speaking when finished.</div>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:3, height:48 }}>
-                {Array.from({length:36}).map((_,i) => (
-                  <div key={i} style={{ width:4, borderRadius:2, background:T.brand, height:8+Math.abs(Math.sin(i*0.6+Date.now()/200)*30), opacity:.7 }}/>
-                ))}
+                {Array.from({length:36}).map(function (_, i) { return <div key={i} style={{ width:4, borderRadius:2, background:T.brand, height:8+Math.abs(Math.sin(i*0.6+Date.now()/200)*30), opacity:.7 }}/>; })}
               </div>
             </>
           )}
           {turn === 'processing' && (
-            <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.4 }}>Analyzing pronunciation, fluency & vocabulary…</div>
+            <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.4 }}>Transcribing with Whisper, grading with Claude…</div>
           )}
+          {err && <div style={{ marginTop:14, color:'#FCA5A5', fontSize:13 }}>{err}</div>}
         </div>
 
-        {/* Live transcript ribbon */}
+        {/* Real transcript ribbon */}
         <div style={{ width:'100%', maxWidth:680, background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:'14px 18px', display:'flex', alignItems:'flex-start', gap:12 }}>
           <div style={{ width:24, height:24, borderRadius:12, background:T.speaking.bg, color:T.speaking.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:11, fontWeight:700 }}>You</div>
           <div style={{ fontSize:13, color:T.ink2, lineHeight:1.5, flex:1, minHeight:38 }}>
-            {turn === 'user' ? <span><span style={{ color:T.ink }}>"My hometown is Madrid, and what I love most</span><span style={{ background:T.brand+'22', borderRadius:3, padding:'1px 4px' }}>is the way the city stays awake until late…"</span><span style={{ color:T.ink5 }}> ▍</span></span> : <span style={{ color:T.ink5 }}>Live transcript appears here as you speak.</span>}
+            {transcript ? <span style={{ color:T.ink }}>"{transcript}"</span> : <span style={{ color:T.ink5 }}>Your transcribed answer will appear here after you speak.</span>}
           </div>
         </div>
       </div>
 
       {/* Bottom controls */}
-      <div style={{ padding:'18px 32px', borderTop:`1px solid ${T.border}`, background:T.card, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
-        <div style={{ display:'flex', gap:8 }}>
-          <button style={{ padding:'8px 12px', borderRadius:9, background:T.bg2, border:`1px solid ${T.border}`, fontSize:12, color:T.ink2, display:'flex', alignItems:'center', gap:6 }}>{Icon.head({ width:12, height:12 })} Replay last</button>
-          <button style={{ padding:'8px 12px', borderRadius:9, background:T.bg2, border:`1px solid ${T.border}`, fontSize:12, color:T.ink2, display:'flex', alignItems:'center', gap:6 }}>Skip question</button>
-        </div>
+      <div style={{ padding:'18px 32px', borderTop:`1px solid ${T.border}`, background:T.card, display:'flex', alignItems:'center', justifyContent:'flex-end', flexShrink:0 }}>
         <div style={{ display:'flex', gap:10 }}>
-          {turn === 'ai' && <Btn label="I'm ready to speak" icon={Icon.mic({ width:13, height:13 })} accent={T.brand} size="md" onClick={() => setTurn('user')}/>}
-          {turn === 'user' && <Btn label="Done speaking" iconRight={Icon.arrow({ width:13, height:13 })} accent={T.brand} size="md" onClick={() => setTurn('processing')}/>}
-          {turn === 'processing' && <Btn label="Continue" iconRight={Icon.arrow({ width:13, height:13 })} accent={T.brand} size="md" onClick={() => { if (exchange < exchanges.length-1) { setExchange(e=>e+1); setTurn('ai'); } else { window.__nav && window.__nav('ai_speaking_results'); } }}/>}
+          {turn === 'ai' && <Btn label="I'm ready to speak" icon={Icon.mic({ width:13, height:13 })} accent={T.brand} size="md" onClick={startRecording}/>}
+          {turn === 'user' && <Btn label="Done speaking" iconRight={Icon.arrow({ width:13, height:13 })} accent={T.brand} size="md" onClick={stopRecording}/>}
+          {turn === 'processing' && <Btn label="Evaluating…" accent={T.ink4} size="md" onClick={function () {}}/>}
         </div>
       </div>
 
+      <audio ref={audioRef} style={{ display:'none' }}/>
       <style>{`
         @keyframes recpulse{0%,100%{opacity:1}50%{opacity:.3}}
         @keyframes aiorb{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.15);opacity:1}}
