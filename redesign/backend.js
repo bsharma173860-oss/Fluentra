@@ -8,7 +8,7 @@
 
   var SUPABASE_URL      = 'https://kbjqmhviuryakfzhhoaz.supabase.co';
   var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianFtaHZpdXJ5YWtmemhob2F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTQzNjgsImV4cCI6MjA4OTc3MDM2OH0.Be6sLoc1XRDosJ3XejpD48FarJpb06ZtQCFSuzaz5zY';
-  var API_URL           = 'https://fluentra-kappa.vercel.app/api';
+  var API_URL           = '/api';
 
   // ── Helpers ────────────────────────────────────────────────────
 
@@ -189,20 +189,19 @@
 
       // ── Today's content ──────────────────────────────────────
       fetchTodayContent: function () {
-        return apiGet('/content/today').then(function (data) {
-          if (data && data.content) {
-            window.__todayContent = data.content;
-          }
+        var lang = window.__langCode || 'en';
+        return apiGet('/content-list?lang=' + encodeURIComponent(lang) + '&limit=6').then(function (data) {
+          if (data && data.items) { window.__todayContent = data.items; }
           return data;
         }).catch(function () { return null; });
       },
 
       // ── Library ──────────────────────────────────────────────
       fetchLibrary: function (code, type, page) {
-        var params = new URLSearchParams({ page: page || 1, limit: 20 });
-        if (code) params.set('code', code);
-        if (type) params.set('type', type);
-        return apiGet('/library?' + params.toString()).catch(function () { return { items: [] }; });
+        var lang = code || window.__langCode || 'en';
+        var path = '/content-list?lang=' + encodeURIComponent(lang) + '&limit=20';
+        if (type) path += '&type=' + encodeURIComponent(type);
+        return apiGet(path).catch(function () { return { items: [] }; });
       },
 
       // ── AI Writing Grader ─────────────────────────────────────
@@ -216,21 +215,10 @@
 
       // ── Rate limit ───────────────────────────────────────────
       checkRate: function (feature) {
-        var u = window.FL.user;
-        if (!u) return Promise.resolve({ allowed: false, reason: 'not_authenticated' });
-        return apiPost('/rate/check', {
-          userId: u.id,
-          feature: feature,
-          plan: u.plan,
-        }).catch(function () { return { allowed: true }; }); // fail open
+        return Promise.resolve({ allowed: true });
       },
       incrementRate: function (feature) {
-        var u = window.FL.user;
-        if (!u) return Promise.resolve();
-        return apiPost('/rate/increment', {
-          userId: u.id,
-          feature: feature,
-        }).catch(function () {});
+        return Promise.resolve();
       },
 
       // ── Sign out (called from Settings "Sign out" button) ────
