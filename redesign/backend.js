@@ -207,11 +207,11 @@
 
       // ── AI Writing Grader ─────────────────────────────────────
       gradeWriting: function (task, text, langCode) {
-        return apiPost('/grade/writing', {
-          task: task,
-          text: text,
-          languageCode: langCode || 'en',
-        });
+        return fetch('/api/grade-writing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task: task, text: text, lang: langCode || 'en' }),
+        }).then(function (r) { return r.json(); });
       },
 
       // ── Rate limit ───────────────────────────────────────────
