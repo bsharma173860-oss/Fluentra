@@ -11,6 +11,9 @@ function VocabPage() {
   const [sortDir, setSortDir] = useState('alpha'); // 'alpha' | 'strength' | 'due'
   const [showNewDeck, setShowNewDeck] = useState(false);
   const [showAddCards, setShowAddCards] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQ, setSearchQ] = useState('');
+  const [shareToast, setShareToast] = useState(false);
 
   const decks = [
     { title:'Café & restaurants', lang:'es', count:42, due:8,  mastered:21, accent:T.es,  tag:'A2 · everyday' },
@@ -41,13 +44,20 @@ function VocabPage() {
       <WebTopbar/>
       {showNewDeck && <NewDeckModal onClose={() => setShowNewDeck(false)}/>}
       {showAddCards && <AddCardsModal deck={deck} onClose={() => setShowAddCards(false)}/>}
+      {showSearch && <SearchWordsModal q={searchQ} setQ={setSearchQ} words={words} decks={decks} onClose={() => setShowSearch(false)}/>}
+      {shareToast && (
+        <div style={{ position:'absolute', top:20, right:20, zIndex:80, background:T.ink, color:'#fff', padding:'12px 16px', borderRadius:10, boxShadow:'0 12px 30px rgba(0,0,0,.2)', display:'flex', alignItems:'center', gap:10, fontSize:13 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5fc77e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Deck link copied to clipboard
+        </div>
+      )}
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px 40px' }}>
         <PageHeader
           eyebrow="Vocabulary"
           title="Build word recall, one card at a time."
           right={
             <div style={{ display:'flex', gap:8 }}>
-              <button style={{ padding:'8px 14px', fontSize:13, fontWeight:600, color:T.ink3, background:T.card, border:`1px solid ${T.border}`, borderRadius:9, display:'flex', alignItems:'center', gap:6 }}>
+              <button onClick={() => setShowSearch(true)} style={{ padding:'8px 14px', fontSize:13, fontWeight:600, color:T.ink3, background:T.card, border:`1px solid ${T.border}`, borderRadius:9, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
                 {Icon.search()} Search words
               </button>
               <Btn label="New deck" icon={Icon.plus()} variant="outline" accent={T.ink} onClick={() => setShowNewDeck(true)} />
@@ -129,6 +139,14 @@ function VocabPage() {
                 <Btn label={`Study ${deck.due} due`} icon={Icon.spark()} accent={deck.accent.accent} onClick={() => { setStudyKind('due'); setMode('study'); }}/>
                 <Btn label="Practice all" variant="outline" accent={T.ink2} onClick={() => { setStudyKind('all'); setMode('study'); }}/>
                 <Btn label="Add cards" variant="soft" accent={T.ink} icon={Icon.plus()} onClick={() => setShowAddCards(true)}/>
+                <button onClick={() => {
+                  const url = `${location.origin}${location.pathname}#deck/${encodeURIComponent(deck.title)}`;
+                  try { navigator.clipboard.writeText(url); } catch {}
+                  setShareToast(true);
+                  setTimeout(() => setShareToast(false), 2200);
+                }} title="Share deck" style={{ width:38, height:38, borderRadius:9, background:T.card, border:`1px solid ${T.border}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+                </button>
               </div>
             </div>
 
@@ -210,15 +228,45 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
   queue = queue.slice(0, kind === 'all' ? words.length : 8);
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const card = queue[idx] || queue[0];
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState({ showHint: true, autoPlay: false, langCode: deck.lang });
+  const [shuffleKey, setShuffleKey] = useState(0); // bumping this re-randomizes the queue
+  const [queueOrder, setQueueOrder] = useState(() => queue.map((_, i) => i));
+  const card = queue[queueOrder[idx]] || queue[0];
   const accent = deck.accent.accent;
   const pct = ((idx) / queue.length) * 100;
+
+  // Speak the foreign word using browser TTS. Voice picked by deck.lang.
+  function speak(text, code = deck.lang) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const langMap = { es:'es-ES', fr:'fr-FR', ja:'ja-JP', de:'de-DE', en:'en-US', it:'it-IT', pt:'pt-PT', ko:'ko-KR', zh:'zh-CN' };
+      u.lang = langMap[code] || 'en-US';
+      u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    } catch {}
+  }
 
   function rate(grade) {
     setFlipped(false);
     if (idx < queue.length - 1) setIdx(idx + 1);
     else setIdx(0);
   }
+
+  function reshuffle() {
+    const order = queue.map((_, i) => i).sort(() => Math.random() - 0.5);
+    setQueueOrder(order);
+    setIdx(0);
+    setFlipped(false);
+    setShuffleKey(k => k + 1);
+  }
+
+  // Auto-play TTS on card change when setting is on
+  React.useEffect(() => {
+    if (settings.autoPlay && card && !flipped) speak(card.word);
+  }, [idx, settings.autoPlay, shuffleKey]);
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:`linear-gradient(180deg, ${deck.accent.bg} 0%, ${T.bg} 60%)` }}>
@@ -235,7 +283,30 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
           <div style={{ width:4, height:4, borderRadius:2, background:T.ink5 }}/>
           <div style={{ fontSize:12, color:T.ink3 }}>Card {idx + 1} of {queue.length}</div>
         </div>
-        <button style={{ width:36, height:36, borderRadius:10, background:T.card, border:`1px solid ${T.border}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.cog()}</button>
+        <button onClick={() => setShowSettings(s => !s)} style={{ width:36, height:36, borderRadius:10, background:T.card, border:`1px solid ${T.border}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', position:'relative', cursor:'pointer' }}>
+          {Icon.cog()}
+          {showSettings && (
+            <div onClick={e => e.stopPropagation()} style={{ position:'absolute', top:'calc(100% + 8px)', right:0, width:240, background:'#fff', border:`1px solid ${T.border}`, borderRadius:12, boxShadow:'0 12px 32px rgba(0,0,0,.14)', padding:12, zIndex:50, textAlign:'left' }}>
+              <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>Study settings</div>
+              <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 0', fontSize:12.5, color:T.ink2, cursor:'pointer' }}>
+                Auto-play audio
+                <span onClick={() => setSettings(s => ({ ...s, autoPlay: !s.autoPlay }))} style={{ width:34, height:20, borderRadius:99, background: settings.autoPlay ? accent : T.bg2, position:'relative', transition:'background .15s' }}>
+                  <span style={{ position:'absolute', top:2, left: settings.autoPlay ? 16 : 2, width:16, height:16, borderRadius:8, background:'#fff', boxShadow:'0 1px 2px rgba(0,0,0,.2)', transition:'left .15s' }}/>
+                </span>
+              </label>
+              <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 0', fontSize:12.5, color:T.ink2, cursor:'pointer', borderTop:`1px solid ${T.hairline}` }}>
+                Show hints
+                <span onClick={() => setSettings(s => ({ ...s, showHint: !s.showHint }))} style={{ width:34, height:20, borderRadius:99, background: settings.showHint ? accent : T.bg2, position:'relative', transition:'background .15s' }}>
+                  <span style={{ position:'absolute', top:2, left: settings.showHint ? 16 : 2, width:16, height:16, borderRadius:8, background:'#fff', boxShadow:'0 1px 2px rgba(0,0,0,.2)', transition:'left .15s' }}/>
+                </span>
+              </label>
+              <button onClick={() => { reshuffle(); setShowSettings(false); }} style={{ width:'100%', marginTop:4, padding:'9px 10px', borderRadius:8, background:T.bg2, color:T.ink2, fontSize:12, fontWeight:600, border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
+                {Icon.refresh({ width:12, height:12 })} Reshuffle deck
+              </button>
+              <button onClick={() => { onExit(); }} style={{ width:'100%', marginTop:6, padding:'9px 10px', borderRadius:8, background:'transparent', color:'#C0392B', fontSize:12, fontWeight:600, border:`1px solid ${T.border}`, cursor:'pointer' }}>End session</button>
+            </div>
+          )}
+        </button>
       </div>
 
       {/* Progress bar */}
@@ -263,23 +334,27 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
                 <Chip label={`Strength ${card.strength}/5`} accent={T.ink3} bg={T.bg2} style={{ fontSize:10 }}/>
               </div>
               <div style={{ display:'flex', gap:6 }}>
-                <div style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.star({ width:13, height:13, fill: card.starred ? 'currentColor' : 'none' })}</div>
-                <div style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.head({ width:14, height:14 })}</div>
+                <button onClick={e => { e.stopPropagation(); /* star toggle local-only */ card.starred = !card.starred; }} title="Star" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer' }}>{Icon.star({ width:13, height:13, fill: card.starred ? 'currentColor' : 'none' })}</button>
+                <button onClick={e => { e.stopPropagation(); speak(card.word); }} title="Hear it" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer' }}>{Icon.head({ width:14, height:14 })}</button>
               </div>
             </div>
 
             <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', textAlign:'center' }}>
               {!flipped ? (
                 <>
-                  <div style={{ fontFamily:T.serif, fontSize:64, color:T.ink, lineHeight:1.05, marginBottom:14 }}>{card.word}</div>
-                  <div style={{ fontSize:14, color:T.ink4 }}>Tap card or press Space to reveal</div>
+                  <div style={{ fontFamily:T.serif, fontSize:64, color:T.ink, lineHeight:1.05, marginBottom:8 }}>{card.word}</div>
+                  {/* Always-visible English translation — small, ink3, italic. Helps people learn. */}
+                  <div style={{ fontSize:16, color:T.ink3, marginBottom:14 }}>{card.trans}</div>
+                  <div style={{ fontSize:14, color:T.ink4 }}>{settings.showHint ? 'Tap card or press Space to reveal example' : ''}</div>
                 </>
               ) : (
                 <>
-                  <div style={{ fontFamily:T.serif, fontSize:38, color:T.ink, lineHeight:1.1, marginBottom:20 }}>{card.trans}</div>
+                  <div style={{ fontFamily:T.serif, fontSize:38, color:T.ink, lineHeight:1.1, marginBottom:6 }}>{card.trans}</div>
+                  <div style={{ fontSize:13, color:T.ink4, marginBottom:14, fontWeight:600, letterSpacing:'.04em', textTransform:'uppercase' }}>English translation</div>
                   <div style={{ width:60, height:1, background:T.border, marginBottom:20 }}/>
-                  <div style={{ fontSize:18, color:T.ink2, fontStyle:'italic', maxWidth:420, lineHeight:1.5, marginBottom:10 }}>"{card.ex}"</div>
-                  <div style={{ fontSize:13, color:T.ink4, maxWidth:360 }}>"{card.ex.replace(/[áéíóúñ]/g,m=>({á:'a',é:'e',í:'i',ó:'o',ú:'u',ñ:'n'})[m])}" — natural English equivalent</div>
+                  <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, marginBottom:6 }}>{card.word}</div>
+                  <div style={{ fontSize:16, color:T.ink2, fontStyle:'italic', maxWidth:420, lineHeight:1.5, marginBottom:8 }}>"{card.ex}"</div>
+                  <div style={{ fontSize:13, color:T.ink4, maxWidth:360 }}>Tap the headphone above to hear it spoken.</div>
                 </>
               )}
             </div>
@@ -294,9 +369,9 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
         {/* Action row */}
         {!flipped ? (
           <div style={{ marginTop:32, display:'flex', alignItems:'center', gap:14 }}>
-            <button style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.refresh({ width:16, height:16 })}</button>
+            <button onClick={reshuffle} title="Reshuffle remaining cards" style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.refresh({ width:16, height:16 })}</button>
             <Btn label="Show answer" size="lg" accent={accent} onClick={() => setFlipped(true)} iconRight={<span style={{ fontSize:10, fontWeight:600, padding:'2px 6px', background:'rgba(255,255,255,.22)', borderRadius:4, marginLeft:4 }}>SPACE</span>}/>
-            <button style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.head({ width:16, height:16 })}</button>
+            <button onClick={() => speak(card.word)} title="Hear pronunciation" style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.head({ width:16, height:16 })}</button>
           </div>
         ) : (
           <div style={{ marginTop:32, display:'flex', alignItems:'center', gap:10 }}>
@@ -332,6 +407,41 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
 }
 
 Object.assign(window, { VocabPage });
+
+// Search words modal — lookup across decks. Used by the topbar “Search words” button.
+function SearchWordsModal({ q, setQ, words, decks, onClose }) {
+  const ql = (q || '').trim().toLowerCase();
+  const matches = ql ? words.filter(w => w.word.toLowerCase().includes(ql) || w.trans.toLowerCase().includes(ql) || w.ex.toLowerCase().includes(ql)) : [];
+  return (
+    <ModalShell onClose={onClose} eyebrow="Search" title="Find a word across your decks" width={520}>
+      <div style={{ position:'relative', marginBottom:14 }}>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Type a word in any language or its English meaning…" autoFocus style={{ width:'100%', padding:'12px 14px 12px 40px', fontSize:14, border:`1px solid ${T.border}`, borderRadius:10, background:T.card, color:T.ink, outline:'none', boxSizing:'border-box' }}/>
+        <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search({ width:14, height:14 })}</span>
+      </div>
+      {!ql ? (
+        <div style={{ fontSize:12.5, color:T.ink4, padding:'18px 4px' }}>Start typing to search · {words.length} words in {decks.length} decks.</div>
+      ) : matches.length === 0 ? (
+        <div style={{ fontSize:13, color:T.ink3, padding:'18px 4px' }}>No matches for <b>“{q}”</b>. Try the English meaning, or check spelling.</div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:340, overflowY:'auto' }}>
+          {matches.map((w, i) => (
+            <div key={i} style={{ padding:'10px 12px', background:T.bg2, border:`1px solid ${T.hairline}`, borderRadius:10, display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
+                  <span style={{ fontWeight:700, color:T.ink, fontSize:14 }}>{w.word}</span>
+                  <span style={{ fontSize:11, color:T.ink4 }}>{w.pos}</span>
+                </div>
+                <div style={{ fontSize:12.5, color:T.ink2, marginTop:2 }}>{w.trans}</div>
+                <div style={{ fontSize:11, color:T.ink4, fontStyle:'italic', marginTop:2 }}>"{w.ex}"</div>
+              </div>
+              <span style={{ fontSize:10, fontWeight:700, color: w.due === 'today' ? T.brand : T.ink4, padding:'3px 8px', borderRadius:99, background: w.due === 'today' ? T.brandLight : T.card, border:`1px solid ${T.border}`, flexShrink:0 }}>{w.due}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </ModalShell>
+  );
+}
 
 // ── Modals ───────────────────────────────────────────────────
 function ModalShell({ onClose, title, eyebrow, children, footer, width = 460 }) {

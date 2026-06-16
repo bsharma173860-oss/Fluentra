@@ -55,15 +55,15 @@ function MSettingsPageV5() {
     <>
       <MobileHeader title="Settings"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5_pre eyebrow={`${(window.__user && window.__user.name) || 'YOUR NAME'} · ${((window.__user && window.__user.plan) || 'FREE').toUpperCase()}`} title="Settings" lede="Account, billing, preferences and your data — all in one place."/>
+        <V5_pre eyebrow="MARÍA GARCÍA · PRO" title="Settings" lede="Account, billing, preferences and your data — all in one place."/>
         {/* Dark hero */}
         <div style={{ background:T.ink, borderRadius:18, padding:'18px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
           <V5_dotgrid/>
           <div style={{ position:'relative', display:'flex', alignItems:'center', gap:14, marginBottom:14 }}>
-            {V5_av((window.__user && window.__user.firstName && window.__user.firstName[0]) || 'U', 56, `linear-gradient(135deg, ${T.brand}, #7B4A2D)`)}
+            {V5_av('M', 56, `linear-gradient(135deg, ${T.brand}, #7B4A2D)`)}
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontFamily:T.serif, fontSize:20, lineHeight:1.05, letterSpacing:'-.015em' }}>{(window.__user && window.__user.name) || 'Your Name'}</div>
-              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.55)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{(window.__user && window.__user.email) || ''}</div>
+              <div style={{ fontFamily:T.serif, fontSize:20, lineHeight:1.05, letterSpacing:'-.015em' }}>María García</div>
+              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.55)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>maria@example.com</div>
               <div style={{ marginTop:6, display:'inline-flex', alignItems:'center', gap:5, padding:'3px 8px', borderRadius:99, background:'rgba(255,255,255,.12)', fontSize:9.5, fontWeight:800, letterSpacing:'.08em' }}>
                 <span style={{ width:5, height:5, borderRadius:3, background:'#FFC859' }}/> PRO · MAY 28
               </div>
@@ -110,7 +110,7 @@ function MSettingsPageV5() {
           </div>
         ))}
 
-        <button onClick={() => window.__signOut ? window.__signOut() : nav('auth_login')} style={{ width:'100%', padding:'13px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, color:T.brand, fontSize:13, fontWeight:700, boxShadow:MT.shadowSm, marginBottom:12 }}>Sign out</button>
+        <button onClick={()=>nav('auth_login')} style={{ width:'100%', padding:'13px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, color:T.brand, fontSize:13, fontWeight:700, boxShadow:MT.shadowSm, marginBottom:12 }}>Sign out</button>
         <div style={{ textAlign:'center', fontSize:10.5, color:T.ink5 }}>Fluentra v2.4.0 · Build 1240</div>
       </MobileBody>
     </>

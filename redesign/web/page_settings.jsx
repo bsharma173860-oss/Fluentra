@@ -46,7 +46,7 @@ function SettingsPage() {
                 </button>
               ))}
               <div style={{ height:1, background:T.border, margin:'12px 6px' }}/>
-              <button onClick={() => window.__signOut && window.__signOut()} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:9, fontSize:13, fontWeight:500, color:T.brand, textAlign:'left', cursor:'pointer' }}>
+              <button style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:9, fontSize:13, fontWeight:500, color:T.brand, textAlign:'left', cursor:'pointer' }}>
                 {Icon.x({ width:14, height:14 })}
                 Sign out
               </button>
@@ -502,7 +502,7 @@ function MSettingsPage() {
         </div>
 
         <div style={{ margin:'18px 16px 32px' }}>
-          <Btn label="Sign out" variant="outline" accent={T.brand} fullWidth icon={Icon.x({ width:13, height:13 })} onClick={() => window.__signOut && window.__signOut()}/>
+          <Btn nav="auth_login" label="Sign out" variant="outline" accent={T.brand} fullWidth icon={Icon.x({ width:13, height:13 })}/>
           <div style={{ textAlign:'center', fontSize:11, color:T.ink5, marginTop:14 }}>Fluentra v2.4.0 · Build 1240</div>
         </div>
       </MobileBody>
