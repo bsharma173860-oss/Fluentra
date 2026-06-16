@@ -480,58 +480,142 @@ function ReadingSession() {
 // LISTENING SESSION
 // ═══════════════════════════════════════════════════════════
 function ListeningSession() {
-  const [playing, setPlaying] = useState(false);
-  const [playedPct, setPlayedPct] = useState(34);
-  const [answered, setAnswered] = useState({});
+  const lang = window.__langCode || 'en';
   const _l = _sc('listening');
-  const questions = _l.questions;
+  const [loading, setLoading]     = React.useState(true);
+  const [data, setData]           = React.useState(null);   // { title, passage, questions }
+  const [contentId, setContentId] = React.useState(null);
+  const [playing, setPlaying]     = React.useState(false);
+  const [started, setStarted]     = React.useState(false);
+  const [answered, setAnswered]   = React.useState({});
+  const [submitted, setSubmitted] = React.useState(false);
+  const [scorePct, setScorePct]   = React.useState(0);
+  const [err, setErr]             = React.useState('');
+
+  // BCP-47 voice hint for the speech synthesizer
+  const VOICE = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', nl:'nl-NL', ru:'ru-RU', pl:'pl-PL', uk:'uk-UA', sv:'sv-SE', no:'nb-NO', da:'da-DK', fi:'fi-FI', el:'el-GR', cs:'cs-CZ', ro:'ro-RO', hu:'hu-HU', tr:'tr-TR', ar:'ar-SA', hi:'hi-IN', zh:'zh-CN', ja:'ja-JP', ko:'ko-KR', id:'id-ID', vi:'vi-VN' };
+
+  React.useEffect(function () {
+    var cancelled = false;
+    (async function () {
+      try {
+        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=reading&full=1&limit=8');
+        var list = await lr.json();
+        var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
+        if (!item) {
+          var gr = await fetch('/api/generate-content', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: 'medium' }),
+          });
+          var gen = await gr.json();
+          if (gen.error) throw new Error(gen.error);
+          item = gen.content;
+        }
+        if (cancelled) return;
+        setData(item.payload); setContentId(item.id); setLoading(false);
+      } catch (e) {
+        if (!cancelled) { setErr('Could not load a listening clip: ' + (e.message || e)); setLoading(false); }
+      }
+    })();
+    return function () { cancelled = true; try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} };
+  }, []);
+
+  function speak() {
+    if (!data || !data.passage || !window.speechSynthesis) { setErr('Audio playback is not supported in this browser.'); return; }
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(data.passage);
+      u.lang = VOICE[lang] || lang;
+      u.rate = 0.95;
+      u.onend = function () { setPlaying(false); };
+      u.onerror = function () { setPlaying(false); };
+      window.speechSynthesis.speak(u);
+      setPlaying(true); setStarted(true);
+    } catch (e) { setErr('Audio playback is not supported in this browser.'); }
+  }
+  function toggle() {
+    if (!window.speechSynthesis) { setErr('Audio playback is not supported in this browser.'); return; }
+    if (!started) { speak(); return; }
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) { window.speechSynthesis.pause(); setPlaying(false); }
+    else if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); setPlaying(true); }
+    else { speak(); }
+  }
+
+  function choose(qi, val) { if (submitted) return; setAnswered(function (a) { var n = Object.assign({}, a); n[qi] = val; return n; }); }
+  function submit() {
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
+    var qs = (data && data.questions) || [];
+    var correct = 0;
+    qs.forEach(function (q, i) { if (q.answer != null && answered[i] === q.answer) correct++; });
+    var pct = qs.length ? Math.round((correct / qs.length) * 100) : 0;
+    setScorePct(pct); setSubmitted(true);
+    window.__lastReadingResult = { module: 'listening', lang: lang, scorePct: pct, correct: correct, total: qs.length };
+    try {
+      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
+      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      if (token) {
+        fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
+          body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length } }) }).catch(function(){});
+      }
+    } catch (e) {}
+    setTimeout(function () { window.__nav && window.__nav('mod_results'); }, 700);
+  }
+
+  if (loading) {
+    return (
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:14, background:T.bg }}>
+        <div style={{ display:'flex', gap:6 }}>{[0,1,2].map(function(i){ return <span key={i} style={{ width:9, height:9, borderRadius:5, background:T.listening.c, animation:'rdb 1s '+(i*0.15)+'s infinite' }}/>; })}</div>
+        <div style={{ fontSize:14, color:T.ink3 }}>Preparing a {lang.toUpperCase()} listening clip…</div>
+        <style>{`@keyframes rdb{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}`}</style>
+      </div>
+    );
+  }
+  if (err || !data) {
+    return (
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center', color:T.ink3, background:T.bg }}>
+        <div>{err || 'No listening clip available.'}<br/><span style={{ fontSize:12, color:T.ink4 }}>Generate some content first, and check the engine env vars in Vercel.</span></div>
+      </div>
+    );
+  }
+
+  var questions = data.questions || [];
+
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-      <SessionHeader title={_l.title} module={`${_modPrefix()} ${_modLabel("Listening")}`} progress={40} timeLeft={1640} color={T.listening.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
+      <SessionHeader title={_l.title} module={`${_modPrefix()} ${_modLabel("Listening")}`} progress={40} timeLeft={1640} color={T.listening.c} onExit={() => { try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){} window.__nav && window.__nav('dashboard'); }}/>
       <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 1fr', overflow:'hidden' }}>
         {/* Audio player */}
         <div style={{ overflow:'auto', padding:'28px 32px', borderRight:`1px solid ${T.border}`, background:T.bg, display:'flex', flexDirection:'column', gap:20 }}>
           <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>{_l.audioLabel}</div>
-          {/* Player card */}
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:18, padding:24 }}>
             <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
               <div style={{ width:52, height:52, borderRadius:14, background:T.listening.bg, color:T.listening.c, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 {Icon.head({ width:22, height:22 })}
               </div>
               <div>
-                <div style={{ fontSize:15, fontWeight:700, color:T.ink }}>{_l.cardTitle}</div>
-                <div style={{ fontSize:12, color:T.ink4, marginTop:2 }}>{_modPrefix()} · 6:40 min</div>
+                <div style={{ fontSize:15, fontWeight:700, color:T.ink }}>{data.title || _l.cardTitle}</div>
+                <div style={{ fontSize:12, color:T.ink4, marginTop:2 }}>Spoken in {lang.toUpperCase()} · listen and answer</div>
               </div>
             </div>
-            {/* Waveform placeholder */}
             <div style={{ height:52, display:'flex', alignItems:'center', gap:1.5, marginBottom:14, overflow:'hidden' }}>
               {Array.from({length:80}).map((_,i) => {
                 const h = 20 + Math.abs(Math.sin(i*0.7+1)*Math.cos(i*0.4)*28);
-                const played = (i/80)*100 < playedPct;
-                return <div key={i} style={{ width:4, borderRadius:2, height:h, background:played?T.listening.c:T.bg3, flexShrink:0 }}/>;
+                return <div key={i} style={{ width:4, borderRadius:2, height:h, background: playing ? T.listening.c : T.bg3, flexShrink:0, transition:'background .2s' }}/>;
               })}
             </div>
-            {/* Controls */}
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
-              <span style={{ fontSize:11, color:T.ink4, fontFamily:'monospace', width:36 }}>2:16</span>
-              <div style={{ flex:1, height:4, background:T.bg3, borderRadius:99, overflow:'hidden', cursor:'pointer' }}>
-                <div style={{ height:'100%', width:playedPct+'%', background:T.listening.c, borderRadius:99 }}/>
-              </div>
-              <span style={{ fontSize:11, color:T.ink4, fontFamily:'monospace', width:36, textAlign:'right' }}>6:40</span>
-            </div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:16 }}>
-              <button style={{ width:36, height:36, borderRadius:18, background:T.bg2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="14" textAnchor="middle" fontSize="6" fill="currentColor">-10</text></svg>
+              <button onClick={speak} title="Restart" style={{ width:36, height:36, borderRadius:18, background:T.bg2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, cursor:'pointer' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
               </button>
-              <button onClick={() => setPlaying(p => !p)} style={{ width:52, height:52, borderRadius:26, background:T.listening.c, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 6px 16px ${T.listening.c}44` }}>
+              <button onClick={toggle} style={{ width:52, height:52, borderRadius:26, background:T.listening.c, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 6px 16px ${T.listening.c}44`, cursor:'pointer' }}>
                 {playing ? Icon.pause({ width:18, height:18 }) : Icon.play({ width:18, height:18 })}
               </button>
-              <button style={{ width:36, height:36, borderRadius:18, background:T.bg2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
-              </button>
+              <div style={{ width:36 }}/>
+            </div>
+            <div style={{ marginTop:14, fontSize:11, color:T.ink4, textAlign:'center' }}>
+              {playing ? 'Playing…' : started ? 'Paused — tap play to resume' : 'Tap play to hear the clip'}
             </div>
           </div>
-          {/* Notes area */}
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:18, flex:1 }}>
             <div style={{ fontSize:12, fontWeight:700, color:T.ink, marginBottom:10 }}>{_l.notesTitle}</div>
             <textarea placeholder={_l.notesPlaceholder} style={{ width:'100%', minHeight:160, border:'none', outline:'none', resize:'none', fontSize:13, color:T.ink2, fontFamily:"'Inter',sans-serif", lineHeight:1.6, background:'transparent' }}/>
@@ -541,35 +625,46 @@ function ListeningSession() {
         <div style={{ overflow:'auto', padding:'28px 32px', background:T.card }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
             <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>{_l.qLabel}</div>
-            <Chip label={`${Object.keys(answered).length}/5`} accent={T.listening.c} bg={T.listening.bg} style={{ fontSize:10 }}/>
+            <Chip label={`${Object.keys(answered).length}/${questions.length}`} accent={T.listening.c} bg={T.listening.bg} style={{ fontSize:10 }}/>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            {questions.map(q => (
-              <div key={q.n} style={{ padding:16, borderRadius:14, border:`1px solid ${answered[q.n]?T.listening.c+'44':T.border}`, background:answered[q.n]?T.listening.bg:T.bg }}>
-                <div style={{ display:'flex', gap:10, marginBottom:10 }}>
-                  <div style={{ width:22, height:22, borderRadius:11, background:answered[q.n]?T.listening.c:T.bg3, color:answered[q.n]?'#fff':T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, flexShrink:0 }}>{q.n}</div>
-                  <div style={{ fontSize:13, color:T.ink, lineHeight:1.5 }}>{q.stem}</div>
+            {questions.map((q, qi) => {
+              const isAns = answered[qi] != null;
+              const opts = q.options || [];
+              return (
+                <div key={qi} style={{ padding:16, borderRadius:14, border:`1px solid ${isAns?T.listening.c+'44':T.border}`, background:isAns?T.listening.bg:T.bg }}>
+                  <div style={{ display:'flex', gap:10, marginBottom:10 }}>
+                    <div style={{ width:22, height:22, borderRadius:11, background:isAns?T.listening.c:T.bg3, color:isAns?'#fff':T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, flexShrink:0 }}>{qi+1}</div>
+                    <div style={{ fontSize:13, color:T.ink, lineHeight:1.5 }}>{q.stem || q.q}</div>
+                  </div>
+                  {opts.length ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:6, paddingLeft:32 }}>
+                      {opts.map((opt, oi) => {
+                        const sel = answered[qi] === opt;
+                        const showCorrect = submitted && q.answer === opt;
+                        const showWrong = submitted && sel && q.answer !== opt;
+                        return (
+                          <button key={oi} onClick={() => choose(qi, opt)} disabled={submitted}
+                            style={{ padding:'8px 12px', borderRadius:8, border:`1.5px solid ${showCorrect?'#2E7D32':showWrong?'#C62828':sel?T.listening.c:T.border}`, background:showCorrect?'rgba(46,125,50,.08)':showWrong?'rgba(198,40,40,.08)':sel?T.listening.bg:'transparent', fontSize:12.5, fontWeight:sel?700:400, color:showCorrect?'#2E7D32':showWrong?'#C62828':sel?T.listening.c:T.ink, textAlign:'left', cursor:submitted?'default':'pointer', transition:'all .15s' }}>
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ paddingLeft:32 }}>
+                      <input placeholder={_l.placeholder} disabled={submitted} onChange={(e) => choose(qi, e.target.value)}
+                        style={{ width:'100%', padding:'9px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
+                    </div>
+                  )}
                 </div>
-                {q.options ? (
-                  <div style={{ display:'flex', flexDirection:'column', gap:6, paddingLeft:32 }}>
-                    {q.options.map(opt => (
-                      <button key={opt} onClick={() => setAnswered(a => ({...a,[q.n]:opt}))}
-                        style={{ padding:'8px 12px', borderRadius:8, border:`1.5px solid ${answered[q.n]===opt?T.listening.c:T.border}`, background:answered[q.n]===opt?T.listening.bg:'transparent', fontSize:12.5, fontWeight:answered[q.n]===opt?700:400, color:answered[q.n]===opt?T.listening.c:T.ink, textAlign:'left', cursor:'pointer', transition:'all .15s' }}>
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ paddingLeft:32 }}>
-                    <input placeholder={_l.placeholder} onChange={() => setAnswered(a => ({...a,[q.n]:'filled'}))}
-                      style={{ width:'100%', padding:'9px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div style={{ marginTop:20 }}>
-            <Btn label={_l.submit} nav="mod_results" accent={T.listening.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })}/>
+            {submitted
+              ? <div style={{ textAlign:'center', fontSize:14, fontWeight:700, color:T.listening.c }}>Score: {scorePct}% — opening results…</div>
+              : <Btn label={_l.submit} onClick={submit} accent={T.listening.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })}/>}
           </div>
         </div>
       </div>
