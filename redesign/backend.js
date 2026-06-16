@@ -235,15 +235,19 @@
     // ── Auth state listener ─────────────────────────────────────
     client.auth.onAuthStateChange(function (event, session) {
       if (session) {
-        FL.fetchProfile().then(function (user) {
-          if (user) {
-            // Patch greeting name in dashboard immediately
-            document.querySelectorAll('[data-fl-name]').forEach(function (el) {
-              el.textContent = user.firstName || user.name;
-            });
-          }
+        Promise.all([
+          FL.fetchProfile().then(function (user) {
+            if (user) {
+              document.querySelectorAll('[data-fl-name]').forEach(function (el) {
+                el.textContent = user.firstName || user.name;
+              });
+            }
+          }),
+          FL.fetchLanguages(),
+          FL.fetchTodayContent()
+        ]).then(function () {
+          window.dispatchEvent(new CustomEvent('fl-updated'));
         });
-        FL.fetchLanguages();
         if (event === 'SIGNED_IN') {
           window.__nav && window.__nav('dashboard');
         }
@@ -260,8 +264,9 @@
     client.auth.getSession().then(function (res) {
       var session = res.data && res.data.session;
       if (session) {
-        FL.fetchProfile();
-        FL.fetchLanguages();
+        Promise.all([FL.fetchProfile(), FL.fetchLanguages(), FL.fetchTodayContent()]).then(function () {
+          window.dispatchEvent(new CustomEvent('fl-updated'));
+        });
       } else {
         // No session — redirect to login once App is mounted
         var waited = 0;

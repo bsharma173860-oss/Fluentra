@@ -96,11 +96,13 @@ function DashboardPage() {
   const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   // Today's #1 task — single-task hero
+  const __today = (typeof window !== 'undefined' && window.__todayContent) || [];
+  const __minsByDiff = { easy: 10, medium: 15, hard: 25 };
   const topTask = langs[0] ? {
     lang: langs[0],
-    title: 'Past tense — passé composé',
-    mins: 15,
-    skill: 'Grammar',
+    title: (__today[0] && __today[0].title) || 'Start your first lesson',
+    mins: (__today[0] && __minsByDiff[__today[0].difficulty]) || 15,
+    skill: (__today[0] && __today[0].type) ? (__today[0].type.charAt(0).toUpperCase() + __today[0].type.slice(1)) : 'Practice',
   } : null;
 
   return (
@@ -124,7 +126,7 @@ function DashboardPage() {
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px 40px' }}>
         <PageHeader
-          eyebrow={`${greet}, María`}
+          eyebrow={`${greet}${(typeof window!=='undefined' && window.__user && window.__user.firstName) ? ', ' + window.__user.firstName : ''}`}
           title="Keep the streaks alive."
           right={
             <div style={{ display:'flex', gap:24, alignItems:'center' }}>
