@@ -4,13 +4,17 @@ function AddLanguagePage() {
   const [added, setAdded] = useState(false); // success state after Add
   const [adding, setAdding] = useState(false);
   const [addErr, setAddErr] = useState('');
-  const owned = userLanguages().map(l => l.code);
+  const owned = (typeof window !== 'undefined' && window.__userLanguages ? window.__userLanguages : []).map(l => l.code);
   // Tiered catalog:
   //  • full curriculum + exam track (already in EXAMS map): en, es, ja, fr, de, it, pt, ko, zh, ar, ru, hi, tr
   //  • CEFR-aligned (CATALOG_EXAMS-style fallback): nl, sv, pl, etc — get an auto exam config from examFor()
   //  • placeholder ("coming soon"): less-resourced languages, marked tier:'soon' — added to your dashboard but with limited content
   const fullCatalogue = [
     // Tier 1 — full curriculum + dedicated exam (top 12 most-requested)
+    { code:'en', native:'English',     english:'English',    speakers:'1.5B', exam:'IELTS / TOEFL',     accent:'#1D4ED8', light:'#E5ECFB', tier:'full', region:'Europe' },
+    { code:'es', native:'Español',     english:'Spanish',    speakers:'560M', exam:'DELE / SIELE',      accent:'#C04A06', light:'#FBEDE2', tier:'full', region:'Europe' },
+    { code:'fr', native:'Français',    english:'French',     speakers:'310M', exam:'DELF / DALF',       accent:'#1558B0', light:'#E5EDF8', tier:'full', region:'Europe' },
+    { code:'ja', native:'日本語',        english:'Japanese',   speakers:'125M', exam:'JLPT',              accent:'#B0142B', light:'#FBE8EB', tier:'full', region:'Asia' },
     { code:'de', native:'Deutsch',     english:'German',     speakers:'135M', exam:'Goethe-Zertifikat', accent:'#111111', light:'#F4F4F4', tier:'full', region:'Europe' },
     { code:'it', native:'Italiano',    english:'Italian',    speakers:'85M',  exam:'CILS / CELI',       accent:'#0F8A4D', light:'#E9F6EE', tier:'full', region:'Europe' },
     { code:'pt', native:'Português',   english:'Portuguese', speakers:'265M', exam:'CELPE-Bras',        accent:'#0E6F3F', light:'#E7F4EC', tier:'full', region:'Europe' },

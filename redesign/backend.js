@@ -312,7 +312,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b9-26lang-addlang-errs';
+    window.__FL_BUILD = 'b10-26lang-en-es-fr-ja';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
