@@ -343,22 +343,20 @@ function AddLanguagePage() {
           <div style={{ display:'flex', gap:10 }}>
             <button onClick={() => { setPicked(null); setStep(0); }} style={{ padding:'14px 22px', borderRadius:12, border:`1px solid ${T.border}`, background:T.card, color:T.ink2, fontSize:13, fontWeight:600, cursor:'pointer' }}>Back</button>
             <Btn label={`Add ${picked.english} to my languages`} accent={picked.accent} size="lg" iconRight={Icon.arrow({ width:13, height:13 })} style={{ flex:1 }} onClick={() => {
-              // Persist into the global userLanguages list
               const newLang = {
                 code: picked.code,
                 native: picked.native,
                 english: picked.english,
-                streak: 0,
-                level: ['A0','A1','A2','B1','B2','C1'][level] || 'A0',
+                level: ['A0','A1','A2','B1','B2','C1'][level] || 'A1',
                 exam: picked.exam,
-                flag: picked.code,
-                goal,
-                dailyMinutes: minutes,
-                addedAt: Date.now(),
               };
-              window.__addedLangs = [...(window.__addedLangs || []), newLang];
               window.__langCode = picked.code;
               window.__justAddedLang = picked.code; // for dashboard toast
+              if (window.FL && window.FL.addLanguage) {
+                window.FL.addLanguage(newLang).catch(function () {});
+              } else {
+                window.__addedLangs = [...(window.__addedLangs || []), newLang];
+              }
               setAdded(true);
             }}/>
           </div>

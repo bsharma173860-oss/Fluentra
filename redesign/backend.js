@@ -188,6 +188,31 @@
       },
 
       // ── Today's content ──────────────────────────────────────
+      // ── Add a language (persist to user_languages, then refresh) ──
+      addLanguage: function (lang) {
+        return client.auth.getUser().then(function (res) {
+          var user = res.data && res.data.user;
+          if (!user) return Promise.reject(new Error('Not signed in'));
+          var row = {
+            user_id: user.id,
+            language_code: lang.code,
+            native_name: lang.native || lang.code.toUpperCase(),
+            english_name: lang.english || lang.code,
+            level: lang.level || 'A1',
+            exam_type: lang.exam || 'IELTS',
+            streak: 0,
+          };
+          return client.from('user_languages').upsert(row, { onConflict: 'user_id,language_code' }).then(function (r) {
+            if (r.error) throw r.error;
+            window.__langCode = lang.code;
+            return FL.fetchLanguages().then(function () {
+              window.dispatchEvent(new CustomEvent('fl-updated'));
+              return true;
+            });
+          });
+        });
+      },
+
       fetchTodayContent: function () {
         var lang = window.__langCode || 'en';
         return apiGet('/content-list?lang=' + encodeURIComponent(lang) + '&limit=6').then(function (data) {
