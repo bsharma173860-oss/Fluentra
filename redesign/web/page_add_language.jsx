@@ -2,6 +2,8 @@
 function AddLanguagePage() {
   const [picked, setPicked] = useState(null);
   const [added, setAdded] = useState(false); // success state after Add
+  const [adding, setAdding] = useState(false);
+  const [addErr, setAddErr] = useState('');
   const owned = userLanguages().map(l => l.code);
   // Tiered catalog:
   //  • full curriculum + exam track (already in EXAMS map): en, es, ja, fr, de, it, pt, ko, zh, ar, ru, hi, tr
@@ -102,10 +104,12 @@ function AddLanguagePage() {
     { code:'rw', native:'Ikinyarwanda',english:'Kinyarwanda',speakers:'12M',  exam:'UR',                accent:'#00A1DE', light:'#E0F4FB', tier:'soon', region:'Africa' },
   ];
 
-  const catalogue = fullCatalogue.filter(l => !owned.includes(l.code));
+  // Only the 26 languages that actually work end-to-end (Whisper speaking + content engine)
+  const LIVE = ['en','es','fr','de','it','pt','nl','ru','pl','uk','sv','no','da','fi','el','cs','ro','hu','tr','ar','hi','zh','ja','ko','id','vi'];
+  const catalogue = fullCatalogue.filter(l => LIVE.includes(l.code) && !owned.includes(l.code));
 
   // Region filter chips
-  const allRegions = ['All', 'Europe', 'Asia', 'Americas', 'Africa', 'Middle East', 'Oceania', 'Classical'];
+  const allRegions = ['All', 'Europe', 'Asia', 'Middle East'];
   const [region, setRegion] = useState('All');
   const [query, setQuery] = useState('');
   const visible = catalogue.filter(l => {
@@ -342,7 +346,9 @@ function AddLanguagePage() {
 
           <div style={{ display:'flex', gap:10 }}>
             <button onClick={() => { setPicked(null); setStep(0); }} style={{ padding:'14px 22px', borderRadius:12, border:`1px solid ${T.border}`, background:T.card, color:T.ink2, fontSize:13, fontWeight:600, cursor:'pointer' }}>Back</button>
-            <Btn label={`Add ${picked.english} to my languages`} accent={picked.accent} size="lg" iconRight={Icon.arrow({ width:13, height:13 })} style={{ flex:1 }} onClick={() => {
+            <Btn label={adding ? 'Adding…' : `Add ${picked.english} to my languages`} accent={picked.accent} size="lg" iconRight={Icon.arrow({ width:13, height:13 })} style={{ flex:1 }} onClick={() => {
+              if (adding) return;
+              setAddErr('');
               const newLang = {
                 code: picked.code,
                 native: picked.native,
@@ -351,14 +357,22 @@ function AddLanguagePage() {
                 exam: picked.exam,
               };
               window.__langCode = picked.code;
-              window.__justAddedLang = picked.code; // for dashboard toast
               if (window.FL && window.FL.addLanguage) {
-                window.FL.addLanguage(newLang).catch(function () {});
+                setAdding(true);
+                window.FL.addLanguage(newLang).then(function () {
+                  window.__justAddedLang = picked.code;
+                  setAdding(false); setAdded(true);
+                }).catch(function (e) {
+                  setAdding(false);
+                  setAddErr((e && e.message) || 'Could not add the language — make sure you are signed in and the database schema has been run.');
+                });
               } else {
-                window.__addedLangs = [...(window.__addedLangs || []), newLang];
+                setAddErr('Backend not loaded — refresh the page. (window.FL is missing)');
               }
-              setAdded(true);
             }}/>
+          </div>
+          {addErr && <div style={{ marginTop:12, padding:'10px 14px', borderRadius:10, background:'rgba(198,40,40,.08)', border:'1px solid rgba(198,40,40,.25)', color:'#C62828', fontSize:12.5, fontWeight:600 }}>{addErr}</div>}
+          <div style={{ display:'none' }}>
           </div>
         </div>
       </div>

@@ -312,7 +312,8 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    console.log('[FL] Backend ready ✓');
+    window.__FL_BUILD = 'b9-26lang-addlang-errs';
+    console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
   // Try immediately; Supabase SDK is a synchronous <script> before us
