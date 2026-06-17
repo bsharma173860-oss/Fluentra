@@ -15,14 +15,30 @@ function LibraryPage() {
     { title:'JLPT N4 Kanji', count:300, color:'#C84070', bg:'#FFE0EC', ic:'layers' },
   ];
 
-  const items = [
-    { kind:'Lesson',     title:'Past tense — passé composé',          tag:'French · Grammar',    time:'10 min', saved:true,  c:T.writing,   nav:'grammar'   },
-    { kind:'Phrasebook', title:'Ordering at a café',                  tag:'Spanish · A2',         time:'8 min',  saved:false, c:T.speaking,  nav:'vocab'     },
-    { kind:'Audio',      title:'Train station announcements',          tag:'Japanese · N4',        time:'6 min',  saved:true,  c:T.listening, nav:'listening' },
-    { kind:'Article',    title:'How to use cohesive devices in essays',tag:'English · Writing',    time:'14 min', saved:false, c:T.writing,   nav:'grammar'   },
-    { kind:'Lesson',     title:'Conditionals — third type',            tag:'English · B2',         time:'11 min', saved:false, c:T.reading,   nav:'reading'   },
-    { kind:'Phrasebook', title:'Travel & directions',                  tag:'French · A2',          time:'9 min',  saved:true,  c:T.speaking,  nav:'vocab'     },
-  ];
+  const _libLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const [items, setItems] = useState([]);
+  const [libLoading, setLibLoading] = useState(true);
+  React.useEffect(function () {
+    var cancelled = false;
+    fetch('/api/content-list?lang=' + encodeURIComponent(_libLang) + '&full=1&limit=40')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (cancelled) return;
+        var KIND = { reading:'Article', writing:'Article', vocab:'Phrasebook', listening:'Audio' };
+        var NAVB = { reading:'reading', writing:'writing', vocab:'vocab', listening:'listening' };
+        var CB   = { reading:T.reading, writing:T.writing, vocab:T.speaking, listening:T.listening };
+        var mapped = (d.items || []).map(function (it) {
+          var ty = it.type || 'reading';
+          return { kind: KIND[ty] || 'Lesson',
+                   title: it.title || (it.payload && it.payload.title) || 'Untitled',
+                   tag: _libLang.toUpperCase() + ' · ' + (it.difficulty || ty),
+                   time: '—', saved: false, c: CB[ty] || T.reading, nav: NAVB[ty] || 'reading' };
+        });
+        setItems(mapped); setLibLoading(false);
+      })
+      .catch(function () { if (!cancelled) { setItems([]); setLibLoading(false); } });
+    return function () { cancelled = true; };
+  }, []);
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -112,6 +128,12 @@ function LibraryPage() {
           </div>
         </div>
 
+        {libLoading && <div style={{ padding:'40px', textAlign:'center', color:T.ink4, fontSize:13 }}>Loading your library…</div>}
+        {!libLoading && items.length === 0 && (
+          <div style={{ padding:'40px', textAlign:'center', color:T.ink4, fontSize:13, border:`1px dashed ${T.border}`, borderRadius:14 }}>
+            Nothing here yet. Practice a module or generate content and your items appear here.
+          </div>
+        )}
         <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:12 }}>
           {items.filter(it => filter==='all' || it.kind === filter.replace(/s$/, '')).map((item, i) => (
             <button key={i} data-nav={item.nav} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:'16px 18px', textAlign:'left', display:'flex', alignItems:'center', gap:14, cursor:'pointer' }}>

@@ -26,16 +26,26 @@ function VocabPage() {
 
   const deck = decks[activeDeck];
 
-  const words = [
-    { word:'la cuenta',     pos:'noun · f.',     trans:'the bill / check', ex:'¿Me trae la cuenta, por favor?',           strength:4, due:'in 3d',  starred:true  },
-    { word:'pedir',         pos:'verb',          trans:'to order / ask',   ex:'Voy a pedir el plato del día.',             strength:5, due:'in 12d', starred:false },
-    { word:'la propina',    pos:'noun · f.',     trans:'the tip',          ex:'Es costumbre dejar propina aquí.',           strength:2, due:'today',  starred:true  },
-    { word:'el camarero',   pos:'noun · m.',     trans:'the waiter',       ex:'El camarero nos trajo la carta.',            strength:3, due:'in 1d',  starred:false },
-    { word:'la carta',      pos:'noun · f.',     trans:'the menu',         ex:'¿Puedo ver la carta de vinos?',              strength:5, due:'in 18d', starred:false },
-    { word:'recomendar',    pos:'verb',          trans:'to recommend',     ex:'¿Qué nos recomienda usted?',                 strength:1, due:'today',  starred:true  },
-    { word:'reservar',      pos:'verb',          trans:'to reserve',       ex:'Quería reservar una mesa para dos.',         strength:4, due:'in 5d',  starred:false },
-    { word:'la sobremesa',  pos:'noun · f.',     trans:'after-meal chat',  ex:'La sobremesa se alargó hasta las cinco.',    strength:2, due:'today',  starred:true  },
-  ];
+  const _vLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const [words, setWords] = useState([]);
+  React.useEffect(function () {
+    var cancelled = false;
+    fetch('/api/content-list?lang=' + encodeURIComponent(_vLang) + '&type=vocab&full=1&limit=10')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (cancelled) return;
+        var out = [];
+        (d.items || []).forEach(function (it) {
+          var ws = (it.payload && it.payload.words) || [];
+          ws.forEach(function (w) {
+            out.push({ word: w.term || '', pos: w.reading || '', trans: w.en || '', ex: w.example || '', strength: 3, due: 'today', starred: false });
+          });
+        });
+        setWords(out);
+      })
+      .catch(function () { if (!cancelled) setWords([]); });
+    return function () { cancelled = true; };
+  }, []);
 
   if (mode === 'study') return <VocabStudy deck={deck} words={words} kind={studyKind} onExit={() => setMode('browse')}/>;
 
