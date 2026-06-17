@@ -277,9 +277,16 @@ const CATALOG_EXAMS = {
 
 // ── User ──────────────────────────────────────────────────────
 const USER = {
-  name:'María García', email:'maria@fluentra.app', initial:'M',
-  plan:'Pro', renewsOn:'Jun 12',
-  joinedDays:148, totalSessions:142, totalMinutes:2890,
+  get name()    { return (window.__user && window.__user.name) || 'there'; },
+  get email()   { return (window.__user && window.__user.email) || ''; },
+  get initial() { var n = (window.__user && (window.__user.firstName || window.__user.name)) || ''; return n ? n.charAt(0).toUpperCase() : '·'; },
+  get plan()    { var p = (window.__user && window.__user.plan) || 'free'; return p.charAt(0).toUpperCase() + p.slice(1); },
+  get renewsOn(){ return (window.__user && window.__user.renewsOn) || ''; },
+  get streak()  { return (window.__user && window.__user.streak) || 0; },
+  get xp()      { return (window.__user && window.__user.xp) || 0; },
+  get joinedDays()     { return (window.__user && window.__user.joinedDays) || 0; },
+  get totalSessions()  { return (window.__user && window.__user.totalSessions) || 0; },
+  get totalMinutes()   { return (window.__user && window.__user.totalMinutes) || 0; },
 };
 
 // ── Hand-rolled flags (placeholder — repo has FlagSVG) ────────

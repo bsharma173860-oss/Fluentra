@@ -59,7 +59,7 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
         <button onClick={() => nav('streak')} style={{ padding:'14px 14px 12px', borderRadius:13, background:T.brandGrad, color:'#fff', border:'none', cursor:'pointer', textAlign:'left', boxShadow:`0 6px 16px ${T.brand}33` }}>
           <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:6 }}>
             <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', opacity:.85 }}>Today</div>
-            <div style={{ display:'flex', alignItems:'center', gap:3, fontSize:13, fontWeight:700 }}>{Icon.flame({ width:13, height:13 })}7</div>
+            <div style={{ display:'flex', alignItems:'center', gap:3, fontSize:13, fontWeight:700 }}>{Icon.flame({ width:13, height:13 })}{USER.streak}</div>
           </div>
           <div style={{ display:'flex', gap:3, marginBottom:8 }}>
             {['M','T','W','T','F','S','S'].map((d,i) => (
@@ -91,7 +91,7 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
             <div style={{ width:32, height:32, borderRadius:16, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, flexShrink:0 }}>{USER.initial}</div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:12.5, fontWeight:600, color:T.ink, lineHeight:1.1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{USER.name}</div>
-              <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>Pro · Renews {USER.renewsOn}</div>
+              <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>{USER.plan}{USER.renewsOn ? ' · Renews ' + USER.renewsOn : ' plan'}</div>
             </div>
             {Icon.chevU({ width:13, height:13, style:{ color:T.ink4, transform: menuOpen ? 'rotate(180deg)' : 'none', transition:'transform .15s' } })}
           </button>
