@@ -1,5 +1,6 @@
 {
   "framework": null,
-  "buildCommand": "echo no-build-static-site",
-  "outputDirectory": "."
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "dist",
+  "installCommand": "npm install"
 }
