@@ -9,21 +9,57 @@ function AchievementsPage() {
   const [detail, setDetail] = useState(null);   // badge | null
   const [shareOf, setShareOf] = useState(null); // badge | null
 
+  // ── Real signals (computed from the learner's own results) ──
+  const [results, setResults] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try { if (window.FL && window.FL.fetchResults) await window.FL.fetchResults(500); } catch (e) {}
+      if (alive) setResults(window.__results || []);
+    })();
+    return () => { alive = false; };
+  }, []);
+  const _R = results || [];
+  const _streak = (window.__user && window.__user.streak) || 0;
+  const _modOf = (r) => (r && r.detail && r.detail.module) || (r && r.module) || '';
+  const _cnt = (mod) => _R.filter(r => _modOf(r) === mod).length;
+  const _hourCount = (test) => _R.filter(r => { const ts = r.updated_at || r.created_at; if (!ts) return false; const h = new Date(ts).getHours(); return test(h); }).length;
+  const _modulesPracticed = ['reading','listening','speaking','writing'].filter(m => _cnt(m) > 0).length;
+  // id -> [current, threshold]; ids not here aren't tracked yet -> honestly locked
+  const REAL = {
+    streak_3:[_streak,3], streak_7:[_streak,7], streak_14:[_streak,14], streak_30:[_streak,30],
+    streak_60:[_streak,60], streak_100:[_streak,100], streak_365:[_streak,365],
+    reading_10:[_cnt('reading'),10], writing_10:[_cnt('writing'),10], listening_10:[_cnt('listening'),10],
+    speaking_10:[_cnt('speaking'),10], speaking_50:[_cnt('speaking'),50], four_skills:[_modulesPracticed,4],
+    night_owl:[_hourCount(h => h >= 22 || h < 4),10], early_bird:[_hourCount(h => h < 7),10],
+  };
+  const realize = (b) => {
+    const m = REAL[b.id];
+    if (!m) return { ...b, earned:false, pct:0, label:'Not tracked yet', date:null };
+    const cur = m[0], thr = m[1], earned = cur >= thr;
+    return { ...b, earned, pct: Math.min(100, Math.round((cur / thr) * 100)), label: earned ? null : (cur + '/' + thr), date: earned ? b.date : null };
+  };
+  const realCollections = collections.map(c => ({ ...c, badges: c.badges.map(realize) }));
+  const allReal = realCollections.reduce((a, c) => a.concat(c.badges), []);
+
+
   // ── Stats ────────────────────────────────────────────────
+  const _earnedN = allReal.filter(b => b.earned).length;
+  const _xp = (window.__user && window.__user.xp) || 0;
   const stats = [
-    { label:'Badges earned',  v:'24',  sub:'of 86 total',     c:T.brand },
-    { label:'Total XP',       v:'14.2k', sub:'+820 this week', c:T.speaking.c },
-    { label:'Current league', v:'Gold', sub:'rank #14 / 50',   c:T.writing.c },
-    { label:'Quests active',  v:'3',   sub:'1 ends today',    c:T.listening.c },
+    { label:'Badges earned',  v:String(_earnedN),  sub:'of ' + allReal.length + ' total', c:T.brand },
+    { label:'Total XP',       v: _xp >= 1000 ? (_xp/1000).toFixed(1) + 'k' : String(_xp), sub:'lifetime', c:T.speaking.c },
+    { label:'Day streak',     v:String(_streak),   sub: _streak === 1 ? 'day' : 'days',   c:T.writing.c },
+    { label:'Sessions',       v:String(_R.length), sub:'completed',                       c:T.listening.c },
   ];
 
-  // Rarity distribution — for the hero plaque
-  const rarityDist = [
-    { k:'common',    earned:11, total:34, c:T.ink3 },
-    { k:'rare',      earned:8,  total:28, c:T.speaking.c },
-    { k:'epic',      earned:4,  total:18, c:T.brand },
-    { k:'legendary', earned:1,  total:6,  c:T.writing.c },
-  ];
+  // Rarity distribution — for the hero plaque (real)
+  const _rarC = { common:T.ink3, rare:T.speaking.c, epic:T.brand, legendary:T.writing.c };
+  const rarityDist = ['common','rare','epic','legendary'].map(k => ({
+    k, c:_rarC[k],
+    earned: allReal.filter(b => b.rarity === k && b.earned).length,
+    total:  allReal.filter(b => b.rarity === k).length,
+  }));
 
   // ── Featured (hero + supporting) ─────────────────────────
   const heroBadge = {
@@ -106,22 +142,22 @@ function AchievementsPage() {
     if (sort === 'name')     a.sort((x,y) => x.name.localeCompare(y.name));
     return a;
   };
-  const filteredCollections = collections
+  const filteredCollections = realCollections
     .map(c => ({ ...c, badges: sortBadges(c.badges.filter(matchesTab)) }))
     .filter(c => c.badges.length > 0);
   const totalShown = filteredCollections.reduce((n,c) => n + c.badges.length, 0);
 
   const findBadge = (id) => {
-    for (const c of collections) for (const b of c.badges) if (b.id === id) return b;
+    for (const c of realCollections) for (const b of c.badges) if (b.id === id) return b;
     return null;
   };
 
   // ── Tabs def ─────────────────────────────────────────────
   const tabs = [
-    { id:'all',      label:'All',          n:86 },
-    { id:'earned',   label:'Earned',       n:24 },
-    { id:'progress', label:'In progress',  n:7 },
-    { id:'locked',   label:'Locked',       n:55 },
+    { id:'all',      label:'All',          n:allReal.length },
+    { id:'earned',   label:'Earned',       n:allReal.filter(b => b.earned).length },
+    { id:'progress', label:'In progress',  n:allReal.filter(b => !b.earned && (b.pct||0) > 0).length },
+    { id:'locked',   label:'Locked',       n:allReal.filter(b => !b.earned && (b.pct||0) === 0).length },
   ];
   const sortLabels = { rarity:'Rarity', recent:'Recent', progress:'Progress', name:'A → Z' };
 
