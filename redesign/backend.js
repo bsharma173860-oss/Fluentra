@@ -327,6 +327,19 @@
       },
     };
 
+    // ── First-run: a signed-in user with zero languages is guided to add their first one ──
+    function firstRunRouteIfNeeded() {
+      if (window.__userLanguages && window.__userLanguages.length) return;
+      var tries = 0;
+      var iv = setInterval(function () {
+        tries++;
+        if (window.__nav) {
+          clearInterval(iv);
+          if (!window.__userLanguages || !window.__userLanguages.length) window.__nav('add_language');
+        } else if (tries > 40) { clearInterval(iv); }
+      }, 100);
+    }
+
     // ── Auth state listener ─────────────────────────────────────
     client.auth.onAuthStateChange(function (event, session) {
       if (session) {
@@ -343,6 +356,7 @@
         ]).then(function () {
           window.__flReady = true;
           window.dispatchEvent(new CustomEvent('fl-updated'));
+          firstRunRouteIfNeeded();
         }).catch(function (e) {
           window.__flReady = true;
           window.__flReportError('bootstrap', (e && e.message) || 'Failed to load your account data.');
@@ -367,6 +381,7 @@
         Promise.all([FL.fetchProfile(), FL.fetchLanguages(), FL.fetchTodayContent()]).then(function () {
           window.__flReady = true;
           window.dispatchEvent(new CustomEvent('fl-updated'));
+          firstRunRouteIfNeeded();
         }).catch(function (e) {
           window.__flReady = true;
           window.__flReportError('bootstrap', (e && e.message) || 'Failed to load your account data.');
