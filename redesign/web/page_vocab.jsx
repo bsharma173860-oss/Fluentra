@@ -230,19 +230,29 @@ function VocabPage() {
 
 // ── Flashcard study mode ────────────────────────────────────
 function VocabStudy({ deck, words, kind = 'due', onExit }) {
-  let queue;
-  if (kind === 'all') queue = words.slice();
-  else if (kind === 'review') queue = words.filter(w => w.due === 'today' || w.strength <= 3);
-  else queue = words.filter(w => w.due === 'today');
-  if (!queue.length) queue = words.slice(0, 6);
-  queue = queue.slice(0, kind === 'all' ? words.length : 8);
+  const lang = deck.lang || (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const [states, setStates] = useState(null); // "lang::term" -> SRS row (null while loading)
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({ showHint: true, autoPlay: false, langCode: deck.lang });
   const [shuffleKey, setShuffleKey] = useState(0); // bumping this re-randomizes the queue
+  React.useEffect(function () {
+    if (window.FL && window.FL.srsStates) window.FL.srsStates(lang).then(function (m) { setStates(m || {}); }).catch(function () { setStates({}); });
+    else setStates({});
+  }, []);
+  const _now = Date.now();
+  const _key = function (w) { return lang + '::' + (w.word || ''); };
+  const _isDue = function (w) { const st = states && states[_key(w)]; if (!st) return true; return !st.due || new Date(st.due).getTime() <= _now; };
+  let queue;
+  if (kind === 'all') queue = words.slice();
+  else if (states) queue = words.filter(_isDue);   // due/review: real due cards once loaded
+  else queue = words.slice();                        // while loading, show all
+  if (!queue.length) queue = words.slice(0, 6);
+  queue = queue.slice(0, kind === 'all' ? words.length : 20);
   const [queueOrder, setQueueOrder] = useState(() => queue.map((_, i) => i));
-  const card = queue[queueOrder[idx]] || queue[0];
+  React.useEffect(function () { setQueueOrder(queue.map(function (_, i) { return i; })); setIdx(0); }, [queue.length]);
+  const card = queue[queueOrder[idx]] || queue[idx] || queue[0];
   const accent = deck.accent.accent;
   const pct = ((idx) / queue.length) * 100;
 
@@ -260,6 +270,14 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
   }
 
   function rate(grade) {
+    const q = grade === 'Again' ? 1 : grade === 'Hard' ? 3 : grade === 'Easy' ? 5 : 4;
+    const term = card && card.word;
+    if (term && window.FL && window.FL.srsSchedule) {
+      const cur = (states && states[_key(card)]) || null;
+      const ns = window.FL.srsSchedule(cur, q);
+      if (window.FL.srsSave) window.FL.srsSave(lang, term, ns);
+      setStates(function (m) { const c = Object.assign({}, m || {}); c[lang + '::' + term] = Object.assign({ card: lang + '::' + term }, ns); return c; });
+    }
     setFlipped(false);
     if (idx < queue.length - 1) setIdx(idx + 1);
     else setIdx(0);

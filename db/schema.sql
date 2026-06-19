@@ -108,3 +108,23 @@ end; $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ── Spaced repetition (SM-2) — one row per (user, vocab card) ──────────────
+create table if not exists vocab_srs (
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  card          text not null,            -- "lang::term"
+  lang          text not null,
+  ease          real not null default 2.5,
+  interval_days int  not null default 0,
+  reps          int  not null default 0,
+  due           timestamptz,
+  last_reviewed timestamptz,
+  primary key (user_id, card)
+);
+alter table vocab_srs enable row level security;
+do $$ begin
+  create policy "vocab_srs_select" on vocab_srs for select using (auth.uid() = user_id);
+  create policy "vocab_srs_insert" on vocab_srs for insert with check (auth.uid() = user_id);
+  create policy "vocab_srs_update" on vocab_srs for update using (auth.uid() = user_id);
+exception when duplicate_object then null; end $$;
+notify pgrst, 'reload schema';

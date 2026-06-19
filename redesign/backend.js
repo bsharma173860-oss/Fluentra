@@ -253,6 +253,36 @@
         });
       },
 
+      // ── Spaced repetition (SM-2) ─────────────────────────────
+      srsSchedule: function (st, quality) {
+        var ease = (st && st.ease) || 2.5, interval = (st && st.interval_days) || 0, reps = (st && st.reps) || 0;
+        if (quality < 3) { reps = 0; interval = 1; }
+        else {
+          reps += 1;
+          interval = reps === 1 ? 1 : reps === 2 ? 6 : Math.max(1, Math.round(interval * ease));
+          ease = Math.max(1.3, ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
+        }
+        return { ease: ease, interval_days: interval, reps: reps, due: new Date(Date.now() + interval * 86400000).toISOString() };
+      },
+      srsStates: function (lang) {
+        return client.auth.getUser().then(function (res) {
+          var user = res.data && res.data.user;
+          if (!user) return {};
+          return client.from('vocab_srs').select('card,ease,interval_days,reps,due').eq('user_id', user.id).eq('lang', lang).then(function (r) {
+            if (r.error) { console.warn('[FL] srsStates:', r.error.message); return {}; }
+            var map = {}; (r.data || []).forEach(function (row) { map[row.card] = row; }); return map;
+          });
+        });
+      },
+      srsSave: function (lang, term, st) {
+        return client.auth.getUser().then(function (res) {
+          var user = res.data && res.data.user;
+          if (!user) return null;
+          var row = { user_id: user.id, card: lang + '::' + term, lang: lang, ease: st.ease, interval_days: st.interval_days, reps: st.reps, due: st.due, last_reviewed: new Date().toISOString() };
+          return client.from('vocab_srs').upsert(row, { onConflict: 'user_id,card' }).then(function (r) { if (r.error) console.warn('[FL] srsSave:', r.error.message); return r.data; });
+        });
+      },
+
       fetchTodayContent: function () {
         var lang = window.__langCode || 'en';
         return apiGet('/content-list?lang=' + encodeURIComponent(lang) + '&limit=6').then(function (data) {
@@ -362,7 +392,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b25-writing-real-chart';
+    window.__FL_BUILD = 'b26-spaced-repetition';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
