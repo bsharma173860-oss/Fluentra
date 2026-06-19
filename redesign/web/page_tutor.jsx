@@ -168,15 +168,25 @@ function TutorPage() {
     e.target.value = '';
   }
 
-  const send = (text) => {
+  const send = async (text) => {
     if (!text.trim()) return;
-    setMsgs(m => [...m, { role:'user', text, when:'just now' }]);
+    const userMsg = { role:'user', text, when:'just now' };
+    const history = [...msgs, userMsg].map(mm => ({ role: mm.role === 'ai' ? 'assistant' : 'user', content: mm.text }));
+    setMsgs(m => [...m, userMsg]);
     setInput('');
     setThinking(true);
-    setTimeout(() => {
-      setMsgs(m => [...m, { role:'ai', text:"Got it. Let me draft a quick response that walks through the structure step-by-step, then I'll watch your paragraph.", when:'just now' }]);
-      setThinking(false);
-    }, 1400);
+    try {
+      const resp = await fetch('/api/tutor', {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ messages: history, lang: chatLang, context: context }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || 'tutor error');
+      setMsgs(m => [...m, { role:'ai', text: data.reply || '…', when:'just now' }]);
+    } catch (e) {
+      setMsgs(m => [...m, { role:'ai', text: 'Sorry — I had trouble responding (' + (e.message || e) + '). Please try again.', when:'just now' }]);
+    }
+    setThinking(false);
   };
 
   // Wire action chips (Band critique / Rewrite suggestions / Mark phonemes / etc):
