@@ -407,7 +407,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b31-react-prod';
+    window.__FL_BUILD = 'b32-legal';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

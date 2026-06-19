@@ -171,7 +171,7 @@ function LoginCard() {
       </div>
 
       <div style={{ fontSize:11, color:T.ink5, textAlign:'center', lineHeight:1.5 }}>
-        By continuing you agree to Fluentra's <span style={{ color:T.ink4 }}>Terms</span> and <span style={{ color:T.ink4 }}>Privacy Policy</span>.
+        By continuing you agree to Fluentra's <span onClick={() => window.__nav('terms')} style={{ color:T.ink2, fontWeight:600, cursor:'pointer', textDecoration:'underline' }}>Terms</span> and <span onClick={() => window.__nav('privacy')} style={{ color:T.ink2, fontWeight:600, cursor:'pointer', textDecoration:'underline' }}>Privacy Policy</span>.
       </div>
     </div>
   );
@@ -357,7 +357,7 @@ function SignupMobile() {
           Already have one? <span onClick={() => window.__nav && window.__nav('auth_login')} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Sign in</span>
         </div>
         <div style={{ fontSize:10.5, color:T.ink5, textAlign:'center', lineHeight:1.5 }}>
-          By signing up you agree to our <span style={{ color:T.ink4 }}>Terms</span> &amp; <span style={{ color:T.ink4 }}>Privacy</span>.
+          By signing up you agree to our <span onClick={() => window.__nav('terms')} style={{ color:T.ink2, fontWeight:600, cursor:'pointer', textDecoration:'underline' }}>Terms</span> &amp; <span onClick={() => window.__nav('privacy')} style={{ color:T.ink2, fontWeight:600, cursor:'pointer', textDecoration:'underline' }}>Privacy</span>.
         </div>
       </div>
     </MobileBody>

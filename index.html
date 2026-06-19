@@ -108,6 +108,7 @@ body[data-fl-ready] #fl-splash{
 <script type="text/babel" src="redesign/web/page_exams.jsx"></script>
 <script type="text/babel" src="redesign/web/page_add_language.jsx"></script>
 <script type="text/babel" src="redesign/web/page_welcome.jsx"></script>
+<script type="text/babel" src="redesign/web/page_legal.jsx"></script>
 <script type="text/babel" src="redesign/web/page_mock_test.jsx"></script>
 
 <script type="text/babel" src="redesign/mobile/_shell.jsx"></script>
@@ -226,6 +227,8 @@ const WEB_PAGES = {
   refer:         () => <ReferPage/>,
   add_language:  () => <AddLanguagePage/>,
   welcome:       () => <WelcomePage/>,
+  terms:         () => <TermsPage/>,
+  privacy:       () => <PrivacyPage/>,
   mock_test:     () => <MockTestPage/>,
   ai_generating: () => <AIGenerating/>,
   ai_grading:    () => <AIWritingGrading/>,
@@ -309,6 +312,8 @@ const MOBILE_PAGES = {
   refer:         () => <MReferPageV5/>,
   add_language:  () => <MAddLanguageV5/>,
   welcome:       () => <WelcomePage/>,
+  terms:         () => <TermsPage/>,
+  privacy:       () => <PrivacyPage/>,
   mock_test:     () => <MMockTestPageV5/>,
   ai_generating: () => <MAIGeneratingPageV5/>,
   ai_grading:    () => <MAIGradingPageV5/>,

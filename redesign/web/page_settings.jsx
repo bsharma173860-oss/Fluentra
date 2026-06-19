@@ -397,15 +397,15 @@ function DataPrivacyTab() {
       <Card padding={20} style={{ marginBottom:24 }}>
         {[
           { label:'Export my data', sub:'Download a JSON archive of your activity', cta:'Request export', accent:T.ink2 },
-          { label:'Privacy policy',   sub:'Read how we collect and use your data', cta:'Open policy', accent:T.ink2 },
-          { label:'Terms of service', sub:'The agreement that governs your account', cta:'Open terms', accent:T.ink2 },
+          { label:'Privacy policy',   sub:'Read how we collect and use your data', cta:'Open policy', accent:T.ink2, nav:'privacy' },
+          { label:'Terms of service', sub:'The agreement that governs your account', cta:'Open terms', accent:T.ink2, nav:'terms' },
         ].map((r,i,a) => (
           <div key={r.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 0', borderBottom:i<a.length-1?`1px solid ${T.hairline}`:'none' }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>{r.label}</div>
               <div style={{ fontSize:12, color:T.ink4 }}>{r.sub}</div>
             </div>
-            <Btn label={r.cta} variant="outline" size="sm" accent={r.accent}/>
+            <Btn label={r.cta} variant="outline" size="sm" accent={r.accent} nav={r.nav}/>
           </div>
         ))}
       </Card>
