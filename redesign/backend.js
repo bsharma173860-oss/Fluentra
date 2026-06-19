@@ -213,6 +213,24 @@
         });
       },
 
+      // ── User results (from user_content, RLS-scoped to the user) ──
+      fetchResults: function (limit) {
+        return client.auth.getUser().then(function (res) {
+          var user = res.data && res.data.user;
+          if (!user) return [];
+          return client.from('user_content')
+            .select('lang,score,status,detail,content_id,updated_at')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false })
+            .limit(limit || 200)
+            .then(function (r) {
+              if (r.error) { console.warn('[FL] fetchResults:', r.error.message); return []; }
+              window.__results = r.data || [];
+              return window.__results;
+            });
+        });
+      },
+
       fetchTodayContent: function () {
         var lang = window.__langCode || 'en';
         return apiGet('/content-list?lang=' + encodeURIComponent(lang) + '&limit=6').then(function (data) {
@@ -312,7 +330,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b10-26lang-en-es-fr-ja';
+    window.__FL_BUILD = 'b11-progress-real';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

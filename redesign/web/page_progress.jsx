@@ -145,163 +145,161 @@ function ExamStreamsPanel() {
 }
 
 function ProgressPage() {
-  const data = [
-    { label:'Mar 12', score:6.0 }, { label:'Mar 19', score:6.5 },
-    { label:'Mar 26', score:7.0 }, { label:'Apr 2', score:7.0 },
-    { label:'Apr 5', score:7.0 }, { label:'Apr 12', score:7.5 },
-  ];
-  const modules = [
-    { ic:'mic',  c:T.speaking,  title:'Speaking',  score:7.0, change:+0.5 },
-    { ic:'pen',  c:T.writing,   title:'Writing',   score:6.5, change:-0.5 },
-    { ic:'head', c:T.listening, title:'Listening', score:7.5, change:+1.0 },
-    { ic:'book', c:T.reading,   title:'Reading',   score:7.0, change:+0.5 },
+  const [results, setResults] = React.useState(null);
+  React.useEffect(function () {
+    var c = false;
+    if (window.FL && window.FL.fetchResults) {
+      window.FL.fetchResults(300).then(function (rows) { if (!c) setResults(rows || []); }).catch(function () { if (!c) setResults([]); });
+    } else { setResults([]); }
+    return function () { c = true; };
+  }, []);
+  const R = results || [];
+  const loading = results === null;
+  const MOD = {
+    reading:   { ic:'book', c:T.reading,   title:'Reading'   },
+    listening: { ic:'head', c:T.listening, title:'Listening' },
+    speaking:  { ic:'mic',  c:T.speaking,  title:'Speaking'  },
+    writing:   { ic:'pen',  c:T.writing,   title:'Writing'   },
+  };
+  const modOf = (r) => (r.detail && r.detail.module) || 'reading';
+  const scoreOf = (r) => Number(r.score) || 0;
+  const now = Date.now();
+  const sessions = R.length;
+  const last7 = R.filter(r => r.updated_at && (now - new Date(r.updated_at).getTime()) < 7 * 86400000).length;
+  const langCount = (typeof window !== 'undefined' && window.__userLanguages ? window.__userLanguages.length : 0);
+
+  const perMod = ['speaking','writing','listening','reading'].map(k => {
+    const rows = R.filter(r => modOf(r) === k);
+    return { ic:MOD[k].ic, c:MOD[k].c, title:MOD[k].title, n:rows.length };
+  });
+  const maxN = Math.max(1, ...perMod.map(m => m.n));
+
+  const weeks = [];
+  for (let w = 7; w >= 0; w--) {
+    const start = now - (w + 1) * 7 * 86400000, end = now - w * 7 * 86400000;
+    const n = R.filter(r => { const t = r.updated_at ? new Date(r.updated_at).getTime() : 0; return t >= start && t < end; }).length;
+    weeks.push({ label:'', score:n });
+  }
+
+  const rel = (ts) => { if (!ts) return ''; const d = (now - new Date(ts).getTime()) / 86400000; if (d < 1) return 'today'; if (d < 2) return 'yesterday'; return Math.floor(d) + 'd ago'; };
+  const recent = R.slice(0, 5).map(r => { const k = modOf(r); return { ic:MOD[k].ic, c:MOD[k].c, title:MOD[k].title, meta:rel(r.updated_at), score:scoreOf(r) }; });
+
+  const dayCounts = {};
+  R.forEach(r => { if (r.updated_at) { const key = new Date(r.updated_at).toISOString().slice(0, 10); dayCounts[key] = (dayCounts[key] || 0) + 1; } });
+  const heat = [];
+  for (let i = 83; i >= 0; i--) { const key = new Date(now - i * 86400000).toISOString().slice(0, 10); heat.push(dayCounts[key] || 0); }
+
+  const stats = [
+    { eyebrow:'Sessions',  value:String(sessions),     delta: sessions ? 'all time' : 'none yet', up:null },
+    { eyebrow:'This week', value:String(last7),         delta: last7 ? 'keep going' : '0 so far',  up: last7 > 0 },
+    { eyebrow:'Streak',    value:(USER.streak || 0) + 'd', delta:'current',                        up:null },
+    { eyebrow:'Languages', value:String(langCount),     delta:'studying',                         up:null },
   ];
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px 40px' }}>
-        <PageHeader
-          eyebrow="Progress · English"
-          title="You're trending up."
-          right={
-            <div style={{ display:'flex', gap:4, padding:3, background:T.bg2, borderRadius:9 }}>
-              {['Week','Month','3M','Year'].map((p, i) => (
-                <button key={p} style={{ padding:'5px 14px', fontSize:12, fontWeight: i === 1 ? 700 : 500, color: i === 1 ? T.ink : T.ink3, background: i === 1 ? T.card : 'transparent', border:`1px solid ${i === 1 ? T.border : 'transparent'}`, borderRadius:7 }}>{p}</button>
-              ))}
-            </div>
-          }
-        />
+        <PageHeader eyebrow="Progress" title={sessions ? "Here's your activity." : "No sessions yet."} />
 
+        {loading ? (
+          <div style={{ padding:'60px', textAlign:'center', color:T.ink4, fontSize:13 }}>Loading your progress…</div>
+        ) : sessions === 0 ? (
+          <Card padding={40}>
+            <div style={{ textAlign:'center', color:T.ink3, fontSize:14 }}>
+              No practice sessions logged yet.<br/>
+              <span style={{ fontSize:12.5, color:T.ink4 }}>Finish a Reading, Listening, Speaking or Writing session and it shows up here.</span>
+            </div>
+          </Card>
+        ) : (
         <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) 300px', gap:28, alignItems:'start' }}>
         <div style={{ minWidth:0 }}>
-        {/* Top stats row */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14, marginBottom:24 }}>
-          {[
-            { eyebrow:'Avg band', value:'7.0', delta:'+0.5', up:true },
-            { eyebrow:'Sessions',  value:'24',  delta:'+6 this week', up:true },
-            { eyebrow:'Streak',    value:'23d', delta:'Longest: 31d',  up:null },
-            { eyebrow:'Time',      value:'18h', delta:'+2.4h vs last', up:true },
-          ].map(s => (
-            <Card key={s.eyebrow} padding={20}>
-              <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>{s.eyebrow}</div>
-              <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1, marginBottom:6 }}>{s.value}</div>
-              <div style={{ fontSize:11, color: s.up === true ? T.listening.c : s.up === false ? T.brand : T.ink4, fontWeight:600 }}>{s.delta}</div>
-            </Card>
-          ))}
-        </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14, marginBottom:24 }}>
+            {stats.map(s => (
+              <Card key={s.eyebrow} padding={20}>
+                <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>{s.eyebrow}</div>
+                <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1, marginBottom:6 }}>{s.value}</div>
+                <div style={{ fontSize:11, color: s.up === true ? T.listening.c : T.ink4, fontWeight:600 }}>{s.delta}</div>
+              </Card>
+            ))}
+          </div>
 
-        {/* Chart + module breakdown */}
-        <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:20, marginBottom:24 }}>
-          <Card padding={22}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Band score over time</div>
-                <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>English · last 30 days</div>
-              </div>
-              <Chip label="Trending up" icon={Icon.trending({ width:11, height:11 })} accent={T.listening.c} bg={T.listening.bg}/>
-            </div>
-            <MiniLineChart data={data} color={T.brand} w={560} h={180}/>
-          </Card>
-
-          <Card padding={22}>
-            <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:14 }}>By module</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              {modules.map(m => (
-                <div key={m.title} style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div style={{ width:32, height:32, borderRadius:9, background:m.c.bg, color:m.c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    {Icon[m.ic]({ width:13, height:13 })}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                      <div style={{ fontSize:12.5, fontWeight:600, color:T.ink }}>{m.title}</div>
-                      <div style={{ display:'flex', alignItems:'baseline', gap:5 }}>
-                        <div style={{ fontFamily:T.serif, fontSize:16, color:T.ink, lineHeight:1 }}>{m.score.toFixed(1)}</div>
-                        <div style={{ fontSize:10.5, color: m.change >= 0 ? T.listening.c : T.brand, fontWeight:700 }}>{m.change >= 0 ? '+' : ''}{m.change.toFixed(1)}</div>
-                      </div>
-                    </div>
-                    <Bar pct={(m.score / 9) * 100} color={m.c.c}/>
-                  </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:20, marginBottom:24 }}>
+            <Card padding={22}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Sessions per week</div>
+                  <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>last 8 weeks</div>
                 </div>
-              ))}
+              </div>
+              <MiniLineChart data={weeks} color={T.brand} w={560} h={180}/>
+            </Card>
+
+            <Card padding={22}>
+              <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:14 }}>By module</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                {perMod.map(m => (
+                  <div key={m.title} style={{ display:'flex', alignItems:'center', gap:12 }}>
+                    <div style={{ width:32, height:32, borderRadius:9, background:m.c.bg, color:m.c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      {Icon[m.ic]({ width:13, height:13 })}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+                        <div style={{ fontSize:12.5, fontWeight:600, color:T.ink }}>{m.title}</div>
+                        <div style={{ fontSize:11.5, color:T.ink3, fontWeight:600 }}>{m.n} {m.n === 1 ? 'session' : 'sessions'}</div>
+                      </div>
+                      <Bar pct={(m.n / maxN) * 100} color={m.c.c}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <Card padding={22}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Activity · last 12 weeks</div>
+              <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:10.5, color:T.ink4 }}>
+                <span>Less</span>
+                {[T.bg3, '#F0D9CF', '#E5A78C', '#C04A06', '#7A2E00'].map(c => <div key={c} style={{ width:11, height:11, borderRadius:3, background:c }}/>)}
+                <span>More</span>
+              </div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(84, 1fr)', gap:3 }}>
+              {heat.map((n, i) => {
+                const lvl = n >= 4 ? 4 : n === 3 ? 3 : n === 2 ? 2 : n === 1 ? 1 : 0;
+                const colors = [T.bg3, '#F0D9CF', '#E5A78C', '#C04A06', '#7A2E00'];
+                return <div key={i} style={{ aspectRatio:'1', borderRadius:3, background:colors[lvl] }}/>;
+              })}
             </div>
           </Card>
-        </div>
 
-        {/* Calendar heatmap */}
-        <Card padding={22}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Activity · last 12 weeks</div>
-            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:10.5, color:T.ink4 }}>
-              <span>Less</span>
-              {[T.bg3, '#F0D9CF', '#E5A78C', '#C04A06', '#7A2E00'].map(c => <div key={c} style={{ width:11, height:11, borderRadius:3, background:c }}/>)}
-              <span>More</span>
-            </div>
+          <div style={{ marginTop:24 }}>
+            <ExamStreamsPanel/>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(84, 1fr)', gap:3 }}>
-            {Array.from({ length:84 }).map((_,i) => {
-              const v = (Math.sin(i * 1.3) + Math.cos(i * 0.7)) / 2;
-              const lvl = v > .5 ? 4 : v > .2 ? 3 : v > -.1 ? 2 : v > -.4 ? 1 : 0;
-              const colors = [T.bg3, '#F0D9CF', '#E5A78C', '#C04A06', '#7A2E00'];
-              return <div key={i} style={{ aspectRatio:'1', borderRadius:3, background:colors[lvl] }}/>;
-            })}
-          </div>
-        </Card>
-
-        {/* Exam attempt streams (3 separate logs) */}
-        <div style={{ marginTop:24 }}>
-          <ExamStreamsPanel/>
-        </div>
         </div>
 
-        {/* Right rail */}
         <aside style={{ position:'sticky', top:0, alignSelf:'start', display:'flex', flexDirection:'column', gap:14 }}>
           <Card padding={16} style={{ background:`linear-gradient(160deg, ${T.brandSoft} 0%, ${T.brandLight} 100%)`, border:`1px solid ${T.brand}26` }}>
             <div style={{ fontSize:10.5, fontWeight:700, color:T.brand, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>Streak</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:6 }}>
-              <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>23</div>
+              <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{USER.streak || 0}</div>
               <div style={{ fontSize:12, color:T.ink3 }}>days</div>
             </div>
-            <div style={{ fontSize:11, color:T.ink3, marginBottom:10 }}>2 days from your longest run.</div>
+            <div style={{ fontSize:11, color:T.ink3, marginBottom:10 }}>{last7} {last7 === 1 ? 'session' : 'sessions'} in the last 7 days.</div>
             <div style={{ display:'flex', gap:3 }}>
-              {Array.from({ length:14 }).map((_,i) => (
-                <div key={i} style={{ flex:1, height:18, borderRadius:3, background: i < 12 ? T.brand : T.bg3 }}/>
-              ))}
+              {Array.from({ length:14 }).map((_, i) => {
+                const dayN = dayCounts[new Date(now - (13 - i) * 86400000).toISOString().slice(0, 10)] || 0;
+                return <div key={i} style={{ flex:1, height:18, borderRadius:3, background: dayN > 0 ? T.brand : T.bg3 }}/>;
+              })}
             </div>
           </Card>
 
           <Card padding={16}>
-            <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Goals</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              {[
-                { l:'Reach band 7.5', pct:78, meta:'Avg 7.0 → 7.5' },
-                { l:'5 sessions / week', pct:80, meta:'4 of 5 done' },
-                { l:'Master 500 words', pct:82, meta:'412 / 500' },
-              ].map(g => (
-                <div key={g.l}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                    <div style={{ fontSize:11.5, fontWeight:600, color:T.ink }}>{g.l}</div>
-                    <div style={{ fontSize:11, color:T.ink4 }}>{g.pct}%</div>
-                  </div>
-                  <Bar pct={g.pct} color={T.brand}/>
-                  <div style={{ fontSize:10, color:T.ink4, marginTop:4 }}>{g.meta}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card padding={16}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-              <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Recent sessions</div>
-              <button data-nav="practice" style={{ fontSize:11, color:T.ink3, fontWeight:600 }}>All</button>
-            </div>
+            <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Recent sessions</div>
             <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
-              {[
-                { ic:'mic',  c:T.speaking,  title:'Speaking · Part 2',  meta:'2h ago · 12 min', score:'7.5' },
-                { ic:'pen',  c:T.writing,   title:'Task 2 essay',       meta:'Yesterday',       score:'6.5' },
-                { ic:'head', c:T.listening, title:'Section 3',          meta:'2d ago',          score:'7.5' },
-              ].map((r, i) => (
-                <button key={i} data-nav={r.ic === 'mic' ? 'speaking' : r.ic === 'pen' ? 'writing' : 'listening'} style={{ display:'flex', alignItems:'center', gap:9, textAlign:'left', background:'transparent' }}>
+              {recent.length === 0 ? <div style={{ fontSize:12, color:T.ink4 }}>Nothing yet.</div> : recent.map((r, i) => (
+                <button key={i} onClick={() => window.__nav && window.__nav(r.ic === 'mic' ? 'speaking' : r.ic === 'pen' ? 'writing' : r.ic === 'head' ? 'listening' : 'reading')} style={{ display:'flex', alignItems:'center', gap:9, textAlign:'left', background:'transparent', border:'none', cursor:'pointer', padding:0 }}>
                   <div style={{ width:26, height:26, borderRadius:7, background:r.c.bg, color:r.c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[r.ic]({ width:11, height:11 })}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:11.5, fontWeight:600, color:T.ink, lineHeight:1.2 }}>{r.title}</div>
@@ -312,16 +310,9 @@ function ProgressPage() {
               ))}
             </div>
           </Card>
-
-          <Card padding={16}>
-            <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Insights</div>
-            <div style={{ fontSize:12, color:T.ink2, lineHeight:1.45, marginBottom:10 }}>
-              Your <span style={{ color:T.writing.c, fontWeight:700 }}>writing</span> dipped 0.5 this week. Try one Task 2 essay to recover momentum.
-            </div>
-            <button data-nav="writing" style={{ fontSize:11.5, fontWeight:700, color:T.brand, display:'inline-flex', alignItems:'center', gap:4 }}>Open writing →</button>
-          </Card>
         </aside>
         </div>
+        )}
       </div>
     </div>
   );
