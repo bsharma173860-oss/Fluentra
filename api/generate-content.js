@@ -31,9 +31,14 @@ function prompt(type, langName, difficulty, exam) {
       `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option.`;
   }
   if (type === 'writing') {
-    return `Create a ${difficulty} writing task in ${langName}.${examLine} ` +
-      `Return ONLY minified JSON: {"title":string,"prompt":string,"guidance":string,` +
-      `"min_words":number,"time_minutes":number}. Prompt and guidance in ${langName}.`;
+    return `Create a ${difficulty} two-part writing test in ${langName}.${examLine} ` +
+      `Task 1 asks the learner to describe a data visual; Task 2 is an opinion/discussion essay. ` +
+      `Return ONLY minified JSON: {"title":string,` +
+      `"task1":{"prompt":string,"chart":{"type":"bar"|"line","title":string,"unit":string,` +
+      `"categories":[string],"series":[{"name":string,"values":[number]}]}},` +
+      `"task2":{"prompt":string},"min_words":number,"time_minutes":number}. ` +
+      `The chart has 4-7 categories and 1-3 series of realistic whole numbers. ` +
+      `All prompts and chart labels in ${langName}; the Task 1 prompt asks the learner to summarise the visual.`;
   }
   if (type === 'vocab') {
     return `Create a ${difficulty} themed vocabulary set in ${langName}.${examLine} ` +

@@ -761,6 +761,41 @@ function SpeakingSession() {
   );
 }
 
+// Compact SVG chart for writing Task 1 — renders a bar or line chart from a spec.
+function WritingChart({ spec }) {
+  if (!spec || !Array.isArray(spec.categories) || !Array.isArray(spec.series)) return null;
+  const cats = spec.categories, series = spec.series;
+  const W = 520, H = 200, padL = 38, padB = 26, padT = 10, padR = 10;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const allVals = series.reduce(function (a, s) { return a.concat(s.values || []); }, []);
+  const maxV = Math.max(1, Math.max.apply(null, allVals.length ? allVals : [1]));
+  const colors = [T.writing.c, T.listening.c, T.reading.c];
+  const cx = function (i) { return padL + (plotW / cats.length) * (i + 0.5); };
+  const cy = function (v) { return padT + plotH - (v / maxV) * plotH; };
+  return (
+    <svg viewBox={'0 0 ' + W + ' ' + H} style={{ width:'100%', height:'auto', display:'block' }}>
+      <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke={T.border}/>
+      <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke={T.border}/>
+      {spec.type === 'line'
+        ? series.map(function (s, si) {
+            return <polyline key={si} fill="none" stroke={colors[si % 3]} strokeWidth="2"
+              points={(s.values || []).map(function (v, i) { return cx(i) + ',' + cy(v); }).join(' ')}/>;
+          })
+        : series.map(function (s, si) {
+            return (s.values || []).map(function (v, i) {
+              const slot = plotW / cats.length, bw = slot / (series.length + 1);
+              const bx = padL + slot * i + bw * si + bw * 0.5;
+              return <rect key={si + '-' + i} x={bx} y={cy(v)} width={bw} height={padT + plotH - cy(v)} fill={colors[si % 3]} opacity="0.85" rx="2"/>;
+            });
+          })}
+      {cats.map(function (c, i) { return <text key={i} x={cx(i)} y={H - 8} fontSize="9" fill={T.ink4} textAnchor="middle">{String(c).slice(0, 8)}</text>; })}
+      {series.length > 1 && series.map(function (s, si) {
+        return <g key={'lg' + si}><rect x={padL + si * 90} y={0} width={9} height={9} fill={colors[si % 3]} rx="2"/><text x={padL + si * 90 + 13} y={8} fontSize="9" fill={T.ink3}>{s.name || ('Series ' + (si + 1))}</text></g>;
+      })}
+    </svg>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════
 // WRITING SESSION
 // ═══════════════════════════════════════════════════════════
@@ -770,6 +805,21 @@ function WritingSession() {
   const [text, setText] = useState('');
   const [grading, setGrading] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [gen, setGen] = useState(null);
+  useEffect(function () {
+    var lang = window.__langCode || 'en';
+    window.__flWritingGen = window.__flWritingGen || {};
+    if (window.__flWritingGen[lang]) { setGen(window.__flWritingGen[lang]); return; }
+    var alive = true;
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing' }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var p = d && d.content && d.content.payload;
+        if (alive && p && (p.task1 || p.task2)) { window.__flWritingGen[lang] = p; setGen(p); }
+      })
+      .catch(function () {});
+    return function () { alive = false; };
+  }, []);
   const TARGET = task === 'task1' ? 150 : 250;
   const handleChange = (e) => {
     const val = e.target.value;
@@ -802,6 +852,8 @@ function WritingSession() {
     if (thenNav) window.__nav && window.__nav('mod_results');
   };
   const _w = _sc('writing');
+  const _chart = (gen && gen.task1 && gen.task1.chart) || { type:'bar', title:_w.chartLabel, unit:'thousands', categories:['2005','2008','2011','2014','2017','2020'], series:[{ name:'Students', values:[120,145,185,210,240,195] }] };
+  const _task1Prompt = (gen && gen.task1 && gen.task1.prompt) || _w.task1Prompt;
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <SessionHeader title={task==='task1'? _w.task1Title : _w.task2Title} module={`${_modPrefix()} ${_modLabel("Writing")}`} progress={pct} timeLeft={task==='task1'?1180:2380} color={T.writing.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
@@ -822,19 +874,12 @@ function WritingSession() {
           {task === 'task1' ? (
             <>
               <div style={{ fontSize:14, color:T.ink, lineHeight:1.65, fontFamily:"Georgia,serif", whiteSpace:'pre-line' }}>
-                {_w.task1Prompt}
+                {_task1Prompt}
               </div>
-              {/* Chart placeholder */}
+              {/* Chart — generated per task when available, else a built-in spec */}
               <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20 }}>
-                <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:14 }}>{_w.chartLabel}</div>
-                <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:120 }}>
-                  {[[2005,120],[2008,145],[2011,185],[2014,210],[2017,240],[2020,195]].map(([yr,v]) => (
-                    <div key={yr} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
-                      <div style={{ width:'100%', background:T.writing.c, borderRadius:'5px 5px 0 0', height:(v/240)*100+'%', opacity:.8 }}/>
-                      <div style={{ fontSize:10, color:T.ink4, fontWeight:600 }}>{yr}</div>
-                    </div>
-                  ))}
-                </div>
+                <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:14 }}>{_chart.title || _w.chartLabel}</div>
+                <WritingChart spec={_chart}/>
               </div>
             </>
           ) : (
