@@ -191,24 +191,9 @@ function TutorPage() {
 
   // Wire action chips (Band critique / Rewrite suggestions / Mark phonemes / etc):
   // treat them as a user reply with the chosen string, then have AI respond meaningfully.
+  // Action chips now go to the real tutor as a user turn.
   function handleAction(action) {
-    setMsgs(m => [...m, { role:'user', text:action, when:'just now' }]);
-    setThinking(true);
-    const replies = {
-      'Band critique':       'Going band-by-band: Task Response **6.5**, Coherence **6.0**, Lexical **7.0**, Grammar **6.5**. Biggest gain: tighter topic sentences. Want a line-by-line markup?',
-      'Rewrite suggestions': 'Two-pass rewrite incoming — first pass for coherence, second for register. Showing diff view above each paragraph.',
-      'Quick summary':       'Three things to fix: (1) one idea per paragraph, (2) cohesive devices in clause-2 not clause-1, (3) avoid “In conclusion” — paraphrase the thesis.',
-      'Mark phonemes':       'Marked — your /ɪ/ slips into /iː/ on three words. Drill?',
-      'Just summarize':      'Short summary: rhythm is good, vowel length is your main marker.',
-      'Skip':                'Skipping for now. Ping me whenever.',
-      'Show example outline':'Outline: Hook → thesis → P1 view A + reason → P2 view B + reason → your stance + why → paraphrased close.',
-      'Make it harder':      'Switching to a Band 8+ prompt: “To what extent should governments fund the arts?” Same structure, sharper claims.',
-      'Switch to Task 1':    'Task 1 mode on. Pick: line graph, bar chart, pie, map, or process.',
-    };
-    setTimeout(() => {
-      setMsgs(m => [...m, { role:'ai', text: replies[action] || `Working on “${action}” — one moment.`, when:'just now', actions: action.includes('Band') ? ['Show markup','Improve P1','Re-grade'] : null }]);
-      setThinking(false);
-    }, 1200);
+    send(action);
   }
 
   function handleFeedback(kind, text) {

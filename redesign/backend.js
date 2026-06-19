@@ -343,7 +343,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b18-tutor-real';
+    window.__FL_BUILD = 'b19-tutor-chips-real';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
