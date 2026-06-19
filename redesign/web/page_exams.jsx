@@ -2,14 +2,33 @@
 // Dark hero + leaderboard, premium gravitas
 
 function ExamsPage() {
-  const exams = [
-    { name:'IELTS Academic',   lang:'en', flag:'en', color:T.speaking.c,  bg:T.speaking.bg,  next:'Apr 28', score:'7.0', sessions:18 },
-    { name:'TOEFL iBT',        lang:'en', flag:'en', color:'#1558B0',     bg:'#EEF6FF',      next:'May 12', score:'92',  sessions:6  },
-    { name:'DELE B2',          lang:'es', flag:'es', color:T.brand,       bg:T.brandLight,   next:'Jun 04', score:'72',  sessions:4  },
-    { name:'DELF B2',          lang:'fr', flag:'fr', color:'#1558B0',     bg:'#EEF6FF',      next:'May 30', score:'68',  sessions:2  },
-    { name:'JLPT N4',          lang:'ja', flag:'ja', color:'#C84070',     bg:'#FFE0EC',      next:'Jul 07', score:'B',   sessions:5  },
-    { name:'Goethe B1',        lang:'de', flag:'de', color:T.writing.c,   bg:T.writing.bg,   next:'—',       score:'—',   sessions:0  },
+  const [results, setResults] = React.useState(null);
+  React.useEffect(function () {
+    var c = false;
+    if (window.FL && window.FL.fetchResults) window.FL.fetchResults(300).then(function (r) { if (!c) setResults(r || []); }).catch(function () { if (!c) setResults([]); });
+    else setResults([]);
+    return function () { c = true; };
+  }, []);
+  const R = results || [];
+  const langs = (typeof window !== 'undefined' && window.__userLanguages) ? window.__userLanguages : [];
+  const palette = [
+    { color:T.speaking.c, bg:T.speaking.bg },
+    { color:T.brand,      bg:T.brandLight },
+    { color:'#1558B0',    bg:'#EEF6FF' },
+    { color:T.writing.c,  bg:T.writing.bg },
+    { color:'#C84070',    bg:'#FFE0EC' },
+    { color:T.listening.c, bg:T.listening.bg },
   ];
+  const exams = langs.map(function (l, i) {
+    var rows = R.filter(function (r) { return r.lang === l.code; });
+    var best = rows.length ? Math.max.apply(null, rows.map(function (r) { return Number(r.score) || 0; })) : null;
+    var p = palette[i % palette.length];
+    var examName = l.exam || l.exam_type || 'Practice';
+    var eng = l.english || l.english_name || (l.code || '').toUpperCase();
+    return { name: examName + ' · ' + eng, lang: l.code, flag: l.code, color: p.color, bg: p.bg, next: '—', score: best != null ? String(best) : '—', sessions: rows.length };
+  });
+  const totalSessions = R.length;
+  const nextLabel = exams.length ? exams[0].name : 'Practice run';
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -24,17 +43,17 @@ function ExamsPage() {
             <div>
               <div style={{ fontSize:11, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:10 }}>Certification track</div>
               <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1.05, marginBottom:10, maxWidth:540 }}>Your road to certified.</div>
-              <div style={{ fontSize:14, color:'rgba(255,255,255,.7)', maxWidth:540, lineHeight:1.5 }}>Track scheduled exams, monthly mocks, and your global percentile. Practice runs are graded by the same rubrics as the real test.</div>
+              <div style={{ fontSize:14, color:'rgba(255,255,255,.7)', maxWidth:540, lineHeight:1.5 }}>Practice runs are graded by the same rubrics as the real test. Pick a track below and start a mock.</div>
             </div>
             <div style={{ display:'flex', gap:32, alignItems:'flex-end' }}>
               <div>
-                <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1, color:'#fff' }}>P82</div>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginTop:6 }}>Global percentile</div>
+                <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1, color:'#fff' }}>{totalSessions}</div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginTop:6 }}>Sessions logged</div>
               </div>
               <div style={{ width:1, height:60, background:'rgba(255,255,255,.18)' }}/>
               <div>
-                <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1, color:'#fff' }}>4</div>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginTop:6 }}>Active exams</div>
+                <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1, color:'#fff' }}>{exams.length}</div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginTop:6 }}>Exam tracks</div>
               </div>
             </div>
           </div>
@@ -42,14 +61,13 @@ function ExamsPage() {
 
         {/* Body */}
         <div style={{ padding:'28px 36px 40px' }}>
-          {/* Next exam strip + Mock Exam tier card */}
           <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:14, marginBottom:32 }}>
             <div style={{ background:T.brand, color:'#fff', borderRadius:16, padding:'22px 26px', display:'flex', alignItems:'center', gap:20 }}>
               <div style={{ width:48, height:48, borderRadius:12, background:'rgba(255,255,255,.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.trophy({ width:20, height:20 })}</div>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,.7)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:4 }}>Next up</div>
-                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.1 }}>IELTS Mock · Apr 28</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', marginTop:4 }}>2h 45m · all 4 modules · graded vs real bands</div>
+                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.1 }}>{nextLabel}</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,.75)', marginTop:4 }}>All 4 modules · graded against real rubrics</div>
               </div>
               <Btn label="Start practice run" nav="mock_test" iconRight={Icon.arrow()} accent="#fff" style={{ color:T.brand }}/>
             </div>
@@ -57,21 +75,28 @@ function ExamsPage() {
             <div style={{ background:T.card, border:`1.5px solid ${T.brand}33`, borderRadius:16, padding:'18px 20px', display:'flex', flexDirection:'column' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
                 <Chip label="Daily mock" accent={T.brand} bg={T.brandLight} style={{ fontSize:10 }}/>
-                <Chip label="Free on Pro" accent="#1A8F4E" bg="#E5F5EB" style={{ fontSize:10 }}/>
               </div>
-              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.2, marginBottom:4 }}>Take a mock without a streak.</div>
-              <div style={{ fontSize:11.5, color:T.ink3, lineHeight:1.45, marginBottom:12 }}>Pro: unlimited daily mocks free. Free tier: $2 per session — same scoring rubric.</div>
+              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.2, marginBottom:4 }}>Take a mock anytime.</div>
+              <div style={{ fontSize:11.5, color:T.ink3, lineHeight:1.45, marginBottom:12 }}>Same scoring rubric as a real exam section.</div>
               <div style={{ display:'flex', gap:8, marginTop:'auto' }}>
-                <Btn label="Free mock" nav="mock_test" accent={T.brand} size="sm" iconRight={Icon.arrow()}/>
-                <Btn label="$5 official" onClick={() => window.payFor && window.payFor('exam_official')} variant="outline" accent={T.ink2} size="sm"/>
+                <Btn label="Start a mock" nav="mock_test" accent={T.brand} size="sm" iconRight={Icon.arrow()}/>
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:14 }}>All exams</div>
+          <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:14 }}>Your exam tracks</div>
+          {exams.length === 0 ? (
+            <Card padding={32}>
+              <div style={{ textAlign:'center', color:T.ink3, fontSize:13.5 }}>
+                No exam tracks yet.<br/>
+                <span style={{ fontSize:12, color:T.ink4 }}>Add a language and its target exam appears here as a track.</span>
+                <div style={{ marginTop:14 }}><Btn label="Add a language" nav="add_language" accent={T.brand} size="sm"/></div>
+              </div>
+            </Card>
+          ) : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:16, marginBottom:32 }}>
             {exams.map(e => (
-                <Card key={e.name} padding={0} data-nav="exam_entry" data-lang={e.lang} style={{ overflow:'hidden', cursor:'pointer' }}>
+                <Card key={e.lang} padding={0} onClick={() => { window.__langCode = e.lang; window.__nav && window.__nav('exam_entry'); }} style={{ overflow:'hidden', cursor:'pointer' }}>
                 <div style={{ padding:'18px 20px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', gap:12 }}>
                   <div style={{ boxShadow:'inset 0 0 0 1px rgba(0,0,0,.08)', borderRadius:4, overflow:'hidden' }}>
                     <Flag code={e.flag} w={32} h={22} radius={4}/>
@@ -87,45 +112,25 @@ function ExamsPage() {
                     <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1, marginTop:3 }}>{e.score}</div>
                   </div>
                   <div style={{ textAlign:'right' }}>
-                    <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Next mock</div>
-                    <div style={{ fontSize:13, color:T.ink, fontWeight:600, marginTop:3 }}>{e.next}</div>
+                    <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Sessions</div>
+                    <div style={{ fontSize:13, color:T.ink, fontWeight:600, marginTop:3 }}>{e.sessions}</div>
                   </div>
                 </div>
-                <div data-nav="exam_entry" style={{ padding:'12px 20px', background:T.bg2, borderTop:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer' }}>
+                <div style={{ padding:'12px 20px', background:T.bg2, borderTop:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                   <div style={{ fontSize:11.5, color:e.color, fontWeight:700 }}>Open exam track</div>
                   <div style={{ color:e.color }}>{Icon.arrow({ width:13, height:13 })}</div>
                 </div>
               </Card>
             ))}
           </div>
+          )}
 
-          {/* Leaderboard */}
-          <Card padding={0} data-nav="leaderboard" style={{ cursor:'pointer' }}>
-            <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>IELTS · global leaderboard</div>
-                <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>Top 100 this month — your rank #18</div>
-              </div>
-              <Chip label="You · #18" accent={T.brand} bg={T.brandLight}/>
+          {/* Leaderboard — not live yet (needs a shared backend) */}
+          <Card padding={28}>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:6 }}>Global leaderboard</div>
+              <div style={{ fontSize:12.5, color:T.ink4, lineHeight:1.5, maxWidth:440, margin:'0 auto' }}>Leaderboards aren't live yet — they need a shared ranking backend. Your own scores and streak are tracked on the Progress page.</div>
             </div>
-            {[
-              { rank:1,  name:'Akira Tanaka',   country:'ja', score:'8.5', sessions:54 },
-              { rank:2,  name:'Lena Nowak',     country:'de', score:'8.5', sessions:48 },
-              { rank:3,  name:'Pierre Dubois',  country:'fr', score:'8.0', sessions:62 },
-              { rank:18, name:'María García',   country:'es', score:'7.5', sessions:24, you:true },
-              { rank:19, name:'Sam Patel',      country:'en', score:'7.5', sessions:21 },
-            ].map((row, i, all) => (
-              <div key={row.rank} style={{ display:'grid', gridTemplateColumns:'40px 1fr 80px 100px 60px', padding:'12px 22px', alignItems:'center', borderBottom: i < all.length-1 ? `1px solid ${T.hairline}` : 'none', background: row.you ? T.brandLight : 'transparent' }}>
-                <div style={{ fontFamily:T.serif, fontSize:18, color: row.rank <= 3 ? T.brand : T.ink3 }}>#{row.rank}</div>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={{ width:30, height:30, borderRadius:15, background: T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700 }}>{row.name[0]}</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{row.name} {row.you && <span style={{ color:T.brand, fontWeight:700 }}>· you</span>}</div>
-                </div>
-                <div><Flag code={row.country} w={20} h={14} radius={2}/></div>
-                <div style={{ fontSize:12, color:T.ink3 }}>{row.sessions} sessions</div>
-                <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, textAlign:'right' }}>{row.score}</div>
-              </div>
-            ))}
           </Card>
         </div>
       </div>
