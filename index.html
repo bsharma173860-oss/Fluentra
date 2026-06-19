@@ -427,6 +427,55 @@ function Splash() {
   );
 }
 
+// ── Hardening: contain render crashes so one bad page can't white-screen the app ──
+class ErrorBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err: err }; }
+  componentDidCatch(err, info) { try { console.error('[FL page error]', err, info); } catch (e) {} }
+  render() {
+    if (this.state.err) {
+      return (
+        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center', background:'#F9F8F5' }}>
+          <div style={{ maxWidth:440 }}>
+            <div style={{ fontSize:38, marginBottom:10 }}>⚠️</div>
+            <div style={{ fontFamily:"'Instrument Serif',Georgia,serif", fontSize:26, marginBottom:8, color:'#1a1a2e' }}>This page hit a snag</div>
+            <div style={{ fontSize:13.5, color:'#6b6b6b', marginBottom:16, lineHeight:1.55 }}>Something went wrong rendering this screen. The rest of the app is fine — try again, or head back to your dashboard.</div>
+            <div style={{ fontSize:11, color:'#aaa', marginBottom:18, fontFamily:'monospace', wordBreak:'break-word' }}>{String((this.state.err && this.state.err.message) || this.state.err)}</div>
+            <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+              <button onClick={() => this.setState({ err:null })} style={{ padding:'10px 20px', borderRadius:10, border:'none', background:'#1a1a2e', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>Try again</button>
+              <button onClick={() => { this.setState({ err:null }); window.__nav && window.__nav('dashboard'); }} style={{ padding:'10px 20px', borderRadius:10, border:'1px solid #ddd', background:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', color:'#1a1a2e' }}>Go to dashboard</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ── Hardening: surface backend/config failures instead of failing silently ──
+function FLBanner() {
+  const [msg, setMsg] = useState(null);
+  useEffect(() => {
+    function onErr(e) { const d = (e && e.detail) || {}; setMsg(d.message || 'Something went wrong talking to the backend.'); }
+    window.addEventListener('fl-error', onErr);
+    // one-time health probe: detect missing Supabase config up front
+    fetch('/api/content-list?lang=en').then(r => r.json()).then(d => {
+      if (d && d.error && /SUPABASE|Missing/i.test(d.error)) {
+        setMsg('Backend not fully configured: ' + d.error + ' — set it in Vercel → Settings → Environment Variables, then redeploy.');
+      }
+    }).catch(() => {});
+    return () => window.removeEventListener('fl-error', onErr);
+  }, []);
+  if (!msg) return null;
+  return (
+    <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:99999, background:'#7f1d1d', color:'#fff', padding:'9px 16px', fontSize:12.5, display:'flex', alignItems:'center', gap:12, justifyContent:'center', boxShadow:'0 1px 6px rgba(0,0,0,.2)' }}>
+      <span style={{ opacity:.96, maxWidth:880 }}>{msg}</span>
+      <button onClick={() => setMsg(null)} style={{ background:'rgba(255,255,255,.22)', border:'none', color:'#fff', borderRadius:6, padding:'3px 9px', cursor:'pointer', fontSize:11, flexShrink:0 }}>Dismiss</button>
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState('dashboard');
   const [history, setHistory] = useState([]);
@@ -502,7 +551,7 @@ function App() {
     if (isMobile) {
       return (
         <MobileFrame>
-          {MOBILE_PAGES[page]()}
+          <ErrorBoundary key={page + navTick}>{MOBILE_PAGES[page]()}</ErrorBoundary>
         </MobileFrame>
       );
     }
@@ -510,7 +559,7 @@ function App() {
     return (
       <div style={{ width:W, height:H, background:'#F9F8F5', overflow:'hidden', display:'flex' }}>
         {!fullBleed && <WebSidebar active={page === 'lang' ? 'home' : page} activeLang={page === 'lang' ? langCode : null} onNav={(id) => window.__nav(id)}/>}
-        <div key={page + '-' + langCode + '-' + navTick} style={{ flex:1, display:'flex', minWidth:0 }}>{WEB_PAGES[page]()}</div>
+        <div key={page + '-' + langCode + '-' + navTick} style={{ flex:1, display:'flex', minWidth:0 }}><ErrorBoundary>{WEB_PAGES[page]()}</ErrorBoundary></div>
       </div>
     );
   };
@@ -518,6 +567,7 @@ function App() {
   return (
     <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', background: isMobile ? '#EDEAE3' : '#F9F8F5', padding: isMobile ? '40px 40px 40px' : '0', overflow:'auto' }}>
       {!splashGone && <Splash/>}
+      <FLBanner/>
       <div style={{ width:W*scale, height:H*scale, flexShrink:0 }}>
         <div style={{ width:W, height:H, transform:`scale(${scale})`, transformOrigin:'top left' }}>
           {renderFrame()}

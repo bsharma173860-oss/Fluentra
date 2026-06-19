@@ -10,6 +10,15 @@
   var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianFtaHZpdXJ5YWtmemhob2F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTQzNjgsImV4cCI6MjA4OTc3MDM2OH0.Be6sLoc1XRDosJ3XejpD48FarJpb06ZtQCFSuzaz5zY';
   var API_URL           = '/api';
 
+  // ── Hardening: global error reporter (surfaced by the FLBanner) + readiness flag ──
+  window.__flReady = false;
+  window.__flReportError = function (scope, message) {
+    try {
+      window.__flLastError = { scope: scope, message: String(message || ''), at: Date.now() };
+      window.dispatchEvent(new CustomEvent('fl-error', { detail: { scope: scope, message: String(message || '') } }));
+    } catch (e) {}
+  };
+
   // ── Helpers ────────────────────────────────────────────────────
 
   function getToken() {
@@ -302,6 +311,11 @@
           FL.fetchLanguages(),
           FL.fetchTodayContent()
         ]).then(function () {
+          window.__flReady = true;
+          window.dispatchEvent(new CustomEvent('fl-updated'));
+        }).catch(function (e) {
+          window.__flReady = true;
+          window.__flReportError('bootstrap', (e && e.message) || 'Failed to load your account data.');
           window.dispatchEvent(new CustomEvent('fl-updated'));
         });
         if (event === 'SIGNED_IN') {
@@ -321,6 +335,11 @@
       var session = res.data && res.data.session;
       if (session) {
         Promise.all([FL.fetchProfile(), FL.fetchLanguages(), FL.fetchTodayContent()]).then(function () {
+          window.__flReady = true;
+          window.dispatchEvent(new CustomEvent('fl-updated'));
+        }).catch(function (e) {
+          window.__flReady = true;
+          window.__flReportError('bootstrap', (e && e.message) || 'Failed to load your account data.');
           window.dispatchEvent(new CustomEvent('fl-updated'));
         });
       } else {
@@ -343,7 +362,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b22-writing-crash-fix';
+    window.__FL_BUILD = 'b23-hardening-errorboundary-banner';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
