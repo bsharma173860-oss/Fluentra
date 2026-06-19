@@ -277,9 +277,9 @@ function _sc(skill){
   const c=window.__langCode||'en';
   if (SESSION_CONTENT[c]) return SESSION_CONTENT[c][skill];
   // For any language without curated content, return English content but with titles relabelled to the right exam.
-  const en = SESSION_CONTENT.en[skill];
+  const en = SESSION_CONTENT.en[skill] || {};
   const prefix = _modPrefix();
-  return { ...en, title: en.title.replace(/IELTS|DELE|JLPT|DELF/g, prefix) };
+  return { ...en, title: (en.title || '').replace(/IELTS|DELE|JLPT|DELF/g, prefix) };
 }
 function _modLabel(skill){
   const c=window.__langCode||'en';
@@ -847,7 +847,7 @@ function WritingSession() {
           {/* AI tips */}
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:16 }}>
             <div style={{ fontSize:11, fontWeight:700, color:T.writing.c, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:10 }}>{_w.tipsLabel}</div>
-            {(task==='task1' ? _w.task1Tips : _w.task2Tips).map(t => (
+            {((task==='task1' ? _w.task1Tips : _w.task2Tips) || []).map(t => (
               <div key={t} style={{ display:'flex', gap:8, marginBottom:7, fontSize:12.5, color:T.ink2 }}>
                 <span style={{ color:T.writing.c, flexShrink:0 }}>→</span> {t}
               </div>
