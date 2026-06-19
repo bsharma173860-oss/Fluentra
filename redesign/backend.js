@@ -335,7 +335,7 @@
         tries++;
         if (window.__nav) {
           clearInterval(iv);
-          if (!window.__userLanguages || !window.__userLanguages.length) window.__nav('add_language');
+          if (!window.__userLanguages || !window.__userLanguages.length) window.__nav('welcome');
         } else if (tries > 40) { clearInterval(iv); }
       }, 100);
     }
@@ -407,7 +407,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b26-spaced-repetition';
+    window.__FL_BUILD = 'b29-welcome';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
