@@ -682,9 +682,25 @@ function ListeningSession() {
 function SpeakingSession() {
   const [phase, setPhase] = useState('prep'); // prep | recording | done
   const [partIdx, setPartIdx] = useState(1);
+  const [gen, setGen] = useState(null);
+  useEffect(function () {
+    var lang = window.__langCode || 'en';
+    if (SESSION_CONTENT[lang]) return; // curated languages are already in-language
+    window.__flSpeakingGen = window.__flSpeakingGen || {};
+    if (window.__flSpeakingGen[lang]) { setGen(window.__flSpeakingGen[lang]); return; }
+    var alive = true;
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking' }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var p = d && d.content && d.content.payload;
+        if (alive && p && p.parts && p.parts.length) { window.__flSpeakingGen[lang] = p; setGen(p); }
+      })
+      .catch(function () {});
+    return function () { alive = false; };
+  }, []);
   const _s = _sc('speaking');
-  const parts = _s.parts;
-  const part = parts[partIdx - 1];
+  const parts = (gen && gen.parts && gen.parts.length) ? gen.parts : _s.parts;
+  const part = parts[partIdx - 1] || parts[0] || _s.parts[0];
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <SessionHeader title={`${_modPrefix()} ${_modLabel("Speaking")} — ${_s.examiner}`} module={`${_modPrefix()} ${_modLabel("Speaking")}`} progress={(partIdx-1)/3*100+20} timeLeft={820} color={T.speaking.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
@@ -884,9 +900,9 @@ function WritingSession() {
             </>
           ) : (
             <div style={{ fontSize:14, color:T.ink, lineHeight:1.65, fontFamily:"Georgia,serif" }}>
-              <strong>{_w.task2Intro}</strong><br/><br/>
-              <em>{_w.task2Topic}</em><br/><br/>
-              {_w.task2Outro}
+              {(gen && gen.task2 && gen.task2.prompt)
+                ? <span style={{ whiteSpace:'pre-line' }}>{gen.task2.prompt}</span>
+                : <><strong>{_w.task2Intro}</strong><br/><br/><em>{_w.task2Topic}</em><br/><br/>{_w.task2Outro}</>}
             </div>
           )}
           {/* AI tips */}

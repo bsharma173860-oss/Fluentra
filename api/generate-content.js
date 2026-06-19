@@ -40,6 +40,12 @@ function prompt(type, langName, difficulty, exam) {
       `The chart has 4-7 categories and 1-3 series of realistic whole numbers. ` +
       `All prompts and chart labels in ${langName}; the Task 1 prompt asks the learner to summarise the visual.`;
   }
+  if (type === 'speaking') {
+    return `Create a ${difficulty} speaking test in ${langName}.${examLine} ` +
+      `Return ONLY minified JSON: {"title":string,"parts":[{"n":number,"label":string,"desc":string,"prompt":string}]}. ` +
+      `Exactly 3 parts modelled on an oral exam: Part 1 short introductory questions, Part 2 a longer cue-card style turn, Part 3 an abstract discussion. ` +
+      `All "label", "desc" and "prompt" text must be written in ${langName}; "n" is 1, 2 and 3.`;
+  }
   if (type === 'vocab') {
     return `Create a ${difficulty} themed vocabulary set in ${langName}.${examLine} ` +
       `Return ONLY minified JSON: {"title":string,"theme":string,"words":[{"term":string,` +
@@ -70,7 +76,7 @@ module.exports = async function handler(req, res) {
     var difficulty = body.difficulty || 'medium';
     var exam = body.exam || null;
     if (!lang || !LANG_NAMES[lang]) return res.status(400).json({ error: 'valid lang required' });
-    if (['reading', 'writing', 'vocab'].indexOf(type) === -1) return res.status(400).json({ error: 'type must be reading|writing|vocab' });
+    if (['reading', 'writing', 'vocab', 'speaking'].indexOf(type) === -1) return res.status(400).json({ error: 'type must be reading|writing|vocab|speaking' });
 
     var p = prompt(type, LANG_NAMES[lang], difficulty, exam);
 

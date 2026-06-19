@@ -464,7 +464,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b35-stripe';
+    window.__FL_BUILD = 'b36-lang-content';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
