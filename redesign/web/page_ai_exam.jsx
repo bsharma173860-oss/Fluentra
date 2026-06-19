@@ -196,7 +196,14 @@ function AISpeakingSession() {
         setExchange(function (e) { return e + 1; });
         setTurn('ai');
       } else {
-        window.__nav && window.__nav('ai_speaking_results');
+        if (window.__exam && window.__exam.active) {
+          var _arr = (window.__fluentraSpeaking || []).slice(-MAX_EXCHANGES);
+          var _bands = _arr.map(function (x) { return (x.evaluation && Number(x.evaluation.overall_band)) || 0; }).filter(function (b) { return b > 0; });
+          var _avg = _bands.length ? _bands.reduce(function (a, b) { return a + b; }, 0) / _bands.length : 0;
+          window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'speaking', score: Math.round(_avg / 9 * 100) } }));
+        } else {
+          window.__nav && window.__nav('ai_speaking_results');
+        }
       }
     } catch (e) {
       setErr('Something went wrong: ' + (e.message || e) + '. Please try again.');
