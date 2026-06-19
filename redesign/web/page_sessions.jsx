@@ -780,14 +780,25 @@ function WritingSession() {
 
   const handleGrade = async (thenNav) => {
     if (!text.trim() || wordCount < 10) return;
-    if (!window.FL) { thenNav && window.__nav && window.__nav('mod_results'); return; }
+    const examActive = window.__exam && window.__exam.active;
+    if (!window.FL) {
+      if (examActive) window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'writing', score: 0 } }));
+      else if (thenNav) window.__nav && window.__nav('mod_results');
+      return;
+    }
     setGrading(true);
+    let res = null;
     try {
-      const lang = (window.__userLanguages && window.__userLanguages[0] && window.__userLanguages[0].code) || 'en';
-      const res = await window.FL.gradeWriting(task, text, lang);
+      const lang = window.__langCode || (window.__userLanguages && window.__userLanguages[0] && window.__userLanguages[0].code) || 'en';
+      res = await window.FL.gradeWriting(task, text, lang);
       if (res && !res.error) setFeedback(res);
     } catch(e) { /* non-blocking */ }
     setGrading(false);
+    if (examActive) {
+      var band = Number((res && (res.overall_band || (res.evaluation && res.evaluation.overall_band))) || 0);
+      window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'writing', score: Math.round(band / 9 * 100) } }));
+      return;
+    }
     if (thenNav) window.__nav && window.__nav('mod_results');
   };
   const _w = _sc('writing');
