@@ -441,9 +441,9 @@ function ReadingSession() {
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
             {questions.map(function(q, qi){
               return (
-                <div key={qi} style={{ padding:18, borderRadius:14, border:`1px solid ${answered[qi]!==undefined ? T.reading.c+'44' : T.border}`, background:answered[qi]!==undefined?T.reading.bg:T.card }}>
+                <div key={qi} style={{ padding:18, borderRadius:14, border:`1px solid ${answered[qi]!==undefined ? '#16a34a44' : T.border}`, background:answered[qi]!==undefined?'#16a34a14':T.card }}>
                   <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
-                    <div style={{ width:24, height:24, borderRadius:12, background:answered[qi]!==undefined?T.reading.c:T.bg3, color:answered[qi]!==undefined?'#fff':T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>{qi+1}</div>
+                    <div style={{ width:24, height:24, borderRadius:12, background:answered[qi]!==undefined?'#16a34a':T.bg3, color:answered[qi]!==undefined?'#fff':T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>{qi+1}</div>
                     <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.5 }}>{q.q}</div>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:7, paddingLeft:34 }}>
@@ -451,8 +451,8 @@ function ReadingSession() {
                       var chosen = answered[qi] === oi;
                       var isCorrect = submitted && oi === q.answer;
                       var isWrong = submitted && chosen && oi !== q.answer;
-                      var border = isCorrect ? '#16a34a' : isWrong ? '#dc2626' : chosen ? T.reading.c : T.border;
-                      var bg = isCorrect ? '#16a34a18' : isWrong ? '#dc262618' : chosen ? T.reading.bg : 'transparent';
+                      var border = isCorrect ? '#16a34a' : isWrong ? '#dc2626' : chosen ? '#16a34a' : T.border;
+                      var bg = isCorrect ? '#16a34a18' : isWrong ? '#dc262618' : chosen ? '#16a34a18' : 'transparent';
                       return (
                         <button key={oi} onClick={function(){ choose(qi, oi); }}
                           style={{ padding:'9px 14px', borderRadius:9, border:`1.5px solid ${border}`, background:bg, fontSize:13, fontWeight:chosen?700:400, color:T.ink, textAlign:'left', cursor:submitted?'default':'pointer' }}>
@@ -862,6 +862,58 @@ function WritingSession() {
               : 'In today\'s increasingly connected world, technology has transformed the way people communicate and maintain relationships…'}
               style={{ width:'100%', height:'100%', border:'none', outline:'none', resize:'none', padding:'28px 32px', fontSize:14.5, lineHeight:1.8, color:T.ink, fontFamily:"Georgia,'DM Serif Display',serif", background:'transparent' }}/>
           </div>
+          {feedback && !feedback.error && (
+            <div style={{ borderTop:`1px solid ${T.border}`, background:T.bg, padding:'16px 24px', maxHeight:'44%', overflow:'auto', flexShrink:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14 }}>
+                <div style={{ width:54, height:54, borderRadius:14, background:T.writing.bg, color:T.writing.c, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <div style={{ fontFamily:T.serif, fontSize:21, lineHeight:1 }}>{feedback.overall_band}</div>
+                  <div style={{ fontSize:9, color:T.ink4, marginTop:1 }}>band</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>AI feedback</div>
+                  <div style={{ fontSize:11.5, color:T.ink3 }}>Scored against the writing band descriptors</div>
+                </div>
+              </div>
+              {feedback.criteria && (
+                <div style={{ display:'flex', flexDirection:'column', gap:7, marginBottom:14 }}>
+                  {Object.keys(feedback.criteria).map(function (k) {
+                    var v = feedback.criteria[k];
+                    return (
+                      <div key={k} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <div style={{ width:160, fontSize:11.5, color:T.ink2, textTransform:'capitalize' }}>{k.replace(/_/g, ' ')}</div>
+                        <div style={{ flex:1, height:6, background:T.bg3, borderRadius:99, overflow:'hidden' }}>
+                          <div style={{ height:'100%', width:(Number(v) / 9 * 100) + '%', background:T.writing.c, borderRadius:99 }}/>
+                        </div>
+                        <div style={{ width:28, textAlign:'right', fontSize:12, fontWeight:700, color:T.ink }}>{v}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {Array.isArray(feedback.corrections) && feedback.corrections.length > 0 && (
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:8 }}>Corrections</div>
+                  {feedback.corrections.map(function (c, i) {
+                    return (
+                      <div key={i} style={{ padding:'8px 12px', borderRadius:9, background:T.card, border:`1px solid ${T.border}`, marginBottom:6, fontSize:12.5, lineHeight:1.5 }}>
+                        <span style={{ color:'#dc2626', textDecoration:'line-through' }}>{c.original}</span>{' \u2192 '}<span style={{ color:'#16a34a', fontWeight:600 }}>{c.better}</span>
+                        {c.why && <div style={{ fontSize:11, color:T.ink3, marginTop:3 }}>{c.why}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {feedback.model_answer && (
+                <div>
+                  <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:8 }}>Model answer</div>
+                  <div style={{ fontSize:13, color:T.ink2, lineHeight:1.65, fontFamily:"Georgia,serif", whiteSpace:'pre-line' }}>{feedback.model_answer}</div>
+                </div>
+              )}
+            </div>
+          )}
+          {feedback && feedback.error && (
+            <div style={{ borderTop:`1px solid ${T.border}`, padding:'12px 24px', fontSize:12.5, color:'#dc2626', flexShrink:0 }}>Grading failed: {feedback.error}. Check that ANTHROPIC_API_KEY is set in Vercel.</div>
+          )}
           {/* Bottom bar */}
           <div style={{ height:56, borderTop:`1px solid ${T.border}`, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexShrink:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
