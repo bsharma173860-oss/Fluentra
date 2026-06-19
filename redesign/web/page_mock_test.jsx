@@ -108,7 +108,7 @@ function MockTestPage() {
               const c = colorMap[m.color] || T.listening;
               const sel = pickedModule === i;
               return (
-                <button key={i} onClick={() => { setPickedModule(i); window.__nav('practice_runner'); }} style={{ display:'flex', alignItems:'center', gap:14, padding:18, borderRadius:14, border:`1.5px solid ${sel ? c.c : T.border}`, background: sel ? c.bg : T.card, cursor:'pointer', textAlign:'left', transition:'all .15s' }}>
+                <button key={i} onClick={() => { setPickedModule(i); window.__practiceModule = m.color; window.__nav('practice_runner'); }} style={{ display:'flex', alignItems:'center', gap:14, padding:18, borderRadius:14, border:`1.5px solid ${sel ? c.c : T.border}`, background: sel ? c.bg : T.card, cursor:'pointer', textAlign:'left', transition:'all .15s' }}>
                   <div style={{ width:42, height:42, borderRadius:11, background:c.c, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[m.ic]({ width:17, height:17 })}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:2 }}>{m.label}</div>

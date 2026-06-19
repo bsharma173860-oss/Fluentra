@@ -362,7 +362,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b23-hardening-errorboundary-banner';
+    window.__FL_BUILD = 'b24-exam-routing-real';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

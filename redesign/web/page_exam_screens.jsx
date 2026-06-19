@@ -615,10 +615,18 @@ function ExamRunnerResults({ results, lang }) {
   );
 }
 
+// Single-module practice drill — runs just the picked module's real session.
+function PracticeRunner() {
+  React.useEffect(function () { window.__exam = { active: false }; }, []);
+  const mod = window.__practiceModule || 'reading';
+  const Comp = window[EXAM_SECTION_COMP[mod]] || window.ReadingSession;
+  return Comp ? <Comp/> : <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, color:T.ink3 }}>Pick a module to practice.</div>;
+}
+
 Object.assign(window, {
   ExamEntry, FullExamRunner, ExamResults,
   MonthlyExamRunner, MockExamRunner, PracticeExamRunner,
   MonthlyExamResults, MockExamResults, PracticeExamResults,
   EXAM_MODES, getExamMode,
-  ExamRunner, ExamRunnerResults,
+  ExamRunner, ExamRunnerResults, PracticeRunner,
 });
