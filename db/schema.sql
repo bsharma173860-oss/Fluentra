@@ -128,3 +128,9 @@ do $$ begin
   create policy "vocab_srs_update" on vocab_srs for update using (auth.uid() = user_id);
 exception when duplicate_object then null; end $$;
 notify pgrst, 'reload schema';
+
+-- ── Stripe billing columns on profiles (idempotent) ──────────────────────────
+alter table profiles add column if not exists stripe_customer_id  text;
+alter table profiles add column if not exists subscription_status text;
+alter table profiles add column if not exists current_period_end  timestamptz;
+create index if not exists profiles_stripe_customer_idx on profiles (stripe_customer_id);

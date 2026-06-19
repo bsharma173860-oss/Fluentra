@@ -427,10 +427,44 @@
       document.body.setAttribute('data-fl-ready', '1');
     });
 
+    // ── Billing (Stripe) ─────────────────────────────────────
+    function flBilling(action, extra) {
+      return client.auth.getSession().then(function (s) {
+        var token = s && s.data && s.data.session && s.data.session.access_token;
+        if (!token) { window.__nav && window.__nav('auth_login'); return; }
+        return fetch('/api/billing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify(Object.assign({ action: action }, extra || {})),
+        }).then(function (r) { return r.json(); }).then(function (data) {
+          if (data && data.url) window.location.href = data.url;
+          else window.__flReportError('billing', (data && data.error) || 'Could not start checkout. Please try again.');
+        });
+      }).catch(function (e) { window.__flReportError('billing', (e && e.message) || 'Billing error.'); });
+    }
+    window.FL.startCheckout = function (planKey) { return flBilling('checkout', { planKey: planKey }); };
+    window.FL.openBillingPortal = function () { return flBilling('portal', {}); };
+
+    function handleBillingReturn() {
+      try {
+        var q = new URLSearchParams(window.location.search);
+        var b = q.get('billing');
+        if (!b) return;
+        history.replaceState({}, '', window.location.pathname);
+        if (b === 'success') {
+          navWhenReady('new_payment_success');
+          setTimeout(function () { FL.fetchProfile && FL.fetchProfile().then(function () { window.dispatchEvent(new CustomEvent('fl-updated')); }); }, 1500);
+        } else if (b === 'cancel') {
+          navWhenReady('pricing');
+        }
+      } catch (e) {}
+    }
+    handleBillingReturn();
+
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b34-auth-edges';
+    window.__FL_BUILD = 'b35-stripe';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

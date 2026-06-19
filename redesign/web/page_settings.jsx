@@ -159,7 +159,7 @@ function SubscriptionTab() {
           </div>
           <div style={{ display:'flex', gap:8 }}>
             <Btn nav="pricing" label="Manage plan" accent="#fff" size="sm" style={{ background:'#fff', color:T.ink }}/>
-            <Btn label="Pause subscription" variant="outline" accent="rgba(255,255,255,.4)" size="sm" style={{ color:'rgba(255,255,255,.85)' }}/>
+            <Btn label="Manage billing" variant="outline" accent="rgba(255,255,255,.4)" size="sm" style={{ color:'rgba(255,255,255,.85)' }} onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()}/>
           </div>
         </div>
       </div>

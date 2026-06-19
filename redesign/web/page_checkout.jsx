@@ -599,8 +599,13 @@ function MCheckoutPage() {
   );
 }
 
-// ── Checkout helper — call before nav('checkout') to set context ──
+// ── Checkout helper — subscriptions go to Stripe; one-time items use the in-app page ──
 window.payFor = function(presetOrItem) {
+  var SUBS = { pro_monthly:1, pro_yearly:1, max_monthly:1, max_yearly:1 };
+  if (typeof presetOrItem === 'string' && SUBS[presetOrItem] && window.FL && window.FL.startCheckout) {
+    window.FL.startCheckout(presetOrItem);
+    return;
+  }
   window.__checkoutItem = presetOrItem;
   if (window.__nav) window.__nav('checkout');
 };
