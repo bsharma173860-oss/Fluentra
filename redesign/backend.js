@@ -103,6 +103,15 @@
         getUser: function () {
           return client.auth.getUser();
         },
+        resetPassword: function (email) {
+          return client.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+        },
+        updatePassword: function (newPassword) {
+          return client.auth.updateUser({ password: newPassword });
+        },
+        resendVerification: function (email) {
+          return client.auth.resend({ type: 'signup', email: email });
+        },
       },
 
       // ── API helpers ──────────────────────────────────────────
@@ -341,7 +350,21 @@
     }
 
     // ── Auth state listener ─────────────────────────────────────
+    function navWhenReady(id) {
+      var tries = 0;
+      var iv = setInterval(function () {
+        tries++;
+        if (window.__nav) { clearInterval(iv); window.__nav(id); }
+        else if (tries > 50) { clearInterval(iv); }
+      }, 100);
+    }
+
     client.auth.onAuthStateChange(function (event, session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        navWhenReady('reset_password');
+        document.body.setAttribute('data-fl-ready', '1');
+        return;
+      }
       if (session) {
         Promise.all([
           FL.fetchProfile().then(function (user) {
@@ -407,7 +430,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b33-legal-full';
+    window.__FL_BUILD = 'b34-auth-edges';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

@@ -234,6 +234,7 @@ function SignupCard() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [done, setDone] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
 
   const handleSignUp = async () => {
     if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
@@ -255,6 +256,9 @@ function SignupCard() {
         We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then sign in.
       </div>
       <Btn label="Go to sign in" fullWidth accent={T.brand} size="lg" onClick={() => window.__nav && window.__nav('auth_login')}/>
+      <div style={{ fontSize:12.5, color:T.ink4 }}>
+        Didn't get it? {resent ? <span style={{ color:T.listening.c, fontWeight:600 }}>Sent again ✓</span> : <span onClick={async () => { if (window.FL) { try { await window.FL.auth.resendVerification(email); } catch (e) {} setResent(true); } }} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Resend email</span>}
+      </div>
     </div>
   );
 
@@ -309,6 +313,7 @@ function SignupMobile() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [done, setDone] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
 
   const handleSignUp = async () => {
     if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
@@ -329,6 +334,9 @@ function SignupMobile() {
         <div style={{ fontSize:18, fontWeight:700, color:T.ink }}>Check your inbox</div>
         <div style={{ fontSize:13, color:T.ink3, lineHeight:1.6 }}>Confirmation link sent to <strong>{email}</strong></div>
         <Btn label="Go to sign in" fullWidth accent={T.brand} size="lg" onClick={() => window.__nav && window.__nav('auth_login')}/>
+        <div style={{ fontSize:12, color:T.ink4 }}>
+          Didn't get it? {resent ? <span style={{ color:T.listening.c, fontWeight:600 }}>Sent ✓</span> : <span onClick={async () => { if (window.FL) { try { await window.FL.auth.resendVerification(email); } catch (e) {} setResent(true); } }} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Resend</span>}
+        </div>
       </div>
     </MobileBody>
   );
