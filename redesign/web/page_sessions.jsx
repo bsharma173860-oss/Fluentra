@@ -468,7 +468,7 @@ function ReadingSession() {
           <div style={{ marginTop:24 }}>
             {!submitted
               ? <Btn label="Submit & grade" accent={T.reading.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })} onClick={submit}/>
-              : <Btn label="See full results" nav="mod_results" accent={T.reading.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })}/>}
+              : <Btn label={window.__exam && window.__exam.active ? "Finish section →" : "See full results"} accent={T.reading.c} fullWidth size="lg" iconRight={Icon.arrow({ width:13, height:13 })} onClick={() => { if (window.__exam && window.__exam.active) { window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'reading', score: scorePct } })); } else { window.__nav && window.__nav('mod_results'); } }}/>}
           </div>
         </div>
       </div>
