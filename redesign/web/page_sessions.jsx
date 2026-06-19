@@ -558,7 +558,11 @@ function ListeningSession() {
           body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length } }) }).catch(function(){});
       }
     } catch (e) {}
-    setTimeout(function () { window.__nav && window.__nav('mod_results'); }, 700);
+    if (window.__exam && window.__exam.active) {
+      setTimeout(function () { window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'listening', score: pct } })); }, 700);
+    } else {
+      setTimeout(function () { window.__nav && window.__nav('mod_results'); }, 700);
+    }
   }
 
   if (loading) {

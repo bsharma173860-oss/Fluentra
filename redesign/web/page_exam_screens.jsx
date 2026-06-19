@@ -529,7 +529,7 @@ function PracticeExamResults(){ window.__examMode = 'practice'; return <ExamResu
 const EXAM_SECTION_COMP  = { reading:'ReadingSession', listening:'ListeningSession', speaking:'AISpeakingSession', writing:'WritingSession' };
 const EXAM_SECTION_LABEL = { reading:'Reading', listening:'Listening', speaking:'Speaking', writing:'Writing' };
 // Sections wired into the runner so far (grows one by one):
-const EXAM_SECTIONS = ['reading'];
+const EXAM_SECTIONS = ['reading', 'listening'];
 
 function ExamRunner() {
   const code = window.__langCode || 'en';
