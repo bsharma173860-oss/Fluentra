@@ -81,13 +81,15 @@ function FormRow({ label, value, onChange, type='text', placeholder }) {
   return (
     <div style={{ display:'grid', gridTemplateColumns:'180px 1fr', gap:16, alignItems:'center', padding:'14px 0', borderBottom:`1px solid ${T.hairline}` }}>
       <label style={{ fontSize:12.5, color:T.ink3, fontWeight:600 }}>{label}</label>
-      <input type={type} defaultValue={value} placeholder={placeholder}
+      <input type={type} defaultValue={value} placeholder={placeholder} onChange={onChange}
         style={{ padding:'9px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none', maxWidth:380 }}/>
     </div>
   );
 }
 
 function AccountTab() {
+  const [acctName, setAcctName] = useStateS(USER.name);
+  const [acctSaved, setAcctSaved] = useStateS(false);
   return (
     <div>
       <SectionHd title="Account details" sub="Update your name, email, and password. Changes apply across all devices."/>
@@ -100,8 +102,8 @@ function AccountTab() {
           </div>
           <Btn label="Change photo" variant="outline" accent={T.ink2} size="sm"/>
         </div>
-        <FormRow label="Full name" value="María García"/>
-        <FormRow label="Email" value="maria@example.com" type="email"/>
+        <FormRow label="Full name" value={USER.name} onChange={e => setAcctName(e.target.value)}/>
+        <FormRow label="Email" value={USER.email} type="email"/>
         <FormRow label="Phone" value="" placeholder="+34 600 000 000" type="tel"/>
         <FormRow label="Country" value="Spain"/>
       </Card>
@@ -131,7 +133,7 @@ function AccountTab() {
         </div>
       </Card>
 
-      <Btn label="Save changes" accent={T.brand} size="lg"/>
+      <Btn label={acctSaved ? "Saved ✓" : "Save changes"} accent={T.brand} size="lg" onClick={() => { if (window.FL && window.FL.updateProfile) { window.FL.updateProfile({ full_name: acctName }).then(function(){ setAcctSaved(true); setTimeout(function(){ setAcctSaved(false); }, 1500); }).catch(function(){}); } }}/>
     </div>
   );
 }
@@ -272,9 +274,11 @@ function BillingTab() {
 }
 
 function PreferencesTab() {
-  const [exam, setExam] = useStateS('IELTS Academic');
-  const [target, setTarget] = useStateS(8.0);
-  const [native, setNative] = useStateS('Spanish');
+  const _pu = (typeof window !== 'undefined' && window.__user) || {};
+  const [exam, setExam] = useStateS(_pu.targetExam || 'IELTS Academic');
+  const [target, setTarget] = useStateS(_pu.targetScore || 7.0);
+  const [native, setNative] = useStateS(_pu.nativeLang || 'Spanish');
+  const _saveProfile = function (patch) { if (window.FL && window.FL.updateProfile) window.FL.updateProfile(patch).catch(function(){}); };
   return (
     <div>
       <SectionHd title="Learning preferences"/>
@@ -283,7 +287,7 @@ function PreferencesTab() {
           <div style={{ fontSize:12.5, color:T.ink3, fontWeight:600, marginBottom:8 }}>Target exam</div>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
             {['IELTS Academic','IELTS General','TOEFL iBT','Cambridge C2','Duolingo'].map(e => (
-              <button key={e} onClick={() => setExam(e)} style={{ padding:'8px 14px', borderRadius:9, border:`1.5px solid ${exam===e?T.brand:T.border}`, background:exam===e?T.brandLight:T.card, fontSize:12.5, fontWeight:exam===e?700:500, color:exam===e?T.brand:T.ink2, cursor:'pointer' }}>{e}</button>
+              <button key={e} onClick={() => { setExam(e); _saveProfile({ target_exam: e }); }} style={{ padding:'8px 14px', borderRadius:9, border:`1.5px solid ${exam===e?T.brand:T.border}`, background:exam===e?T.brandLight:T.card, fontSize:12.5, fontWeight:exam===e?700:500, color:exam===e?T.brand:T.ink2, cursor:'pointer' }}>{e}</button>
             ))}
           </div>
         </div>
@@ -293,7 +297,7 @@ function PreferencesTab() {
             <span style={{ fontSize:12.5, color:T.ink3, fontWeight:600 }}>Target band score</span>
             <span style={{ fontFamily:T.serif, fontSize:24, color:T.brand }}>{target.toFixed(1)}</span>
           </div>
-          <input type="range" min="4" max="9" step="0.5" value={target} onChange={e=>setTarget(+e.target.value)}
+          <input type="range" min="4" max="9" step="0.5" value={target} onChange={e=>{ setTarget(+e.target.value); _saveProfile({ target_score: +e.target.value }); }}
             style={{ width:'100%', accentColor:T.brand }}/>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:T.ink5, marginTop:4 }}>
             <span>4.0</span><span>5.0</span><span>6.0</span><span>7.0</span><span>8.0</span><span>9.0</span>
@@ -302,7 +306,7 @@ function PreferencesTab() {
 
         <div>
           <div style={{ fontSize:12.5, color:T.ink3, fontWeight:600, marginBottom:8 }}>Native language</div>
-          <select value={native} onChange={e=>setNative(e.target.value)} style={{ width:'100%', maxWidth:380, padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none', background:T.card }}>
+          <select value={native} onChange={e=>{ setNative(e.target.value); _saveProfile({ native_language: e.target.value }); }} style={{ width:'100%', maxWidth:380, padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none', background:T.card }}>
             {['Spanish','Arabic','English','French','German','Portuguese','Mandarin','Japanese','Korean','Hindi'].map(l => <option key={l}>{l}</option>)}
           </select>
         </div>

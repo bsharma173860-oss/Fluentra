@@ -213,6 +213,19 @@
         });
       },
 
+      // ── Update profile (name, exam target, native language, etc.) ──
+      updateProfile: function (patch) {
+        return client.auth.getUser().then(function (res) {
+          var user = res.data && res.data.user;
+          if (!user) return Promise.reject(new Error('Not signed in'));
+          var row = Object.assign({ id: user.id }, patch);
+          return client.from('profiles').upsert(row, { onConflict: 'id' }).then(function (r) {
+            if (r.error) throw r.error;
+            return FL.fetchProfile().then(function () { window.dispatchEvent(new CustomEvent('fl-updated')); return true; });
+          });
+        });
+      },
+
       // ── User results (from user_content, RLS-scoped to the user) ──
       fetchResults: function (limit) {
         return client.auth.getUser().then(function (res) {
@@ -330,7 +343,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b11-progress-real';
+    window.__FL_BUILD = 'b12-progress-settings';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
