@@ -28,31 +28,63 @@ function VocabPage() {
 
   const _vLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
   const [words, setWords] = useState([]);
+  const [srsCache, setSrsCache] = useState({});
+  const [genning, setGenning] = useState(false);
+
+  function buildWord(w, states) {
+    var st = states[_vLang + '::' + (w.term || '')];
+    var isDue = !st || !st.due || new Date(st.due).getTime() <= Date.now();
+    return {
+      word: w.term || '', pos: w.reading || '', trans: w.en || '', ex: w.example || '',
+      strength: st ? Math.min(5, Math.max(1, st.reps || 1)) : 0,
+      due: (st && st.due && !isDue) ? new Date(st.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (st ? 'due' : 'new'),
+      starred: false, _srs: st || null
+    };
+  }
+
   React.useEffect(function () {
     var cancelled = false;
-    Promise.all([
-      fetch('/api/content-list?lang=' + encodeURIComponent(_vLang) + '&type=vocab&full=1&limit=10').then(function (r) { return r.json(); }).catch(function () { return { items: [] }; }),
-      (window.FL && window.FL.srsStates) ? window.FL.srsStates(_vLang).catch(function () { return {}; }) : Promise.resolve({})
-    ]).then(function (arr) {
+    (async function () {
+      var states = {};
+      try { if (window.FL && window.FL.srsStates) states = (await window.FL.srsStates(_vLang).catch(function () { return {}; })) || {}; } catch (e) {}
+      var items = [];
+      try {
+        var r = await fetch('/api/content-list?lang=' + encodeURIComponent(_vLang) + '&type=vocab&full=1&limit=10');
+        var d = await r.json(); items = (d && d.items) || [];
+      } catch (e) {}
+      if (!items.length) {
+        // pool empty for this language → generate one set on the spot
+        try {
+          var gr = await fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: _vLang, type: 'vocab', difficulty: 'medium' }) });
+          var gen = await gr.json(); if (gen && gen.content) items = [gen.content];
+        } catch (e) {}
+      }
       if (cancelled) return;
-      var d = arr[0] || {}, states = arr[1] || {}, now = Date.now(), out = [];
-      (d.items || []).forEach(function (it) {
-        var ws = (it.payload && it.payload.words) || [];
-        ws.forEach(function (w) {
-          var st = states[_vLang + '::' + (w.term || '')];
-          var isDue = !st || !st.due || new Date(st.due).getTime() <= now;
-          out.push({
-            word: w.term || '', pos: w.reading || '', trans: w.en || '', ex: w.example || '',
-            strength: st ? Math.min(5, Math.max(1, st.reps || 1)) : 0,
-            due: (st && st.due && !isDue) ? new Date(st.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (st ? 'due' : 'new'),
-            starred: false, _srs: st || null
-          });
-        });
-      });
-      setWords(out);
-    });
+      var out = [];
+      items.forEach(function (it) { ((it.payload && it.payload.words) || []).forEach(function (w) { out.push(buildWord(w, states)); }); });
+      setSrsCache(states); setWords(out);
+    })();
     return function () { cancelled = true; };
   }, []);
+
+  async function generateMore() {
+    if (genning) return;
+    setGenning(true);
+    try {
+      var gr = await fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: _vLang, type: 'vocab', difficulty: 'medium' }) });
+      var gen = await gr.json();
+      var ws = gen && gen.content && gen.content.payload && gen.content.payload.words;
+      if (ws && ws.length) {
+        var add = ws.map(function (w) { return buildWord(w, srsCache); });
+        setWords(function (prev) {
+          var seen = {}; prev.forEach(function (w) { seen[w.word] = 1; });
+          return prev.concat(add.filter(function (w) { return w.word && !seen[w.word]; }));
+        });
+      }
+    } catch (e) {}
+    setGenning(false);
+  }
+
   var _now = Date.now();
   const dueCount = words.filter(function (w) { var st = w._srs; return !st || !st.due || new Date(st.due).getTime() <= _now; }).length;
   const masteredCount = words.filter(function (w) { return w._srs && (w._srs.reps || 0) >= 3; }).length;
@@ -81,6 +113,7 @@ function VocabPage() {
               <button onClick={() => setShowSearch(true)} style={{ padding:'8px 14px', fontSize:13, fontWeight:600, color:T.ink3, background:T.card, border:`1px solid ${T.border}`, borderRadius:9, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }}>
                 {Icon.search()} Search words
               </button>
+              <Btn label={genning ? 'Generating…' : 'Generate words'} icon={Icon.spark()} variant="outline" accent={T.brand} onClick={generateMore}/>
               <Btn label="New deck" icon={Icon.plus()} variant="outline" accent={T.ink} onClick={() => setShowNewDeck(true)} />
               <Btn label={"Start review · " + dueCount + " due"} icon={Icon.spark()} accent={T.brand} onClick={() => { setStudyKind('review'); setMode('study'); }}/>
             </div>
