@@ -30,22 +30,33 @@ function VocabPage() {
   const [words, setWords] = useState([]);
   React.useEffect(function () {
     var cancelled = false;
-    fetch('/api/content-list?lang=' + encodeURIComponent(_vLang) + '&type=vocab&full=1&limit=10')
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (cancelled) return;
-        var out = [];
-        (d.items || []).forEach(function (it) {
-          var ws = (it.payload && it.payload.words) || [];
-          ws.forEach(function (w) {
-            out.push({ word: w.term || '', pos: w.reading || '', trans: w.en || '', ex: w.example || '', strength: 3, due: 'today', starred: false });
+    Promise.all([
+      fetch('/api/content-list?lang=' + encodeURIComponent(_vLang) + '&type=vocab&full=1&limit=10').then(function (r) { return r.json(); }).catch(function () { return { items: [] }; }),
+      (window.FL && window.FL.srsStates) ? window.FL.srsStates(_vLang).catch(function () { return {}; }) : Promise.resolve({})
+    ]).then(function (arr) {
+      if (cancelled) return;
+      var d = arr[0] || {}, states = arr[1] || {}, now = Date.now(), out = [];
+      (d.items || []).forEach(function (it) {
+        var ws = (it.payload && it.payload.words) || [];
+        ws.forEach(function (w) {
+          var st = states[_vLang + '::' + (w.term || '')];
+          var isDue = !st || !st.due || new Date(st.due).getTime() <= now;
+          out.push({
+            word: w.term || '', pos: w.reading || '', trans: w.en || '', ex: w.example || '',
+            strength: st ? Math.min(5, Math.max(1, st.reps || 1)) : 0,
+            due: (st && st.due && !isDue) ? new Date(st.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (st ? 'due' : 'new'),
+            starred: false, _srs: st || null
           });
         });
-        setWords(out);
-      })
-      .catch(function () { if (!cancelled) setWords([]); });
+      });
+      setWords(out);
+    });
     return function () { cancelled = true; };
   }, []);
+  var _now = Date.now();
+  const dueCount = words.filter(function (w) { var st = w._srs; return !st || !st.due || new Date(st.due).getTime() <= _now; }).length;
+  const masteredCount = words.filter(function (w) { return w._srs && (w._srs.reps || 0) >= 3; }).length;
+  const _streak = (window.__user && window.__user.streak) || 0;
 
   if (mode === 'study') return <VocabStudy deck={deck} words={words} kind={studyKind} onExit={() => setMode('browse')}/>;
 
@@ -71,7 +82,7 @@ function VocabPage() {
                 {Icon.search()} Search words
               </button>
               <Btn label="New deck" icon={Icon.plus()} variant="outline" accent={T.ink} onClick={() => setShowNewDeck(true)} />
-              <Btn label="Start review · 22 due" icon={Icon.spark()} accent={T.brand} onClick={() => { setStudyKind('review'); setMode('study'); }}/>
+              <Btn label={"Start review · " + dueCount + " due"} icon={Icon.spark()} accent={T.brand} onClick={() => { setStudyKind('review'); setMode('study'); }}/>
             </div>
           }
         />
@@ -79,10 +90,10 @@ function VocabPage() {
         {/* Stat strip */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12, marginBottom:32 }}>
           {[
-            { label:'Cards mastered',  value:'199', sub:'+14 this week',   c:T.listening },
-            { label:'Due for review',  value:'22',  sub:'across 4 decks',  c:T.reading   },
-            { label:'Day streak',      value:'14',  sub:'best: 31',        c:T.writing   },
-            { label:'Retention rate',  value:'87%', sub:'last 30 days',    c:T.speaking  },
+            { label:'Cards mastered',  value:String(masteredCount), sub:'reviewed 3+ times', c:T.listening },
+            { label:'Due for review',  value:String(dueCount),      sub:'ready now',         c:T.reading   },
+            { label:'Day streak',      value:String(_streak),       sub:_streak===1?'day':'days', c:T.writing },
+            { label:'Cards tracked',   value:String(words.length),  sub:'in this language',  c:T.speaking  },
           ].map(s => (
             <Card key={s.label} padding={18}>
               <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:6 }}>{s.label}</div>
