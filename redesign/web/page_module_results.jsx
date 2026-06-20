@@ -269,6 +269,11 @@ function ModuleResultsPage() {
   const pct = R && R.pct != null ? R.pct : (R && R.total ? Math.round((R.correct/R.total)*100) : null);
   const band = R && R.band != null ? Number(R.band) : null;
   const crit = _critEntries(R);
+  React.useEffect(function () {
+    if (!R) return;
+    var sc = isBand ? Math.round((Number(band) || 0) / 9 * 100) : (pct != null ? pct : null);
+    try { if (window.FL && window.FL.social) window.FL.social.logActivity('lesson', R.lang || window.__langCode || 'en', { module: mod, score: sc }); } catch (e) {}
+  }, []);
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>

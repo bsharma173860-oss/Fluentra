@@ -503,6 +503,7 @@ function ExamRunnerResults({ results, lang }) {
       if (token) {
         fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
           body: JSON.stringify({ lang: lang, score: overall, detail: { module:'mock_exam', sections: results } }) }).catch(function(){});
+        try { if (window.FL && window.FL.social) window.FL.social.logActivity('mock', lang, { score: overall }); } catch (e) {}
       }
     } catch (e) {}
   }, []);

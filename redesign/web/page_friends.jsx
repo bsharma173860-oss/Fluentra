@@ -2,447 +2,162 @@
 // Three-column: feed (center), friends list (left), discover/clubs (right)
 
 function FriendsPage() {
-  const [tab, setTab] = useState('feed');
+  const [tab, setTab] = React.useState('friends');
+  const [data, setData] = React.useState(null);   // { friends, incoming, outgoing }
+  const [busy, setBusy] = React.useState(false);
+  const [q, setQ] = React.useState('');
+  const [results, setResults] = React.useState(null);
+  const [searching, setSearching] = React.useState(false);
 
-  const friends = [
-    { name:'Aiko T.',     lang:'ja', streak:178, online:true,  status:'Just finished N3 Reading · 92%', initial:'A', accent:T.ja.accent },
-    { name:'Lukas B.',    lang:'de', streak:142, online:true,  status:'Working on B2 essay structure',   initial:'L', accent:T.de.accent },
-    { name:'Léa D.',      lang:'fr', streak:74,  online:false, status:'Last seen 2h ago',                 initial:'L', accent:T.fr.accent },
-    { name:'Carlos M.',   lang:'es', streak:51,  online:true,  status:'On Café Master · level 4',         initial:'C', accent:T.es.accent },
-    { name:'Olivia B.',   lang:'en', streak:99,  online:false, status:'IELTS in 18 days',                  initial:'O', accent:T.en.accent },
-    { name:'Hiroshi S.',  lang:'ja', streak:115, online:false, status:'Last seen yesterday',                initial:'H', accent:T.ja.accent },
-    { name:'Anna K.',     lang:'fr', streak:42,  online:true,  status:'Reading: French short stories',     initial:'A', accent:T.fr.accent },
-  ];
+  const S = (window.FL && window.FL.social) ? window.FL.social : null;
 
-  const feed = [
-    {
-      who:'Aiko T.', when:'12 min ago', lang:'ja', accent:T.ja.accent,
-      kind:'achievement',
-      headline:'earned the badge', emphasis:'Perfect Listener',
-      body:'Aced 10 listening sessions in a row without missing a question. Currently a 178-day streak.',
-      badge:{ ic:'head', label:'Perfect Listener', tier:'Epic', c:T.listening },
-      reactions:{ '🔥':14, '👏':9, '🎌':3 }, comments:5,
-    },
-    {
-      who:'Lukas B.', when:'34 min ago', lang:'de', accent:T.de.accent,
-      kind:'milestone',
-      headline:'hit a milestone', emphasis:'1,000 vocabulary words',
-      body:'German B2 deck is now 1,012 cards. Going to slow down on new ones and focus on retention this week.',
-      stats:[
-        { label:'Words learned', v:'1,012' },
-        { label:'Mastery',       v:'78%'   },
-        { label:'Days to goal',  v:'24'    },
-      ],
-      reactions:{ '🚀':22, '💪':11 }, comments:3,
-    },
-    {
-      who:'Léa D.', when:'2h ago', lang:'fr', accent:T.fr.accent,
-      kind:'session',
-      headline:'finished a Speaking session', emphasis:'Restaurant role-play · A2',
-      body:'"Pretty proud of this one — barely used English crutches. Lía gave me feedback on three filler-word habits I didn\'t realize I had."',
-      session:{ score:8.4, dur:'18 min', module:'Speaking', mod:T.speaking },
-      reactions:{ '👏':8, '🥖':4 }, comments:2,
-    },
-    {
-      who:'Carlos M.', when:'5h ago', lang:'es', accent:T.es.accent,
-      kind:'streak',
-      headline:'just hit', emphasis:'a 50-day streak',
-      body:'Half a year of showing up. Thanks to everyone who kept nudging me back when I missed a day in February.',
-      streakNum:50,
-      reactions:{ '🔥':31, '🎉':18, '🇪🇸':6 }, comments:8,
-    },
-    {
-      who:'Hiroshi S.', when:'Yesterday', lang:'ja', accent:T.ja.accent,
-      kind:'note',
-      headline:'shared a vocab card',
-      body:'木漏れ日 (komorebi) — sunlight filtering through the leaves of trees. No clean English equivalent. This is the kind of word I keep this app around for.',
-      vocab:{ word:'木漏れ日', romaji:'komorebi', def:'sunlight filtering through trees' },
-      reactions:{ '🌿':19, '✨':12 }, comments:4,
-    },
-  ];
+  function refresh() {
+    if (!S) { setData({ friends:[], incoming:[], outgoing:[] }); return; }
+    S.listFriends().then(function (d) { setData(d || { friends:[], incoming:[], outgoing:[] }); })
+      .catch(function () { setData({ friends:[], incoming:[], outgoing:[] }); });
+  }
+  React.useEffect(function () { refresh(); }, []);
 
-  const clubs = [
-    { name:'IELTS · April cohort',    members:248, exam:'IELTS', accent:T.brand, c:T.brandLight },
-    { name:'JLPT N3 study circle',    members:84,  exam:'JLPT',  accent:T.ja.accent, c:T.ja.accentLight },
-    { name:'Spanish A2 → B1 ladder',  members:156, exam:'DELE',  accent:T.es.accent, c:T.es.accentLight },
-    { name:'Daily 15-min French',     members:412, exam:'DELF',  accent:T.fr.accent, c:T.fr.accentLight },
-  ];
+  function initial(p) { var n = (p && (p.full_name || p.username)) || '?'; return n[0].toUpperCase(); }
+  function label(p) { return (p && (p.full_name || p.username)) || 'Learner'; }
+  function handle(p) { return p && p.username ? '@' + p.username : ''; }
 
-  const discover = [
-    { name:'Yuki N.',      lang:'ja', mutual:4, reason:'4 mutual friends · same streak goal', initial:'Y', accent:T.ja.accent },
-    { name:'Marcus H.',    lang:'en', mutual:2, reason:'Studying for IELTS · April',           initial:'M', accent:T.en.accent },
-    { name:'Priya S.',     lang:'en', mutual:6, reason:'In your Reading league',                initial:'P', accent:T.en.accent },
-  ];
+  function act(promise) {
+    if (!promise) return;
+    setBusy(true);
+    Promise.resolve(promise).then(function () { setBusy(false); refresh(); }).catch(function () { setBusy(false); refresh(); });
+  }
+  function doSearch() {
+    if (!S || q.trim().length < 2) { setResults([]); return; }
+    setSearching(true);
+    S.searchUsers(q.trim()).then(function (r) {
+      var known = {};
+      ((data && data.friends) || []).forEach(function (x) { known[x.profile.id] = 1; });
+      ((data && data.outgoing) || []).forEach(function (x) { known[x.profile.id] = 1; });
+      S._uid().then(function (me) {
+        setResults((r || []).filter(function (u) { return u.id !== me; }).map(function (u) { return Object.assign({ _known: !!known[u.id] }, u); }));
+        setSearching(false);
+      });
+    }).catch(function () { setSearching(false); setResults([]); });
+  }
 
-  const requests = [
-    { name:'Diego H.',  lang:'es', mutual:3, initial:'D', accent:T.es.accent },
-    { name:'Min-Jun P.',lang:'en', mutual:1, initial:'M', accent:T.en.accent },
+  function Avatar({ p, size }) {
+    var sz = size || 40;
+    return <div style={{ width:sz, height:sz, borderRadius:sz/2, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:sz*0.4, flexShrink:0 }}>{initial(p)}</div>;
+  }
+  function Row({ p, children }) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 20px', borderBottom:`1px solid ${T.hairline}` }}>
+        <Avatar p={p}/>
+        <button onClick={function () { window.__profileId = p.id; window.__nav && window.__nav('public_profile'); }} style={{ flex:1, minWidth:0, textAlign:'left', background:'transparent', cursor:'pointer' }}>
+          <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>{label(p)}</div>
+          <div style={{ fontSize:11.5, color:T.ink4, marginTop:2 }}>{handle(p)}{(p.streak ? (handle(p) ? ' · ' : '') + p.streak + '-day streak' : '')}</div>
+        </button>
+        <div style={{ display:'flex', gap:8, flexShrink:0 }}>{children}</div>
+      </div>
+    );
+  }
+  function MiniBtn({ label, onClick, accent, outline }) {
+    return <button disabled={busy} onClick={onClick} style={{ padding:'7px 13px', borderRadius:9, fontSize:12, fontWeight:700, cursor: busy?'default':'pointer', opacity: busy?.6:1, border: outline?`1px solid ${T.border}`:'none', background: outline?'transparent':(accent||T.brand), color: outline?T.ink2:'#fff' }}>{label}</button>;
+  }
+
+  const d = data || { friends:[], incoming:[], outgoing:[] };
+  const tabs = [
+    { id:'friends',  label:'Friends · ' + d.friends.length },
+    { id:'requests', label:'Requests · ' + d.incoming.length },
+    { id:'find',     label:'Find people' },
   ];
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-      <WebTopbar/>
-      <div style={{ flex:1, overflow:'auto', padding:'28px 36px 40px' }}>
-        <PageHeader
-          eyebrow="Friends"
-          title="Your study circle."
-          right={
-            <div style={{ display:'flex', gap:8 }}>
-              <button data-nav="search" style={{ padding:'8px 14px', fontSize:13, fontWeight:600, color:T.ink3, background:T.card, border:`1px solid ${T.border}`, borderRadius:9, display:'flex', alignItems:'center', gap:6 }}>
-                {Icon.search()} Find people
-              </button>
-              <Btn nav="friends" label="Invite friends" icon={Icon.plus()} accent={T.brand}/>
-            </div>
-          }
-        />
+      <WebTopbar search=""/>
+      <div style={{ flex:1, overflow:'auto', padding:'28px 36px 48px' }}>
+        <div style={{ maxWidth:760, margin:'0 auto' }}>
+          <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1.05, marginBottom:6 }}>Friends</div>
+          <div style={{ fontSize:13, color:T.ink4, marginBottom:20 }}>Connect with other learners, compare streaks, and message each other.</div>
 
-        {/* Tab strip */}
-        <div style={{ display:'flex', gap:4, borderBottom:`1px solid ${T.border}`, marginBottom:24 }}>
-          {[
-            { id:'feed',     label:'Feed' },
-            { id:'messages', label:'Messages · 4', nav:'dm_thread' },
-            { id:'friends',  label:`Friends · ${friends.length}` },
-            { id:'requests', label:`Requests · ${requests.length}` },
-            { id:'clubs',    label:'Study clubs' },
-          ].map(t => (
-            <button key={t.id} onClick={()=> t.nav ? (window.__nav && window.__nav(t.nav)) : setTab(t.id)} data-nav={t.nav} style={{ padding:'10px 14px', fontSize:13, fontWeight: tab===t.id ? 700 : 500, color: tab===t.id ? T.ink : T.ink3, background:'transparent', borderBottom: tab===t.id ? `2px solid ${T.brand}` : '2px solid transparent', marginBottom:-1 }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Three-column body — only on Feed tab */}
-        {tab === 'feed' && (
-        <div style={{ display:'grid', gridTemplateColumns:'260px 1fr 300px', gap:20 }}>
-
-          {/* LEFT — friends list */}
-          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            <Card padding={0}>
-              <div style={{ padding:'14px 16px 8px', borderBottom:`1px solid ${T.hairline}` }}>
-                <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Online · {friends.filter(f=>f.online).length}</div>
-              </div>
-              <div style={{ maxHeight:540, overflow:'auto' }}>
-                {friends.map((f, i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderBottom: i < friends.length - 1 ? `1px solid ${T.hairline}` : 'none', background:'transparent' }}>
-                    <button data-nav="public_profile" style={{ display:'flex', alignItems:'center', gap:10, flex:1, textAlign:'left', background:'transparent', cursor:'pointer', minWidth:0 }}>
-                      <div style={{ position:'relative', flexShrink:0 }}>
-                        <div style={{ width:32, height:32, borderRadius:16, background:f.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14 }}>
-                          {f.initial}
-                        </div>
-                        {f.online && <div style={{ position:'absolute', bottom:-1, right:-1, width:10, height:10, borderRadius:5, background:'#1A8F4E', border:`2px solid ${T.card}` }}/>}
-                      </div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          <Flag code={f.lang} w={14} h={9} radius={2}/>
-                          <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{f.name}</div>
-                        </div>
-                        <div style={{ fontSize:10.5, color:T.ink4, marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.status}</div>
-                      </div>
-                    </button>
-                    <button data-nav="dm_thread" title="Message" style={{ width:26, height:26, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, cursor:'pointer' }}>
-                      {Icon.message({ width:11, height:11 })}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Compare-progress widget */}
-            <Card padding={16}>
-              <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:10 }}>This week</div>
-              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                {[
-                  { name:'You',       v:142, c:T.brand },
-                  { name:'Aiko T.',   v:198, c:T.ja.accent },
-                  { name:'Lukas B.',  v:165, c:T.de.accent },
-                  { name:'Léa D.',    v:88,  c:T.fr.accent },
-                ].map((r,i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <div style={{ width:60, fontSize:11.5, fontWeight: r.name==='You' ? 700 : 500, color: r.name==='You' ? T.ink : T.ink3 }}>{r.name}</div>
-                    <div style={{ flex:1, height:5, background:T.trackWarm, borderRadius:99, overflow:'hidden' }}>
-                      <div style={{ height:'100%', width:`${(r.v/200)*100}%`, background:r.c, borderRadius:99 }}/>
-                    </div>
-                    <div style={{ width:30, textAlign:'right', fontSize:11, color:T.ink3, fontWeight:600 }}>{r.v}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize:10.5, color:T.ink4, marginTop:10, lineHeight:1.4 }}>Minutes studied this week. Aiko is 56 minutes ahead of you.</div>
-            </Card>
+          <div style={{ display:'flex', gap:8, marginBottom:18 }}>
+            {tabs.map(function (t) {
+              var active = tab === t.id;
+              return <button key={t.id} onClick={function () { setTab(t.id); }} style={{ padding:'8px 15px', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', border:`1px solid ${active?T.brand:T.border}`, background:active?T.brandLight:T.card, color:active?T.brand:T.ink2 }}>{t.label}</button>;
+            })}
           </div>
 
-          {/* CENTER — feed */}
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            {/* Composer */}
-            <Card padding={14}>
-              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
-                <div style={{ width:36, height:36, borderRadius:18, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:15, flexShrink:0 }}>{USER.initial}</div>
-                <input placeholder="Share a milestone, question, or word…" style={{ flex:1, padding:'9px 12px', fontSize:13, color:T.ink2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10, outline:'none' }}/>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingLeft:48 }}>
-                <div style={{ display:'flex', gap:6 }}>
-                  {[
-                    { ic:'trophy', label:'Achievement' },
-                    { ic:'book',   label:'Vocab' },
-                    { ic:'play',   label:'Session' },
-                  ].map(b => (
-                    <button key={b.label} style={{ padding:'6px 10px', fontSize:11.5, fontWeight:600, color:T.ink3, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, display:'flex', alignItems:'center', gap:5 }}>
-                      {Icon[b.ic]({ width:12, height:12 })} {b.label}
-                    </button>
-                  ))}
-                </div>
-                <Btn label="Post" size="sm" accent={T.brand}/>
-              </div>
-            </Card>
-
-            {feed.map((p, i) => (
-              <Card key={i} padding={0}>
-                {/* Header */}
-                <div style={{ padding:'14px 16px 8px', display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={{ width:38, height:38, borderRadius:19, background:p.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:15 }}>{p.who[0]}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <Flag code={p.lang} w={14} h={9} radius={2}/>
-                      <span style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>{p.who}</span>
-                      <span style={{ fontSize:12, color:T.ink3 }}>{p.headline}</span>
-                      {p.emphasis && <span style={{ fontSize:13, fontWeight:700, color:T.ink, fontFamily:T.serif }}>{p.emphasis}</span>}
-                    </div>
-                    <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{p.when}</div>
-                  </div>
-                  <button style={{ width:28, height:28, borderRadius:14, color:T.ink4 }}>{Icon.more()}</button>
-                </div>
-
-                {/* Body */}
-                {p.body && (
-                  <div style={{ padding:'4px 16px 12px', fontSize:13.5, color:T.ink2, lineHeight:1.55 }}>{p.body}</div>
-                )}
-
-                {/* Embed: badge */}
-                {p.badge && (
-                  <div style={{ margin:'4px 16px 14px', padding:'18px 18px', background:p.badge.c.bg, borderRadius:14, display:'flex', alignItems:'center', gap:14, border:`1px solid ${T.hairline}` }}>
-                    <div style={{ width:64, height:64, borderRadius:32, background:p.badge.c.c, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:`0 8px 24px ${p.badge.c.c}40` }}>
-                      {Icon[p.badge.ic]({ width:24, height:24 })}
-                    </div>
-                    <div>
-                      <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:p.badge.c.c, marginBottom:3 }}>{p.badge.tier} achievement</div>
-                      <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.1 }}>{p.badge.label}</div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Embed: milestone stats */}
-                {p.stats && (
-                  <div style={{ margin:'4px 16px 14px', padding:'14px 18px', background:T.bg2, borderRadius:12, display:'grid', gridTemplateColumns:`repeat(${p.stats.length}, 1fr)`, gap:12 }}>
-                    {p.stats.map((s, j) => (
-                      <div key={j}>
-                        <div style={{ fontSize:10.5, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>{s.label}</div>
-                        <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1 }}>{s.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Embed: session score */}
-                {p.session && (
-                  <div style={{ margin:'4px 16px 14px', padding:'14px 16px', border:`1px solid ${T.border}`, borderRadius:12, display:'flex', alignItems:'center', gap:14 }}>
-                    <div style={{ width:48, height:48, borderRadius:10, background:p.session.mod.bg, color:p.session.mod.c, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      {Icon.mic({ width:18, height:18 })}
-                    </div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{p.session.module} · {p.session.dur}</div>
-                      <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>Band score</div>
-                    </div>
-                    <div style={{ fontFamily:T.serif, fontSize:32, color:p.session.mod.c, lineHeight:1 }}>{p.session.score}</div>
-                  </div>
-                )}
-
-                {/* Embed: streak */}
-                {p.streakNum && (
-                  <div style={{ margin:'4px 16px 14px', padding:'24px 18px', background:`linear-gradient(135deg, ${T.brandLight} 0%, #FFF6F2 100%)`, borderRadius:14, display:'flex', alignItems:'center', gap:18, border:`1px solid ${T.brandLight}` }}>
-                    <div style={{ width:72, height:72, borderRadius:36, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 8px 24px ${T.brand}50` }}>
-                      {Icon.flame({ width:32, height:32 })}
-                    </div>
-                    <div>
-                      <div style={{ fontFamily:T.serif, fontSize:42, color:T.brand, lineHeight:1 }}>{p.streakNum} days</div>
-                      <div style={{ fontSize:12, color:T.ink3, marginTop:4 }}>Showing up daily since Jan 18</div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Embed: vocab card */}
-                {p.vocab && (
-                  <div style={{ margin:'4px 16px 14px', padding:'20px 22px', background:T.paper, borderRadius:14, border:`1px solid ${T.border}`, textAlign:'center' }}>
-                    <div style={{ fontFamily:T.serif, fontSize:42, color:T.ink, lineHeight:1.1 }}>{p.vocab.word}</div>
-                    <div style={{ fontSize:13, color:T.ink3, marginTop:6, fontStyle:'italic' }}>{p.vocab.romaji}</div>
-                    <div style={{ height:1, background:T.hairline, margin:'14px 40px' }}/>
-                    <div style={{ fontSize:13, color:T.ink2 }}>{p.vocab.def}</div>
-                  </div>
-                )}
-
-                {/* Reactions + comments bar */}
-                <div style={{ padding:'10px 16px 12px', borderTop:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                  <div style={{ display:'flex', gap:6 }}>
-                    {Object.entries(p.reactions).map(([emoji, n]) => (
-                      <button key={emoji} style={{ padding:'4px 10px', background:T.bg2, border:`1px solid ${T.border}`, borderRadius:99, fontSize:12, fontWeight:600, color:T.ink2, display:'inline-flex', alignItems:'center', gap:4 }}>
-                        <span style={{ fontSize:13 }}>{emoji}</span> {n}
-                      </button>
-                    ))}
-                    <button style={{ padding:'4px 9px', border:`1px dashed ${T.border}`, borderRadius:99, fontSize:12, color:T.ink4 }}>+</button>
-                  </div>
-                  <button style={{ fontSize:11.5, color:T.ink3, fontWeight:600, display:'flex', alignItems:'center', gap:5 }}>
-                    {Icon.message({ width:12, height:12 })} {p.comments} comments
-                  </button>
-                </div>
-              </Card>
-            ))}
-
-            <button style={{ padding:'12px', fontSize:12.5, fontWeight:700, color:T.ink3, background:T.card, border:`1px solid ${T.border}`, borderRadius:10 }}>Load older posts</button>
-          </div>
-
-          {/* RIGHT — discover + clubs */}
-          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            {/* Pending requests */}
-            {requests.length > 0 && (
+          {data === null ? (
+            <Card padding={40}><div style={{ color:T.ink3, fontSize:13.5 }}>Loading…</div></Card>
+          ) : tab === 'friends' ? (
+            d.friends.length === 0 ? (
+              <Card padding={36}><div style={{ color:T.ink3, fontSize:13.5, lineHeight:1.6 }}>No friends yet. Head to <button onClick={function(){ setTab('find'); }} style={{ color:T.brand, fontWeight:700, background:'transparent', cursor:'pointer' }}>Find people</button> to search by name or username and send a request.</div></Card>
+            ) : (
               <Card padding={0}>
-                <div style={{ padding:'12px 14px 10px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                  <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Requests · {requests.length}</div>
-                </div>
-                {requests.map((r, i) => (
-                  <div key={i} style={{ padding:'12px 14px', borderBottom: i < requests.length - 1 ? `1px solid ${T.hairline}` : 'none' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                      <div style={{ width:34, height:34, borderRadius:17, background:r.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14 }}>{r.initial}</div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{r.name}</div>
-                        <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{r.mutual} mutual · learning {r.lang === 'es' ? 'Spanish' : 'English'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display:'flex', gap:6 }}>
-                      <Btn label="Accept" size="sm" accent={T.brand} fullWidth/>
-                      <button style={{ padding:'6px 12px', fontSize:12, fontWeight:600, color:T.ink3, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8 }}>Decline</button>
-                    </div>
-                  </div>
-                ))}
+                {d.friends.map(function (fr) { return (
+                  <Row key={fr.friendshipId} p={fr.profile}>
+                    <MiniBtn label="Message" onClick={function () { window.__dmUser = fr.profile; window.__nav && window.__nav('dm_thread'); }}/>
+                    <MiniBtn label="Remove" outline onClick={function () { act(S.removeFriend(fr.friendshipId)); }}/>
+                  </Row>
+                ); })}
               </Card>
-            )}
-
-            {/* Discover people */}
-            <Card padding={0}>
-              <div style={{ padding:'12px 14px 10px', borderBottom:`1px solid ${T.hairline}` }}>
-                <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>People you may know</div>
-              </div>
-              {discover.map((d, i) => (
-                <div key={i} style={{ padding:'12px 14px', borderBottom: i < discover.length - 1 ? `1px solid ${T.hairline}` : 'none' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                    <div style={{ width:34, height:34, borderRadius:17, background:d.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14 }}>{d.initial}</div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{d.name}</div>
-                      <div style={{ fontSize:10.5, color:T.ink4, marginTop:1, lineHeight:1.3 }}>{d.reason}</div>
-                    </div>
-                  </div>
-                  <Btn nav="friends" label="Add friend" size="sm" variant="outline" accent={T.brand} fullWidth/>
-                </div>
-              ))}
-            </Card>
-
-            {/* Clubs */}
-            <Card padding={0}>
-              <div style={{ padding:'12px 14px 10px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Study clubs</div>
-                <button style={{ fontSize:11, color:T.brand, fontWeight:700 }}>Browse</button>
-              </div>
-              {clubs.map((c, i) => (
-                <button key={i} style={{ padding:'12px 14px', borderBottom: i < clubs.length - 1 ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', display:'flex', alignItems:'center', gap:10, background:'transparent', cursor:'pointer' }}>
-                  <div style={{ width:34, height:34, borderRadius:9, background:c.c, color:c.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:11, fontWeight:700 }}>
-                    {c.exam}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, lineHeight:1.2 }}>{c.name}</div>
-                    <div style={{ fontSize:10.5, color:T.ink4, marginTop:2, display:'flex', alignItems:'center', gap:4 }}>
-                      {Icon.users({ width:10, height:10 })} {c.members} members
-                    </div>
-                  </div>
-                  {Icon.chev({ width:12, height:12, style:{ color:T.ink4 } })}
-                </button>
-              ))}
-            </Card>
-          </div>
+            )
+          ) : tab === 'requests' ? (
+            <>
+              <div style={{ fontSize:12, fontWeight:700, color:T.ink4, letterSpacing:'.08em', textTransform:'uppercase', margin:'4px 0 10px' }}>Incoming</div>
+              {d.incoming.length === 0 ? (
+                <Card padding={28}><div style={{ color:T.ink4, fontSize:13 }}>No incoming requests.</div></Card>
+              ) : (
+                <Card padding={0}>
+                  {d.incoming.map(function (fr) { return (
+                    <Row key={fr.friendshipId} p={fr.profile}>
+                      <MiniBtn label="Accept" onClick={function () { act(S.respondFriendRequest(fr.friendshipId, true)); }}/>
+                      <MiniBtn label="Decline" outline onClick={function () { act(S.respondFriendRequest(fr.friendshipId, false)); }}/>
+                    </Row>
+                  ); })}
+                </Card>
+              )}
+              {d.outgoing.length > 0 && (
+                <>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.ink4, letterSpacing:'.08em', textTransform:'uppercase', margin:'20px 0 10px' }}>Sent</div>
+                  <Card padding={0}>
+                    {d.outgoing.map(function (fr) { return (
+                      <Row key={fr.friendshipId} p={fr.profile}>
+                        <Chip label="Pending" accent={T.ink3} bg={T.bg2}/>
+                        <MiniBtn label="Cancel" outline onClick={function () { act(S.removeFriend(fr.friendshipId)); }}/>
+                      </Row>
+                    ); })}
+                  </Card>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Card padding={14} style={{ marginBottom:16, display:'flex', gap:10 }}>
+                <input value={q} onChange={function (e) { setQ(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') doSearch(); }} placeholder="Search by name or username…" style={{ flex:1, padding:'10px 14px', borderRadius:10, border:`1px solid ${T.border}`, fontSize:13.5, color:T.ink, background:T.bg, outline:'none' }}/>
+                <Btn label="Search" accent={T.brand} onClick={doSearch}/>
+              </Card>
+              {searching ? (
+                <Card padding={28}><div style={{ color:T.ink4, fontSize:13 }}>Searching…</div></Card>
+              ) : results === null ? (
+                <Card padding={28}><div style={{ color:T.ink4, fontSize:13 }}>Search for other learners by name or username.</div></Card>
+              ) : results.length === 0 ? (
+                <Card padding={28}><div style={{ color:T.ink4, fontSize:13 }}>No matches. People appear here once they've set a name or username.</div></Card>
+              ) : (
+                <Card padding={0}>
+                  {results.map(function (u) { return (
+                    <Row key={u.id} p={u}>
+                      {u._known
+                        ? <Chip label="Added" accent={T.ink3} bg={T.bg2}/>
+                        : <MiniBtn label="Add friend" onClick={function () { act(S.sendFriendRequest(u.id)); }}/>}
+                    </Row>
+                  ); })}
+                </Card>
+              )}
+            </>
+          )}
         </div>
-        )}
-
-        {/* FRIENDS LIST TAB */}
-        {tab === 'friends' && (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14 }}>
-            {friends.map((f, i) => (
-              <Card key={i} padding={18}>
-                <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
-                  <div style={{ position:'relative', flexShrink:0 }}>
-                    <div style={{ width:48, height:48, borderRadius:24, background:f.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:18 }}>{f.initial}</div>
-                    {f.online && <div style={{ position:'absolute', bottom:0, right:0, width:12, height:12, borderRadius:6, background:'#1A8F4E', border:`2px solid ${T.card}` }}/>}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <Flag code={f.lang} w={14} h={9} radius={2}/>
-                      <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>{f.name}</div>
-                    </div>
-                    <div style={{ fontSize:11.5, color:T.ink4, marginTop:3, lineHeight:1.4 }}>{f.status}</div>
-                    <div style={{ fontSize:10.5, color:T.ink4, marginTop:6, display:'flex', alignItems:'center', gap:4 }}>{Icon.flame({ width:10, height:10 })} {f.streak}-day streak</div>
-                  </div>
-                </div>
-                <div style={{ display:'flex', gap:6, marginTop:12 }}>
-                  <Btn label="Profile" nav="public_profile" variant="outline" size="sm" fullWidth/>
-                  <Btn label="Message" nav="dm_thread" accent={T.brand} size="sm" fullWidth/>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* REQUESTS TAB */}
-        {tab === 'requests' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:10, maxWidth:640 }}>
-            {requests.map((r, i) => (
-              <Card key={i} padding={16} style={{ display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:44, height:44, borderRadius:22, background:r.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:16 }}>{r.initial}</div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>{r.name}</div>
-                  <div style={{ fontSize:11.5, color:T.ink4, marginTop:2 }}>{r.mutual} mutual friends · learning {r.lang === 'es' ? 'Spanish' : 'English'}</div>
-                </div>
-                <div style={{ display:'flex', gap:6 }}>
-                  <Btn label="View" nav="public_profile" variant="outline" size="sm"/>
-                  <Btn label="Accept" accent={T.brand} size="sm"/>
-                  <button style={{ padding:'7px 12px', fontSize:12, fontWeight:600, color:T.ink3, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8 }}>Decline</button>
-                </div>
-              </Card>
-            ))}
-            {requests.length === 0 && <div style={{ padding:40, textAlign:'center', fontSize:13, color:T.ink4 }}>No pending requests.</div>}
-          </div>
-        )}
-
-        {/* CLUBS TAB */}
-        {tab === 'clubs' && (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:14 }}>
-            {clubs.map((c, i) => (
-              <Card key={i} padding={20}>
-                <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:14 }}>
-                  <div style={{ width:48, height:48, borderRadius:11, background:c.c, color:c.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:700 }}>{c.exam}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.ink, lineHeight:1.25 }}>{c.name}</div>
-                    <div style={{ fontSize:11.5, color:T.ink4, marginTop:4, display:'flex', alignItems:'center', gap:4 }}>{Icon.users({ width:11, height:11 })} {c.members} members · public</div>
-                  </div>
-                </div>
-                <div style={{ display:'flex', gap:8 }}>
-                  <Btn label="Open club" variant="outline" size="sm" fullWidth/>
-                  <Btn label="Join" accent={c.accent} size="sm" fullWidth/>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-// ── Mobile ─────────────────────────────────────────────────────
 function MFriendsPage({ onBack }) {
   const [tab, setTab] = useState('feed');
 

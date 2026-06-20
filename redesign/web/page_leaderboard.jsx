@@ -37,7 +37,7 @@ function PodiumCard({ entry, place }) {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
       <div style={{ width:64, height:64, borderRadius:32, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:26, border:`3px solid ${rings[place]}`, position:'relative' }}>
-        {entry.name[0]}
+        {(entry.name||'?')[0]}
         <div style={{ position:'absolute', bottom:-6, right:-6, width:24, height:24, borderRadius:12, background:rings[place], color:'#fff', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', border:`2px solid ${T.bg}` }}>{place}</div>
       </div>
       <div style={{ textAlign:'center' }}>
@@ -46,7 +46,7 @@ function PodiumCard({ entry, place }) {
       </div>
       <div style={{ width:'100%', height:heights[place], background:`linear-gradient(180deg, ${colors[place]} 0%, ${colors[place]}66 100%)`, borderRadius:'12px 12px 0 0', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', paddingTop:14, border:`1px solid ${rings[place]}40`, borderBottom:'none' }}>
         <div style={{ fontFamily:T.serif, fontSize:28, color:T.ink, lineHeight:1 }}>{entry.score}</div>
-        <div style={{ fontSize:10, color:T.ink4, fontWeight:600, marginTop:3 }}>band</div>
+        <div style={{ fontSize:10, color:T.ink4, fontWeight:600, marginTop:3 }}>{entry.unit||'XP'}</div>
       </div>
     </div>
   );
@@ -63,7 +63,7 @@ function LBRow({ r }) {
     <div style={{ display:'grid', gridTemplateColumns:'56px 1fr 80px 80px 90px 70px', alignItems:'center', padding:'12px 16px', borderRadius:r.user?10:0, background:r.user?T.brandLight:'transparent', border:r.user?`1px solid ${T.brand}40`:'none', borderBottom:r.user?`1px solid ${T.brand}40`:`1px solid ${T.hairline}`, gap:8 }}>
       <div style={{ fontSize:13, fontWeight:r.user?700:500, color:r.user?T.brand:T.ink4 }}>#{r.rank}</div>
       <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
-        <div style={{ width:32, height:32, borderRadius:16, background:r.user?T.brandGrad:T.bg2, color:r.user?'#fff':T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14, flexShrink:0 }}>{r.name[0]}</div>
+        <div style={{ width:32, height:32, borderRadius:16, background:r.user?T.brandGrad:T.bg2, color:r.user?'#fff':T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14, flexShrink:0 }}>{(r.name||'?')[0]}</div>
         <div style={{ minWidth:0 }}>
           <div style={{ fontSize:13, fontWeight:r.user?700:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.name}</div>
           <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{r.country} · {r.streak}d streak</div>
@@ -71,9 +71,9 @@ function LBRow({ r }) {
       </div>
       <div style={{ fontFamily:T.serif, fontSize:18, color:r.user?T.brand:T.ink, textAlign:'right' }}>{r.score}</div>
       <div style={{ textAlign:'center' }}><DeltaPill d={r.delta}/></div>
-      <div style={{ fontSize:12, color:T.ink3, textAlign:'right' }}>{r.ses} sessions</div>
+      <div style={{ fontSize:12, color:T.ink3, textAlign:'right' }}>{r.ses}% best</div>
       <div style={{ textAlign:'right' }}>
-        <button data-nav="public_profile" style={{ fontSize:11, color:T.brand, fontWeight:600, background:'transparent', cursor:'pointer' }}>Profile</button>
+        <button onClick={() => { window.__profileId = r.id; window.__nav && window.__nav('public_profile'); }} style={{ fontSize:11, color:T.brand, fontWeight:600, background:'transparent', cursor:'pointer' }}>Profile</button>
       </div>
     </div>
   );
@@ -108,146 +108,104 @@ function applyFilters(rows, region, time, mod) {
 
 // ═══ desktop ═══════════════════════════════════════════════
 function LeaderboardPage() {
-  const [region, setRegion] = useStateLB('Global');
-  const [time, setTime]     = useStateLB('This week');
-  const [mod, setMod]       = useStateLB('Overall');
-  const rows = applyFilters(LB_ROWS, region, time, mod);
+  const [by, setBy] = React.useState('xp');
+  const [entries, setEntries] = React.useState(null);
+  const [meId, setMeId] = React.useState(null);
+  React.useEffect(function () {
+    var cancelled = false;
+    if (window.FL && window.FL.social) {
+      window.FL.social._uid().then(function (id) { if (!cancelled) setMeId(id); });
+      window.FL.social.leaderboard(by, 100)
+        .then(function (rows) { if (!cancelled) setEntries(rows || []); })
+        .catch(function () { if (!cancelled) setEntries([]); });
+    } else { setEntries([]); }
+    return function () { cancelled = true; };
+  }, [by]);
+
+  const unit = by === 'streak' ? 'days' : 'XP';
+  const raw = entries || [];
+  const adapted = raw.map(function (p, i) {
+    return {
+      id: p.id, rank: i + 1, user: p.id === meId,
+      name: p.full_name || p.username || 'Learner',
+      country: p.username ? '@' + p.username : '',
+      streak: p.streak || 0,
+      score: by === 'streak' ? (p.streak || 0) : (p.xp || 0),
+      unit: unit, delta: null, ses: p.best_score || 0,
+    };
+  });
+  const top3 = adapted.slice(0, 3);
+  const me = adapted.filter(function (r) { return r.user; })[0];
+  const total = adapted.length;
+
+  function Toggle() {
+    return (
+      <Card padding={10} style={{ marginBottom:18, display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:11.5, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginRight:4 }}>Rank by</span>
+        {[['xp','Total XP'],['streak','Day streak']].map(function (o) {
+          var active = by === o[0];
+          return <button key={o[0]} onClick={function () { setBy(o[0]); }} style={{ padding:'7px 14px', borderRadius:9, fontSize:12.5, fontWeight:700, cursor:'pointer', border:`1px solid ${active?T.brand:T.border}`, background:active?T.brandLight:T.card, color:active?T.brand:T.ink2 }}>{o[1]}</button>;
+        })}
+      </Card>
+    );
+  }
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px 48px' }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
-
-          {/* Header */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:20, gap:18 }}>
-            <div>
-              <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>Rankings</div>
-              <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1.05 }}>Leaderboard</div>
-              <div style={{ fontSize:13, color:T.ink4, marginTop:6 }}>26,420 learners ranked across {LB_MODULE.length-1} modules · Updated 2 minutes ago</div>
-            </div>
-            <div style={{ display:'flex', gap:8 }}>
-              <Btn label="Invite friends" variant="outline" accent={T.ink2}/>
-              <Btn label="Share my rank" accent={T.brand}/>
-            </div>
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>Rankings</div>
+            <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1.05 }}>Leaderboard</div>
+            <div style={{ fontSize:13, color:T.ink4, marginTop:6 }}>{entries === null ? 'Loading…' : total + (total === 1 ? ' learner' : ' learners') + ' ranked by ' + (by === 'streak' ? 'day streak' : 'total XP')}</div>
           </div>
 
-          {/* Filters */}
-          <Card padding={16} style={{ marginBottom:18, display:'flex', alignItems:'center', gap:18, flexWrap:'wrap' }}>
-            <FilterGroup label="Region" opts={LB_REGIONS} v={region} set={setRegion}/>
-            <div style={{ width:1, height:24, background:T.hairline }}/>
-            <FilterGroup label="Time" opts={LB_TIME} v={time} set={setTime}/>
-            <div style={{ width:1, height:24, background:T.hairline }}/>
-            <FilterGroup label="Module" opts={LB_MODULE} v={mod} set={setMod}/>
-          </Card>
+          <Toggle/>
 
-          {/* You + podium */}
-          <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:14, marginBottom:18 }}>
-            {/* Podium */}
-            <Card padding={26}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:18 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>This week's podium</div>
-                <div style={{ fontSize:11, color:T.ink4 }}>{region} · {mod}</div>
-              </div>
-              <div style={{ display:'flex', alignItems:'flex-end', gap:14, height:240 }}>
-                <PodiumCard entry={LB_TOP3[1]} place={2}/>
-                <PodiumCard entry={LB_TOP3[0]} place={1}/>
-                <PodiumCard entry={LB_TOP3[2]} place={3}/>
-              </div>
-            </Card>
-
-            {/* You card */}
-            <div style={{ background:T.ink, borderRadius:18, padding:'24px 26px', color:'#fff', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
-              <div>
-                <Chip label="Your position" accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.12)"/>
-                <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginTop:14 }}>
-                  <span style={{ fontFamily:T.serif, fontSize:54, lineHeight:1 }}>#491</span>
-                  <span style={{ fontSize:14, color:'rgba(255,255,255,.55)', marginBottom:8 }}>of 26,420</span>
-                </div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,.7)', marginTop:6 }}>Top 1.9% · ▲ 12 places this week</div>
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, paddingTop:16, borderTop:'1px solid rgba(255,255,255,.15)', marginTop:14 }}>
-                <div><div style={{ fontFamily:T.serif, fontSize:22 }}>7.5</div><div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:2 }}>Avg band</div></div>
-                <div><div style={{ fontFamily:T.serif, fontSize:22 }}>42</div><div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:2 }}>Day streak</div></div>
-                <div><div style={{ fontFamily:T.serif, fontSize:22 }}>142</div><div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:2 }}>Sessions</div></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Rankings table */}
-          <Card padding={0}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:`1px solid ${T.hairline}` }}>
-              <div>
-                <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>Full rankings</div>
-                <div style={{ fontSize:11.5, color:T.ink4, marginTop:2 }}>Showing top 10, plus your group · {time}</div>
-              </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <button style={{ padding:'7px 12px', borderRadius:8, border:`1px solid ${T.border}`, fontSize:12, color:T.ink2, fontWeight:500, background:T.card, cursor:'pointer' }}>Sort: Band ↓</button>
-                <button style={{ padding:'7px 12px', borderRadius:8, border:`1px solid ${T.border}`, fontSize:12, color:T.ink2, fontWeight:500, background:T.card, cursor:'pointer' }}>Friends only</button>
-              </div>
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'56px 1fr 80px 80px 90px 70px', padding:'10px 16px', fontSize:10, color:T.ink5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', borderBottom:`1px solid ${T.hairline}`, gap:8 }}>
-              <div>Rank</div><div>Learner</div><div style={{ textAlign:'right' }}>Band</div><div style={{ textAlign:'center' }}>Δ Week</div><div style={{ textAlign:'right' }}>Activity</div><div></div>
-            </div>
-            {/* Top 10 */}
-            {rows.slice(0,10).map(r => <LBRow key={r.rank} r={r}/>)}
-            {/* Gap */}
-            <div style={{ padding:'10px 20px', display:'flex', alignItems:'center', gap:10, color:T.ink5, fontSize:11.5, background:T.bg2, borderTop:`1px solid ${T.hairline}`, borderBottom:`1px solid ${T.hairline}` }}>
-              <span style={{ flex:1, height:1, background:T.border }}/>
-              · · · 478 places · · ·
-              <span style={{ flex:1, height:1, background:T.border }}/>
-            </div>
-            {/* Your group */}
-            {rows.slice(10).map(r => <LBRow key={r.rank} r={r}/>)}
-            <div style={{ padding:'14px 20px', textAlign:'center' }}>
-              <button data-nav="leaderboard" style={{ fontSize:12.5, color:T.brand, fontWeight:600, background:'transparent', cursor:'pointer' }}>Show all 26,420 ranks →</button>
-            </div>
-          </Card>
-
-          {/* Country leaderboard */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginTop:18 }}>
-            <Card padding={22}>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:12 }}>Top countries this week</div>
-              {[
-                { c:'🇯🇵', n:'Japan',   v:'8.21', count:'2,408 learners' },
-                { c:'🇩🇪', n:'Germany', v:'8.04', count:'1,892 learners' },
-                { c:'🇰🇷', n:'South Korea', v:'7.98', count:'1,654 learners' },
-                { c:'🇪🇸', n:'Spain',   v:'7.72', count:'984 learners', user:true },
-                { c:'🇫🇷', n:'France',  v:'7.65', count:'1,201 learners' },
-              ].map((r,i) => (
-                <div key={r.n} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:i<4?`1px solid ${T.hairline}`:'none' }}>
-                  <div style={{ width:24, fontSize:11, color:T.ink4, fontWeight:600 }}>#{i+1}</div>
-                  <div style={{ fontSize:18 }}>{r.c}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:r.user?700:600, color:T.ink }}>{r.n}{r.user && <span style={{ marginLeft:6, fontSize:10, color:T.brand, fontWeight:700 }}>· YOU</span>}</div>
-                    <div style={{ fontSize:11, color:T.ink4 }}>{r.count}</div>
+          {entries === null ? (
+            <Card padding={40}><div style={{ color:T.ink3, fontSize:13.5 }}>Loading leaderboard…</div></Card>
+          ) : total === 0 ? (
+            <Card padding={40}><div style={{ color:T.ink3, fontSize:13.5, lineHeight:1.6 }}>No public learners yet. As people practice, their XP and streaks appear here. Keep going and you'll be on the board.</div></Card>
+          ) : (
+          <>
+            <div style={{ display:'grid', gridTemplateColumns: me ? '1.2fr 1fr' : '1fr', gap:14, marginBottom:18 }}>
+              {top3.length >= 3 && (
+                <Card padding={26}>
+                  <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:18 }}>Top three</div>
+                  <div style={{ display:'flex', alignItems:'flex-end', gap:14, height:240 }}>
+                    <PodiumCard entry={top3[1]} place={2}/>
+                    <PodiumCard entry={top3[0]} place={1}/>
+                    <PodiumCard entry={top3[2]} place={3}/>
                   </div>
-                  <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink }}>{r.v}</div>
+                </Card>
+              )}
+              {me && (
+                <div style={{ background:T.ink, borderRadius:18, padding:'24px 26px', color:'#fff', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+                  <div>
+                    <Chip label="Your position" accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.12)"/>
+                    <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginTop:14 }}>
+                      <span style={{ fontFamily:T.serif, fontSize:54, lineHeight:1 }}>#{me.rank}</span>
+                      <span style={{ fontSize:14, color:'rgba(255,255,255,.55)', marginBottom:8 }}>of {total}</span>
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, paddingTop:16, borderTop:'1px solid rgba(255,255,255,.15)', marginTop:14 }}>
+                    <div><div style={{ fontFamily:T.serif, fontSize:22 }}>{me.score}</div><div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:2 }}>{unit==='days'?'Day streak':'Total XP'}</div></div>
+                    <div><div style={{ fontFamily:T.serif, fontSize:22 }}>{me.streak}</div><div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:2 }}>Day streak</div></div>
+                    <div><div style={{ fontFamily:T.serif, fontSize:22 }}>{me.ses}%</div><div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:2 }}>Best score</div></div>
+                  </div>
                 </div>
-              ))}
-            </Card>
-            <Card padding={22}>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:12 }}>Friends</div>
-              {[
-                { n:'Sara Vega',     score:'7.8', d:'+0.2', user:false },
-                { n:'Tom Müller',    score:'7.7', d:'+0.1', user:false },
-                { n:'You',           score:'7.5', d:'+0.3', user:true  },
-                { n:'Hana Lee',      score:'7.4', d:'',     user:false },
-                { n:'Pedro Ortiz',   score:'6.9', d:'-0.1', user:false },
-              ].map((r,i) => (
-                <div key={r.n} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:9, background:r.user?T.brandLight:'transparent', marginBottom:i<4?2:0 }}>
-                  <div style={{ width:28, height:28, borderRadius:14, background:r.user?T.brandGrad:T.bg2, color:r.user?'#fff':T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13 }}>{r.n[0]}</div>
-                  <div style={{ flex:1, fontSize:13, fontWeight:r.user?700:500, color:T.ink }}>{r.n}</div>
-                  <DeltaPill d={r.d}/>
-                  <div style={{ fontFamily:T.serif, fontSize:16, color:r.user?T.brand:T.ink, marginLeft:10 }}>{r.score}</div>
-                </div>
-              ))}
-              <div style={{ marginTop:12, padding:'10px 0 0', borderTop:`1px solid ${T.hairline}` }}>
-                <Btn label="Find friends" variant="outline" accent={T.ink2} fullWidth size="sm" icon={Icon.users({width:13,height:13})}/>
+              )}
+            </div>
+
+            <Card padding={0}>
+              <div style={{ padding:'14px 20px', borderBottom:`1px solid ${T.hairline}`, fontSize:13.5, fontWeight:700, color:T.ink }}>Full rankings</div>
+              <div style={{ padding:'8px 4px' }}>
+                {adapted.map(function (r) { return <LBRow key={r.id} r={r}/>; })}
               </div>
             </Card>
-          </div>
-
+          </>
+          )}
         </div>
       </div>
     </div>
@@ -322,7 +280,7 @@ function MLeaderboardPage() {
           {LB_ROWS.slice(0,8).map((r,i,a) => (
             <div key={r.rank} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:i<a.length-1?`1px solid ${T.hairline}`:'none' }}>
               <div style={{ width:30, fontSize:12, fontWeight:700, color:r.rank<=3?T.brand:T.ink4 }}>#{r.rank}</div>
-              <div style={{ width:32, height:32, borderRadius:16, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13 }}>{r.name[0]}</div>
+              <div style={{ width:32, height:32, borderRadius:16, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13 }}>{(r.name||'?')[0]}</div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:12.5, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.name}</div>
                 <div style={{ fontSize:10, color:T.ink4, marginTop:1 }}>{r.country} · {r.streak}d</div>
@@ -343,7 +301,7 @@ function MLeaderboardPage() {
           {LB_ROWS.slice(10).map((r,i,a) => (
             <div key={r.rank} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:i<a.length-1?`1px solid ${T.hairline}`:'none', background:r.user?T.brandLight:'transparent' }}>
               <div style={{ width:38, fontSize:12, fontWeight:r.user?700:500, color:r.user?T.brand:T.ink4 }}>#{r.rank}</div>
-              <div style={{ width:32, height:32, borderRadius:16, background:r.user?T.brandGrad:T.bg2, color:r.user?'#fff':T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13 }}>{r.name[0]}</div>
+              <div style={{ width:32, height:32, borderRadius:16, background:r.user?T.brandGrad:T.bg2, color:r.user?'#fff':T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13 }}>{(r.name||'?')[0]}</div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:12.5, fontWeight:r.user?700:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.name}</div>
                 <div style={{ fontSize:10, color:T.ink4, marginTop:1 }}>{r.country} · {r.streak}d</div>
