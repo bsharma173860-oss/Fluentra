@@ -3,6 +3,11 @@
 
 function LangHero({ lang }) {
   const t = langTheme(lang.code);
+  const _rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(function(r){ return r.lang === lang.code; }) : [];
+  const _scored = _rows.filter(function(r){ return typeof r.score === 'number'; });
+  const _bestPct = _scored.length ? Math.max.apply(null, _scored.map(function(r){ return r.score; })) : null;
+  const _dates = _rows.map(function(r){ return r.updated_at; }).filter(Boolean).map(function(d){ return new Date(d).getTime(); }).filter(function(n){ return !isNaN(n); });
+  const _daysActive = _dates.length ? Math.max(1, Math.round((Date.now() - Math.min.apply(null,_dates))/86400000)) : 0;
   return (
     <div style={{
       borderRadius:20, overflow:'hidden', position:'relative',
@@ -23,7 +28,7 @@ function LangHero({ lang }) {
             <Chip label={lang.level} accent="#fff" bg="rgba(255,255,255,.18)"/>
           </div>
           <div style={{ fontFamily:T.serif, fontSize:56, lineHeight:1, marginBottom:6 }}>{lang.native}</div>
-          <div style={{ fontSize:14, opacity:.85, fontWeight:500 }}>{lang.english} · You started {(typeof langContent === 'function' ? langContent(lang.code).startedDays : 148)} days ago</div>
+          <div style={{ fontSize:14, opacity:.85, fontWeight:500 }}>{lang.english}{_daysActive > 0 ? ' · Active for ' + _daysActive + ' day' + (_daysActive===1?'':'s') : ' · New'}</div>
         </div>
         <div style={{ display:'flex', gap:28, alignItems:'center' }}>
           <div style={{ textAlign:'center' }}>
@@ -35,8 +40,8 @@ function LangHero({ lang }) {
           </div>
           <div style={{ width:1, alignSelf:'stretch', background:'rgba(255,255,255,.25)' }}/>
           <div style={{ textAlign:'center' }}>
-            <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1 }}>{(typeof examFor === 'function' ? examFor(lang.code).bestScore : '—')}</div>
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', opacity:.85, marginTop:4 }}>Best {(typeof examFor === 'function' ? examFor(lang.code).scoreLabel : 'score')}</div>
+            <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1 }}>{_bestPct != null ? _bestPct + '%' : '—'}</div>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', opacity:.85, marginTop:4 }}>Best score</div>
           </div>
         </div>
       </div>
@@ -106,16 +111,16 @@ function LangDetailPage() {
               {(() => {
                 const pack = langPack(lang.code);
                 const subs = pack.sub;
-                const score = pack.score || '—';
-                // For JLPT (no speaking module) hide the speaking tile - flag from langContent
                 const cnt = (typeof langContent === 'function') ? langContent(lang.code) : null;
                 const hideSpeaking = !!cnt?.hideSpeaking;
+                const rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(r => r.lang === lang.code) : [];
+                const bestMod = (m) => { const xs = rows.filter(r => r.detail && r.detail.module === m && typeof r.score === 'number'); return xs.length ? Math.max.apply(null, xs.map(r=>r.score)) + '%' : '—'; };
                 return (
                   <>
-                    {!hideSpeaking && <ModuleTile nav="speaking"  ic="mic"  title="Speaking"  sub={subs.speaking}  color={T.speaking.c}  bg={T.speaking.bg}  score={score}/>}
-                    <ModuleTile nav="writing"   ic="pen"  title="Writing"   sub={subs.writing}    color={T.writing.c}   bg={T.writing.bg}   score={score}/>
-                    <ModuleTile nav="listening" ic="head" title="Listening" sub={subs.listening}  color={T.listening.c} bg={T.listening.bg} score={score}/>
-                    <ModuleTile nav="reading"   ic="book" title="Reading"   sub={subs.reading}    color={T.reading.c}   bg={T.reading.bg}   score={score}/>
+                    {!hideSpeaking && <ModuleTile nav="speaking"  ic="mic"  title="Speaking"  sub={subs.speaking}  color={T.speaking.c}  bg={T.speaking.bg}  score={bestMod('speaking')}/>}
+                    <ModuleTile nav="writing"   ic="pen"  title="Writing"   sub={subs.writing}    color={T.writing.c}   bg={T.writing.bg}   score={bestMod('writing')}/>
+                    <ModuleTile nav="listening" ic="head" title="Listening" sub={subs.listening}  color={T.listening.c} bg={T.listening.bg} score={bestMod('listening')}/>
+                    <ModuleTile nav="reading"   ic="book" title="Reading"   sub={subs.reading}    color={T.reading.c}   bg={T.reading.bg}   score={bestMod('reading')}/>
                   </>
                 );
               })()}
@@ -150,8 +155,10 @@ function LangDetailPage() {
               {/* Goals */}
               <Card padding={20}>
                 {(() => {
-                  const cnt = (typeof langContent === 'function') ? langContent(lang.code) : null;
-                  const goal = cnt?.weeklyGoal || { done:4, target:7 };
+                  const _wrows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(r => r.lang === lang.code) : [];
+                  const _weekAgo = Date.now() - 7*86400000;
+                  const _doneWk = _wrows.filter(r => r.updated_at && new Date(r.updated_at).getTime() >= _weekAgo).length;
+                  const goal = { done: _doneWk, target: 7 };
                   const remaining = Math.max(0, goal.target - goal.done);
                   return (
                     <>
