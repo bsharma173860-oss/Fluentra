@@ -95,41 +95,26 @@ function AccountTab() {
       <SectionHd title="Account details" sub="Update your name, email, and password. Changes apply across all devices."/>
       <Card padding={24} style={{ marginBottom:24 }}>
         <div style={{ display:'flex', alignItems:'center', gap:18, padding:'4px 0 18px', borderBottom:`1px solid ${T.hairline}`, marginBottom:6 }}>
-          <div style={{ width:64, height:64, borderRadius:32, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:28 }}>M</div>
+          <div style={{ width:64, height:64, borderRadius:32, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:28 }}>{USER.initial}</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:15, fontWeight:700, color:T.ink, marginBottom:2 }}>María García</div>
-            <div style={{ fontSize:12.5, color:T.ink4 }}>maria@example.com · Member since Mar 2025</div>
+            <div style={{ fontSize:15, fontWeight:700, color:T.ink, marginBottom:2 }}>{USER.name}</div>
+            <div style={{ fontSize:12.5, color:T.ink4 }}>{USER.email}</div>
           </div>
           <Btn label="Change photo" variant="outline" accent={T.ink2} size="sm"/>
         </div>
         <FormRow label="Full name" value={USER.name} onChange={e => setAcctName(e.target.value)}/>
         <FormRow label="Email" value={USER.email} type="email"/>
         <FormRow label="Phone" value="" placeholder="+34 600 000 000" type="tel"/>
-        <FormRow label="Country" value="Spain"/>
       </Card>
 
       <SectionHd title="Password & security"/>
       <Card padding={24} style={{ marginBottom:24 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.hairline}` }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0' }}>
           <div>
             <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>Password</div>
-            <div style={{ fontSize:12, color:T.ink4 }}>Last changed 2 months ago</div>
+            <div style={{ fontSize:12, color:T.ink4 }}>Reset your password by email</div>
           </div>
-          <Btn nav="settings" label="Change password" variant="outline" size="sm" accent={T.ink2}/>
-        </div>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0', borderBottom:`1px solid ${T.hairline}` }}>
-          <div>
-            <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>Two-factor authentication</div>
-            <div style={{ fontSize:12, color:T.ink4 }}>Adds an extra step when signing in</div>
-          </div>
-          <Btn label="Enable" accent={T.brand} size="sm"/>
-        </div>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 0' }}>
-          <div>
-            <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>Connected accounts</div>
-            <div style={{ fontSize:12, color:T.ink4 }}>Google · maria@gmail.com</div>
-          </div>
-          <Btn label="Manage" variant="outline" size="sm" accent={T.ink2}/>
+          <Btn label="Reset password" variant="outline" size="sm" accent={T.ink2} onClick={function(){ if (window.FL && window.FL.resetPassword && window.__user && window.__user.email) { window.FL.resetPassword(window.__user.email).then(function(){ alert('Password reset link sent to ' + window.__user.email); }).catch(function(){}); } }}/>
         </div>
       </Card>
 
@@ -139,135 +124,106 @@ function AccountTab() {
 }
 
 function SubscriptionTab() {
+  const u = (typeof window !== 'undefined' && window.__user) || {};
+  const plan = (u.plan || 'free').toLowerCase();
+  const isPaid = plan === 'pro' || plan === 'max';
+  const status = u.subscriptionStatus || null;
+  const renews = u.renewsOn || '';
+  const PLAN_META = { free:{ name:'Fluentra Free', price:'$0', per:'' }, pro:{ name:'Fluentra Pro', price:'$24', per:'/ month' }, max:{ name:'Fluentra Max', price:'$59', per:'/ month' } };
+  const meta = PLAN_META[plan] || PLAN_META.free;
+  const statusLabel = status === 'trialing' ? 'Free trial' : status === 'past_due' ? 'Payment past due' : status === 'canceled' ? 'Cancels at period end' : (isPaid ? 'Active' : '');
   return (
     <div>
       <SectionHd title="Subscription"/>
-      {/* Current plan card */}
+      {/* Current plan card — reflects the real plan on the profile */}
       <div style={{ background:T.ink, borderRadius:18, padding:'28px 32px', color:'#fff', marginBottom:24, position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', inset:0, opacity:.04, background:'radial-gradient(circle at 100% 0%, #fff 0%, transparent 60%)' }}/>
         <div style={{ position:'relative', zIndex:1 }}>
           <Chip label="Current plan" accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.1)" style={{ marginBottom:14 }}/>
           <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:18 }}>
             <div>
-              <div style={{ fontFamily:T.serif, fontSize:36, lineHeight:1, marginBottom:6 }}>Fluentra Pro</div>
-              <div style={{ fontSize:13, color:'rgba(255,255,255,.6)' }}>Renews May 28, 2026 · $24 / month</div>
+              <div style={{ fontFamily:T.serif, fontSize:36, lineHeight:1, marginBottom:6 }}>{meta.name}</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,.6)' }}>
+                {isPaid
+                  ? ((statusLabel || 'Active') + (renews ? ' · ' + (status==='canceled'?'Ends ':'Renews ') + renews : '') + ' · ' + meta.price + ' ' + meta.per)
+                  : 'Free plan — upgrade to unlock every language, unlimited AI tutor, and writing feedback.'}
+              </div>
             </div>
             <div style={{ textAlign:'right' }}>
-              <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1 }}>$24</div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,.55)', marginTop:3 }}>per month</div>
+              <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1 }}>{meta.price}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.55)', marginTop:3 }}>{isPaid ? 'per month' : 'forever'}</div>
             </div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
-            <Btn nav="pricing" label="Manage plan" accent="#fff" size="sm" style={{ background:'#fff', color:T.ink }}/>
-            <Btn label="Manage billing" variant="outline" accent="rgba(255,255,255,.4)" size="sm" style={{ color:'rgba(255,255,255,.85)' }} onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()}/>
+            {isPaid
+              ? <React.Fragment>
+                  <Btn nav="pricing" label="Change plan" accent="#fff" size="sm" style={{ background:'#fff', color:T.ink }}/>
+                  <Btn label="Manage billing" variant="outline" accent="rgba(255,255,255,.4)" size="sm" style={{ color:'rgba(255,255,255,.85)' }} onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()}/>
+                </React.Fragment>
+              : <Btn nav="pricing" label="See plans & upgrade" accent="#fff" size="sm" style={{ background:'#fff', color:T.ink }}/>}
           </div>
         </div>
       </div>
 
-      <SectionHd title="What's included"/>
-      <Card padding={24} style={{ marginBottom:24 }}>
-        {[
-          { ic:'spark', label:'Unlimited AI Tutor', v:'Used 142 sessions this month' },
-          { ic:'mic',   label:'Speaking practice',  v:'Unlimited conversations' },
-          { ic:'pen',   label:'AI Writing feedback',v:'Unlimited essays · Band-level scoring' },
-          { ic:'trophy',label:'Monthly Exam',       v:'1 entry/month included · 3 used' },
-          { ic:'book',  label:'Premium content',    v:'500+ lessons · 24 IELTS practice tests' },
-        ].map((f,i,arr) => (
-          <div key={f.label} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 0', borderBottom:i<arr.length-1?`1px solid ${T.hairline}`:'none' }}>
-            <div style={{ width:34, height:34, borderRadius:9, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              {Icon[f.ic]({ width:14, height:14 })}
-            </div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>{f.label}</div>
-              <div style={{ fontSize:12, color:T.ink4 }}>{f.v}</div>
-            </div>
-            <div style={{ color:T.listening.c }}>{Icon.check({ width:15, height:15 })}</div>
-          </div>
-        ))}
-      </Card>
-
       <SectionHd title="Compare plans"/>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14 }}>
         {[
-          { name:'Free', price:'$0', sub:'1 session/day · English', features:['1 session per day','English only','5 AI Tutor msgs / day','Basic progress'], current:false, cta:'Downgrade' },
-          { name:'Pro',  price:'$24', sub:'Per month · Most popular', features:['All languages','Unlimited AI Tutor','AI Writing feedback','Monthly Exam included','Priority support'], current:true, cta:'Current' },
-        ].map(p => (
-          <div key={p.name} style={{ background:T.card, border:`1.5px solid ${p.current?T.brand:T.border}`, borderRadius:14, padding:22, position:'relative' }}>
-            {p.current && <Chip label="Current" accent={T.brand} bg={T.brandLight} style={{ position:'absolute', top:14, right:14, fontSize:9 }}/>}
+          { key:'free', name:'Free', price:'$0',  sub:'1 session/day · English',     features:['1 session per day','English only','Limited AI Tutor','Basic progress'] },
+          { key:'pro',  name:'Pro',  price:'$24', sub:'Per month · Most popular',     features:['All languages','Unlimited AI Tutor','AI Writing feedback','Monthly Exam included','Priority support'] },
+          { key:'max',  name:'Max',  price:'$59', sub:'Per month · Power users',      features:['Everything in Pro','Highest usage limits','Early access features','Priority exam grading'] },
+        ].map(function (p) {
+          var current = p.key === plan;
+          return (
+          <div key={p.name} style={{ background:T.card, border:'1.5px solid '+(current?T.brand:T.border), borderRadius:14, padding:22, position:'relative' }}>
+            {current && <Chip label="Current" accent={T.brand} bg={T.brandLight} style={{ position:'absolute', top:14, right:14, fontSize:9 }}/>}
             <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:6 }}>{p.name}</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:4 }}>
               <span style={{ fontFamily:T.serif, fontSize:32, color:T.ink, lineHeight:1 }}>{p.price}</span>
-              <span style={{ fontSize:11, color:T.ink4 }}>{p.name==='Pro'?'/mo':''}</span>
+              <span style={{ fontSize:11, color:T.ink4 }}>{p.key!=='free'?'/mo':''}</span>
             </div>
             <div style={{ fontSize:11, color:T.ink4, marginBottom:14 }}>{p.sub}</div>
             <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-              {p.features.map(f => (
-                <div key={f} style={{ display:'flex', gap:8, alignItems:'flex-start', fontSize:12, color:T.ink2 }}>
+              {p.features.map(function (fe) { return (
+                <div key={fe} style={{ display:'flex', gap:8, alignItems:'flex-start', fontSize:12, color:T.ink2 }}>
                   <span style={{ color:T.listening.c, flexShrink:0 }}>{Icon.check({ width:11, height:11 })}</span>
-                  {f}
+                  {fe}
                 </div>
-              ))}
+              ); })}
             </div>
             <div style={{ marginTop:16 }}>
-              <Btn label={p.cta} accent={p.current?T.ink4:T.brand} fullWidth size="sm" variant={p.current?'outline':'solid'}/>
+              <Btn label={current ? 'Current plan' : (p.key==='free' ? 'Downgrade' : 'Choose ' + p.name)} accent={current?T.ink4:T.brand} fullWidth size="sm" variant={current?'outline':'solid'}
+                onClick={current ? undefined : function(){ if (p.key==='free') { window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal(); } else { window.FL && window.FL.startCheckout && window.FL.startCheckout(p.key + '_monthly'); } }}/>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
 function BillingTab() {
-  const invoices = [
-    { date:'Apr 28, 2026', desc:'Fluentra Pro · Monthly', amt:'$24.00', status:'Paid' },
-    { date:'Apr 12, 2026', desc:'IELTS Practice Exam · April',  amt:'$5.00', status:'Paid' },
-    { date:'Mar 28, 2026', desc:'Fluentra Pro · Monthly', amt:'$24.00', status:'Paid' },
-    { date:'Mar 12, 2026', desc:'IELTS Practice Exam · March',  amt:'$5.00', status:'Paid' },
-    { date:'Feb 28, 2026', desc:'Fluentra Pro · Monthly', amt:'$24.00', status:'Paid' },
-  ];
+  const u = (typeof window !== 'undefined' && window.__user) || {};
+  const isPaid = (u.plan === 'pro' || u.plan === 'max');
   return (
     <div>
-      <SectionHd title="Billing & payment"/>
-
-      <SectionHd title="Payment method"/>
-      <Card padding={20} style={{ marginBottom:24 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14, padding:'8px 0' }}>
-          <div style={{ width:48, height:32, borderRadius:6, background:'linear-gradient(135deg,#1A1F71,#3358D4)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13, fontWeight:700, letterSpacing:'.05em' }}>VISA</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:13.5, fontWeight:600, color:T.ink, marginBottom:2 }}>Visa ending in 4242</div>
-            <div style={{ fontSize:12, color:T.ink4 }}>Expires 09/27</div>
-          </div>
-          <Btn label="Replace" variant="outline" accent={T.ink2} size="sm"/>
-        </div>
-      </Card>
-
-      <SectionHd title="Billing address"/>
+      <SectionHd title="Billing & payment" sub="Your payment method, billing address, and invoices are managed securely in the billing portal."/>
       <Card padding={24} style={{ marginBottom:24 }}>
-        <FormRow label="Name on bill" value="María García"/>
-        <FormRow label="Address line 1" value="Calle de Serrano 41"/>
-        <FormRow label="City" value="Madrid"/>
-        <FormRow label="Postal code" value="28001"/>
-        <FormRow label="Country" value="Spain"/>
-        <FormRow label="VAT number" value="" placeholder="Optional"/>
-      </Card>
-
-      <SectionHd title="Invoice history"/>
-      <Card padding={0} style={{ marginBottom:24 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'140px 1fr 100px 100px 80px', padding:'12px 20px', fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', borderBottom:`1px solid ${T.hairline}` }}>
-          <div>Date</div><div>Description</div><div style={{ textAlign:'right' }}>Amount</div><div style={{ textAlign:'center' }}>Status</div><div></div>
-        </div>
-        {invoices.map((inv,i) => (
-          <div key={i} style={{ display:'grid', gridTemplateColumns:'140px 1fr 100px 100px 80px', padding:'14px 20px', alignItems:'center', borderBottom:i<invoices.length-1?`1px solid ${T.hairline}`:'none', fontSize:13 }}>
-            <div style={{ color:T.ink3 }}>{inv.date}</div>
-            <div style={{ color:T.ink, fontWeight:500 }}>{inv.desc}</div>
-            <div style={{ color:T.ink, fontWeight:600, textAlign:'right' }}>{inv.amt}</div>
-            <div style={{ textAlign:'center' }}><Chip label={inv.status} accent={T.listening.c} bg={T.listening.bg} style={{ fontSize:10 }}/></div>
-            <div style={{ textAlign:'right' }}>
-              <button style={{ fontSize:12, color:T.brand, fontWeight:600, cursor:'pointer', background:'transparent' }}>PDF</button>
+        {isPaid ? (
+          <div>
+            <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+              Update your card, change your billing address, download past invoices, or cancel your plan — all in the secure billing portal.
             </div>
+            <Btn label="Open billing portal" accent={T.brand} onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()}/>
           </div>
-        ))}
+        ) : (
+          <div>
+            <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+              You're on the Free plan, so there's nothing to bill yet. Upgrade to Pro or Max to unlock every language, unlimited tutor, and writing feedback.
+            </div>
+            <Btn label="See plans" nav="pricing" accent={T.brand}/>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -466,12 +422,12 @@ function MSettingsPage() {
 
         {/* User card */}
         <div style={{ margin:'14px 16px', background:T.ink, borderRadius:18, padding:'22px 20px', color:'#fff', display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ width:56, height:56, borderRadius:28, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:24 }}>M</div>
+          <div style={{ width:56, height:56, borderRadius:28, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:24 }}>{USER.initial}</div>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:15, fontWeight:700, marginBottom:3 }}>María García</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.65)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>maria@example.com</div>
+            <div style={{ fontSize:15, fontWeight:700, marginBottom:3 }}>{USER.name}</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.65)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{USER.email}</div>
             <div style={{ marginTop:8 }}>
-              <Chip label="Pro · Renews May 28" accent="rgba(255,255,255,.9)" bg="rgba(255,255,255,.12)" style={{ fontSize:10 }}/>
+              <Chip label={USER.plan + ((window.__user && window.__user.renewsOn && (window.__user.plan==='pro'||window.__user.plan==='max')) ? ' · Renews ' + window.__user.renewsOn : '')} accent="rgba(255,255,255,.9)" bg="rgba(255,255,255,.12)" style={{ fontSize:10 }}/>
             </div>
           </div>
         </div>
