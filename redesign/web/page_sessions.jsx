@@ -701,6 +701,59 @@ function SpeakingSession() {
   const _s = _sc('speaking');
   const parts = (gen && gen.parts && gen.parts.length) ? gen.parts : _s.parts;
   const part = parts[partIdx - 1] || parts[0] || _s.parts[0];
+
+  const recRef = React.useRef(null);
+  const chunksRef = React.useRef([]);
+  const streamRef = React.useRef(null);
+  const savedRef = React.useRef(false);
+  const [evalResult, setEvalResult] = useState(null);
+  const [evalErr, setEvalErr] = useState('');
+
+  function _tok(){ try { var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token'); return raw ? (JSON.parse(raw).access_token || null) : null; } catch(e){ return null; } }
+  function _stopTracks(){ if (streamRef.current){ streamRef.current.getTracks().forEach(function(t){ t.stop(); }); streamRef.current=null; } }
+
+  async function startRecording(){
+    setEvalErr(''); setEvalResult(null);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined'){ setEvalErr('Recording is not supported in this browser.'); return; }
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      streamRef.current = stream;
+      var mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = function(e){ if (e.data && e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = function(){ handleEvaluate(new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' })); };
+      recRef.current = mr; mr.start(); setPhase('recording');
+      setTimeout(function(){ if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); }, 45000);
+    } catch(e){ setEvalErr('Microphone access was blocked. Allow mic access in your browser and try again.'); setPhase('prep'); }
+  }
+  function stopRecording(){ if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); setPhase('evaluating'); }
+
+  async function handleEvaluate(blob){
+    _stopTracks();
+    try {
+      var b64 = await new Promise(function(resolve,reject){ var fr=new FileReader(); fr.onload=function(){ resolve(String(fr.result).split(',')[1]); }; fr.onerror=reject; fr.readAsDataURL(blob); });
+      var lang = window.__langCode || 'en';
+      var ex = (typeof examFor === 'function') ? examFor(lang) : { short:'IELTS' };
+      var token = _tok();
+      var resp = await fetch('/api/speaking-eval', {
+        method:'POST',
+        headers: Object.assign({ 'Content-Type':'application/json' }, token ? { Authorization:'Bearer '+token } : {}),
+        body: JSON.stringify({ audioBase64:b64, mimeType: blob.type || 'audio/webm', exam: ex.short || 'IELTS', part:'Part '+partIdx, question: part.prompt, speak:false }),
+      });
+      var data = await resp.json();
+      if (data && data.evaluation){ setEvalResult(data.evaluation); _maybeSave(data.evaluation); }
+      else setEvalErr((data && (data.note || data.error)) || 'Could not evaluate the recording — please try again.');
+    } catch(e){ setEvalErr('Could not evaluate the recording — please try again.'); }
+    setPhase('done');
+  }
+
+  function _maybeSave(ev){
+    if (window.__exam && window.__exam.active) return; // exam scoring handled on finish
+    if (savedRef.current) return; savedRef.current = true;
+    var band = Number(ev.overall_band || 0);
+    var token = _tok(); if (!token) return;
+    fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ lang: window.__langCode||'en', score: Math.round(band/9*100), detail:{ module:'speaking', part: partIdx }, status:'completed' }) }).catch(function(){});
+  }
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <SessionHeader title={`${_modPrefix()} ${_modLabel("Speaking")} — ${_s.examiner}`} module={`${_modPrefix()} ${_modLabel("Speaking")}`} progress={(partIdx-1)/3*100+20} timeLeft={820} color={T.speaking.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
@@ -717,7 +770,7 @@ function SpeakingSession() {
           ))}
           <div style={{ height:1, background:T.border, margin:'10px 0' }}/>
           <div style={{ fontSize:12, color:T.ink4, fontWeight:600, marginBottom:6 }}>{_s.scoreLabels.soFar}</div>
-          {[{l:_s.scoreLabels.f,v:'7.0'},{l:_s.scoreLabels.v,v:'7.5'},{l:_s.scoreLabels.g,v:'6.5'},{l:_s.scoreLabels.p,v:'7.0'}].map(r => (
+          {(function(){ var c=(evalResult&&evalResult.criteria)||{}; return [{l:_s.scoreLabels.f,v:c.fluency_coherence!=null?c.fluency_coherence:'—'},{l:_s.scoreLabels.v,v:c.lexical_resource!=null?c.lexical_resource:'—'},{l:_s.scoreLabels.g,v:c.grammatical_range!=null?c.grammatical_range:'—'},{l:_s.scoreLabels.p,v:evalResult&&evalResult.overall_band!=null?evalResult.overall_band:'—'}]; })().map(r => (
             <div key={r.l} style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4 }}>
               <span style={{ color:T.ink3 }}>{r.l}</span>
               <span style={{ fontFamily:T.serif, fontSize:14, color:T.speaking.c }}>{r.v}</span>
@@ -737,7 +790,8 @@ function SpeakingSession() {
             {phase === 'prep' && (
               <div style={{ textAlign:'center' }}>
                 <div style={{ fontSize:13, color:T.ink3, marginBottom:20 }}>{_s.prepHint}</div>
-                <Btn label={_s.startRec} icon={Icon.mic({ width:14, height:14 })} accent={T.speaking.c} size="lg" onClick={() => setPhase('recording')}/>
+                {evalErr ? <div style={{ fontSize:12.5, color:'#B91C1C', marginBottom:14 }}>{evalErr}</div> : null}
+                <Btn label={_s.startRec} icon={Icon.mic({ width:14, height:14 })} accent={T.speaking.c} size="lg" onClick={startRecording}/>
               </div>
             )}
             {phase === 'recording' && (
@@ -752,22 +806,51 @@ function SpeakingSession() {
                     <div key={i} style={{ width:5, borderRadius:3, background:T.speaking.c, height:8+Math.abs(Math.sin(i*0.8)*28), opacity:.7+Math.sin(i*.5)*.3 }}/>
                   ))}
                 </div>
-                <Btn label={_s.stop} icon={Icon.x({ width:12, height:12 })} accent={T.speaking.c} size="lg" variant="outline" onClick={() => setPhase('done')}/>
+                <Btn label={_s.stop} icon={Icon.x({ width:12, height:12 })} accent={T.speaking.c} size="lg" variant="outline" onClick={stopRecording}/>
+              </div>
+            )}
+            {phase === 'evaluating' && (
+              <div style={{ textAlign:'center', padding:'24px 0' }}>
+                <div style={{ fontSize:13.5, color:T.ink3 }}>Evaluating your answer…</div>
               </div>
             )}
             {phase === 'done' && (
               <div style={{ background:T.speaking.bg, border:`1px solid ${T.speaking.c}33`, borderRadius:16, padding:24 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:T.speaking.c, marginBottom:12 }}>{_s.feedbackTitle}</div>
-                <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.65, marginBottom:18 }}>{_s.feedbackBody}</div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:18 }}>
-                  {[{l:_s.scoreLabels.f,v:'7.0'},{l:_s.scoreLabels.v,v:'7.5'},{l:_s.scoreLabels.g,v:'6.5'},{l:_s.scoreLabels.p,v:'7.0'}].map(r => (
-                    <div key={r.l} style={{ background:T.card, borderRadius:10, padding:'10px 14px' }}>
-                      <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:4 }}>{r.l}</div>
-                      <div style={{ fontFamily:T.serif, fontSize:22, color:T.speaking.c }}>{r.v}</div>
+                {evalErr ? (
+                  <div>
+                    <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.6, marginBottom:16 }}>{evalErr}</div>
+                    <Btn label="Try again" accent={T.speaking.c} fullWidth onClick={() => { setEvalErr(''); setPhase('prep'); }}/>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+                      <div style={{ width:56, height:56, borderRadius:14, background:T.card, color:T.speaking.c, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1 }}>{evalResult ? evalResult.overall_band : '—'}</div>
+                        <div style={{ fontSize:9, color:T.ink4, marginTop:1 }}>band</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, color:T.speaking.c }}>{_s.feedbackTitle}</div>
+                        <div style={{ fontSize:11.5, color:T.ink3 }}>Scored from your spoken answer</div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-                <Btn label={partIdx < 3 ? _s.next : _s.finish} nav={partIdx < 3 ? null : 'mod_results'} accent={T.speaking.c} fullWidth iconRight={Icon.arrow({ width:13, height:13 })} onClick={() => { if(partIdx < 3) { setPartIdx(p=>p+1); setPhase('prep'); } }}/>
+                    {evalResult && evalResult.criteria && (
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+                        {Object.keys(evalResult.criteria).filter(function(k){ return typeof evalResult.criteria[k] === 'number'; }).map(function(k){
+                          return (
+                            <div key={k} style={{ background:T.card, borderRadius:10, padding:'10px 14px' }}>
+                              <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.06em', textTransform:'uppercase', marginBottom:4 }}>{k.replace(/_/g,' ')}</div>
+                              <div style={{ fontFamily:T.serif, fontSize:22, color:T.speaking.c }}>{evalResult.criteria[k]}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {evalResult && (evalResult.pronunciation_note || (evalResult.criteria && evalResult.criteria.pronunciation_note)) && (
+                      <div style={{ fontSize:12, color:T.ink3, lineHeight:1.5, marginBottom:14 }}>{evalResult.pronunciation_note || evalResult.criteria.pronunciation_note}</div>
+                    )}
+                    <Btn label={partIdx < 3 ? _s.next : _s.finish} accent={T.speaking.c} fullWidth iconRight={Icon.arrow({ width:13, height:13 })} onClick={() => { if (partIdx < 3) { setPartIdx(p=>p+1); setPhase('prep'); setEvalResult(null); } else { if (window.__exam && window.__exam.active) window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail:{ module:'speaking', score: Math.round((evalResult && evalResult.overall_band || 0)/9*100) } })); else window.__nav && window.__nav('mod_results'); } }}/>
+                  </div>
+                )}
               </div>
             )}
           </div>
