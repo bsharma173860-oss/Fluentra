@@ -500,13 +500,13 @@ function ListeningSession() {
     var cancelled = false;
     (async function () {
       try {
-        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=reading&full=1&limit=8');
+        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=listening&full=1&limit=8');
         var list = await lr.json();
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: 'medium' }),
+            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: 'medium' }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
