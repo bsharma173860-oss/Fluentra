@@ -605,7 +605,7 @@ function StudyTab({ lang }) {
           </div>
           <div style={{ padding:'14px 22px 18px' }}>
             {c.grammar.map((g,i) => (
-              <button key={g} data-nav="grammar" style={{ display:'flex', alignItems:'center', gap:11, width:'100%', padding:'10px 0', borderBottom: i < c.grammar.length-1 ? `1px solid ${T.brandLight}80` : 'none', textAlign:'left', cursor:'pointer', background:'transparent' }}>
+              <button key={g} onClick={function(){ window.__lessonTopic = { title: g, unit:'Grammar', level: lang.level }; window.__nav && window.__nav('lesson_detail'); }} style={{ display:'flex', alignItems:'center', gap:11, width:'100%', padding:'10px 0', borderBottom: i < c.grammar.length-1 ? `1px solid ${T.brandLight}80` : 'none', textAlign:'left', cursor:'pointer', background:'transparent' }}>
                 <div style={{ width:26, height:26, borderRadius:7, background:'#fff', color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:`1px solid ${T.brandLight}` }}>{Icon.pen({ width:11, height:11 })}</div>
                 <div style={{ flex:1, fontSize:12.5, fontWeight:600, color:T.ink }}>{g}</div>
                 {Icon.chev({ width:12, height:12, style:{ color:T.brand } })}
