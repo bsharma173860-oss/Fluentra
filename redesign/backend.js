@@ -341,13 +341,21 @@
 
     // ── First-run: a signed-in user with zero languages is guided to add their first one ──
     function firstRunRouteIfNeeded() {
-      if (window.__userLanguages && window.__userLanguages.length) return;
+      var hasLangs = window.__userLanguages && window.__userLanguages.length;
       var tries = 0;
       var iv = setInterval(function () {
         tries++;
         if (window.__nav) {
           clearInterval(iv);
-          if (!window.__userLanguages || !window.__userLanguages.length) window.__nav('welcome');
+          if (!hasLangs) { window.__nav('welcome'); return; }
+          if (window.__navResumed) return;
+          window.__navResumed = true;
+          try {
+            var last = localStorage.getItem('fl-last-route');
+            var lastLang = localStorage.getItem('fl-last-lang');
+            if (lastLang) window.__langCode = lastLang;
+            if (last && last !== 'dashboard') window.__nav(last);
+          } catch (e) {}
         } else if (tries > 40) { clearInterval(iv); }
       }, 100);
     }
@@ -390,6 +398,7 @@
           window.dispatchEvent(new CustomEvent('fl-updated'));
         });
         if (event === 'SIGNED_IN') {
+          window.__navResumed = true;
           window.__nav && window.__nav('dashboard');
         }
       } else {
@@ -468,7 +477,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b49-receipts-real';
+    window.__FL_BUILD = 'b50-tutor-resume-langcount';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

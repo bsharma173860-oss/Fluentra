@@ -21,7 +21,7 @@ const PRICING_PLANS = [
     id:'pro', name:'Pro', tagline:'For serious learners.',
     monthly:24, yearly:19, yearlyTotal:228,
     features:[
-      { t:'All 80+ languages', on:true },
+      { t:'All 26 languages', on:true },
       { t:'Unlimited daily sessions', on:true },
       { t:'Detailed progress & analytics', on:true },
       { t:'Unlimited AI Tutor', on:true },
@@ -172,7 +172,7 @@ function PricingPage() {
                 <tbody>
                   {[
                     { cat:'Learning' },
-                    ['Languages',           '1',          'All 80+',    'All 80+'],
+                    ['Languages',           '1',          'All 26',    'All 26'],
                     ['Daily lesson length', '5 min',      'Unlimited',  'Unlimited'],
                     ['Spaced repetition',   '✓',          '✓',          '✓'],
                     ['Adaptive difficulty', '—',          '✓',          '✓'],

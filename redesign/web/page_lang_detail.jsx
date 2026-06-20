@@ -443,17 +443,42 @@ function LangDetailPage() {
 
 function TutorTab({ lang }) {
   const t = langTheme(lang.code);
-  const [msgs, setMsgs] = useState([
-    { role:'ai',   text: langPack(lang.code).tutorGreeting },
-  ]);
   const pk = langPack(lang.code);
+  const [msgs, setMsgs] = useState([{ role:'ai', text: pk.tutorGreeting }]);
   const [input, setInput] = useState('');
+  const [thinking, setThinking] = useState(false);
 
-  const send = () => {
-    if (!input.trim()) return;
-    setMsgs(m => [...m, { role:'user', text:input.trim() }, { role:'ai', text:'Great question! Let me think through that for you…' }]);
+  const rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(function(r){ return r.lang === lang.code; }) : [];
+  const sessionCount = rows.length;
+  const avgByMod = {};
+  rows.forEach(function(r){ var m=(r.detail&&r.detail.module)||'reading'; if(typeof r.score==='number'){ (avgByMod[m]=avgByMod[m]||[]).push(r.score); } });
+  let weakest = '—', lowest = 101;
+  Object.keys(avgByMod).forEach(function(m){ var a=avgByMod[m]; var avg=a.reduce(function(x,y){return x+y;},0)/a.length; if(avg<lowest){ lowest=avg; weakest=m.charAt(0).toUpperCase()+m.slice(1); } });
+
+  const ask = function (text) {
+    if (!text || !text.trim() || thinking) return;
+    var userMsg = { role:'user', text: text.trim() };
+    var history = msgs.concat(userMsg);
+    setMsgs(function (m) { return m.concat(userMsg); });
     setInput('');
+    setThinking(true);
+    fetch('/api/tutor', {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        messages: history.map(function (m) { return { role: m.role === 'ai' ? 'assistant' : m.role, content: m.text }; }),
+        lang: lang.english,
+        context: 'The learner is in the ' + lang.english + ' language hub. Reply in ' + lang.english + ' where natural, with English glosses for new words.'
+      }),
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (data && data.error) throw new Error(data.error);
+      setMsgs(function (m) { return m.concat({ role:'ai', text: (data && data.reply) || '…' }); });
+      setThinking(false);
+    }).catch(function () {
+      setMsgs(function (m) { return m.concat({ role:'ai', text: 'Sorry — I had trouble responding. Please try again.' }); });
+      setThinking(false);
+    });
   };
+  const send = function () { ask(input); };
 
   return (
     <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:20, height:560 }}>
@@ -467,29 +492,27 @@ function TutorTab({ lang }) {
               <span style={{ width:6, height:6, borderRadius:3, background:T.listening.c, display:'inline-block' }}/> Online · {lang.english}
             </div>
           </div>
-          <div style={{ marginLeft:'auto' }}>
-            <Chip label="Pro · Unlimited" accent={T.brand} bg={T.brandLight} style={{ fontSize:10 }}/>
-          </div>
         </div>
         <div style={{ flex:1, overflow:'auto', padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
-          {msgs.map((m,i) => (
+          {msgs.map(function (m, i) { return (
             <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', flexDirection:m.role==='user'?'row-reverse':'row' }}>
               <div style={{ width:28, height:28, borderRadius:14, flexShrink:0, background:m.role==='user'?T.brandGrad:'#1A1A1A', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {m.role==='user' ? <span style={{ fontSize:11, fontWeight:700, color:'#fff' }}>M</span> : Icon.spark({ width:13, height:13, color:'#fff' })}
+                {m.role==='user' ? <span style={{ fontSize:11, fontWeight:700, color:'#fff' }}>{(typeof USER!=='undefined'&&USER.initial)||'·'}</span> : Icon.spark({ width:13, height:13, color:'#fff' })}
               </div>
               <div style={{ maxWidth:'75%', background:m.role==='user'?T.brand:T.card, color:m.role==='user'?'#fff':T.ink, borderRadius:m.role==='user'?'14px 4px 14px 14px':'4px 14px 14px 14px', padding:'10px 14px', fontSize:13, lineHeight:1.55, border:m.role==='user'?'none':`1px solid ${T.border}` }}>
-                {m.text.split('\n').map((line,j) => line.startsWith('**')
+                {m.text.split('\n').map(function (line, j) { return line.indexOf('**') === 0
                   ? <div key={j} style={{ fontWeight:700, margin:'4px 0 2px' }}>{line.replace(/\*\*/g,'')}</div>
-                  : <div key={j}>{line}</div>)}
+                  : <div key={j}>{line}</div>; })}
               </div>
             </div>
-          ))}
+          ); })}
+          {thinking && <div style={{ fontSize:12, color:T.ink4, paddingLeft:38 }}>Tutor is typing…</div>}
         </div>
         <div style={{ padding:'14px 22px', borderTop:`1px solid ${T.hairline}`, display:'flex', gap:10 }}>
-          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key==='Enter' && send()}
+          <input value={input} onChange={function(e){ setInput(e.target.value); }} onKeyDown={function(e){ if(e.key==='Enter') send(); }}
             placeholder="Ask anything — grammar, vocab, phrases, exam tips…"
             style={{ flex:1, padding:'10px 14px', borderRadius:10, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
-          <button onClick={send} style={{ width:40, height:40, borderRadius:10, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <button onClick={send} disabled={thinking} style={{ width:40, height:40, borderRadius:10, background:thinking?T.ink4:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, cursor:thinking?'default':'pointer' }}>
             {Icon.send({ width:14, height:14 })}
           </button>
         </div>
@@ -499,28 +522,26 @@ function TutorTab({ lang }) {
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
         <Card padding={18}>
           <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, marginBottom:12 }}>Quick prompts</div>
-          {pk.quickPrompts.map(p => (
-            <button key={p} onClick={() => { setMsgs(m => [...m, { role:'user', text:p }, { role:'ai', text:'Great question! Let me think through that for you…' }]); }}
-              style={{ display:'block', width:'100%', textAlign:'left', padding:'9px 12px', borderRadius:9, border:`1px solid ${T.border}`, fontSize:12, color:T.ink2, marginBottom:6, cursor:'pointer', background:T.card }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = t.accent}
-              onMouseLeave={e => e.currentTarget.style.borderColor = T.border}>
+          {pk.quickPrompts.map(function (p) { return (
+            <button key={p} onClick={function(){ ask(p); }}
+              style={{ display:'block', width:'100%', textAlign:'left', padding:'9px 12px', borderRadius:9, border:`1px solid ${T.border}`, fontSize:12, color:T.ink2, marginBottom:6, cursor:'pointer', background:T.card }}>
               {p}
             </button>
-          ))}
+          ); })}
         </Card>
         <Card padding={18}>
           <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, marginBottom:10 }}>Study context</div>
           {[
-            { l:'Target exam', v: (pk.exam?.short || lang.exam || 'CEFR') + (pk.exam?.bestScore ? ' ' + pk.exam.bestScore : '') },
-            { l:'Weakest skill', v: lang.code==='ja' ? 'Reading' : 'Writing' },
-            { l:'Recent focus', v:'Fluency' },
-            { l:'Session count', v:'142' },
-          ].map(r => (
+            { l:'Language', v: lang.english },
+            { l:'Target exam', v: (pk.exam && pk.exam.short) || lang.exam || 'CEFR' },
+            { l:'Weakest skill', v: weakest },
+            { l:'Sessions', v: String(sessionCount) },
+          ].map(function (r) { return (
             <div key={r.l} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`1px solid ${T.hairline}`, fontSize:12 }}>
               <span style={{ color:T.ink4 }}>{r.l}</span>
               <span style={{ color:T.ink, fontWeight:600 }}>{r.v}</span>
             </div>
-          ))}
+          ); })}
         </Card>
       </div>
     </div>

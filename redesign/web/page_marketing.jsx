@@ -32,7 +32,7 @@ function MarketingPage() {
           <h1 style={{ fontFamily:T.serif, fontSize:76, lineHeight:1.02, color:T.ink, margin:0, marginBottom:14, letterSpacing:'-.01em', textWrap:'balance' }}>
             Speak it. <em style={{ fontStyle:'italic', color:T.brand }}>Score it.</em> Own it.
           </h1>
-          <div style={{ fontFamily:T.serif, fontSize:22, fontStyle:'italic', color:T.ink3, lineHeight:1.4, marginBottom:22, letterSpacing:'-.005em' }}>The fastest path to fluent — across 80+ languages.</div>
+          <div style={{ fontFamily:T.serif, fontSize:22, fontStyle:'italic', color:T.ink3, lineHeight:1.4, marginBottom:22, letterSpacing:'-.005em' }}>The fastest path to fluent — across 26 languages.</div>
           <p style={{ fontSize:19, color:T.ink2, lineHeight:1.5, marginBottom:32, maxWidth:520, textWrap:'pretty' }}>
             Fluentra is a calmer way to learn — daily 15-minute lessons that move with your real life. Speaking, writing, listening, reading — and the AI tutor that follows up on whatever you got wrong.
           </p>
@@ -293,7 +293,7 @@ function MarketingPage() {
             { v:'2.4M',  l:'active learners',         s:'across 142 countries' },
             { v:'94%',   l:'pass their target exam',  s:'IELTS · DELE · JLPT' },
             { v:'4.9★',  l:'App Store · Play',         s:'over 38,000 reviews' },
-            { v:'80+',   l:'languages and dialects',   s:'+ 18 in beta' },
+            { v:'26',   l:'languages and dialects',   s:'+ 18 in beta' },
           ].map(s => (
             <div key={s.l} style={{ paddingRight:24, borderRight:'1px solid rgba(255,255,255,.1)' }}>
               <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:1, color:'#fff', letterSpacing:'-.02em', marginBottom:10 }}>{s.v}</div>
@@ -567,7 +567,7 @@ function MarketingPage() {
           <div style={{ position:'absolute', inset:0, opacity:.07, backgroundImage:'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize:'22px 22px' }}/>
           <div style={{ position:'relative', maxWidth:640, margin:'0 auto' }}>
             <div style={{ fontSize:11.5, fontWeight:800, letterSpacing:'.18em', color:'rgba(255,255,255,.7)', marginBottom:14 }}>LESS THAN A COFFEE</div>
-            <h2 style={{ fontFamily:T.serif, fontSize:54, lineHeight:1.05, letterSpacing:'-.015em', margin:0, marginBottom:16 }}>$19/mo for 80+ languages.</h2>
+            <h2 style={{ fontFamily:T.serif, fontSize:54, lineHeight:1.05, letterSpacing:'-.015em', margin:0, marginBottom:16 }}>$19/mo for 26 languages.</h2>
             <p style={{ fontSize:15.5, color:'rgba(255,255,255,.85)', lineHeight:1.6, marginBottom:28 }}>$19/mo billed yearly, or $24/mo on monthly. 7-day free trial. Cancel any time.</p>
             <Btn label="See all plans" nav="pricing" accent="#fff" size="lg" iconRight={Icon.arrow()} style={{ color:T.brand }}/>
           </div>
@@ -581,7 +581,7 @@ function MarketingPage() {
           <div style={{ position:'absolute', bottom:-80, right:60, width:200, height:200, borderRadius:100, border:'10px solid rgba(255,255,255,.06)' }}/>
           <div style={{ color:'#fff', position:'relative' }}>
             <h2 style={{ fontFamily:T.serif, fontSize:46, lineHeight:1.05, margin:0, marginBottom:14, letterSpacing:'-.01em' }}>Speak it. Score it. <em style={{ fontStyle:'italic', color:'rgba(255,255,255,.7)' }}>Own it.</em></h2>
-            <p style={{ fontSize:15.5, opacity:.92, lineHeight:1.5, marginBottom:24 }}>7 days free, full access to all 80+ languages and the AI tutor. Cancel any time — no card needed for trial.</p>
+            <p style={{ fontSize:15.5, opacity:.92, lineHeight:1.5, marginBottom:24 }}>7 days free, full access to all 26 languages and the AI tutor. Cancel any time — no card needed for trial.</p>
             <div style={{ display:'flex', gap:10 }}>
               <Btn label="Start free" nav="auth_signup" accent="#fff" size="lg" iconRight={Icon.arrow()} style={{ color:T.brand }}/>
               <Btn label="Compare plans" nav="pricing" variant="ghost" accent="#fff" size="lg"/>
@@ -589,7 +589,7 @@ function MarketingPage() {
           </div>
           <div style={{ position:'relative', display:'flex', flexDirection:'column', gap:12 }}>
             {[
-              { ic:'check', t:'80+ languages',        s:'major + heritage + niche' },
+              { ic:'check', t:'26 languages',        s:'major + heritage + niche' },
               { ic:'check', t:'AI tutor (Lía)',        s:'unlimited conversations' },
               { ic:'check', t:'Mock exams + scoring',  s:'IELTS · DELE · JLPT · DELF' },
               { ic:'check', t:'Cancel anytime',        s:'no questions asked' },

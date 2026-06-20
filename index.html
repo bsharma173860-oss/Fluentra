@@ -512,6 +512,14 @@ function App() {
       if (window.__langCode && id === 'lang') setLangCode(window.__langCode);
       setPage(id);
       setNavTick(t => t + 1);
+      // Remember the last resumable page so reopening returns here (not the dashboard).
+      try {
+        var SKIP = ['welcome','auth_login','auth_signup','auth_onboarding','otp','forgot_pw','reset_password','onboarding','prelaunch','marketing','ai_generating','ai_grading','splash'];
+        if (SKIP.indexOf(id) === -1) {
+          localStorage.setItem('fl-last-route', id);
+          localStorage.setItem('fl-last-lang', window.__langCode || 'en');
+        }
+      } catch (e) {}
       requestAnimationFrame(() => {
         document.querySelectorAll('[data-app-scroll]').forEach(el => { el.scrollTop = 0; });
       });
