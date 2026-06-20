@@ -511,6 +511,18 @@ function OnboardingPage() {
     else if (idx < OB_PLACEMENT.length - 1) setPIdx(idx + 1);
   };
 
+  const finishOnboarding = function () {
+    var go = function () { window.__nav && window.__nav('dashboard'); };
+    try {
+      var code = data.language;
+      if (code && window.FL && window.FL.addLanguage && typeof LANGUAGES !== 'undefined' && LANGUAGES.find) {
+        var meta = LANGUAGES.find(function (x) { return x.code === code; }) || { code: code };
+        var lvl = data.placedLevel || data.level || 'A1';
+        window.FL.addLanguage({ code: code, native: meta.native, english: meta.english, level: lvl, exam: meta.exam || 'IELTS' }).then(go).catch(go);
+      } else { go(); }
+    } catch (e) { go(); }
+  };
+
   switch (step) {
     case 0: return <SWelcome onNext={next}/>;
     case 1: return <SLanguage value={data.language} onChange={v => upd('language', v)} onNext={next} onBack={back}/>;
@@ -519,7 +531,7 @@ function OnboardingPage() {
     case 4: return <SLevel value={data.level} onChange={v => upd('level', v)} onNext={next} onBack={back} onSkipPlacement={() => { upd('placedLevel', data.level); setStep(6); }}/>;
     case 5: return <SPlacement qIdx={pIdx} answers={data.placement || []} onAnswer={onPAnswer} onNext={handlePlacementNext} onBack={back} onSkip={() => { upd('placedLevel', data.level); next(); }}/>;
     case 6: return <SSchedule value={data.schedule} onChange={v => upd('schedule', v)} reminderTime={data.reminderTime} onReminderChange={v => upd('reminderTime', v)} onNext={next} onBack={back}/>;
-    case 7: return <SPlan data={data} onFinish={() => alert('Onboarding complete!')} onBack={back}/>;
+    case 7: return <SPlan data={data} onFinish={finishOnboarding} onBack={back}/>;
     default: return <SWelcome onNext={next}/>;
   }
 }
@@ -725,7 +737,7 @@ function MOnboardingPage() {
     const lvl = OB_LEVELS.find(l => l.id === data.placedLevel) || OB_LEVELS.find(l => l.id === data.level) || OB_LEVELS[0];
     const sched = OB_SCHEDULES.find(s => s.id === data.schedule);
     return (
-      <MOBStep step={7} total={8} eyebrow="Your plan" title={`Plan for ${lang.label}`} onBack={back} onNext={() => alert('Onboarding complete!')} nextLabel="Start my first lesson →">
+      <MOBStep step={7} total={8} eyebrow="Your plan" title={`Plan for ${lang.label}`} onBack={back} onNext={function(){ var go=function(){ window.__nav && window.__nav('dashboard'); }; try { var code=data.language; if (code && window.FL && window.FL.addLanguage && typeof LANGUAGES!=='undefined' && LANGUAGES.find) { var meta=LANGUAGES.find(function(x){return x.code===code;})||{code:code}; var lvl=data.placedLevel||data.level||'A1'; window.FL.addLanguage({ code:code, native:meta.native, english:meta.english, level:lvl, exam:meta.exam||'IELTS' }).then(go).catch(go); } else { go(); } } catch(e){ go(); } }} nextLabel="Start my first lesson →">
         <Card padding={20} style={{ background:T.brand, color:'#fff', marginBottom:12, position:'relative', overflow:'hidden' }}>
           <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', opacity:.85, marginBottom:10 }}>You're starting at</div>
           <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1, marginBottom:4 }}>{lvl.id}</div>
