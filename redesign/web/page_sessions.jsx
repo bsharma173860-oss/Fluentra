@@ -384,6 +384,7 @@ function ReadingSession() {
     var pct = qs.length ? Math.round((correct / qs.length) * 100) : 0;
     setScorePct(pct); setSubmitted(true);
     window.__lastReadingResult = { module: 'reading', lang: lang, scorePct: pct, correct: correct, total: qs.length };
+    window.__lastResult = { module:'reading', lang:lang, kind:'count', correct:correct, total:qs.length, pct:pct };
     try {
       var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
@@ -550,6 +551,7 @@ function ListeningSession() {
     var pct = qs.length ? Math.round((correct / qs.length) * 100) : 0;
     setScorePct(pct); setSubmitted(true);
     window.__lastReadingResult = { module: 'listening', lang: lang, scorePct: pct, correct: correct, total: qs.length };
+    window.__lastResult = { module:'listening', lang:lang, kind:'count', correct:correct, total:qs.length, pct:pct };
     try {
       var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
@@ -848,7 +850,7 @@ function SpeakingSession() {
                     {evalResult && (evalResult.pronunciation_note || (evalResult.criteria && evalResult.criteria.pronunciation_note)) && (
                       <div style={{ fontSize:12, color:T.ink3, lineHeight:1.5, marginBottom:14 }}>{evalResult.pronunciation_note || evalResult.criteria.pronunciation_note}</div>
                     )}
-                    <Btn label={partIdx < 3 ? _s.next : _s.finish} accent={T.speaking.c} fullWidth iconRight={Icon.arrow({ width:13, height:13 })} onClick={() => { if (partIdx < 3) { setPartIdx(p=>p+1); setPhase('prep'); setEvalResult(null); } else { if (window.__exam && window.__exam.active) window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail:{ module:'speaking', score: Math.round((evalResult && evalResult.overall_band || 0)/9*100) } })); else window.__nav && window.__nav('mod_results'); } }}/>
+                    <Btn label={partIdx < 3 ? _s.next : _s.finish} accent={T.speaking.c} fullWidth iconRight={Icon.arrow({ width:13, height:13 })} onClick={() => { if (partIdx < 3) { setPartIdx(p=>p+1); setPhase('prep'); setEvalResult(null); } else { if (window.__exam && window.__exam.active) window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail:{ module:'speaking', score: Math.round((evalResult && evalResult.overall_band || 0)/9*100) } })); else { window.__lastResult = { module:'speaking', lang: window.__langCode||'en', kind:'band', band: Number((evalResult && evalResult.overall_band) || 0), criteria: (evalResult && evalResult.criteria) || {} }; window.__nav && window.__nav('mod_results'); } } }}/>
                   </div>
                 )}
               </div>
@@ -948,6 +950,8 @@ function WritingSession() {
       window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'writing', score: Math.round(band / 9 * 100) } }));
       return;
     }
+    var _ev = (res && res.evaluation) ? res.evaluation : res;
+    if (_ev && !_ev.error && _ev.overall_band != null) window.__lastResult = { module:'writing', lang: window.__langCode||'en', kind:'band', band: Number(_ev.overall_band||0), criteria: _ev.criteria||{}, corrections: _ev.corrections||[] };
     if (thenNav) window.__nav && window.__nav('mod_results');
   };
   const _w = _sc('writing');

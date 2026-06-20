@@ -258,294 +258,120 @@ function MiniLeaderboard({ accent, base, total='13' }) {
 }
 
 // ═══ desktop ═══════════════════════════════════════════════
-function ModuleResultsPage() {
-  const [mod, setMod] = useStateMR('reading');
-  const M = MODULES[mod];
+function _lastResult(){ return (typeof window!=='undefined' && window.__lastResult) || null; }
+function _critEntries(R){ return (R && R.criteria) ? Object.keys(R.criteria).filter(function(k){return typeof R.criteria[k]==='number';}).map(function(k){return { key:k.replace(/_/g,' '), val:R.criteria[k] };}) : []; }
 
+function ModuleResultsPage() {
+  const R = _lastResult();
+  const mod = (R && R.module) || 'reading';
+  const M = MODULES[mod] || MODULES.reading;
+  const isBand = R ? R.kind === 'band' : (mod==='speaking'||mod==='writing');
+  const pct = R && R.pct != null ? R.pct : (R && R.total ? Math.round((R.correct/R.total)*100) : null);
+  const band = R && R.band != null ? Number(R.band) : null;
+  const crit = _critEntries(R);
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>
       <div style={{ flex:1, overflow:'auto' }}>
-        {/* Module switcher (prototype convenience) */}
-        <div style={{ borderBottom:`1px solid ${T.hairline}`, background:T.card }}>
-          <div style={{ maxWidth:1080, margin:'0 auto', display:'flex', gap:6, padding:'10px 36px' }}>
-            {Object.entries(MODULES).map(([key, v]) => (
-              <button key={key} onClick={() => setMod(key)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 12px', borderRadius:8, background:mod===key?v.accentBg:'transparent', color:mod===key?v.accent:T.ink3, fontSize:12.5, fontWeight:mod===key?700:500, cursor:'pointer' }}>
-                <span style={{ display:'inline-flex' }}>{Icon[v.icon]({ width:13, height:13 })}</span>
-                {v.name}
-              </button>
-            ))}
-            <div style={{ flex:1 }}/>
-            <span style={{ fontSize:11, color:T.ink5, alignSelf:'center' }}>Prototype switcher</span>
-          </div>
-        </div>
+        <div style={{ maxWidth:760, margin:'0 auto', padding:'32px 36px 56px' }}>
+          <Crumbs items={[M.name, 'Session results']} accent={M.accent}/>
+          <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.05, margin:'10px 0 20px' }}>{M.headerLabel}</div>
 
-        <div style={{ maxWidth:1080, margin:'0 auto', padding:'28px 36px 48px' }}>
-          {/* Header */}
-          <div style={{ marginBottom:18 }}>
-            <Crumbs items={[M.name, 'Session results']} accent={M.accent}/>
-            <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:18, marginTop:10 }}>
-              <div>
-                <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1.05, marginBottom:8 }}>{M.headerLabel}</div>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                  {M.meta.map(m => <Chip key={m} label={m} accent={T.ink3} bg={T.bg2}/>)}
-                </div>
-              </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <Btn label="Share" variant="outline" accent={T.ink2} icon={Icon.share?Icon.share({width:13,height:13}):null}/>
-                <Btn label="Practice again" accent={M.accent} icon={Icon.play?Icon.play({width:13,height:13}):null}/>
-              </div>
-            </div>
-          </div>
-
-          {/* Score card + side panel */}
-          <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:14, marginBottom:14 }}>
-            {/* Big band card */}
-            <div style={{ background:mod==='writing'?T.ink:M.accent, borderRadius:18, padding:'30px 32px', color:'#fff', position:'relative', overflow:'hidden' }}>
-              <Chip label={`${M.name} score`} accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.12)" style={{ marginBottom:14 }}/>
-              {M.score.type === 'count' ? (
-                <>
-                  <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:8 }}>
-                    <span style={{ fontFamily:T.serif, fontSize:64, lineHeight:1 }}>{M.score.val}</span>
-                    <span style={{ fontSize:18, color:'rgba(255,255,255,.55)', marginBottom:10 }}>/ {M.score.total} {M.score.sub}</span>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:14, paddingTop:14, borderTop:'1px solid rgba(255,255,255,.15)' }}>
-                    <div>
-                      <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:3 }}>Estimated band</div>
-                      <div style={{ fontFamily:T.serif, fontSize:28, lineHeight:1 }}>{M.bandEst.toFixed(1)}</div>
-                    </div>
-                    <div style={{ flex:1 }}/>
-                    <div style={{ textAlign:'right' }}>
-                      <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:3 }}>Time</div>
-                      <div style={{ fontFamily:T.serif, fontSize:24, lineHeight:1 }}>{M.meta.find(m=>m.includes('m '))||'—'}</div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:18 }}>
-                    <span style={{ fontFamily:T.serif, fontSize:64, lineHeight:1 }}>{M.score.val.toFixed(1)}</span>
-                    <span style={{ fontSize:18, color:'rgba(255,255,255,.55)', marginBottom:10 }}>{M.score.sub}</span>
-                  </div>
-                  <div style={{ display:'flex', gap:8, paddingTop:16, borderTop:'1px solid rgba(255,255,255,.15)' }}>
-                    {M.criteria.map(c => (
-                      <div key={c.key} style={{ flex:1, textAlign:'center' }}>
-                        <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1, marginBottom:4 }}>{c.val.toFixed(1)}</div>
-                        <div style={{ fontSize:10, color:'rgba(255,255,255,.6)' }}>{c.short}</div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Side panel — leaderboard or stats */}
-            <Card padding={22}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
-                <div>
-                  <div style={{ fontSize:11, color:T.ink5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase' }}>Your ranking</div>
-                  <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1.15, marginTop:6 }}>#491 of 26,400</div>
-                  <div style={{ fontSize:12, color:T.listening.c, fontWeight:600, marginTop:3 }}>Top 1.9% this week</div>
-                </div>
-                <Chip label="🏆 Top 2%" accent={M.accent} bg={M.accentBg}/>
-              </div>
-              <div style={{ height:1, background:T.hairline, margin:'14px 0 8px' }}/>
-              <MiniLeaderboard accent={M.accent} base={M.score.type==='count'?M.score.val:M.score.val.toFixed(1)} total={M.score.type==='count'?M.score.total:'9.0'}/>
-              <button style={{ width:'100%', textAlign:'center', fontSize:12, color:M.accent, fontWeight:600, padding:'10px 0 0', cursor:'pointer', background:'transparent' }}>View full leaderboard →</button>
+          {!R && (
+            <Card padding={22} style={{ marginBottom:16 }}>
+              <div style={{ fontSize:13.5, color:T.ink3, lineHeight:1.6 }}>No recent session found. Finish a practice session and your results will appear here.</div>
             </Card>
+          )}
+
+          <div style={{ background: mod==='writing'?T.ink:M.accent, borderRadius:18, padding:'30px 32px', color:'#fff', marginBottom:16 }}>
+            <Chip label={M.name + ' score'} accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.12)" style={{ marginBottom:14 }}/>
+            {isBand ? (
+              <div style={{ display:'flex', alignItems:'flex-end', gap:8 }}>
+                <span style={{ fontFamily:T.serif, fontSize:64, lineHeight:1 }}>{band != null ? band.toFixed(1) : '—'}</span>
+                <span style={{ fontSize:18, color:'rgba(255,255,255,.55)', marginBottom:10 }}>/ 9.0 band</span>
+              </div>
+            ) : (
+              <div style={{ display:'flex', alignItems:'flex-end', gap:8 }}>
+                <span style={{ fontFamily:T.serif, fontSize:64, lineHeight:1 }}>{R && R.correct != null ? R.correct : '—'}</span>
+                <span style={{ fontSize:18, color:'rgba(255,255,255,.55)', marginBottom:10 }}>/ {R && R.total != null ? R.total : '—'} correct{pct!=null?(' \u00b7 '+pct+'%'):''}</span>
+              </div>
+            )}
+            {isBand && crit.length > 0 && (
+              <div style={{ display:'flex', gap:8, paddingTop:16, marginTop:16, borderTop:'1px solid rgba(255,255,255,.15)' }}>
+                {crit.map(function(c){ return (
+                  <div key={c.key} style={{ flex:1, textAlign:'center' }}>
+                    <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1, marginBottom:4 }}>{Number(c.val).toFixed(1)}</div>
+                    <div style={{ fontSize:9.5, color:'rgba(255,255,255,.6)', textTransform:'capitalize' }}>{c.key}</div>
+                  </div>
+                ); })}
+              </div>
+            )}
           </div>
 
-          {/* Per-module body */}
-          {(mod === 'reading' || mod === 'listening') && (
+          {isBand && crit.length > 0 && (
             <>
-              <Card padding={22} style={{ marginBottom:14 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:6 }}>{M.breakdownTitle}</div>
-                <div style={{ fontSize:12, color:T.ink4, marginBottom:6 }}>How you did across each part of the test.</div>
-                {M.breakdown.map(b => <CriterionBar key={b.label} {...b} accent={M.accent}/>)}
-                <div style={{ display:'flex', gap:8, marginTop:14 }}>
-                  <div style={{ flex:1, background:T.listening.bg, padding:'10px 12px', borderRadius:8, fontSize:12, color:T.listening.c, fontWeight:600 }}>
-                    Strong: {M.breakdown.filter(b=>b.correct===b.total).map(b=>b.type).join(', ') || '—'}
-                  </div>
-                  <div style={{ flex:1, background:T.brandLight, padding:'10px 12px', borderRadius:8, fontSize:12, color:T.brand, fontWeight:600 }}>
-                    Needs work: {M.breakdown.filter(b=>b.correct<b.total).map(b=>b.type).join(', ') || '—'}
-                  </div>
+              <div style={{ fontSize:16, fontWeight:700, color:T.ink, margin:'8px 0 12px' }}>Per-criterion feedback</div>
+              {crit.map(function(c){ return <CriterionCard key={c.key} name={c.key} value={c.val} accent={M.accent}/>; })}
+            </>
+          )}
+
+          {mod==='writing' && R && Array.isArray(R.corrections) && R.corrections.length > 0 && (
+            <Card padding={20} style={{ marginTop:14 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:10 }}>Corrections</div>
+              {R.corrections.map(function(c,i){ return (
+                <div key={i} style={{ padding:'8px 12px', borderRadius:9, background:T.bg2, marginBottom:6, fontSize:12.5, lineHeight:1.5 }}>
+                  <span style={{ color:'#dc2626', textDecoration:'line-through' }}>{c.original}</span>{' \u2192 '}<span style={{ color:'#16a34a', fontWeight:600 }}>{c.better}</span>
+                  {c.why && <div style={{ fontSize:11, color:T.ink3, marginTop:3 }}>{c.why}</div>}
                 </div>
-              </Card>
-
-              <div style={{ fontSize:18, fontWeight:700, color:T.ink, margin:'24px 0 12px' }}>Answer review</div>
-              <div style={{ fontSize:12, color:T.ink4, marginBottom:12 }}>Showing {SAMPLE_QS.length} of {M.score.total} questions · <span style={{ color:M.accent, fontWeight:600 }}>Show only incorrect</span></div>
-              {SAMPLE_QS.map(q => <QReview key={q.n} q={q} accent={M.accent}/>)}
-            </>
+              ); })}
+            </Card>
           )}
 
-          {(mod === 'speaking' || mod === 'writing') && (
-            <>
-              <div style={{ fontSize:18, fontWeight:700, color:T.ink, margin:'24px 0 12px' }}>Per-criterion feedback</div>
-              {M.criteria.map(c => <CriterionCard key={c.key} name={c.key} value={c.val} accent={M.accent}/>)}
-
-              {mod === 'speaking' && (
-                <Card padding={22} style={{ marginBottom:14 }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:14 }}>Session transcript</div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                    {SAMPLE_TRANSCRIPT.map((m,i) => (
-                      <div key={i} style={{ display:'flex', alignItems:'flex-end', gap:8, flexDirection:m.who==='user'?'row-reverse':'row', maxWidth:'85%', alignSelf:m.who==='user'?'flex-end':'flex-start' }}>
-                        <div style={{ width:26, height:26, borderRadius:13, background:m.who==='user'?T.ink4:M.accent, color:'#fff', fontSize:10, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{m.who==='user'?'Y':'E'}</div>
-                        <div style={{ background:m.who==='user'?M.accentBg:T.bg2, padding:'10px 14px', borderRadius:12, fontSize:12.5, color:m.who==='user'?M.accent:T.ink, lineHeight:1.5 }}>{m.text}</div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {mod === 'writing' && (
-                <Card padding={22} style={{ marginBottom:14 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>Your essay</div>
-                    <Chip label="328 words" accent={T.ink3} bg={T.bg2}/>
-                  </div>
-                  <div style={{ fontFamily:"'Inter',sans-serif", fontSize:13.5, color:T.ink2, lineHeight:1.8, whiteSpace:'pre-wrap' }}>{SAMPLE_ESSAY}</div>
-                </Card>
-              )}
-            </>
-          )}
-
-          {/* Next steps */}
-          <Card padding={22} style={{ marginTop:14, background:T.bg2 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:12 }}>Next steps for you</div>
-            {[
-              `Focus on ${mod==='reading'||mod==='listening'?'inference questions':'lexical resource'} — your weakest area.`,
-              `Try a ${mod==='reading'?'harder passage':mod==='listening'?'lecture-style listening':'Part 2 long-form prompt'}.`,
-              'Aim for 30 minutes of practice today to keep your streak alive.',
-            ].map((tip,i) => (
-              <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', padding:'9px 0', borderBottom:i<2?`1px solid ${T.hairline}`:'none' }}>
-                <div style={{ width:20, height:20, borderRadius:10, background:M.accentBg, color:M.accent, fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>{i+1}</div>
-                <div style={{ fontSize:13, color:T.ink2, lineHeight:1.55 }}>{tip}</div>
-              </div>
-            ))}
-          </Card>
+          <div style={{ display:'flex', gap:10, marginTop:22 }}>
+            <Btn label="Practice again" accent={M.accent} onClick={function(){ window.__nav && window.__nav(mod); }}/>
+            <Btn label="Back to dashboard" variant="outline" accent={T.ink2} onClick={function(){ window.__nav && window.__nav('dashboard'); }}/>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ═══ mobile ═══════════════════════════════════════════════
 function MModuleResultsPage() {
-  const [mod, setMod] = useStateMR('reading');
-  const M = MODULES[mod];
-
+  const R = _lastResult();
+  const mod = (R && R.module) || 'reading';
+  const M = MODULES[mod] || MODULES.reading;
+  const isBand = R ? R.kind === 'band' : (mod==='speaking'||mod==='writing');
+  const pct = R && R.pct != null ? R.pct : (R && R.total ? Math.round((R.correct/R.total)*100) : null);
+  const band = R && R.band != null ? Number(R.band) : null;
+  const crit = _critEntries(R);
   return (
-    <MobileBody noTabs>
-        {/* Header bar */}
-        <div style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:10, borderBottom:`1px solid ${T.hairline}` }}>
-          <button style={{ width:32, height:32, borderRadius:8, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.ink, lineHeight:1.2 }}>{M.headerLabel}</div>
-            <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{M.meta.slice(0,2).join(' · ')}</div>
-          </div>
-          <button style={{ width:32, height:32, borderRadius:8, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          </button>
-        </div>
-
-        {/* Module switcher */}
-        <div style={{ display:'flex', gap:6, padding:'10px 16px', overflowX:'auto', borderBottom:`1px solid ${T.hairline}` }}>
-          {Object.entries(MODULES).map(([key, v]) => (
-            <button key={key} onClick={() => setMod(key)} style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:8, background:mod===key?v.accentBg:T.bg2, color:mod===key?v.accent:T.ink3, fontSize:11.5, fontWeight:mod===key?700:500, flexShrink:0 }}>
-              {Icon[v.icon]({ width:11, height:11 })}
-              {v.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Big band card */}
-        <div style={{ margin:'14px 16px', background:mod==='writing'?T.ink:M.accent, borderRadius:18, padding:'24px 22px', color:'#fff', position:'relative', overflow:'hidden' }}>
-          <Chip label={`${M.name} score`} accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.12)" style={{ marginBottom:10, fontSize:9.5 }}/>
-          {M.score.type === 'count' ? (
-            <>
-              <div style={{ display:'flex', alignItems:'flex-end', gap:6, marginBottom:14 }}>
-                <span style={{ fontFamily:T.serif, fontSize:54, lineHeight:1 }}>{M.score.val}</span>
-                <span style={{ fontSize:14, color:'rgba(255,255,255,.55)', marginBottom:8 }}>/ {M.score.total}</span>
-              </div>
-              <div style={{ paddingTop:14, borderTop:'1px solid rgba(255,255,255,.15)', display:'flex', justifyContent:'space-between' }}>
-                <div>
-                  <div style={{ fontSize:9.5, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:3 }}>Band est.</div>
-                  <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1 }}>{M.bandEst.toFixed(1)}</div>
-                </div>
-                <div style={{ textAlign:'right' }}>
-                  <div style={{ fontSize:9.5, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:3 }}>Rank</div>
-                  <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1 }}>#491</div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ display:'flex', alignItems:'flex-end', gap:6, marginBottom:16 }}>
-                <span style={{ fontFamily:T.serif, fontSize:54, lineHeight:1 }}>{M.score.val.toFixed(1)}</span>
-                <span style={{ fontSize:14, color:'rgba(255,255,255,.55)', marginBottom:8 }}>{M.score.sub}</span>
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, paddingTop:14, borderTop:'1px solid rgba(255,255,255,.15)' }}>
-                {M.criteria.map(c => (
-                  <div key={c.key}>
-                    <div style={{ fontSize:9.5, color:'rgba(255,255,255,.55)', textTransform:'uppercase', fontWeight:700, letterSpacing:'.08em', marginBottom:3 }}>{c.short}</div>
-                    <div style={{ fontFamily:T.serif, fontSize:18, lineHeight:1 }}>{c.val.toFixed(1)}</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Body */}
-        <div style={{ padding:'4px 16px 14px' }}>
-          {(mod==='reading' || mod==='listening') && (
-            <>
-              <div style={{ fontSize:11, color:T.ink5, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', margin:'14px 0 8px' }}>{M.breakdownTitle}</div>
-              <Card padding={16} style={{ marginBottom:14 }}>
-                {M.breakdown.map(b => <CriterionBar key={b.label} {...b} accent={M.accent}/>)}
-              </Card>
-
-              <div style={{ fontSize:11, color:T.ink5, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', margin:'18px 0 8px' }}>Answer review</div>
-              {SAMPLE_QS.slice(0,5).map(q => <QReview key={q.n} q={q} accent={M.accent}/>)}
-              <button style={{ width:'100%', padding:'10px 0', textAlign:'center', fontSize:12.5, color:M.accent, fontWeight:600, background:'transparent' }}>Show all {M.score.total} questions →</button>
-            </>
-          )}
-
-          {(mod==='speaking' || mod==='writing') && (
-            <>
-              <div style={{ fontSize:11, color:T.ink5, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', margin:'14px 0 8px' }}>Per-criterion feedback</div>
-              {M.criteria.map(c => <CriterionCard key={c.key} name={c.key} value={c.val} accent={M.accent}/>)}
-              {mod === 'writing' && (
-                <Card padding={16} style={{ marginBottom:14 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Your essay</div>
-                    <Chip label="328 words" accent={T.ink3} bg={T.bg2} style={{ fontSize:9.5 }}/>
-                  </div>
-                  <div style={{ fontSize:13, color:T.ink2, lineHeight:1.7, whiteSpace:'pre-wrap' }}>{SAMPLE_ESSAY}</div>
-                </Card>
-              )}
-            </>
-          )}
-
-          {/* Ranking card */}
-          <Card padding={16} style={{ marginBottom:14 }}>
-            <div style={{ fontSize:11, color:T.ink5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:6 }}>Your ranking</div>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-              <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink }}>#491 of 26,400</div>
-              <Chip label="Top 1.9%" accent={M.accent} bg={M.accentBg} style={{ fontSize:10 }}/>
+    <MobileBody>
+      <div style={{ padding:'20px 18px 40px' }}>
+        <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, marginBottom:16 }}>{M.headerLabel}</div>
+        <div style={{ background: mod==='writing'?T.ink:M.accent, borderRadius:16, padding:'24px 22px', color:'#fff', marginBottom:16 }}>
+          {isBand ? (
+            <div style={{ display:'flex', alignItems:'flex-end', gap:6 }}>
+              <span style={{ fontFamily:T.serif, fontSize:48, lineHeight:1 }}>{band!=null?band.toFixed(1):'—'}</span>
+              <span style={{ fontSize:14, color:'rgba(255,255,255,.6)', marginBottom:8 }}>/ 9.0</span>
             </div>
-            <MiniLeaderboard accent={M.accent} base={M.score.type==='count'?M.score.val:M.score.val.toFixed(1)} total={M.score.type==='count'?M.score.total:'9.0'}/>
-          </Card>
-
-          {/* Actions */}
-          <div style={{ display:'flex', gap:8, marginTop:8 }}>
-            <Btn label="Practice again" accent={M.accent} fullWidth/>
-            <Btn label="Home" variant="outline" accent={T.ink2} fullWidth/>
-          </div>
+          ) : (
+            <div style={{ display:'flex', alignItems:'flex-end', gap:6 }}>
+              <span style={{ fontFamily:T.serif, fontSize:48, lineHeight:1 }}>{R&&R.correct!=null?R.correct:'—'}</span>
+              <span style={{ fontSize:14, color:'rgba(255,255,255,.6)', marginBottom:8 }}>/ {R&&R.total!=null?R.total:'—'}{pct!=null?(' \u00b7 '+pct+'%'):''}</span>
+            </div>
+          )}
+          {isBand && crit.length>0 && (
+            <div style={{ display:'flex', gap:6, paddingTop:12, marginTop:12, borderTop:'1px solid rgba(255,255,255,.15)' }}>
+              {crit.map(function(c){ return <div key={c.key} style={{ flex:1, textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:17 }}>{Number(c.val).toFixed(1)}</div><div style={{ fontSize:8.5, color:'rgba(255,255,255,.6)', textTransform:'capitalize' }}>{c.key}</div></div>; })}
+            </div>
+          )}
         </div>
-      </MobileBody>
+        <Btn label="Practice again" accent={M.accent} fullWidth onClick={function(){ window.__nav && window.__nav(mod); }}/>
+        <div style={{ height:8 }}/>
+        <Btn label="Back to dashboard" variant="outline" accent={T.ink2} fullWidth onClick={function(){ window.__nav && window.__nav('dashboard'); }}/>
+      </div>
+    </MobileBody>
   );
 }
 
