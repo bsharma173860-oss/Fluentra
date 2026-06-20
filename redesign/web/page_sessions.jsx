@@ -951,7 +951,14 @@ function WritingSession() {
       return;
     }
     var _ev = (res && res.evaluation) ? res.evaluation : res;
-    if (_ev && !_ev.error && _ev.overall_band != null) window.__lastResult = { module:'writing', lang: window.__langCode||'en', kind:'band', band: Number(_ev.overall_band||0), criteria: _ev.criteria||{}, corrections: _ev.corrections||[] };
+    if (_ev && !_ev.error && _ev.overall_band != null) {
+      window.__lastResult = { module:'writing', lang: window.__langCode||'en', kind:'band', band: Number(_ev.overall_band||0), criteria: _ev.criteria||{}, corrections: _ev.corrections||[] };
+      try {
+        var _raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
+        var _tok = _raw ? (JSON.parse(_raw).access_token || null) : null;
+        if (_tok) fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+_tok }, body: JSON.stringify({ lang: window.__langCode||'en', score: Math.round(Number(_ev.overall_band||0)/9*100), detail:{ module:'writing', task: task } }) }).catch(function(){});
+      } catch(e){}
+    }
     if (thenNav) window.__nav && window.__nav('mod_results');
   };
   const _w = _sc('writing');
