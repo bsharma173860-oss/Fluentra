@@ -295,15 +295,18 @@ function PreferencesTab() {
   );
 }
 
-function ToggleRow({ label, sub, on=false }) {
-  const [v, setV] = useStateS(on);
+function ToggleRow({ label, sub, on=false, prefKey }) {
+  const _key = 'fl-pref:' + ((typeof window !== 'undefined' && window.__user && window.__user.id) || 'anon') + ':' + (prefKey || label);
+  const _init = (function () { try { var s = localStorage.getItem(_key); return s === null ? on : s === '1'; } catch (e) { return on; } })();
+  const [v, setV] = useStateS(_init);
+  const toggle = function () { setV(function (x) { var nv = !x; try { localStorage.setItem(_key, nv ? '1' : '0'); } catch (e) {} return nv; }); };
   return (
     <div style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${T.hairline}` }}>
       <div style={{ flex:1 }}>
         <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>{label}</div>
         {sub && <div style={{ fontSize:12, color:T.ink4 }}>{sub}</div>}
       </div>
-      <button onClick={() => setV(x=>!x)} style={{ width:42, height:24, borderRadius:12, background:v?T.brand:T.bg3, position:'relative', cursor:'pointer', transition:'.2s' }}>
+      <button onClick={toggle} style={{ width:42, height:24, borderRadius:12, background:v?T.brand:T.bg3, position:'relative', cursor:'pointer', transition:'.2s' }}>
         <div style={{ width:18, height:18, borderRadius:9, background:'#fff', position:'absolute', top:3, left:v?21:3, transition:'.2s', boxShadow:'0 1px 3px rgba(0,0,0,.2)' }}/>
       </button>
     </div>
