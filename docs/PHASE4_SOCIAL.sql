@@ -6,6 +6,8 @@
 
 -- ---------- 1. PROFILES: public social fields ----------------
 -- profiles already exists; add the fields social features need.
+alter table public.profiles add column if not exists full_name   text;
+alter table public.profiles add column if not exists avatar_url  text;
 alter table public.profiles add column if not exists username    text;
 alter table public.profiles add column if not exists is_public   boolean not null default true;
 alter table public.profiles add column if not exists xp           integer not null default 0;
