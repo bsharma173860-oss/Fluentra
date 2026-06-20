@@ -196,26 +196,32 @@ function PhrasebookPage() {
 
 function PhrasebookPracticePage() {
   const nav = window.__nav || (() => {});
-  const catId = (typeof window !== 'undefined' && window.__phraseCat) || 'all';
-  const cat = PHRASEBOOK_CATS.find(c => c.id === catId);
-  const allPhrases = cat ? cat.phrases : PHRASEBOOK_CATS.flatMap(c => c.phrases);
+  const S = (window.FL && window.FL.social) ? window.FL.social : null;
+  const lang = (typeof window !== 'undefined' && window.__langCode) ? window.__langCode : 'en';
+  const locale = (typeof TUTOR_LOCALE !== 'undefined' && TUTOR_LOCALE[lang]) ? TUTOR_LOCALE[lang] : 'en-US';
+  const [phrases, setPhrases] = useState(null);
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [mode, setMode] = useState('listen'); // listen | speak
-  const [done, setDone] = useState([]);
-  const total = allPhrases.length;
-  const phrase = allPhrases[idx];
+  React.useEffect(function () { if (!S) { setPhrases([]); return; } S.listPhrases(lang).then(function (r) { setPhrases(r || []); }).catch(function () { setPhrases([]); }); }, [lang]);
 
-  const next = () => {
-    setDone(d => [...d, idx]);
-    setRevealed(false);
-    if (idx < total - 1) setIdx(idx + 1);
-    else nav('phrasebook');
-  };
+  const all = phrases || [];
+  const total = all.length;
+  const phrase = all[idx];
+  const progress = total ? ((idx + 1) / total) * 100 : 0;
+  const catName = 'Saved phrases';
+
+  function speak() { try { if ('speechSynthesis' in window && phrase) { window.speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(phrase.front); u.lang = locale; window.speechSynthesis.speak(u); } } catch (e) {} }
+  const next = () => { setRevealed(false); if (idx < total - 1) setIdx(idx + 1); else nav('phrasebook'); };
   const prev = () => { setRevealed(false); if (idx > 0) setIdx(idx - 1); };
 
-  const progress = ((idx + 1) / total) * 100;
-  const catName = cat ? cat.name : 'All phrases';
+  if (phrases === null) return (<div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink3 }}>Loading…</div>);
+  if (total === 0) return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:40, background:T.bg }}>
+      <div style={{ fontSize:14, color:T.ink3 }}>No saved phrases to practice yet.</div>
+      <Btn label="Back to phrasebook" accent={T.brand} onClick={() => nav('phrasebook')}/>
+    </div>
+  );
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', background:T.bg, overflow:'hidden' }}>
@@ -257,7 +263,7 @@ function PhrasebookPracticePage() {
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px 40px 40px' }}>
         <div style={{ width:'100%', maxWidth:680, background:T.card, border:`1px solid ${T.border}`, borderRadius:24, padding:'56px 48px', textAlign:'center', boxShadow:'0 20px 60px rgba(0,0,0,.06)' }}>
           {/* Phrase */}
-          <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1.25, color:T.ink, marginBottom:20, fontStyle:'italic' }}>"{phrase?.es}"</div>
+          <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1.25, color:T.ink, marginBottom:20, fontStyle:'italic' }}>"{phrase?.front}"</div>
 
           {/* Listen button big */}
           {mode === 'listen' && (
@@ -265,21 +271,21 @@ function PhrasebookPracticePage() {
               width:72, height:72, borderRadius:'50%', background:T.brand, color:'#fff',
               display:'inline-flex', alignItems:'center', justifyContent:'center',
               boxShadow:'0 12px 28px rgba(192,74,6,.35)', cursor:'pointer', marginBottom:24
-            }}>{Icon.play({ width:24, height:24 })}</button>
+            }} onClick={speak}>{Icon.play({ width:24, height:24 })}</button>
           )}
           {mode === 'speak' && (
             <button style={{
               width:72, height:72, borderRadius:'50%', background:T.speaking.c, color:'#fff',
               display:'inline-flex', alignItems:'center', justifyContent:'center',
               boxShadow:`0 12px 28px ${T.speaking.c}55`, cursor:'pointer', marginBottom:24
-            }}>{Icon.mic({ width:24, height:24 })}</button>
+            }} onClick={speak}>{Icon.mic({ width:24, height:24 })}</button>
           )}
 
           {/* Reveal */}
           {revealed ? (
             <div style={{ borderTop:`1px solid ${T.hairline}`, paddingTop:20, marginTop:8 }}>
               <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Translation</div>
-              <div style={{ fontSize:18, color:T.ink2 }}>{phrase?.en}</div>
+              <div style={{ fontSize:18, color:T.ink2 }}>{phrase?.back || '—'}</div>
             </div>
           ) : (
             <button onClick={() => setRevealed(true)} style={{ fontSize:13, fontWeight:700, color:T.brand, padding:'8px 14px', borderRadius:8, background:T.bg2, cursor:'pointer' }}>
@@ -293,7 +299,6 @@ function PhrasebookPracticePage() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 40px', borderTop:`1px solid ${T.hairline}`, background:T.card }}>
         <button onClick={prev} disabled={idx === 0} style={{ padding:'10px 16px', borderRadius:10, fontSize:13, fontWeight:700, color: idx === 0 ? T.ink4 : T.ink2, background:T.bg2, cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? .5 : 1 }}>← Previous</button>
         <div style={{ display:'flex', gap:8 }}>
-          <Btn label="Save phrase" variant="outline" accent={T.ink} icon={Icon.bookmark ? Icon.bookmark() : null}/>
           <Btn label={idx === total - 1 ? 'Finish' : 'Next phrase →'} accent={T.brand} onClick={next}/>
         </div>
       </div>
@@ -357,4 +362,4 @@ function ReferPage() {
   );
 }
 
-Object.assign(window, { PublicProfilePage, DMThreadPage, ActivityFeedPage, PhrasebookPage, PhrasebookPracticePage, ReceiptsPage, ReferPage, PHRASEBOOK_CATS });
+Object.assign(window, { PublicProfilePage, DMThreadPage, ActivityFeedPage, PhrasebookPage, PhrasebookPracticePage, ReceiptsPage, ReferPage });
