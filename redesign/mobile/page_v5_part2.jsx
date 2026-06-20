@@ -28,88 +28,80 @@ const V5b_av = (initials, size=40, grad) => (
 // LEADERBOARD · v5
 // ══════════════════════════════════════════════════════════════════
 function MLeaderboardPageV5() {
-  const [scope, setScope] = useStateMV5b('global');
-  const [time, setTime] = useStateMV5b('week');
-  const board = [
-    { rank:1, name:'Yuki Tanaka',     ini:'YT', xp:8420, dxp:'+420', grad:'linear-gradient(135deg,#D26890,#7C5BD6)', country:'JP' },
-    { rank:2, name:'Marcus Chen',     ini:'MC', xp:8180, dxp:'+380', grad:'linear-gradient(135deg,#2A6FA0,#5A9C7A)', country:'US' },
-    { rank:3, name:'Anaís Rodríguez', ini:'AR', xp:7960, dxp:'+360', grad:'linear-gradient(135deg,#D26890,#E08F4D)', country:'ES' },
-    { rank:4, name:'Lin Wei',         ini:'LW', xp:7200, dxp:'+320', grad:'linear-gradient(135deg,#7C5BD6,#2A6FA0)', country:'CN' },
-    { rank:5, name:'Sara Müller',     ini:'SM', xp:6890, dxp:'+295', grad:'linear-gradient(135deg,#E08F4D,#D26890)', country:'DE' },
-    { rank:18, name:'María García',   ini:'MG', xp:4280, dxp:'+180', grad:T.brandGrad, country:'MX', me:true },
-  ];
-  const top3 = board.slice(0,3);
-  const rest = board.slice(3);
-
+  const [by, setBy] = useStateMV5b('xp');
+  const [entries, setEntries] = React.useState(null);
+  const [meId, setMeId] = React.useState(null);
+  React.useEffect(function () {
+    var c = false;
+    if (window.FL && window.FL.social) {
+      window.FL.social._uid().then(function (id) { if (!c) setMeId(id); });
+      window.FL.social.leaderboard(by, 100).then(function (r) { if (!c) setEntries(r || []); }).catch(function () { if (!c) setEntries([]); });
+    } else setEntries([]);
+    return function () { c = true; };
+  }, [by]);
+  function ini(n) { n = n || '?'; var p = n.trim().split(/\s+/); return (((p[0] || '')[0] || '') + ((p[1] || '')[0] || '')).toUpperCase(); }
+  const raw = entries || [];
+  const adapted = raw.map(function (p, i) { return { rank:i+1, id:p.id, me:p.id===meId, name:p.full_name||p.username||'Learner', xp: by==='streak'?(p.streak||0):(p.xp||0), streak:p.streak||0, best:p.best_score||0 }; });
+  const top3 = adapted.slice(0, 3);
+  const me = adapted.filter(function (r) { return r.me; })[0];
   return (
     <>
       <MobileHeader title="Leaderboard"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b_pre eyebrow="THIS WEEK · UPDATES HOURLY" title="Leaderboard" lede="See where your XP this week ranks among friends, your country and the world."/>
-        {/* Tabs */}
-        <div style={{ display:'flex', gap:0, background:T.bg2, borderRadius:11, padding:3, marginBottom:10, border:`1px solid ${T.border}` }}>
-          {[{id:'friends',l:'Friends'},{id:'country',l:'México'},{id:'global',l:'Global'}].map(t => {
-            const a = scope === t.id;
-            return <button key={t.id} onClick={()=>setScope(t.id)} style={{ flex:1, padding:'7px 6px', borderRadius:9, fontSize:11.5, fontWeight: a?700:500, color: a?T.ink:T.ink3, background: a?T.card:'transparent', boxShadow: a?MT.shadowSm:'none' }}>{t.l}</button>;
-          })}
-        </div>
+        <V5b_pre eyebrow="RANKINGS" title="Leaderboard" lede="See where your progress ranks among all learners."/>
         <div style={{ display:'flex', gap:6, marginBottom:14 }}>
-          {[{id:'day',l:'Today'},{id:'week',l:'Week'},{id:'month',l:'Month'},{id:'all',l:'All-time'}].map(t => {
-            const a = time === t.id;
-            return <button key={t.id} onClick={()=>setTime(t.id)} style={{ flex:1, padding:'6px 8px', borderRadius:9, background: a ? T.ink : T.card, color: a ? '#fff' : T.ink3, fontSize:11, fontWeight: a?700:600, border:`1px solid ${a ? T.ink : T.hairline}` }}>{t.l}</button>;
-          })}
+          {[['xp','Total XP'],['streak','Day streak']].map(function (o) { var a = by===o[0]; return <button key={o[0]} onClick={function(){ setBy(o[0]); }} style={{ flex:1, padding:'8px', borderRadius:9, background:a?T.ink:T.card, color:a?'#fff':T.ink3, fontSize:12, fontWeight:a?700:600, border:`1px solid ${a?T.ink:T.hairline}` }}>{o[1]}</button>; })}
         </div>
-
-        {/* Podium hero — dark */}
-        <div style={{ background:T.ink, borderRadius:18, padding:'24px 14px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
-          <V5b_dotgrid/>
-          <div style={{ position:'relative', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', alignItems:'end', gap:8 }}>
-            {[1,0,2].map(idx => {
-              const p = top3[idx]; const isWinner = idx === 0;
-              return (
-                <div key={p.name} style={{ textAlign:'center' }}>
-                  <div style={{ position:'relative', display:'inline-block', marginBottom:8 }}>
-                    {V5b_av(p.ini, isWinner ? 56 : 44, p.grad)}
-                    <div style={{ position:'absolute', top:-7, right:-3, width:22, height:22, borderRadius:11, background: isWinner ? '#FFC859' : idx === 1 ? '#D5D8DC' : '#D8956C', color:'#1F1812', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:11, fontWeight:700 }}>{p.rank}</div>
-                  </div>
-                  <div style={{ fontSize:11, fontWeight:700, lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.name.split(' ')[0]}</div>
-                  <div style={{ fontFamily:T.serif, fontSize: isWinner ? 18 : 14, color:'rgba(255,255,255,.8)', marginTop:2 }}>{(p.xp/1000).toFixed(1)}k</div>
-                  <div style={{ fontSize:9.5, color:'#5A9C7A', fontWeight:700, marginTop:2 }}>{p.dxp}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {V5b_label('RANK 4–18')}
-        <MCard style={{ padding:0, overflow:'hidden' }}>
-          {rest.map((p, i) => (
-            <div key={p.name} style={{ display:'flex', alignItems:'center', gap:11, padding:'11px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none', background: p.me ? T.brandLight : 'transparent' }}>
-              <div style={{ width:24, fontFamily:T.serif, fontSize:14, color: p.me ? T.brand : T.ink4, fontWeight:600, textAlign:'center' }}>{p.rank}</div>
-              {V5b_av(p.ini, 32, p.grad)}
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12.5, fontWeight: p.me ? 700 : 600, color:T.ink, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.name}{p.me && <span style={{ fontSize:9.5, marginLeft:5, padding:'1px 6px', borderRadius:99, background:T.brand, color:'#fff', fontWeight:800, letterSpacing:'.05em' }}>YOU</span>}</div>
-                <div style={{ fontSize:10, color:T.ink5, marginTop:1 }}>{p.country}</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontFamily:T.serif, fontSize:14, color:T.ink }}>{p.xp.toLocaleString()}</div>
-                <div style={{ fontSize:9.5, color:'#5A9C7A', fontWeight:700 }}>{p.dxp}</div>
-              </div>
-            </div>
-          ))}
-        </MCard>
-
-        <div style={{ marginTop:14, padding:'14px 16px', background:T.brandLight, border:`1px dashed ${T.brand}55`, borderRadius:12 }}>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.ink, lineHeight:1.5 }}>"You're 14 ranks from the top 5 — keep your daily streak going to climb fast."</div>
-        </div>
+        {entries === null ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13 }}>Loading…</div></MCard>
+         : adapted.length === 0 ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13, lineHeight:1.5 }}>No public learners yet. Keep practicing and you'll appear here.</div></MCard>
+         : <>
+           {top3.length >= 3 && (
+             <div style={{ background:T.ink, borderRadius:18, padding:'24px 14px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
+               <V5b_dotgrid/>
+               <div style={{ position:'relative', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', alignItems:'end', gap:8 }}>
+                 {[1,0,2].map(function (ix) { var p = top3[ix]; var w = ix===0; return (
+                   <div key={p.id} style={{ textAlign:'center' }}>
+                     <div style={{ position:'relative', display:'inline-block', marginBottom:8 }}>
+                       {V5b_av(ini(p.name), w?56:44, T.brandGrad)}
+                       <div style={{ position:'absolute', top:-7, right:-3, width:22, height:22, borderRadius:11, background: w?'#FFC859':ix===1?'#D5D8DC':'#D8956C', color:'#1F1812', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:11, fontWeight:700 }}>{p.rank}</div>
+                     </div>
+                     <div style={{ fontSize:11, fontWeight:700, lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.name.split(' ')[0]}</div>
+                     <div style={{ fontFamily:T.serif, fontSize:w?18:14, color:'rgba(255,255,255,.8)', marginTop:2 }}>{p.xp}{by==='streak'?'d':''}</div>
+                   </div>
+                 ); })}
+               </div>
+             </div>
+           )}
+           {me && (
+             <MCard style={{ padding:'12px 14px', marginBottom:12, background:T.brandLight, border:`1px solid ${T.brand}44` }}>
+               <div style={{ display:'flex', alignItems:'center', gap:11 }}>
+                 <div style={{ width:24, fontFamily:T.serif, fontSize:14, color:T.brand, fontWeight:700, textAlign:'center' }}>{me.rank}</div>
+                 {V5b_av(ini(me.name), 32, T.brandGrad)}
+                 <div style={{ flex:1 }}><div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>You</div><div style={{ fontSize:10, color:T.ink5 }}>{me.streak}-day streak · {me.best}% best</div></div>
+                 <div style={{ fontFamily:T.serif, fontSize:16, color:T.brand }}>{me.xp}{by==='streak'?'d':''}</div>
+               </div>
+             </MCard>
+           )}
+           {V5b_label('FULL RANKINGS')}
+           <MCard style={{ padding:0, overflow:'hidden' }}>
+             {adapted.map(function (p, i) { return (
+               <button key={p.id} onClick={function(){ if(!p.me){ window.__profileId=p.id; window.__nav&&window.__nav('public_profile'); } }} style={{ display:'flex', alignItems:'center', gap:11, padding:'11px 14px', borderTop: i?`1px solid ${T.hairline}`:'none', background: p.me?T.brandLight:'transparent', width:'100%', textAlign:'left' }}>
+                 <div style={{ width:24, fontFamily:T.serif, fontSize:14, color:p.me?T.brand:T.ink4, fontWeight:600, textAlign:'center' }}>{p.rank}</div>
+                 {V5b_av(ini(p.name), 32, T.brandGrad)}
+                 <div style={{ flex:1, minWidth:0 }}>
+                   <div style={{ fontSize:12.5, fontWeight:p.me?700:600, color:T.ink, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{p.name}{p.me&&<span style={{ fontSize:9.5, marginLeft:5, padding:'1px 6px', borderRadius:99, background:T.brand, color:'#fff', fontWeight:800 }}>YOU</span>}</div>
+                   <div style={{ fontSize:10, color:T.ink5, marginTop:1 }}>{p.streak}-day streak</div>
+                 </div>
+                 <div style={{ fontFamily:T.serif, fontSize:14, color:T.ink }}>{p.xp}{by==='streak'?'d':''}</div>
+               </button>
+             ); })}
+           </MCard>
+         </>}
       </MobileBody>
     </>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// COURSE OVERVIEW · v5
-// ══════════════════════════════════════════════════════════════════
 function MCoursePageV5() {
   const [unit, setUnit] = useStateMV5b(2);
   const lang = (typeof window !== 'undefined' && window.__activeLang) || { name:'English', accent:T.brand, native:'English' };

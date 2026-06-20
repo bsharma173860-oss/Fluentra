@@ -272,73 +272,34 @@ function MArticleReaderPageV5() {
 // PHRASEBOOK
 // ══════════════════════════════════════════════════════════════════
 function MPhrasebookPageV5() {
-  const [cat, setCat] = useStV5B1('travel');
-  const cats = [
-    { id:'travel',   l:'Travel',   ic:'pin',   c:'#2A6FA0', bg:'#E1ECF6', n:42 },
-    { id:'food',     l:'Food',     ic:'spark', c:'#E08F4D', bg:'#FEF3E5', n:38 },
-    { id:'emergency',l:'Emergency',ic:'shield',c:'#D26890', bg:'#F9E6EE', n:18 },
-    { id:'small',    l:'Small talk',ic:'users',c:'#5A9C7A', bg:'#E2EEDF', n:24 },
-    { id:'work',     l:'Work',     ic:'briefcase',c:'#7C5BD6', bg:'#EFEBFB', n:32 },
-    { id:'directions',l:'Getting around',ic:'pin',c:T.brand, bg:T.brandLight, n:22 },
-  ];
-  const data = {
-    travel: [
-      { es:'¿Dónde está la estación?',     en:'Where is the station?',         ph:'DON-deh es-TAH lah es-tah-see-OWN' },
-      { es:'Quisiera un billete a Madrid', en:'I\'d like a ticket to Madrid',   ph:'kee-SYEH-rah oon bee-YEH-teh' },
-      { es:'¿A qué hora sale el tren?',    en:'What time does the train leave?',ph:'ah keh OH-rah SAH-leh' },
-      { es:'¿Esto es la parada correcta?', en:'Is this the right stop?',        ph:'EHS-toh es lah pah-RAH-dah' },
-    ],
-    food: [
-      { es:'La cuenta, por favor',         en:'The check, please',              ph:'lah KWEN-tah por fah-VOR' },
-      { es:'¿Qué recomienda?',             en:'What do you recommend?',         ph:'keh reh-koh-MYEN-dah' },
-      { es:'Soy alérgico a los frutos secos', en:'I\'m allergic to nuts',       ph:'soy ah-LEHR-hee-koh' },
-    ],
-    emergency: [{ es:'¡Ayuda, por favor!', en:'Help, please!', ph:'ah-YOO-dah por fah-VOR' }],
-    small: [{ es:'Mucho gusto', en:'Nice to meet you', ph:'MOO-choh GOOS-toh' }],
-    work: [{ es:'Tengo una reunión a las tres', en:'I have a meeting at 3', ph:'TEN-go OO-nah reh-oo-NYON' }],
-    directions: [{ es:'¿Cómo llego al centro?', en:'How do I get downtown?', ph:'KOH-moh YEH-go al SEN-tro' }],
-  };
+  const S = (window.FL && window.FL.social) ? window.FL.social : null;
+  const lang = (typeof window !== 'undefined' && window.__langCode) ? window.__langCode : 'en';
+  const [items, setItems] = React.useState(null);
+  const [front, setFront] = useStV5B1('');
+  const [back, setBack] = useStV5B1('');
+  function load() { if (!S) { setItems([]); return; } S.listPhrases(lang).then(function (r) { setItems(r || []); }).catch(function () { setItems([]); }); }
+  React.useEffect(load, [lang]);
+  function add() { var fr = front.trim(); if (!fr || !S) return; setFront(''); setBack(''); S.addPhrase(lang, fr, back.trim()).then(function () { load(); }); }
+  function del(id) { if (!S) return; S.deletePhrase(id).then(function () { load(); }); }
+  const langName = (typeof langByCode === 'function') ? (langByCode(lang).english || lang) : lang;
   return (
     <>
-      <MobileHeader back title="Phrasebook"/>
+      <MobileHeader title="Phrasebook"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b1Pre eyebrow={`${cats.reduce((a,c)=>a+c.n,0)} PHRASES · OFFLINE READY`} title="Phrasebook" lede="The phrases you'll actually use, grouped by what you're doing — with native pronunciation, always with you."/>
-        {/* Category grid */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
-          {cats.map(c => {
-            const a = cat === c.id;
-            return (
-              <button key={c.id} onClick={()=>setCat(c.id)} style={{ background: a ? T.ink : T.card, color: a ? '#fff' : T.ink, border:`1px solid ${a ? T.ink : T.hairline}`, borderRadius:13, padding:'12px 13px', textAlign:'left', boxShadow: a ? MT.shadowMd : MT.shadowSm }}>
-                <div style={{ width:32, height:32, borderRadius:9, background: a ? 'rgba(255,255,255,.12)' : c.bg, color: a ? '#fff' : c.c, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:9 }}>{Icon[c.ic] ? Icon[c.ic]({width:13,height:13}) : '★'}</div>
-                <div style={{ fontSize:12.5, fontWeight:700, marginBottom:3 }}>{c.l}</div>
-                <div style={{ fontSize:9.5, fontWeight:800, color: a ? 'rgba(255,255,255,.6)' : c.c, letterSpacing:'.06em' }}>{c.n} PHRASES</div>
-              </button>
-            );
-          })}
-        </div>
-
-        {V5b1Lbl(`${(cats.find(c=>c.id===cat)||cats[0]).l.toUpperCase()} PHRASES`)}
-        <MCard style={{ padding:0, overflow:'hidden' }}>
-          {(data[cat] || data.travel).map((p, i) => (
-            <div key={i} style={{ padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-              <div style={{ display:'flex', alignItems:'flex-start', gap:9, marginBottom:5 }}>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontFamily:T.serif, fontSize:15, color:T.ink, fontWeight:600, lineHeight:1.3 }}>{p.es}</div>
-                  <div style={{ fontSize:11.5, color:T.ink3, marginTop:3 }}>{p.en}</div>
-                </div>
-                <div style={{ display:'flex', gap:5, flexShrink:0 }}>
-                  <button style={{ width:28, height:28, borderRadius:8, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 3px 8px ${T.brand}55` }}>{Icon.play ? Icon.play({width:11,height:11}) : '▶'}</button>
-                  <button style={{ width:28, height:28, borderRadius:8, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.bookmark ? Icon.bookmark({width:11,height:11}) : '☆'}</button>
-                </div>
-              </div>
-              <div style={{ fontSize:10, color:T.ink5, fontFamily:T.serif, fontStyle:'italic' }}>{p.ph}</div>
-            </div>
-          ))}
+        <V5_pre eyebrow="SAVED" title="Phrasebook" lede={'Save ' + langName + ' words and phrases you want to remember.'}/>
+        <MCard style={{ padding:12, marginBottom:14 }}>
+          <input value={front} onChange={function (e) { setFront(e.target.value); }} placeholder={langName + ' word or phrase'} style={{ width:'100%', padding:'10px 12px', borderRadius:9, border:`1px solid ${T.border}`, fontSize:13, outline:'none', background:T.bg, marginBottom:8 }}/>
+          <input value={back} onChange={function (e) { setBack(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') add(); }} placeholder="Meaning (optional)" style={{ width:'100%', padding:'10px 12px', borderRadius:9, border:`1px solid ${T.border}`, fontSize:13, outline:'none', background:T.bg, marginBottom:8 }}/>
+          <button onClick={add} style={{ width:'100%', padding:'11px', borderRadius:10, background:T.brandGrad, color:'#fff', fontSize:13, fontWeight:700 }}>Add phrase</button>
         </MCard>
-
-        <div style={{ marginTop:16, padding:'12px 14px', background:T.brandLight, border:`1px dashed ${T.brand}55`, borderRadius:11 }}>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink, lineHeight:1.5 }}>"Save phrases for offline — they'll work even when you don't have signal."</div>
-        </div>
+        {items === null ? <MCard style={{ padding:20 }}><div style={{ color:T.ink3, fontSize:13 }}>Loading…</div></MCard>
+         : items.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink3, fontSize:12.5 }}>No saved phrases yet. Add your first {langName} phrase above.</div></MCard>
+         : <MCard style={{ padding:0, overflow:'hidden' }}>{items.map(function (p, i) { return (
+             <div key={p.id} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
+               <div style={{ flex:1 }}><div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{p.front}</div>{p.back && <div style={{ fontSize:11.5, color:T.ink4, marginTop:2 }}>{p.back}</div>}</div>
+               <button onClick={function () { del(p.id); }} style={{ fontSize:11, color:T.ink4, background:'transparent' }}>Remove</button>
+             </div>
+           ); })}</MCard>}
       </MobileBody>
     </>
   );

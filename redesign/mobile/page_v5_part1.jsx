@@ -281,112 +281,74 @@ function MAchievementsPageV5() {
 // FRIENDS · v5
 // ══════════════════════════════════════════════════════════════════
 function MFriendsPageV5() {
-  const [tab, setTab] = useStateMV5('feed');
-  const nav = (id) => window.__nav && window.__nav(id);
-  const friends = [
-    { name:'Anaís Rodríguez', initials:'AR', meta:'Spanish · 14-day streak', online:true,  grad:'linear-gradient(135deg,#D26890,#E08F4D)' },
-    { name:'Marcus Chen',     initials:'MC', meta:'Japanese · Band 6.5',     online:true,  grad:'linear-gradient(135deg,#2A6FA0,#5A9C7A)' },
-    { name:'Lin Wei',         initials:'LW', meta:'Mandarin · 92 days',      online:false, grad:'linear-gradient(135deg,#7C5BD6,#2A6FA0)' },
-    { name:'Sara Müller',     initials:'SM', meta:'German · A2',             online:true,  grad:'linear-gradient(135deg,#E08F4D,#D26890)' },
-    { name:'Ravi Patel',      initials:'RP', meta:'Italian · B1',            online:false, grad:'linear-gradient(135deg,#5A9C7A,#7C5BD6)' },
-  ];
-  const feed = [
-    { who:'Anaís Rodríguez', ini:'AR', grad:friends[0].grad, t:'12 min ago', verb:'unlocked', what:'Café Master',     ic:'trophy', c:'#7C5BD6' },
-    { who:'Marcus Chen',     ini:'MC', grad:friends[1].grad, t:'1h ago',     verb:'finished a',  what:'Speaking session', ic:'mic', c:'#D26890', body:'"Felt much smoother on Part 2 — pacing held."' },
-    { who:'Lin Wei',         ini:'LW', grad:friends[2].grad, t:'3h ago',     verb:'reached',  what:'92-day streak',   ic:'flame',  c:'#E08F4D' },
-    { who:'Sara Müller',     ini:'SM', grad:friends[3].grad, t:'Yesterday',  verb:'added',    what:'Marcus as a friend', ic:'users', c:'#5A9C7A' },
-  ];
-  const requests = [
-    { name:'Yuki Tanaka',  ini:'YT', meta:'2 mutual · Japanese',       grad:'linear-gradient(135deg,#D26890,#7C5BD6)' },
-    { name:'Pierre Dubois',ini:'PD', meta:'1 mutual · French · 30d',   grad:'linear-gradient(135deg,#2A6FA0,#E08F4D)' },
-  ];
-
+  const [tab, setTab] = useStateMV5('friends');
+  const [data, setData] = React.useState(null);
+  const [q, setQ] = React.useState('');
+  const [results, setResults] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const S = (window.FL && window.FL.social) ? window.FL.social : null;
+  const nav = function (id) { window.__nav && window.__nav(id); };
+  function refresh() { if (!S) { setData({ friends:[], incoming:[], outgoing:[] }); return; } S.listFriends().then(function (d) { setData(d || { friends:[], incoming:[], outgoing:[] }); }).catch(function () { setData({ friends:[], incoming:[], outgoing:[] }); }); }
+  React.useEffect(refresh, []);
+  function ini(p) { var n = (p && (p.full_name || p.username)) || '?'; var parts = n.trim().split(/\s+/); return (((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'')).toUpperCase(); }
+  function nm(p) { return (p && (p.full_name || p.username)) || 'Learner'; }
+  function act(promise) { if (!promise) return; setBusy(true); Promise.resolve(promise).then(function () { setBusy(false); refresh(); }).catch(function () { setBusy(false); refresh(); }); }
+  function doSearch() {
+    if (!S || q.trim().length < 2) { setResults([]); return; }
+    S.searchUsers(q.trim()).then(function (r) {
+      S._uid().then(function (me) {
+        var known = {};
+        ((data && data.friends) || []).forEach(function (x) { known[x.profile.id] = 1; });
+        ((data && data.outgoing) || []).forEach(function (x) { known[x.profile.id] = 1; });
+        setResults((r || []).filter(function (u) { return u.id !== me; }).map(function (u) { return Object.assign({ _known: !!known[u.id] }, u); }));
+      });
+    }).catch(function () { setResults([]); });
+  }
+  const d = data || { friends:[], incoming:[], outgoing:[] };
+  function Mini(props) { return <button disabled={busy} onClick={props.onClick} style={{ padding:'6px 11px', borderRadius:8, fontSize:11.5, fontWeight:700, border:props.solid?'none':`1px solid ${T.border}`, background:props.solid?T.brand:'transparent', color:props.solid?'#fff':T.ink2, opacity:busy?.6:1 }}>{props.label}</button>; }
+  function Person(props) { var p = props.p; return (
+    <div style={{ display:'flex', alignItems:'center', gap:11, padding:'11px 14px', borderTop:`1px solid ${T.hairline}` }}>
+      <button onClick={function () { window.__profileId = p.id; nav('public_profile'); }} style={{ display:'flex', alignItems:'center', gap:11, flex:1, minWidth:0, textAlign:'left', background:'transparent' }}>
+        {V5_av(ini(p), 38, T.brandGrad)}
+        <div style={{ minWidth:0 }}><div style={{ fontSize:12.5, fontWeight:700, color:T.ink, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{nm(p)}</div>{p.username && <div style={{ fontSize:10, color:T.ink5 }}>@{p.username}{p.streak?(' · '+p.streak+'d'):''}</div>}</div>
+      </button>
+      <div style={{ display:'flex', gap:6 }}>{props.right}</div>
+    </div>
+  ); }
   return (
     <>
-      <MobileHeader title="Friends" right={<button onClick={()=>nav('refer')} style={{ width:34, height:34, borderRadius:17, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 10px ${T.brand}55` }}>+</button>}/>
+      <MobileHeader title="Friends"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5_pre eyebrow={`${friends.length} FRIENDS · ${requests.length} REQUESTS`} title="Your circle" lede="See what your study buddies are up to and stay accountable together."/>
+        <V5_pre eyebrow="COMMUNITY" title="Friends" lede="Connect with other learners and message each other."/>
         <div style={{ display:'flex', gap:0, background:T.bg2, borderRadius:11, padding:3, marginBottom:14, border:`1px solid ${T.border}` }}>
-          {[{id:'feed',l:'Feed'},{id:'friends',l:`Friends · ${friends.length}`},{id:'requests',l:`Requests · ${requests.length}`}].map(t => {
-            const a = tab === t.id;
-            return <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:'7px 6px', borderRadius:9, fontSize:11, fontWeight: a?700:500, color: a?T.ink:T.ink3, background: a?T.card:'transparent', boxShadow: a?MT.shadowSm:'none' }}>{t.l}</button>;
-          })}
+          {[{id:'friends',l:'Friends · '+d.friends.length},{id:'requests',l:'Requests · '+d.incoming.length},{id:'find',l:'Find'}].map(function (t) { var a = tab===t.id; return <button key={t.id} onClick={function(){ setTab(t.id); }} style={{ flex:1, padding:'7px 4px', borderRadius:9, fontSize:11, fontWeight:a?700:500, color:a?T.ink:T.ink3, background:a?T.card:'transparent', boxShadow:a?MT.shadowSm:'none' }}>{t.l}</button>; })}
         </div>
-
-        {tab === 'feed' && <>
-          {/* Online ring */}
-          <div style={{ display:'flex', gap:14, overflowX:'auto', padding:'2px 0 14px', WebkitOverflowScrolling:'touch' }}>
-            <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', gap:6, width:56 }}>
-              <button onClick={()=>nav('refer')} style={{ width:50, height:50, borderRadius:25, border:`2px dashed ${T.border}`, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, fontWeight:300 }}>+</button>
-              <div style={{ fontSize:10, color:T.ink4, fontWeight:600 }}>Invite</div>
-            </div>
-            {friends.filter(f=>f.online).map(f => (
-              <div key={f.name} style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', gap:6, width:56 }}>
-                <div style={{ position:'relative' }}>
-                  {V5_av(f.initials, 50, f.grad)}
-                  <div style={{ position:'absolute', right:0, bottom:0, width:12, height:12, borderRadius:7, background:'#5A9C7A', border:`2.5px solid ${T.bg}` }}/>
-                </div>
-                <div style={{ fontSize:10, color:T.ink2, fontWeight:600, maxWidth:56, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.name.split(' ')[0]}</div>
-              </div>
-            ))}
-          </div>
-          {V5_label('ACTIVITY')}
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {feed.map((f, i) => (
-              <MCard key={i} style={{ padding:'12px 13px', display:'flex', gap:11, alignItems:'flex-start' }}>
-                {V5_av(f.ini, 36, f.grad)}
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12, color:T.ink, lineHeight:1.4 }}>
-                    <span style={{ fontWeight:700 }}>{f.who}</span> <span style={{ color:T.ink3 }}>{f.verb}</span> <span style={{ fontWeight:700, color:f.c }}>{f.what}</span>
-                  </div>
-                  {f.body && <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink2, marginTop:6, padding:'7px 10px', background:T.bg2, borderRadius:9, lineHeight:1.4 }}>{f.body}</div>}
-                  <div style={{ fontSize:10, color:T.ink5, fontWeight:600, marginTop:5 }}>{f.t}</div>
-                </div>
-                <div style={{ width:28, height:28, borderRadius:8, background:`${f.c}14`, color:f.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[f.ic] ? Icon[f.ic]({width:12,height:12}) : Icon.trophy({width:12,height:12})}</div>
-              </MCard>
-            ))}
-          </div>
-        </>}
-
-        {tab === 'friends' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {friends.map(f => (
-              <button key={f.name} onClick={()=>nav('public_profile')} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 12px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, boxShadow:MT.shadowSm, textAlign:'left' }}>
-                <div style={{ position:'relative' }}>{V5_av(f.initials, 40, f.grad)}{f.online && <div style={{ position:'absolute', right:0, bottom:0, width:11, height:11, borderRadius:6, background:'#5A9C7A', border:`2px solid ${T.card}` }}/>}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{f.name}</div>
-                  <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{f.meta}</div>
-                </div>
-                <button onClick={(e)=>{ e.stopPropagation(); nav('dm_thread'); }} style={{ padding:'6px 10px', borderRadius:9, background:T.bg2, color:T.ink2, fontSize:11, fontWeight:700, border:`1px solid ${T.hairline}` }}>Message</button>
-              </button>
-            ))}
-          </div>
-        )}
-        {tab === 'requests' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {requests.map(r => (
-              <MCard key={r.name} style={{ padding:'10px 12px', display:'flex', alignItems:'center', gap:11 }}>
-                {V5_av(r.ini, 40, r.grad)}
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{r.name}</div>
-                  <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{r.meta}</div>
-                </div>
-                <div style={{ display:'flex', gap:5 }}>
-                  <button style={{ width:32, height:32, borderRadius:9, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 3px 8px ${T.brand}55` }}>{Icon.check ? Icon.check({width:12,height:12}) : '✓'}</button>
-                  <button style={{ width:32, height:32, borderRadius:9, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${T.hairline}` }}>{Icon.x ? Icon.x({width:12,height:12}) : '×'}</button>
-                </div>
-              </MCard>
-            ))}
-          </div>
-        )}
+        {data === null ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13 }}>Loading…</div></MCard>
+         : tab === 'friends' ? (
+           d.friends.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink3, fontSize:12.5, lineHeight:1.5 }}>No friends yet. Tap <b>Find</b> to search for learners by name or username.</div></MCard>
+           : <MCard style={{ padding:0, overflow:'hidden' }}>{d.friends.map(function (fr) { return <Person key={fr.friendshipId} p={fr.profile} right={<><Mini label="Message" solid onClick={function(){ window.__dmUser=fr.profile; nav('dm_thread'); }}/><Mini label="Remove" onClick={function(){ act(S.removeFriend(fr.friendshipId)); }}/></>}/>; })}</MCard>
+         ) : tab === 'requests' ? (
+           <>
+             {d.incoming.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink4, fontSize:12.5 }}>No incoming requests.</div></MCard>
+              : <MCard style={{ padding:0, overflow:'hidden' }}>{d.incoming.map(function (fr) { return <Person key={fr.friendshipId} p={fr.profile} right={<><Mini label="Accept" solid onClick={function(){ act(S.respondFriendRequest(fr.friendshipId,true)); }}/><Mini label="Decline" onClick={function(){ act(S.respondFriendRequest(fr.friendshipId,false)); }}/></>}/>; })}</MCard>}
+             {d.outgoing.length > 0 && <>{V5_label('SENT')}<MCard style={{ padding:0, overflow:'hidden' }}>{d.outgoing.map(function (fr) { return <Person key={fr.friendshipId} p={fr.profile} right={<Mini label="Cancel" onClick={function(){ act(S.removeFriend(fr.friendshipId)); }}/>}/>; })}</MCard></>}
+           </>
+         ) : (
+           <>
+             <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+               <input value={q} onChange={function(e){ setQ(e.target.value); }} onKeyDown={function(e){ if(e.key==='Enter') doSearch(); }} placeholder="Name or username…" style={{ flex:1, padding:'10px 13px', borderRadius:10, border:`1px solid ${T.border}`, fontSize:13, outline:'none', background:T.card }}/>
+               <button onClick={doSearch} style={{ padding:'10px 16px', borderRadius:10, background:T.brand, color:'#fff', fontSize:13, fontWeight:700 }}>Go</button>
+             </div>
+             {results === null ? <MCard style={{ padding:20 }}><div style={{ color:T.ink4, fontSize:12.5 }}>Search for other learners by name or username.</div></MCard>
+              : results.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink4, fontSize:12.5 }}>No matches.</div></MCard>
+              : <MCard style={{ padding:0, overflow:'hidden' }}>{results.map(function (u) { return <Person key={u.id} p={u} right={u._known ? <span style={{ fontSize:10.5, color:T.ink4, fontWeight:700, padding:'5px 9px' }}>Added</span> : <Mini label="Add" solid onClick={function(){ act(S.sendFriendRequest(u.id)); }}/>}/>; })}</MCard>}
+           </>
+         )}
       </MobileBody>
     </>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// VOCAB · v5
-// ══════════════════════════════════════════════════════════════════
 function MVocabPageV5() {
   const [tab, setTab] = useStateMV5('decks');
   const [studying, setStudying] = useStateMV5(false);
