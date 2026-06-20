@@ -74,4 +74,5 @@ Bharat runs the SQL migrations below in Supabase SQL editor.
 - b50: hub tutor real, reopen-on-last-page, language count 26.
 - b51: Phase 1 done — hub Stats real, hub Study real, mobile checkout price $24/$228.
 - b52: Phase 2 done — exam history/results/hub-exams real (runner was already real). FullExamRunner is dead code.
-- (next) Phase 3 — honesty cleanup …
+- b53: Phase 3 done — removed dev `states` route; marketing fake metrics (4,200 schools etc.) → real product facts; help FAQ corrected (language limits, exam-score honesty, removed invented streak-freeze/family-plan/pause); tutor persona made consistent (no fictional "Lía").
+- (next) Phase 4 — social backend (profiles, friends, leaderboard, DMs, activity) via Supabase + RLS.

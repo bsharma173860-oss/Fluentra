@@ -20,19 +20,19 @@ function HelpPage() {
     { id:'writing',         label:'Writing module',  ic:'pen',   n:8,  c:T.writing.c,     cBg:T.writing.bg,   blurb:'Rubric, AI feedback, edit history.' },
     { id:'listening',       label:'Listening',       ic:'head',  n:7,  c:T.listening.c,   cBg:T.listening.bg, blurb:'Playback speed, captions, replays.' },
     { id:'reading',         label:'Reading',         ic:'book',  n:6,  c:T.reading.c,     cBg:T.reading.bg,   blurb:'Texts, look-up, marking words.' },
-    { id:'tutor',           label:'AI Tutor (Lía)',  ic:'message',n:12, c:T.speaking.c,   cBg:T.speaking.bg,  blurb:'Memory, languages, daily limits.' },
+    { id:'tutor',           label:'AI Tutor',  ic:'message',n:12, c:T.speaking.c,   cBg:T.speaking.bg,  blurb:'Memory, languages, daily limits.' },
     { id:'exams',           label:'Exam mode',       ic:'trophy',n:10, c:T.writing.c,     cBg:T.writing.bg,   blurb:'IELTS, JLPT, DELE, DELF prep.' },
-    { id:'billing',         label:'Billing & plans', ic:'card',  n:13, c:T.ink2,          cBg:T.bg2,          blurb:'Free, Pro, refunds, family plan.' },
+    { id:'billing',         label:'Billing & plans', ic:'card',  n:13, c:T.ink2,          cBg:T.bg2,          blurb:'Free, Pro, billing, refunds.' },
     { id:'account',         label:'Account & data',  ic:'shield',n:9,  c:T.ink2,          cBg:T.bg2,          blurb:'Password, export, delete account.' },
   ];
 
   const faq = [
     { q:'Why didn\'t my streak count today?', a:'A day counts when you finish at least one lesson, drill, or 5-minute session before midnight in your local timezone. If you completed something but the streak didn\'t move, double-check your timezone in Settings → Account, and try a manual sync from the streak card.' },
-    { q:'Can I learn more than one language at once?', a:'Yes — you can have up to four active languages on Pro and one on Free. Add a language from the dashboard\'s "Add another language" tile. Each language keeps its own streak, level, and saved library.' },
-    { q:'How does Lía decide what to teach me next?', a:'Lía reads from three signals: your level on each module (Reading / Listening / Speaking / Writing), the words and grammar you\'ve marked as "tricky", and any exam target you\'ve set. Recommendations refresh every Sunday and after any major score change.' },
-    { q:'I missed a day — can I save my streak?', a:'Pro accounts get one automatic streak freeze per month, applied at midnight if you missed a day. You can also buy a "second-chance" freeze with XP from the Streak card. Streaks longer than 100 days get a 48-hour grace window built in.' },
-    { q:'Are exam scores I see real predictions?', a:'They\'re calibrated against past Fluentra users who took the exam within 14 days of practice. The band you see is a 70%-confidence prediction — your actual score will be within ±0.5 of it most of the time, but no model is perfect. Use it as a guide, not a guarantee.' },
-    { q:'How do I cancel or pause my subscription?', a:'Settings → Billing → Manage. You can cancel any time and keep Pro until the end of the current period; pause for up to 3 months and we\'ll keep your streak frozen and your library intact.' },
+    { q:'Can I learn more than one language at once?', a:'Yes. Free covers English; Pro unlocks all 26 supported languages. Add a language from the dashboard\'s "Add another language" tile. Each language keeps its own streak, level, and saved library.' },
+    { q:'How does the AI tutor decide what to teach me next?', a:'the AI tutor reads from three signals: your level on each module (Reading / Listening / Speaking / Writing), the words and grammar you\'ve marked as "tricky", and any exam target you\'ve set. Recommendations refresh every Sunday and after any major score change.' },
+    { q:'I missed a day — can I save my streak?', a:'Your streak counts the days you actually practice — finish at least one session before midnight in your local timezone to keep it going.' },
+    { q:'Are exam scores I see real predictions?', a:'They\'re estimates based on your practice performance, meant as a guide to track progress — not a guaranteed exam result.' },
+    { q:'How do I cancel or pause my subscription?', a:'Settings → Subscription → Manage billing. You can cancel any time and keep Pro until the end of the current billing period.' },
   ];
 
   const filtered = cat === 'all' ? categories : categories.filter(c => c.id === cat);
@@ -55,7 +55,7 @@ function HelpPage() {
             <div style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search()}</div>
             <div style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', display:'flex', gap:6, alignItems:'center' }}>
               <span style={{ fontSize:11, color:T.ink5, fontFamily:T.sans }}>or</span>
-              <button style={{ padding:'7px 12px', fontSize:12, fontWeight:700, color:T.brand, background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:8, display:'flex', alignItems:'center', gap:5 }}>{Icon.spark({ width:11, height:11 })} Ask Lía</button>
+              <button style={{ padding:'7px 12px', fontSize:12, fontWeight:700, color:T.brand, background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:8, display:'flex', alignItems:'center', gap:5 }}>{Icon.spark({ width:11, height:11 })} Ask the tutor</button>
             </div>
           </div>
           {/* Quick suggested */}
@@ -257,7 +257,7 @@ function MHelpPage({ onBack }) {
   const faq = [
     { q:'Why didn\'t my streak count today?', a:'A day counts when you finish at least one lesson before midnight in your local timezone. Check your timezone in Settings.' },
     { q:'Can I learn more than one language?', a:'Up to 4 on Pro, 1 on Free. Add from the dashboard.' },
-    { q:'How does Lía pick what to teach?', a:'It reads your level, tricky words/grammar, and your exam target. Refreshes weekly.' },
+    { q:'How does the AI tutor pick what to teach?', a:'It reads your level, tricky words/grammar, and your exam target. Refreshes weekly.' },
     { q:'I missed a day — can I save my streak?', a:'Pro gives one auto-freeze per month. You can also buy a freeze with XP.' },
   ];
 
@@ -287,11 +287,11 @@ function MHelpPage({ onBack }) {
           <div style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search({ width:13, height:13 })}</div>
         </div>
 
-        {/* Ask Lía */}
+        {/* Ask the tutor */}
         <button style={{ width:'100%', padding:'14px', background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:12, display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
           <div style={{ width:32, height:32, borderRadius:8, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.spark({ width:14, height:14 })}</div>
           <div style={{ flex:1, textAlign:'left' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:T.brand }}>Ask Lía</div>
+            <div style={{ fontSize:13, fontWeight:700, color:T.brand }}>Ask the tutor</div>
             <div style={{ fontSize:11, color:T.ink3, marginTop:1 }}>Instant answers · trained on every article</div>
           </div>
           {Icon.arrow({ width:13, height:13, style:{ color:T.brand } })}
