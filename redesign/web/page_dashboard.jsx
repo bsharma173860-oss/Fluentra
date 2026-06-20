@@ -85,6 +85,16 @@ function TodayItem({ ic, label, meta, color, bg, done }) {
 function DashboardPage() {
   const langs = userLanguages();
   const longestStreak = langs.length ? Math.max.apply(null, langs.map(function(l){ var rows=((typeof window!=='undefined'&&window.__results)||[]).filter(function(r){return r.lang===l.code;}); return (typeof computeStreak==='function')?computeStreak(rows):(l.streak||0); })) : 0;
+  const _allres = (typeof window !== 'undefined' && window.__results) || [];
+  const _now = new Date();
+  const _todayIdx = (_now.getDay() + 6) % 7;
+  const _monday = new Date(_now); _monday.setHours(0,0,0,0); _monday.setDate(_now.getDate() - _todayIdx);
+  const _weekFlags = [false,false,false,false,false,false,false];
+  _allres.forEach(function(r){ if(!r.updated_at) return; var t=new Date(r.updated_at); if(isNaN(t.getTime())) return; t.setHours(0,0,0,0); var diff=Math.round((t.getTime()-_monday.getTime())/86400000); if(diff>=0&&diff<7) _weekFlags[diff]=true; });
+  const _streakAll = (typeof computeStreak==='function') ? computeStreak(_allres) : 0;
+  const _totalSessions = _allres.length;
+  const _scoredAll = _allres.filter(function(r){ return typeof r.score==='number'; });
+  const _bestOverall = _scoredAll.length ? Math.max.apply(null, _scoredAll.map(function(r){ return r.score; })) : -1;
   const justAdded = (typeof window !== 'undefined') ? window.__justAddedLang : null;
   const [toastVisible, setToastVisible] = useState(!!justAdded);
   React.useEffect(() => {
@@ -230,7 +240,7 @@ function DashboardPage() {
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:3 }}>
                     {['M','T','W','T','F','S','S'].map((d,i) => {
-                      const done = i < 4, today = i === 4;
+                      const done = _weekFlags[i], today = i === _todayIdx;
                       return (
                         <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
                           <div style={{ width:'100%', aspectRatio:'1', maxWidth:24, borderRadius:6, background: done ? T.brand : today ? T.brandLight : T.card, border:`1.5px solid ${today ? T.brand : T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color: done ? '#fff' : today ? T.brand : T.ink5, fontWeight:700, fontSize:9 }}>
@@ -241,25 +251,18 @@ function DashboardPage() {
                       );
                     })}
                   </div>
-                  <div style={{ marginTop:10, fontSize:10.5, color:T.ink3, textAlign:'center' }}>4-day streak</div>
+                  <div style={{ marginTop:10, fontSize:10.5, color:T.ink3, textAlign:'center' }}>{_streakAll}-day streak</div>
                 </Card>
 
-                {/* Friends */}
+                {/* Overall progress (real) */}
                 <Card padding={16}>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Friends today</div>
-                    <button data-nav="friends" style={{ fontSize:10, color:T.ink4, fontWeight:600, cursor:'pointer' }}>All →</button>
+                  <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Overall</div>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:6 }}>
+                    <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1 }}>{_totalSessions}</div>
+                    <div style={{ fontSize:11, color:T.ink4 }}>session{_totalSessions===1?'':'s'}</div>
                   </div>
-                  {[
-                    { name:'Liam', avatar:'L', color:'#7B4BC4', mins:22, action:'practiced French' },
-                    { name:'Yui',  avatar:'Y', color:'#1F8A5B', mins:18, action:'JLPT mock' },
-                    { name:'Anna', avatar:'A', color:'#D97757', mins:14, action:'31-day streak' },
-                  ].map((f,i,all) => (
-                    <button key={f.name} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', textAlign:'left', background:'transparent', cursor:'pointer' }}>
-                      <div style={{ width:24, height:24, borderRadius:12, background:f.color, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:11, flexShrink:0 }}>{f.avatar}</div>
-                      <div style={{ flex:1, minWidth:0, fontSize:11, color:T.ink, lineHeight:1.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}><b>{f.name}</b> · {f.action}</div>
-                    </button>
-                  ))}
+                  <div style={{ fontSize:11, color:T.ink3 }}>{_bestOverall>=0 ? ('Best score ' + _bestOverall + '%') : 'Finish a session to see your stats'}</div>
+                  <button data-nav="progress" style={{ marginTop:12, fontSize:11, color:T.brand, fontWeight:700, cursor:'pointer', background:'transparent', padding:0 }}>View progress →</button>
                 </Card>
 
                 {/* Tutor shortcut */}
@@ -276,8 +279,8 @@ function DashboardPage() {
                   <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>Quick links</div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:5 }}>
                     {[
-                      { id:'friends',      label:'Friends',    ic:'users' },
-                      { id:'leaderboard',  label:'Ranks',      ic:'bars' },
+                      { id:'vocab',        label:'Vocab',      ic:'book' },
+                      { id:'achievements', label:'Badges',     ic:'trophy' },
                       { id:'notifications',label:'Inbox',      ic:'message' },
                       { id:'progress',     label:'Progress',   ic:'trophy' },
                       { id:'pricing',      label:'Plan',       ic:'flame' },
@@ -308,8 +311,8 @@ function DashboardPage() {
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:5 }}>
                 {['M','T','W','T','F','S','S'].map((d,i) => {
-                  const done = i < 4;
-                  const today = i === 4;
+                  const done = _weekFlags[i];
+                  const today = i === _todayIdx;
                   return (
                     <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
                       <div style={{ width:'100%', aspectRatio:'1', maxWidth:34, borderRadius:9, background: done ? T.brand : today ? T.brandLight : T.card, border: `1.5px solid ${ today ? T.brand : T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color: done ? '#fff' : today ? T.brand : T.ink5, fontWeight:700, fontSize:11 }}>
@@ -320,28 +323,18 @@ function DashboardPage() {
                   );
                 })}
               </div>
-              <div style={{ marginTop:14, fontSize:11.5, color:T.ink3, textAlign:'center' }}>4-day streak · keep it going</div>
+              <div style={{ marginTop:14, fontSize:11.5, color:T.ink3, textAlign:'center' }}>{_streakAll}-day streak · keep it going</div>
             </Card>
 
-            {/* Friends activity — replaces the old Today checklist (which was duplicated by the hero) */}
+            {/* Overall progress (real) */}
             <Card padding={18}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Friends today</div>
-                <button data-nav="friends" style={{ fontSize:11, color:T.ink4, fontWeight:600, cursor:'pointer' }}>See all →</button>
+              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:12 }}>Overall</div>
+              <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:6 }}>
+                <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1 }}>{_totalSessions}</div>
+                <div style={{ fontSize:12, color:T.ink4 }}>session{_totalSessions===1?'':'s'} total</div>
               </div>
-              {[
-                { name:'Liam', avatar:'L', color:'#7B4BC4', mins:22, action:'practiced French' },
-                { name:'Yui',  avatar:'Y', color:'#1F8A5B', mins:18, action:'finished a JLPT mock' },
-                { name:'Anna', avatar:'A', color:'#D97757', mins:14, action:'extended to 31-day streak' },
-              ].map((f,i,all) => (
-                <button key={f.name} data-nav="profile_user" style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', textAlign:'left', background:'transparent', cursor:'pointer' }}>
-                  <div style={{ width:32, height:32, borderRadius:16, background:f.color, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:13, flexShrink:0 }}>{f.avatar}</div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:12.5, color:T.ink, lineHeight:1.3 }}><b>{f.name}</b> {f.action}</div>
-                    <div style={{ fontSize:11, color:T.ink4, marginTop:1 }}>{f.mins} min · today</div>
-                  </div>
-                </button>
-              ))}
+              <div style={{ fontSize:12, color:T.ink3, marginBottom:12 }}>{_bestOverall>=0 ? ('Best score ' + _bestOverall + '%') : 'Finish a session to see your stats'}</div>
+              <button data-nav="progress" style={{ width:'100%', textAlign:'center', fontSize:12, color:T.brand, fontWeight:700, cursor:'pointer', background:T.brandLight, borderRadius:9, padding:'9px 0' }}>View full progress →</button>
             </Card>
 
             {/* Tutor shortcut */}
@@ -359,8 +352,8 @@ function DashboardPage() {
               <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Quick links</div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
                 {[
-                  { id:'friends',      label:'Friends',    ic:'users' },
-                  { id:'leaderboard',  label:'Ranks',      ic:'bars' },
+                  { id:'vocab',        label:'Vocab',      ic:'book' },
+                  { id:'achievements', label:'Badges',     ic:'trophy' },
                   { id:'notifications',label:'Inbox',      ic:'message' },
                   { id:'progress',     label:'Progress',   ic:'trophy' },
                   { id:'pricing',      label:'Plan',       ic:'flame' },
