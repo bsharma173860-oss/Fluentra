@@ -1,155 +1,176 @@
-// ── Lesson detail (article + video) ────────────────────────
+// ── Lesson detail · real AI-generated, in-language lesson ───────────────────
+// Reads window.__lessonTopic = { title, unit, level } (set by the course page),
+// generates a structured lesson in the target language, and renders it.
 
 function LessonDetailPage() {
-  const [tab, setTab] = React.useState('overview');
-  return (
-    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-      <WebTopbar/>
-      <div style={{ flex:1, overflow:'auto' }}>
-        {/* Hero */}
-        <div style={{ padding:'32px 40px 24px', borderBottom:`1px solid ${T.hairline}` }}>
-          <div onClick={() => window.dispatchEvent(new CustomEvent('app:nav', { detail:'course' }))} style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, color:T.ink3, marginBottom:14, cursor:'pointer' }}>
-            {Icon.arrowL()} <span>Module 4 · Past Tenses</span>
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:32, alignItems:'flex-start' }}>
-            <div>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-                <Chip label="Lesson 7 of 12" bg={T.bg2} accent={T.ink2}/>
-                <Chip label="B1 · Intermediate" bg={T.brandLight} accent={T.brand}/>
-                <Chip label="18 min" bg={T.bg2} accent={T.ink2}/>
-              </div>
-              <div style={{ fontFamily:T.serif, fontSize:46, lineHeight:1.05, color:T.ink, marginBottom:14 }}>Pretérito vs. imperfecto: when stories shift</div>
-              <div style={{ fontSize:15, color:T.ink2, lineHeight:1.6, maxWidth:640, marginBottom:20 }}>
-                The single biggest stumbling block for English speakers learning Spanish past tenses. We'll work through 12 example sentences, common test traps, and finish with a 3-minute speaking drill with Lía.
-              </div>
-              <div style={{ display:'flex', gap:10 }}>
-                <Btn label="Continue lesson" nav="reading" accent={T.brand} icon={Icon.arrow()}/>
-                <Btn label="Practice drill" nav="practice" variant="outline" accent={T.ink} icon={Icon.target ? Icon.target() : null}/>
-              </div>
-            </div>
-            <div>
-              {/* Video player */}
-              <div style={{ aspectRatio:'16/9', background:T.ink, borderRadius:14, position:'relative', overflow:'hidden', cursor:'pointer' }}>
-                <div style={{ position:'absolute', inset:0, background:`linear-gradient(135deg, ${T.brand}33, transparent 60%)` }}/>
-                <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <div style={{ width:64, height:64, borderRadius:32, background:'rgba(255,255,255,.95)', display:'flex', alignItems:'center', justifyContent:'center', color:T.ink }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
-                </div>
-                <div style={{ position:'absolute', bottom:10, left:12, right:12, display:'flex', alignItems:'center', gap:10, color:'#fff', fontSize:11, fontWeight:600 }}>
-                  <span>0:42</span>
-                  <div style={{ flex:1, height:3, background:'rgba(255,255,255,.25)', borderRadius:2, overflow:'hidden' }}><div style={{ width:'18%', height:'100%', background:T.brand }}/></div>
-                  <span style={{ color:'rgba(255,255,255,.6)' }}>4:38</span>
-                </div>
-              </div>
-              <div style={{ marginTop:10, fontSize:11.5, color:T.ink4 }}>Intro video · taught by María González</div>
-            </div>
-          </div>
+  const lang = window.__langCode || 'en';
+  const topicObj = (typeof window !== 'undefined' && window.__lessonTopic) || null;
+  const title = topicObj ? topicObj.title : 'Lesson';
+  const unit  = topicObj ? topicObj.unit  : '';
+  const level = topicObj ? topicObj.level : '';
+
+  const [loading, setLoading] = React.useState(true);
+  const [data, setData]       = React.useState(null);
+  const [err, setErr]         = React.useState('');
+  const [tab, setTab]         = React.useState('lesson');
+  const [ans, setAns]         = React.useState({});
+  const [checked, setChecked] = React.useState(false);
+
+  React.useEffect(function () {
+    var cancelled = false;
+    (async function () {
+      try {
+        var r = await fetch('/api/generate-content', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lang: lang, type: 'lesson', difficulty: 'medium', topic: title }),
+        });
+        var j = await r.json();
+        if (j.error) throw new Error(j.error);
+        if (cancelled) return;
+        setData((j.content && j.content.payload) || null);
+        setLoading(false);
+      } catch (e) {
+        if (!cancelled) { setErr('Could not load this lesson: ' + (e.message || e)); setLoading(false); }
+      }
+    })();
+    return function () { cancelled = true; };
+  }, []);
+
+  function back() { window.__nav && window.__nav('course'); }
+  const practice = (data && data.practice) || [];
+  let correct = 0;
+  practice.forEach(function (q, i) { if (ans[i] === q.answer) correct++; });
+
+  function shell(children) {
+    return (
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+        <WebTopbar/>
+        <div style={{ flex:1, overflow:'auto' }}>{children}</div>
+      </div>
+    );
+  }
+
+  if (loading) return shell(
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'70%', gap:14, color:T.ink3 }}>
+      <div style={{ display:'flex', gap:6 }}>{[0,1,2].map(function(i){ return <span key={i} style={{ width:9, height:9, borderRadius:5, background:T.brand, animation:'rdb 1s '+(i*0.15)+'s infinite' }}/>; })}</div>
+      <div style={{ fontSize:13 }}>Writing your lesson on “{title}”…</div>
+      <style>{'@keyframes rdb{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}'}</style>
+    </div>
+  );
+  if (err || !data) return shell(
+    <div style={{ padding:40, textAlign:'center', color:T.ink3 }}>
+      <div style={{ fontSize:14, marginBottom:14 }}>{err || 'No lesson content.'}</div>
+      <Btn label="Back to course" accent={T.brand} onClick={back}/>
+    </div>
+  );
+
+  return shell(
+    <>
+      <div style={{ padding:'32px 40px 22px', borderBottom:`1px solid ${T.hairline}` }}>
+        <div onClick={back} style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, color:T.ink3, marginBottom:14, cursor:'pointer' }}>
+          {Icon.arrowL ? Icon.arrowL() : '←'} <span>{unit || 'Course'}</span>
         </div>
-
-        {/* Tabs */}
-        <div style={{ padding:'0 40px', borderBottom:`1px solid ${T.hairline}`, display:'flex', gap:0 }}>
-          {['overview','transcript','exercises','vocab'].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding:'14px 18px', fontSize:13, fontWeight: tab === t ? 700 : 500, color: tab === t ? T.ink : T.ink3, borderBottom: tab === t ? `2px solid ${T.brand}` : '2px solid transparent', textTransform:'capitalize', cursor:'pointer' }}>
-              {t}
-            </button>
-          ))}
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+          {level && <Chip label={level} bg={T.brandLight} accent={T.brand}/>}
+          {unit && <Chip label={unit} bg={T.bg2} accent={T.ink2}/>}
         </div>
+        <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1.06, color:T.ink, marginBottom:14 }}>{data.title || title}</div>
+        {Array.isArray(data.objectives) && data.objectives.length > 0 && (
+          <ul style={{ display:'flex', flexDirection:'column', gap:8, padding:0, listStyle:'none', maxWidth:680 }}>
+            {data.objectives.map(function (o, i) { return (
+              <li key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, fontSize:14, color:T.ink2, lineHeight:1.5 }}>
+                <div style={{ width:18, height:18, borderRadius:9, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>{Icon.check({ width:10, height:10 })}</div>
+                <span>{o}</span>
+              </li>
+            ); })}
+          </ul>
+        )}
+      </div>
 
-        <div style={{ padding:'30px 40px 60px', display:'grid', gridTemplateColumns:'1fr 320px', gap:36 }}>
-          <div style={{ minWidth:0 }}>
-            {tab === 'overview' && <>
-              <h2 style={{ fontFamily:T.serif, fontSize:28, color:T.ink, marginBottom:14 }}>What you'll learn</h2>
-              <ul style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:28, padding:0, listStyle:'none' }}>
-                {[
-                  'When to use pretérito for "completed" actions',
-                  'When to use imperfecto for habit and atmosphere',
-                  'How sentence-level time markers signal tense (de repente, todos los días, mientras…)',
-                  'Five "trap" verbs: saber, conocer, querer, poder, tener',
-                ].map((s, i) => (
-                  <li key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, fontSize:14, color:T.ink2, lineHeight:1.5 }}>
-                    <div style={{ width:18, height:18, borderRadius:9, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>{Icon.check({ width:10, height:10 })}</div>
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ul>
+      <div style={{ padding:'0 40px', borderBottom:`1px solid ${T.hairline}`, display:'flex', gap:0 }}>
+        {[['lesson','Lesson'],['practice','Practice'],['vocab','Vocab']].map(function (t) { return (
+          <button key={t[0]} onClick={function(){ setTab(t[0]); }} style={{ padding:'14px 18px', fontSize:13, fontWeight: tab===t[0]?700:500, color: tab===t[0]?T.ink:T.ink3, borderBottom: tab===t[0]?`2px solid ${T.brand}`:'2px solid transparent', cursor:'pointer', background:'transparent' }}>{t[1]}</button>
+        ); })}
+      </div>
 
-              <h2 style={{ fontFamily:T.serif, fontSize:28, color:T.ink, marginBottom:14 }}>Lesson plan</h2>
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {[
-                  { n:1, t:'The two timelines', d:'4 min', done:true },
-                  { n:2, t:'Hablé vs. hablaba — minimal pairs',  d:'5 min', done:true },
-                  { n:3, t:'Time-marker triggers',  d:'3 min', done:true, current:false },
-                  { n:4, t:'Trap verbs in past tenses', d:'4 min', current:true },
-                  { n:5, t:'Speaking drill with Lía', d:'3 min' },
-                ].map(s => (
-                  <div key={s.n} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: s.current ? T.brandLight : T.card, border:`1px solid ${s.current ? T.brand : T.border}`, borderRadius:11 }}>
-                    <div style={{ width:26, height:26, borderRadius:13, background: s.done ? '#1A8F4E' : s.current ? T.brand : T.bg2, color: s.done || s.current ? '#fff' : T.ink3, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700 }}>
-                      {s.done ? Icon.check({ width:11, height:11 }) : s.n}
-                    </div>
-                    <div style={{ flex:1, fontSize:13, fontWeight:600, color:T.ink }}>{s.t}</div>
-                    <div style={{ fontSize:11, color:T.ink4 }}>{s.d}</div>
-                  </div>
-                ))}
+      <div style={{ padding:'30px 40px 60px', display:'grid', gridTemplateColumns:'1fr 300px', gap:36 }}>
+        <div style={{ minWidth:0 }}>
+          {tab === 'lesson' && <>
+            {(data.sections || []).map(function (sec, i) { return (
+              <div key={i} style={{ marginBottom:26 }}>
+                {sec.heading && <h2 style={{ fontFamily:T.serif, fontSize:24, color:T.ink, marginBottom:10 }}>{sec.heading}</h2>}
+                <div style={{ fontSize:14.5, lineHeight:1.7, color:T.ink2, whiteSpace:'pre-wrap', maxWidth:660 }}>{sec.body}</div>
+              </div>
+            ); })}
+            {Array.isArray(data.examples) && data.examples.length > 0 && <>
+              <h2 style={{ fontFamily:T.serif, fontSize:24, color:T.ink, margin:'8px 0 14px' }}>Examples</h2>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {data.examples.map(function (ex, i) { return (
+                  <Card key={i} padding={16}>
+                    <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.4 }}>{ex.target}</div>
+                    <div style={{ fontSize:12.5, color:T.ink3, marginTop:4 }}>{ex.gloss}</div>
+                  </Card>
+                ); })}
               </div>
             </>}
+          </>}
 
-            {tab === 'transcript' && <div style={{ fontSize:14.5, lineHeight:1.75, color:T.ink2, maxWidth:640 }}>
-              <p style={{ marginBottom:14 }}><b style={{ color:T.brand }}>0:00 ·</b> Hola, soy María. Hoy vamos a hablar del pretérito y el imperfecto — los dos tiempos del pasado más importantes en español.</p>
-              <p style={{ marginBottom:14 }}><b style={{ color:T.brand }}>0:18 ·</b> The mistake almost every English speaker makes is treating these like "simple past" and "past continuous." They're not. They encode a deeper distinction: completion versus context.</p>
-              <p style={{ marginBottom:14 }}><b style={{ color:T.brand }}>0:42 ·</b> When you say "comí pizza," you're saying it happened, it ended. When you say "comía pizza," you're describing the moment — what was going on…</p>
-              <p style={{ marginBottom:14 }}><b style={{ color:T.brand }}>1:14 ·</b> Let's look at our first example. "Cuando yo era niño, vivía en Madrid." Both verbs in imperfecto, because we're painting a picture…</p>
-            </div>}
-
-            {tab === 'exercises' && <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              {['Conjugate 12 regular verbs in pretérito','Identify tense from time markers','Translate 8 sentences (EN → ES)','Listen and fill in the blank'].map((e, i) => (
-                <Card key={i} padding={16}>
-                  <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.target ? Icon.target({ width:16, height:16 }) : '◎'}</div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>Exercise {i+1} · {e}</div>
-                      <div style={{ fontSize:11.5, color:T.ink4, marginTop:2 }}>{[8,12,15,10][i]} questions · ~{[5,7,9,6][i]} min</div>
-                    </div>
-                    <Btn label="Start" nav="practice" accent={T.brand} small/>
+          {tab === 'practice' && <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            {practice.length === 0 && <div style={{ fontSize:13, color:T.ink3 }}>No practice items for this lesson.</div>}
+            {practice.map(function (q, qi) { return (
+              <Card key={qi} padding={18}>
+                <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:12, lineHeight:1.4 }}>{qi+1}. {q.q}</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {(q.options || []).map(function (opt, oi) {
+                    var picked = ans[qi] === oi;
+                    var right = checked && oi === q.answer;
+                    var wrong = checked && picked && oi !== q.answer;
+                    return (
+                      <button key={oi} onClick={function(){ if(!checked) setAns(function(a){ var n=Object.assign({},a); n[qi]=oi; return n; }); }}
+                        style={{ textAlign:'left', padding:'10px 14px', borderRadius:10, fontSize:13.5, cursor: checked?'default':'pointer',
+                          background: right ? '#dcfce7' : wrong ? '#fee2e2' : picked ? T.brandLight : T.bg2,
+                          border:`1px solid ${ right ? '#16a34a' : wrong ? '#dc2626' : picked ? T.brand : T.border }`,
+                          color: right ? '#166534' : wrong ? '#991b1b' : T.ink }}>
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Card>
+            ); })}
+            {practice.length > 0 && (
+              checked
+                ? <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                    <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink }}>{correct} / {practice.length} correct</div>
+                    <Btn label="Reset" variant="outline" accent={T.ink2} onClick={function(){ setAns({}); setChecked(false); }}/>
                   </div>
-                </Card>
-              ))}
-            </div>}
+                : <Btn label="Check answers" accent={T.brand} onClick={function(){ setChecked(true); }}/>
+            )}
+          </div>}
 
-            {tab === 'vocab' && <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              {[
-                ['de repente','suddenly'],['mientras','while'],['todos los días','every day'],['ayer','yesterday'],
-                ['siempre','always'],['nunca','never'],['una vez','once'],['a menudo','often'],
-              ].map(([es, en], i) => (
-                <Card key={i} padding={14}>
-                  <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink }}>{es}</div>
-                  <div style={{ fontSize:12, color:T.ink3, marginTop:2 }}>{en}</div>
-                </Card>
-              ))}
-            </div>}
+          {tab === 'vocab' && <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            {(data.vocab || []).map(function (v, i) { return (
+              <Card key={i} padding={14}>
+                <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink }}>{v.term}</div>
+                <div style={{ fontSize:12, color:T.ink3, marginTop:2 }}>{v.gloss}</div>
+              </Card>
+            ); })}
+            {(!data.vocab || !data.vocab.length) && <div style={{ fontSize:13, color:T.ink3 }}>No vocabulary for this lesson.</div>}
+          </div>}
+        </div>
+
+        <div>
+          <div style={{ padding:'14px 16px', background:T.brandLight, border:`1px solid ${T.brand}33`, borderRadius:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:T.brand, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:6 }}>Stuck?</div>
+            <div style={{ fontSize:13, color:T.ink2, lineHeight:1.5, marginBottom:12 }}>Ask the AI tutor to explain anything from this lesson in your own language.</div>
+            <Btn label="Ask the tutor" nav="tutor" small accent={T.brand}/>
           </div>
-
-          <div>
-            <Card padding={18}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:14 }}>Your progress</div>
-              <CircularProgress value={62} size={120} stroke={10}/>
-              <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:18 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12.5 }}><span style={{ color:T.ink3 }}>Steps done</span><span style={{ fontWeight:700, color:T.ink }}>3 of 5</span></div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12.5 }}><span style={{ color:T.ink3 }}>Time spent</span><span style={{ fontWeight:700, color:T.ink }}>11 min</span></div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12.5 }}><span style={{ color:T.ink3 }}>Mastery</span><span style={{ fontWeight:700, color:T.brand }}>72%</span></div>
-              </div>
-              <div style={{ marginTop:16 }}><Btn label="Continue lesson" nav="reading" accent={T.brand} fullWidth iconRight={Icon.arrow()}/></div>
-            </Card>
-
-            <div style={{ marginTop:14, padding:'14px 16px', background:T.brandLight, border:`1px solid ${T.brand}33`, borderRadius:12 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.brand, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:6 }}>Stuck?</div>
-              <div style={{ fontSize:13, color:T.ink2, lineHeight:1.5, marginBottom:12 }}>Lía can explain anything in this lesson in your own language.</div>
-              <Btn label="Ask Lía" nav="tutor" small accent={T.brand}/>
-            </div>
+          <div style={{ marginTop:14 }}>
+            <Btn label="Practice this skill" nav="reading" variant="outline" accent={T.ink} fullWidth iconRight={Icon.arrow ? Icon.arrow() : null}/>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

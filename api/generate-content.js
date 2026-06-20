@@ -21,7 +21,7 @@ var LANG_NAMES = {
   ko:'Korean', id:'Indonesian', vi:'Vietnamese',
 };
 
-function prompt(type, langName, difficulty, exam) {
+function prompt(type, langName, difficulty, exam, topic) {
   var examLine = exam ? ` Match the style/level of the ${exam} exam.` : '';
   if (type === 'reading') {
     return `Create a ${difficulty} reading-comprehension item in ${langName}.${examLine} ` +
@@ -47,6 +47,19 @@ function prompt(type, langName, difficulty, exam) {
       `"options":[string,string,string,string],"answer":number}]}. ` +
       `Passage ~120-220 words in a conversational register; 4-6 questions. ` +
       `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option.`;
+  }
+  if (type === 'lesson') {
+    var topicLine = topic ? ' The lesson topic is: "' + topic + '".' : '';
+    return 'Create a structured ' + difficulty + ' language lesson for a learner of ' + langName + '.' + topicLine + examLine + ' ' +
+      'Explanations must be in ENGLISH (the learner\'s language); all example sentences and vocabulary terms must be in ' + langName + ' with English glosses. ' +
+      'Return ONLY minified JSON: {"title":string,"level":string,"objectives":[string],' +
+      '"sections":[{"heading":string,"body":string}],' +
+      '"examples":[{"target":string,"gloss":string}],' +
+      '"vocab":[{"term":string,"gloss":string}],' +
+      '"practice":[{"q":string,"options":[string,string,string,string],"answer":number}]}. ' +
+      '3-4 objectives; 2-3 explanation sections (English, clear and concise); 5-8 examples (target sentence + English gloss); ' +
+      '6-10 vocab items; 4-6 practice questions (question stems in English, target-language answer options). ' +
+      '"answer" is the 0-based index of the correct option.';
   }
   if (type === 'speaking') {
     return `Create a ${difficulty} speaking test in ${langName}.${examLine} ` +
@@ -83,16 +96,17 @@ module.exports = async function handler(req, res) {
     var lang = body.lang, type = body.type;
     var difficulty = body.difficulty || 'medium';
     var exam = body.exam || null;
+    var topic = body.topic || null;
     if (!lang || !LANG_NAMES[lang]) return res.status(400).json({ error: 'valid lang required' });
-    if (['reading', 'writing', 'vocab', 'speaking', 'listening'].indexOf(type) === -1) return res.status(400).json({ error: 'type must be reading|writing|vocab|speaking|listening' });
+    if (['reading', 'writing', 'vocab', 'speaking', 'listening', 'lesson'].indexOf(type) === -1) return res.status(400).json({ error: 'type must be reading|writing|vocab|speaking|listening|lesson' });
 
-    var p = prompt(type, LANG_NAMES[lang], difficulty, exam);
+    var p = prompt(type, LANG_NAMES[lang], difficulty, exam, topic);
 
     // Claude generates the content
     var aResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': ANTHROPIC, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 2000, messages: [{ role: 'user', content: p }] }),
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: (type === 'lesson' ? 3500 : 2000), messages: [{ role: 'user', content: p }] }),
     });
     if (!aResp.ok) return res.status(502).json({ error: 'generation failed', detail: (await aResp.text()).slice(0, 300) });
     var aData = await aResp.json();

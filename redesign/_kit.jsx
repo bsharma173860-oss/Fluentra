@@ -130,6 +130,17 @@ function computeStreak(rows) {
 }
 if (typeof window !== 'undefined') window.computeStreak = computeStreak;
 
+// Curriculum scaffolding — a language-agnostic topic outline. The lesson CONTENT
+// is generated in the target language on demand (/api/generate-content type=lesson).
+var LESSON_SYLLABUS = [
+  { unit:'Foundations',       level:'A1', lessons:['Greetings and introductions','Numbers, dates and time','Building basic sentences','Present tense of common verbs'] },
+  { unit:'Everyday language', level:'A2', lessons:['Your daily routine','Talking about the past','Food, ordering and shopping','Asking questions and directions'] },
+  { unit:'Connected speech',  level:'B1', lessons:['Describing past experiences','Future plans and intentions','Making comparisons','Linking ideas: because, although, so'] },
+  { unit:'Fluency',           level:'B2', lessons:['Expressing hypotheticals','Reported speech','Opinions and argument','Formal vs. informal register'] },
+];
+function lessonSyllabus() { return LESSON_SYLLABUS; }
+if (typeof window !== 'undefined') window.lessonSyllabus = lessonSyllabus;
+
 // ── Per-language certified exam systems ─────────────────────────
 // Each language has its own real-world exam regime: IELTS (en), DELE (es),
 // JLPT (ja), DELF (fr). The Entry/Runner/Results screens render this data.

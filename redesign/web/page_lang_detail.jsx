@@ -134,19 +134,20 @@ function LangDetailPage() {
                   <button data-nav="course" style={{ fontSize:11.5, color:T.ink3, fontWeight:600, cursor:'pointer' }}>Course →</button>
                 </div>
                 {(() => {
-                  const content = (typeof langContent === 'function') ? langContent(lang.code) : null;
-                  const lessons = (content?.currentLessons || []).slice(0, 4);
+                  const syl = (typeof lessonSyllabus === 'function') ? lessonSyllabus() : [];
+                  const flat = [];
+                  syl.forEach(function(u){ u.lessons.forEach(function(title){ flat.push({ title:title, unit:u.unit, level:u.level }); }); });
+                  const lessons = flat.slice(0, 4);
                   return lessons.map((row, i, all) => (
-                    <button key={i} data-nav="lesson_detail" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderBottom: i < all.length-1 ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', background:'transparent' }}>
+                    <button key={i} onClick={function(){ window.__lessonTopic = { title:row.title, unit:row.unit, level:row.level }; window.__nav && window.__nav('lesson_detail'); }} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderBottom: i < all.length-1 ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', background:'transparent', cursor:'pointer' }}>
                       <div style={{ width:36, height:36, borderRadius:10, background:t.bg, color:t.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                         {Icon.book({ width:15, height:15 })}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:10.5, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>{row.unit || 'Lesson'}</div>
+                        <div style={{ fontSize:10.5, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>{row.level + ' · ' + row.unit}</div>
                         <div style={{ fontSize:13, fontWeight:600, color:T.ink, lineHeight:1.2 }}>{row.title}</div>
-                        <div style={{ fontSize:11, color:T.ink4, marginTop:3 }}>{row.progress > 0 ? `${Math.round(row.progress*100)}% · ${row.mins||10} min` : `${row.mins||10} min · start`}</div>
                       </div>
-                      <div style={{ fontSize:11.5, color:t.accent, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>{row.progress > 0 ? 'Resume' : 'Start'} {Icon.arrow({ width:11, height:11 })}</div>
+                      <div style={{ fontSize:11.5, color:t.accent, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>Start {Icon.arrow({ width:11, height:11 })}</div>
                     </button>
                   ));
                 })()}
