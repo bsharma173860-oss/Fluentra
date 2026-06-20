@@ -368,152 +368,74 @@ function FullExamRunner() {
 // EXAM RESULTS
 // ═══════════════════════════════════════════════════════════
 function ExamResults() {
-  const code = window.__langCode || 'en';
-  const lang = LANGUAGES.find(l => l.code === code) || LANGUAGES[0];
-  const ex = examFor(lang.code);
-  const t = langTheme(lang.code);
-  const mode = getExamMode();
-  const colorMap = { listening:T.listening, reading:T.reading, writing:T.writing, speaking:T.speaking };
-
-  // Per-language module results (synthesized from the exam config + theme colors)
-  const modules = ex.modules.map((m, i) => {
-    const c = colorMap[m.color] || T.listening;
-    const score = ex.scoreUnit === '/9' ? [8.0, 7.5, 6.5, 7.0][i] || 7.0
-                : ex.scoreUnit === '/180' ? [42, 38, 42, 0][i] || 36
-                : [78, 74, 70, 76][i] || 70;
-    const change = [+0.5, +0.5, -0.5, +0.0][i] || +0.0;
-    return {
-      ic: m.ic, c, label: m.label.replace(/\s*\(.*\)/,''),
-      score, change,
-      correct: m.q > 5 ? Math.round(m.q * 0.85) : null,
-      total: m.q > 5 ? m.q : null,
-      tasks: m.q <= 2 ? Array.from({length:m.q},(_,k)=>`Task ${k+1}: ${score}`) : null,
-      criteria: m.color === 'speaking' ? ['Fluency','Vocab','Grammar','Pronunciation'].map(k=>`${k} ${score}`) : null,
-    };
-  });
-
-  const overall = ex.bestScore;
-  const overallPct = ex.scoreUnit === '/9' ? (overall/9)*100
-                   : ex.scoreUnit === '/180' ? (overall/180)*100
-                   : overall;
-  const passNote = ex.scoreUnit === '/9' ? 'Band 7.5 is a strong score for university admission at most UK institutions.'
-                 : ex.scoreUnit === '/180' ? 'Above the JLPT N4 pass threshold. To progress to N3, focus on grammar and 800 new kanji.'
-                 : ex.scoreUnit === '/100' && lang.code === 'es' ? 'Apto en B2. Para C1, refuerza la expresión escrita argumentativa y el subjuntivo.'
-                 : 'Réussite au DELF B1. Pour le B2, travaillez l\'argumentation écrite et la nuance lexicale.';
-  const greetingName = lang.code === 'es' ? 'Felicidades, María.' : lang.code === 'fr' ? 'Félicitations, María.' : lang.code === 'ja' ? 'おめでとう、María。' : 'Congratulations, María.';
-
+  const rows = ((typeof window!=='undefined' && window.__results) ? window.__results : []).filter(function(r){ return r && r.detail && r.detail.module === 'mock_exam'; });
+  rows.sort(function(a,b){ return new Date(b.updated_at) - new Date(a.updated_at); });
+  const latest = rows[0] || null;
+  const code = (latest && latest.lang) || window.__langCode || 'en';
+  const langObj = (typeof langByCode==='function') ? langByCode(code) : { english: code };
+  const MOD = {
+    reading:   { c:T.reading,   ic:'book', title:'Reading'   },
+    listening: { c:T.listening, ic:'head', title:'Listening' },
+    speaking:  { c:T.speaking,  ic:'mic',  title:'Speaking'  },
+    writing:   { c:T.writing,   ic:'pen',  title:'Writing'   },
+  };
+  const overall = latest ? (Number(latest.score)||0) : null;
+  const sections = (latest && latest.detail && latest.detail.sections) || [];
+  const dateStr = latest && latest.updated_at ? new Date(latest.updated_at).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}) : '';
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>
       <div style={{ flex:1, overflow:'auto', padding:'40px 36px' }}>
-        <div style={{ maxWidth:800, margin:'0 auto' }}>
-
-          {/* Overall hero */}
-          <div style={{ background:T.ink, borderRadius:24, padding:'40px 44px', color:'#fff', marginBottom:28, position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', inset:0, display:'grid', gridTemplateColumns:'repeat(20,1fr)', gap:14, opacity:.04, pointerEvents:'none' }}>
-              {Array.from({length:200}).map((_,i)=><div key={i} style={{ width:4, height:4, borderRadius:2, background:'#fff' }}/>)}
-            </div>
-            <div style={{ position:'relative', zIndex:1, display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center' }}>
-              <div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:10 }}>{ex.name} · {mode.kind === 'official' ? 'May 2026 · Official result' : mode.kind === 'practice' ? 'Mock result · Not on record' : 'Practice drill · Saved to log'}</div>
-                <div style={{ fontFamily:T.serif, fontSize:44, lineHeight:1.05, marginBottom:10 }}>{greetingName}</div>
-                <div style={{ fontSize:14, color:'rgba(255,255,255,.7)', lineHeight:1.55 }}>You've improved your overall {ex.scoreLabel.toLowerCase()} since your last exam. Your {modules[0].label} was your strongest section.</div>
-                <div style={{ display:'flex', gap:10, marginTop:20, flexWrap:'wrap' }}>
-                  <Chip label={mode.short} accent="#fff" bg={mode.accent}/>
-                  {mode.kind === 'official' && <Chip label={`${lang.english} Rank #12`} accent="rgba(255,255,255,.9)" bg="rgba(255,255,255,.12)"/>}
-                  {mode.kind === 'official' && <Chip label="Top 2% this month" accent="rgba(255,255,255,.9)" bg="rgba(255,255,255,.12)"/>}
-                  {mode.kind !== 'official' && <Chip label={mode.subtitle} accent="rgba(255,255,255,.85)" bg="rgba(255,255,255,.1)"/>}
+        <div style={{ maxWidth:760, margin:'0 auto' }}>
+          {!latest ? (
+            <Card padding={28}>
+              <div style={{ fontSize:13.5, color:T.ink3, lineHeight:1.6 }}>No mock exam results yet. Take a full mock and your scored result will appear here. <span data-nav="exam_runner" style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Take a mock →</span></div>
+            </Card>
+          ) : (
+            <>
+              <div style={{ background:T.ink, borderRadius:24, padding:'40px 44px', color:'#fff', marginBottom:28, display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center' }}>
+                <div>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:10 }}>{langObj.english} mock exam{dateStr ? ' · ' + dateStr : ''}</div>
+                  <div style={{ fontFamily:T.serif, fontSize:44, lineHeight:1.05, marginBottom:10 }}>Your results</div>
+                  <div style={{ fontSize:14, color:'rgba(255,255,255,.7)', lineHeight:1.55 }}>Overall across {sections.length} {sections.length===1?'section':'sections'}.</div>
+                </div>
+                <div style={{ textAlign:'center' }}>
+                  <Ring pct={overall} size={150} stroke={12} color={T.brand} trackColor="rgba(255,255,255,.1)">
+                    <div style={{ fontFamily:T.serif, fontSize:52, color:'#fff', lineHeight:1 }}>{overall}<span style={{ fontSize:20, opacity:.5 }}>%</span></div>
+                    <div style={{ fontSize:9, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginTop:4 }}>Overall</div>
+                  </Ring>
                 </div>
               </div>
-              <div style={{ textAlign:'center' }}>
-                <Ring pct={overallPct} size={150} stroke={12} color={T.brand} trackColor="rgba(255,255,255,.1)">
-                  <div style={{ fontFamily:T.serif, fontSize:52, color:'#fff', lineHeight:1 }}>{overall}{ex.scoreUnit && ex.scoreUnit.startsWith('/') ? <span style={{ fontSize:20, opacity:.5 }}>{ex.scoreUnit}</span> : ''}</div>
-                  <div style={{ fontSize:9, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginTop:4 }}>{ex.scoreLabel}</div>
-                </Ring>
+
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:28 }}>
+                {sections.map(function(sec, i){
+                  var m = MOD[sec.module] || { c:T.reading, ic:'book', title:sec.module };
+                  var sc = Math.round(Number(sec.score)||0);
+                  return (
+                    <Card key={i} padding={22}>
+                      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                        <div style={{ width:38, height:38, borderRadius:11, background:m.c.bg, color:m.c.c, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[m.ic]({ width:16, height:16 })}</div>
+                        <div style={{ flex:1, fontSize:13.5, fontWeight:700, color:T.ink }}>{m.title}</div>
+                        <div style={{ fontFamily:T.serif, fontSize:32, color:m.c.c, lineHeight:1 }}>{sc}%</div>
+                      </div>
+                      <Bar pct={sc} color={m.c.c}/>
+                    </Card>
+                  );
+                })}
               </div>
-            </div>
-          </div>
 
-          {/* Module breakdown */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:28 }}>
-            {modules.map(m => (
-              <Card key={m.label} padding={22}>
-                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-                  <div style={{ width:38, height:38, borderRadius:11, background:m.c.bg, color:m.c.c, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    {Icon[m.ic]({ width:16, height:16 })}
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>{m.label}</div>
-                  </div>
-                  <div style={{ textAlign:'right' }}>
-                    <div style={{ fontFamily:T.serif, fontSize:32, color:m.c.c, lineHeight:1 }}>{ex.scoreUnit === '/9' ? m.score.toFixed(1) : m.score}</div>
-                    <div style={{ fontSize:11, color:m.change>=0?T.listening.c:T.brand, fontWeight:700 }}>{m.change>=0?'+':''}{ex.scoreUnit === '/9' ? m.change.toFixed(1) : Math.round(m.change)}</div>
-                  </div>
-                </div>
-                <Bar pct={ex.scoreUnit === '/9' ? (m.score/9)*100 : ex.scoreUnit === '/180' ? (m.score/45)*100 : m.score} color={m.c.c}/>
-                <div style={{ marginTop:12, display:'flex', flexWrap:'wrap', gap:6 }}>
-                  {m.correct !== undefined && <Chip label={`${m.correct}/${m.total} correct`} accent={m.c.c} bg={m.c.bg} style={{ fontSize:10 }}/>}
-                  {m.tasks && m.tasks.map(ta => <Chip key={ta} label={ta} accent={m.c.c} bg={m.c.bg} style={{ fontSize:10 }}/>)}
-                  {m.criteria && m.criteria.map(cr => <Chip key={cr} label={cr} accent={m.c.c} bg={m.c.bg} style={{ fontSize:10 }}/>)}
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          {/* AI feedback */}
-          <Card padding={26} style={{ marginBottom:24 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
-              <div style={{ width:38, height:38, borderRadius:11, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.spark()}</div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>AI Examiner Feedback</div>
-            </div>
-            {[
-              { label:'Listening', text:'Excellent performance. You correctly identified all 4 speakers in Section 3 and completed the form-fill in Section 1 with 100% accuracy. Minor slips in Section 4 academic vocabulary — review "demographic," "hypothesis," and "proliferation."' },
-              { label:'Writing',   text:'Your Task 2 argument was well-structured with a clear thesis. Cohesion would benefit from more varied linkers (you used "however" 4 times). Task 1 over-described minor data — focus on the overall trend first.' },
-            ].map(fb => (
-              <div key={fb.label} style={{ display:'flex', gap:14, marginBottom:16, paddingBottom:16, borderBottom:`1px solid ${T.hairline}` }}>
-                <div style={{ fontSize:12.5, fontWeight:700, color:T.ink2, width:80, flexShrink:0, paddingTop:2 }}>{fb.label}</div>
-                <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.65, flex:1 }}>{fb.text}</div>
+              <div style={{ display:'flex', gap:10 }}>
+                <Btn label="Take another mock" accent={T.brand} onClick={function(){ window.__nav && window.__nav('exam_runner'); }}/>
+                <Btn label="Back to exams" variant="outline" accent={T.ink2} onClick={function(){ window.__nav && window.__nav('exams'); }}/>
               </div>
-            ))}
-            <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.65, fontStyle:'italic' }}>
-              "{passNote} To reach {ex.nextLevel}, focus on weaker modules and review the official {ex.short} descriptors."
-            </div>
-          </Card>
-
-          {/* Actions */}
-          <div style={{ display:'flex', gap:12 }}>
-            {mode.kind === 'official' ? (
-              <>
-                <Btn nav="dashboard" label="Download certificate" icon={Icon.download({ width:13, height:13 })} variant="outline" accent={T.ink} size="lg" style={{ flex:1 }}/>
-                <Btn label="View leaderboard" nav="exams" icon={Icon.trophy({ width:13, height:13 })} variant="outline" accent={T.brand} size="lg" style={{ flex:1 }}/>
-                <Btn label="Start next exam prep" nav="exam_entry" accent={T.brand} size="lg" iconRight={Icon.arrow({ width:13, height:13 })} style={{ flex:1 }}/>
-              </>
-            ) : mode.kind === 'practice' ? (
-              <>
-                <Btn nav="dashboard" label="Back to dashboard" variant="outline" accent={T.ink} size="lg" style={{ flex:1 }}/>
-                <Btn nav="mock_test" label="Take another mock" variant="outline" accent={mode.accent} size="lg" style={{ flex:1 }}/>
-                <Btn nav="exam_entry" label={`Try the official ${ex.short}`} accent={T.brand} size="lg" iconRight={Icon.arrow({ width:13, height:13 })} style={{ flex:1 }}/>
-              </>
-            ) : (
-              <>
-                <Btn nav="dashboard" label="Back to dashboard" variant="outline" accent={T.ink} size="lg" style={{ flex:1 }}/>
-                <Btn nav="lang" label="More practice" variant="outline" accent={mode.accent} size="lg" style={{ flex:1 }}/>
-                <Btn nav="practice_runner" label="Drill again" accent={mode.accent} size="lg" iconRight={Icon.arrow({ width:13, height:13 })} style={{ flex:1 }}/>
-              </>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// Mode wrappers — set window.__examMode then render shared UI.
-// Backend can read this to know which exam stream a result
-// belongs to. Three pairs: monthly (official, $5, leaderboard),
-// mock (free practice exam, full format), practice (single-skill drill).
-// ═══════════════════════════════════════════════════════════
 function MonthlyExamRunner()  { window.__examMode = 'monthly';  return <FullExamRunner/>; }
 function MockExamRunner()     { window.__examMode = 'mock';     return <FullExamRunner/>; }
 function PracticeExamRunner() { window.__examMode = 'practice'; return <FullExamRunner/>; }

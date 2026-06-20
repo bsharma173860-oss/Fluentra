@@ -22,9 +22,9 @@ polished iteratively after.
 
 ## PHASE 2 — Exam meta-pages  (M)
 Runner is already real (chains real modules). 
-- [ ] Tag exam section saves with `detail.exam = true` + an exam run id.
-- [ ] **Exam history** reads real exam rows; **monthly/mock results** show real per-section scores.
-- [ ] Collapse fake **booking/preview/unlock/scheduling** into "Take a mock exam now" → runner.
+- [x] (already real) Exam section saves with `detail.exam = true` + an exam run id.
+- [x] **Exam history**, **ExamResults** (exam/monthly/mock/practice), and **hub exams tab** all read real mock_exam rows.
+- [x] Exam start funnels into the real runner; history/hub CTAs say "Take a mock now." (exam_book registration page still fake — minor, Phase 3.)
 
 ## PHASE 3 — Honesty cleanup  (S)
 - [ ] Remove `states` (dev UI gallery) from production routing.
@@ -73,4 +73,5 @@ Bharat runs the SQL migrations below in Supabase SQL editor.
 ## Status log
 - b50: hub tutor real, reopen-on-last-page, language count 26.
 - b51: Phase 1 done — hub Stats real, hub Study real, mobile checkout price $24/$228.
-- (next) Phase 2 — exam meta-pages …
+- b52: Phase 2 done — exam history/results/hub-exams real (runner was already real). FullExamRunner is dead code.
+- (next) Phase 3 — honesty cleanup …

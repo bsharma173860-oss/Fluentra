@@ -312,115 +312,52 @@ function LangDetailPage() {
 
         {/* ── EXAMS TAB ── */}
         {tab === 'exams' && (() => {
-          const cnt = (typeof langContent === 'function') ? langContent(lang.code) : null;
-          const ex = { primary: cnt?.primaryExam || { name:`${lang.english} certification`, cycle:'May 2026', date:'May 15', registered:60, fee:'$5' }, others: cnt?.otherExams || [] };
-          const examHistory = cnt?.examHistory || [];
-          const skillTargets = cnt?.skillTargets || [];
-          const colorFor = mod => mod==='speaking'?T.speaking : mod==='writing'?T.writing : mod==='listening'?T.listening : T.reading;
-          const iconFor  = mod => mod==='speaking'?'mic'      : mod==='writing'?'pen'      : mod==='listening'?'head'      : 'book';
-          const titleFor = mod => mod.charAt(0).toUpperCase() + mod.slice(1);
+          const rows = ((typeof window!=='undefined' && window.__results) ? window.__results : []).filter(r => r.lang === lang.code && r.detail && r.detail.module === 'mock_exam');
+          rows.sort((a,b)=> new Date(b.updated_at) - new Date(a.updated_at));
+          const best = rows.length ? Math.max.apply(null, rows.map(r=>Number(r.score)||0)) : null;
+          const ABBR = { reading:'R', listening:'L', writing:'W', speaking:'S' };
           return (
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-            {/* Monthly exam card */}
-            <div style={{ background:T.ink, borderRadius:20, padding:'28px 32px', color:'#fff', position:'relative', overflow:'hidden' }}>
-              <div style={{ position:'absolute', top:-30, right:-30, width:240, height:240, display:'grid', gridTemplateColumns:'repeat(12,1fr)', gap:12, opacity:.05, pointerEvents:'none' }}>
-                {Array.from({length:100}).map((_,i)=><div key={i} style={{ width:4, height:4, borderRadius:2, background:'#fff' }}/>)}
+            {/* Take a mock */}
+            <div style={{ background:T.ink, borderRadius:18, padding:'28px 30px', color:'#fff', display:'grid', gridTemplateColumns:'1fr auto', gap:20, alignItems:'center' }}>
+              <div>
+                <div style={{ fontSize:10.5, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>{lang.english} mock exam</div>
+                <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.1, marginBottom:8 }}>Full mock — all four sections</div>
+                <div style={{ fontSize:13, color:'rgba(255,255,255,.7)', lineHeight:1.5 }}>Reading, listening, speaking, and writing back to back, scored like the real thing.{best!=null ? ' Your best so far: ' + best + '%.' : ''}</div>
               </div>
-              <div style={{ position:'relative', zIndex:1, display:'grid', gridTemplateColumns:'1fr auto', gap:24, alignItems:'center' }}>
-                <div>
-                  <Chip label="Monthly Exam" accent="#fff" bg="rgba(255,255,255,.14)" style={{ marginBottom:14 }}/>
-                  <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1.1, marginBottom:8 }}>{ex.primary.name} — {ex.primary.cycle}</div>
-                  <div style={{ display:'flex', gap:28, marginTop:14 }}>
-                    {[{v:String(ex.primary.registered),l:'Registered'},{v:ex.primary.fee,l:'Entry fee'},{v:ex.primary.date,l:'Exam date'}].map(s=>(
-                      <div key={s.l}>
-                        <div style={{ fontFamily:T.serif, fontSize:24, lineHeight:1 }}>{s.v}</div>
-                        <div style={{ fontSize:11, color:'rgba(255,255,255,.55)', marginTop:3 }}>{s.l}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:10, alignItems:'flex-end' }}>
-                  <Chip label="Exam unlocked ✓" accent={T.listening.c} bg={`${T.listening.c}22`}/>
-                  <Btn label={`Register — ${ex.primary.fee}`} nav="exam_entry" accent={t.accent} iconRight={Icon.arrow({ width:12, height:12 })}/>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,.45)' }}>Leaderboard goes live May 2</div>
-                </div>
-              </div>
-              {/* Streak progress */}
-              <div style={{ marginTop:20, paddingTop:20, borderTop:'1px solid rgba(255,255,255,.12)' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8, fontSize:12, color:'rgba(255,255,255,.65)' }}>
-                  <span>Streak unlock progress</span><span>5/9 days</span>
-                </div>
-                <div style={{ height:5, background:'rgba(255,255,255,.12)', borderRadius:99, overflow:'hidden' }}>
-                  <div style={{ width:'57%', height:'100%', background:'rgba(255,255,255,.6)', borderRadius:99 }}/>
-                </div>
-              </div>
+              <button onClick={()=>{ window.__langCode = lang.code; window.__nav && window.__nav('exam_runner'); }} style={{ padding:'14px 22px', background:'#fff', color:T.ink, borderRadius:12, fontSize:14, fontWeight:700, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>Take a mock →</button>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
-              {/* Exam history */}
-              <Card padding={0}>
-                <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.hairline}` }}>
-                  <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>Practice exam history</div>
-                </div>
-                {examHistory.length === 0 ? (
-                  <div style={{ padding:'24px 22px', fontSize:12, color:T.ink4, textAlign:'center' }}>No practice exams yet — take a mock to see your history.</div>
-                ) : examHistory.map((r,i,all)=>(
-                  <div key={r.month} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 22px', borderBottom:i<all.length-1?`1px solid ${T.hairline}`:'none' }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{r.month}</div>
-                      <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{r.sessions} sessions · Rank #{r.rank}</div>
-                    </div>
-                    <div style={{ fontFamily:T.serif, fontSize:28, color:t.accent }}>{r.score}</div>
-                  </div>
-                ))}
-              </Card>
-
-              {/* Skill targets */}
-              <Card padding={22}>
-                <div style={{ fontSize:13.5, fontWeight:700, color:T.ink, marginBottom:18 }}>Skill targets</div>
-                {skillTargets.map(m=>{
-                  const c = colorFor(m.module); const ic = iconFor(m.module); const title = titleFor(m.module);
-                  const scale = m.scale || 9;
-                  return (
-                    <div key={m.module} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-                      <div style={{ width:30, height:30, borderRadius:8, background:c.bg, color:c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[ic]({ width:13, height:13 })}</div>
-                      <div style={{ flex:1 }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                          <span style={{ fontSize:12.5, fontWeight:600, color:T.ink }}>{title}</span>
-                          <span style={{ fontSize:11.5, color:T.ink4, fontWeight:600 }}>{m.current} → <span style={{ color:c.c }}>{m.target}</span></span>
-                        </div>
-                        <div style={{ height:5, background:T.bg3, borderRadius:99, overflow:'hidden' }}>
-                          <div style={{ height:'100%', width:`${(m.current/scale)*100}%`, background:c.c, borderRadius:99 }}/>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </Card>
-            </div>
-            {/* Other exams for this language */}
+            {/* Real exam history for this language */}
             <Card padding={0}>
-              <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.hairline}` }}>
-                <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>Other {lang.english} exams</div>
-                <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>Available certifications for this language</div>
+              <div style={{ padding:'16px 22px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>Your {lang.english} mocks</div>
+                <button data-nav="exam_history" style={{ fontSize:11.5, color:T.ink3, fontWeight:600, cursor:'pointer', background:'transparent' }}>All history →</button>
               </div>
-              {ex.others.map((o, i) => (
-                <button key={o.name} data-nav="exam_entry" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderBottom:i<ex.others.length-1?`1px solid ${T.hairline}`:'none', width:'100%', textAlign:'left', background:'transparent', cursor:'pointer' }}>
-                  <div style={{ width:34, height:34, borderRadius:9, background:t.bg, color:t.accent, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700 }}>{o.name.split(' ')[0].slice(0,4)}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{o.name}</div>
-                    <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>Next mock: {o.next}</div>
+              {rows.length === 0 ? (
+                <div style={{ padding:'18px 22px', fontSize:12.5, color:T.ink4 }}>No mock exams yet for {lang.english}. Take one above and your scored attempts appear here.</div>
+              ) : rows.slice(0,6).map((r,i,all) => {
+                const secs = (r.detail.sections||[]).reduce((acc,sec)=>{ acc[ABBR[sec.module]||sec.module]=Math.round(Number(sec.score)||0); return acc; },{});
+                return (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderBottom: i<Math.min(all.length,6)-1?`1px solid ${T.hairline}`:'none' }}>
+                    <div style={{ fontFamily:T.serif, fontSize:24, color:t.accent, minWidth:54 }}>{Number(r.score)||0}%</div>
+                    <div style={{ flex:1, fontSize:12, color:T.ink4 }}>{r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : ''}</div>
+                    <div style={{ display:'flex', gap:6 }}>
+                      {['R','L','W','S'].map(k => (
+                        <div key={k} style={{ padding:'3px 7px', background:T.bg2, borderRadius:6, textAlign:'center', minWidth:30 }}>
+                          <div style={{ fontSize:9, color:T.ink4, fontWeight:700 }}>{k}</div>
+                          <div style={{ fontSize:11.5, fontWeight:700, color:T.ink }}>{secs[k]!=null?secs[k]:'—'}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink2 }}>{o.score}</div>
-                  {Icon.chev({ width:13, height:13, style:{ color:T.ink5 } })}
-                </button>
-              ))}
+                );
+              })}
             </Card>
           </div>
           );
         })()}
 
-        {/* ── LIBRARY TAB ── */}
         {tab === 'library' && (() => {
           const cnt = (typeof langContent === 'function') ? langContent(lang.code) : null;
           const items = (cnt?.libraryItems || []).map(it => ({ ...it, c: it.module==='speaking'?T.speaking : it.module==='writing'?T.writing : it.module==='listening'?T.listening : T.reading, nav: it.kind==='Lesson'?'lesson_detail' : it.kind==='Audio'?'listening' : it.kind==='Phrasebook'?'phrasebook' : 'article_reader' }));
