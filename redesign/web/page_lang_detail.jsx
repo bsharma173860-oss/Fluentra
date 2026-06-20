@@ -33,7 +33,7 @@ function LangHero({ lang }) {
         <div style={{ display:'flex', gap:28, alignItems:'center' }}>
           <div style={{ textAlign:'center' }}>
             <div style={{ display:'flex', alignItems:'baseline', gap:4, justifyContent:'center' }}>
-              <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1 }}>{lang.streak}</div>
+              <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1 }}>{(typeof computeStreak==='function'?computeStreak(_rows):(lang.streak||0))}</div>
               <div style={{ fontSize:13, opacity:.75, fontWeight:600 }}>days</div>
             </div>
             <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', opacity:.85, marginTop:4 }}>Streak</div>

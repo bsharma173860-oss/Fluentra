@@ -375,7 +375,8 @@
             }
           }),
           FL.fetchLanguages(),
-          FL.fetchTodayContent()
+          FL.fetchTodayContent(),
+          FL.fetchResults(300)
         ]).then(function () {
           window.__flReady = true;
           window.dispatchEvent(new CustomEvent('fl-updated'));
@@ -401,7 +402,7 @@
     client.auth.getSession().then(function (res) {
       var session = res.data && res.data.session;
       if (session) {
-        Promise.all([FL.fetchProfile(), FL.fetchLanguages(), FL.fetchTodayContent()]).then(function () {
+        Promise.all([FL.fetchProfile(), FL.fetchLanguages(), FL.fetchTodayContent(), FL.fetchResults(300)]).then(function () {
           window.__flReady = true;
           window.dispatchEvent(new CustomEvent('fl-updated'));
           firstRunRouteIfNeeded();
@@ -464,7 +465,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b39-lang-hub';
+    window.__FL_BUILD = 'b40-streaks';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

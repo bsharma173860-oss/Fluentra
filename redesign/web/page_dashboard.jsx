@@ -12,8 +12,10 @@ function levelFor(streak) {
 
 function DashLangCard({ lang, freshlyAdded=false }) {
   const t = langTheme(lang.code);
-  const lvl = levelFor(lang.streak);
-  const pct = Math.min((lang.streak / EXAM_UNLOCK_DAYS) * 100, 100);
+  const _rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(function(r){ return r.lang === lang.code; }) : [];
+  const streak = (typeof computeStreak==='function') ? computeStreak(_rows) : (lang.streak||0);
+  const lvl = levelFor(streak);
+  const pct = Math.min((streak / EXAM_UNLOCK_DAYS) * 100, 100);
 
   return (
     <div onClick={() => { window.__langCode = lang.code; window.__nav && window.__nav('lang'); }} style={{
@@ -36,7 +38,7 @@ function DashLangCard({ lang, freshlyAdded=false }) {
             <Flag code={lang.code} w={48} h={32}/>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,.22)', padding:'5px 11px', borderRadius:99, backdropFilter:'blur(10px)', fontSize:12, fontWeight:700 }}>
-            {Icon.flame()} {lang.streak}-day
+            {Icon.flame()} {streak}-day
           </div>
         </div>
         <div style={{ fontFamily:T.serif, fontSize:38, lineHeight:1, marginBottom:4 }}>{lang.native}</div>
@@ -45,7 +47,7 @@ function DashLangCard({ lang, freshlyAdded=false }) {
       {/* Sheet */}
       <div style={{ background:T.card, borderTopLeftRadius:22, borderTopRightRadius:22, padding:'20px 22px', display:'flex', gap:16 }}>
         <Ring pct={pct} size={92} stroke={8} color={t.accent}>
-          <div style={{ fontFamily:T.serif, fontSize:26, color:T.ink, lineHeight:1 }}>{lang.streak}</div>
+          <div style={{ fontFamily:T.serif, fontSize:26, color:T.ink, lineHeight:1 }}>{streak}</div>
           <div style={{ fontSize:8.5, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', fontWeight:700, marginTop:2 }}>Day streak</div>
         </Ring>
         <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
@@ -82,7 +84,7 @@ function TodayItem({ ic, label, meta, color, bg, done }) {
 
 function DashboardPage() {
   const langs = userLanguages();
-  const longestStreak = langs.length ? Math.max(...langs.map(l => l.streak)) : 0;
+  const longestStreak = langs.length ? Math.max.apply(null, langs.map(function(l){ var rows=((typeof window!=='undefined'&&window.__results)||[]).filter(function(r){return r.lang===l.code;}); return (typeof computeStreak==='function')?computeStreak(rows):(l.streak||0); })) : 0;
   const justAdded = (typeof window !== 'undefined') ? window.__justAddedLang : null;
   const [toastVisible, setToastVisible] = useState(!!justAdded);
   React.useEffect(() => {

@@ -112,6 +112,24 @@ function langByCode(code) {
   return userLanguages().find(l => l.code === code) || LANGUAGES[0];
 }
 
+// Consecutive-day streak derived from real session history (no stored counter).
+function computeStreak(rows) {
+  if (!rows || !rows.length) return 0;
+  var days = {};
+  rows.forEach(function (r) {
+    var d = r && r.updated_at; if (!d) return;
+    var t = new Date(d); if (isNaN(t.getTime())) return;
+    days[t.getFullYear() + '-' + t.getMonth() + '-' + t.getDate()] = true;
+  });
+  var keyOf = function (date) { return date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate(); };
+  var cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+  if (!days[keyOf(cursor)]) { cursor.setDate(cursor.getDate() - 1); if (!days[keyOf(cursor)]) return 0; }
+  var streak = 0;
+  while (days[keyOf(cursor)]) { streak++; cursor.setDate(cursor.getDate() - 1); }
+  return streak;
+}
+if (typeof window !== 'undefined') window.computeStreak = computeStreak;
+
 // ── Per-language certified exam systems ─────────────────────────
 // Each language has its own real-world exam regime: IELTS (en), DELE (es),
 // JLPT (ja), DELF (fr). The Entry/Runner/Results screens render this data.
