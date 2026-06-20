@@ -609,45 +609,29 @@ function PhrasebookPracticePage() {
 }
 
 function ReceiptsPage() {
-  const rows = [
-    { id:'INV-2025-0412', date:'Apr 12, 2025', desc:'Pro · Monthly',    amt:'$14.00', status:'Paid',     method:'•••• 4242' },
-    { id:'INV-2025-0312', date:'Mar 12, 2025', desc:'Pro · Monthly',    amt:'$14.00', status:'Paid',     method:'•••• 4242' },
-    { id:'INV-2025-0228', date:'Feb 28, 2025', desc:'Mock exam credit', amt:'$2.00',  status:'Paid',     method:'•••• 4242' },
-    { id:'INV-2025-0212', date:'Feb 12, 2025', desc:'Pro · Monthly',    amt:'$14.00', status:'Paid',     method:'•••• 4242' },
-    { id:'INV-2025-0114', date:'Jan 14, 2025', desc:'Annual · upgrade', amt:'$84.00', status:'Refunded', method:'•••• 4242' },
-    { id:'INV-2025-0112', date:'Jan 12, 2025', desc:'Pro · Monthly',    amt:'$14.00', status:'Paid',     method:'•••• 4242' },
-  ];
+  const u = (typeof window !== 'undefined' && window.__user) || {};
+  const isPaid = (u.plan === 'pro' || u.plan === 'max');
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'32px 40px 60px' }}>
-        <PageHeader eyebrow="Billing" title="Receipts and invoices" subtitle="Every payment, refund, and credit. Download as PDF for your records."
-          right={<div style={{ display:'flex', gap:8 }}><Btn label="Manage plan" nav="pricing" variant="outline" accent={T.ink}/><Btn label="Export all" accent={T.brand} icon={Icon.download ? Icon.download() : Icon.arrow()}/></div>}
-        />
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, marginBottom:24 }}>
-          <StatTile label="Lifetime spend" value="$182" big/>
-          <StatTile label="This year" value="$58" delta="3 invoices" big/>
-          <StatTile label="Next charge" value="May 12" delta="$14.00" big color={T.brand}/>
-        </div>
-
-        <Card padding={0}>
-          <div style={{ padding:'14px 22px', borderBottom:`1px solid ${T.hairline}`, display:'grid', gridTemplateColumns:'1.2fr 1fr 2fr 1fr 1fr 80px', gap:14, fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase' }}>
-            <div>Invoice</div><div>Date</div><div>Description</div><div>Amount</div><div>Status</div><div></div>
-          </div>
-          {rows.map((r, i) => (
-            <div key={r.id} style={{ padding:'14px 22px', display:'grid', gridTemplateColumns:'1.2fr 1fr 2fr 1fr 1fr 80px', gap:14, alignItems:'center', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-              <div style={{ fontFamily:T.mono, fontSize:12, color:T.ink2 }}>{r.id}</div>
-              <div style={{ fontSize:12.5, color:T.ink2 }}>{r.date}</div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{r.desc}</div>
-                <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{r.method}</div>
+        <PageHeader eyebrow="Billing" title="Receipts and invoices" subtitle="Your payment history is kept in the secure billing portal."/>
+        <Card padding={24} style={{ maxWidth:560 }}>
+          {isPaid ? (
+            <div>
+              <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+                View and download every invoice and receipt, update your card, or change your billing address in the secure billing portal.
               </div>
-              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink }}>{r.amt}</div>
-              <div><Chip label={r.status} accent={r.status === 'Paid' ? '#1A8F4E' : T.ink3} bg={r.status === 'Paid' ? '#E5F5EB' : T.bg2} style={{ fontSize:10.5, padding:'3px 9px' }}/></div>
-              <button style={{ fontSize:11, fontWeight:700, color:T.brand, textAlign:'right' }}>Download</button>
+              <Btn label="Open billing portal" accent={T.brand} onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()}/>
             </div>
-          ))}
+          ) : (
+            <div>
+              <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+                You're on the Free plan, so there are no charges or invoices yet. Upgrade to Pro or Max and your receipts will appear in the billing portal.
+              </div>
+              <Btn label="See plans" nav="pricing" accent={T.brand}/>
+            </div>
+          )}
         </Card>
       </div>
     </div>

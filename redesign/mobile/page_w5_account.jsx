@@ -132,14 +132,8 @@ function MForgotPwPage() {
 // ── Mobile Receipts / billing ──────────────────────────────────────
 function MReceiptsPage() {
   const nav = (id) => window.__nav && window.__nav(id);
-  const rows = [
-    { id:'INV-2025-0412', date:'Apr 12',  desc:'Pro · Monthly',    amt:'$14.00', status:'Paid' },
-    { id:'INV-2025-0312', date:'Mar 12',  desc:'Pro · Monthly',    amt:'$14.00', status:'Paid' },
-    { id:'INV-2025-0228', date:'Feb 28',  desc:'Mock exam credit', amt:'$2.00',  status:'Paid' },
-    { id:'INV-2025-0212', date:'Feb 12',  desc:'Pro · Monthly',    amt:'$14.00', status:'Paid' },
-    { id:'INV-2025-0114', date:'Jan 14',  desc:'Annual · upgrade', amt:'$84.00', status:'Refunded' },
-    { id:'INV-2025-0112', date:'Jan 12',  desc:'Pro · Monthly',    amt:'$14.00', status:'Paid' },
-  ];
+  const u = (typeof window !== 'undefined' && window.__user) || {};
+  const isPaid = (u.plan === 'pro' || u.plan === 'max');
   return (
     <>
       <MobileHeader back onBack={()=>nav('settings')} title="Receipts"/>
@@ -148,68 +142,28 @@ function MReceiptsPage() {
           <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>Billing</div>
           <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.02, letterSpacing:'-.02em' }}>Receipts &amp; invoices</div>
         </div>
-
-        {/* Stat strip */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-          {[
-            { l:'Lifetime', v:'$182' },
-            { l:'This year', v:'$58',  s:'3 invoices' },
-            { l:'Next', v:'May 12', s:'$14.00', accent:true },
-          ].map(s => (
-            <MCard key={s.l} style={{ padding:12 }}>
-              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:6 }}>{s.l}</div>
-              <div style={{ fontFamily:T.serif, fontSize:18, color: s.accent ? T.brand : T.ink, lineHeight:1, letterSpacing:'-.01em' }}>{s.v}</div>
-              {s.s && <div style={{ fontSize:10, color:T.ink4, marginTop:4 }}>{s.s}</div>}
-            </MCard>
-          ))}
-        </div>
-
-        {/* Plan card */}
-        <MCard raised style={{ padding:16, marginBottom:14 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+        <MCard raised style={{ padding:18 }}>
+          {isPaid ? (
             <div>
-              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:4 }}>Current plan</div>
-              <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, letterSpacing:'-.01em' }}>Pro · Monthly</div>
+              <div style={{ fontSize:13, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+                View and download every invoice and receipt, update your card, or change your billing address in the secure billing portal.
+              </div>
+              <Btn label="Open billing portal" accent={T.brand} fullWidth onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()}/>
             </div>
-            <span style={{ fontSize:10, fontWeight:800, color:T.brand, background:T.brandLight, padding:'4px 9px', borderRadius:99, letterSpacing:'.08em' }}>ACTIVE</span>
-          </div>
-          <div style={{ fontSize:12, color:T.ink3, marginBottom:12 }}>Visa ending 4242 · renews May 12</div>
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={()=>nav('pricing')} style={{ flex:1, padding:'10px', borderRadius:10, background:T.bg2, color:T.ink, fontSize:12, fontWeight:700 }}>Manage plan</button>
-            <button style={{ flex:1, padding:'10px', borderRadius:10, background:T.card, border:`1px solid ${T.border}`, color:T.ink2, fontSize:12, fontWeight:700 }}>Update card</button>
-          </div>
-        </MCard>
-
-        {/* Invoice list */}
-        <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>History</div>
-        <MCard style={{ padding:0, overflow:'hidden' }}>
-          {rows.map((r, i) => (
-            <div key={r.id} style={{ padding:'14px 14px', display:'flex', alignItems:'center', gap:12, borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-              <div style={{ width:40, textAlign:'center' }}>
-                <div style={{ fontSize:9, fontWeight:800, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase' }}>{r.date.split(' ')[0]}</div>
-                <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{r.date.split(' ')[1]}</div>
+          ) : (
+            <div>
+              <div style={{ fontSize:13, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+                You're on the Free plan, so there are no charges or invoices yet. Upgrade and your receipts will appear in the billing portal.
               </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{r.desc}</div>
-                <div style={{ fontSize:10.5, color:T.ink4, marginTop:2, fontFamily:T.mono }}>{r.id}</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontFamily:T.serif, fontSize:16, color:T.ink, lineHeight:1 }}>{r.amt}</div>
-                <div style={{ fontSize:10, fontWeight:700, color: r.status === 'Paid' ? '#1A8F4E' : T.ink4, marginTop:3 }}>{r.status}</div>
-              </div>
+              <Btn label="See plans" accent={T.brand} fullWidth onClick={()=>nav('pricing')}/>
             </div>
-          ))}
+          )}
         </MCard>
-
-        <button style={{ width:'100%', marginTop:14, padding:'13px', borderRadius:12, background:T.card, border:`1px solid ${T.border}`, color:T.ink, fontSize:13, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-          {Icon.download ? Icon.download({ width:13, height:13 }) : Icon.arrow({ width:13, height:13 })} Export all as PDF
-        </button>
       </MobileBody>
     </>
   );
 }
 
-// ── Mobile Refer-a-friend ──────────────────────────────────────────
 function MReferPage() {
   const nav = (id) => window.__nav && window.__nav(id);
   const [copied, setCopied] = React.useState(false);

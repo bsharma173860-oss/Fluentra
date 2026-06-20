@@ -24,59 +24,35 @@ const V5b3Dot = () => (
 // ══════════════════════════════════════════════════════════════════
 function MReceiptsPageV5() {
   const nav = (id) => window.__nav && window.__nav(id);
-  const items = [
-    { d:'May 1',  m:'Pro · Monthly',         amt:14.99, status:'Paid', method:'•••• 4242', no:'INV-2841' },
-    { d:'Apr 1',  m:'Pro · Monthly',         amt:14.99, status:'Paid', method:'•••• 4242', no:'INV-2654' },
-    { d:'Mar 12', m:'DELE B2 · Mock exam',    amt:5.00,  status:'Paid', method:'•••• 4242', no:'INV-2510' },
-    { d:'Mar 1',  m:'Pro · Monthly',         amt:14.99, status:'Paid', method:'•••• 4242', no:'INV-2389' },
-    { d:'Feb 14', m:'Tutor · 4 sessions',    amt:48.00, status:'Paid', method:'•••• 4242', no:'INV-2208' },
-    { d:'Feb 1',  m:'Pro · Monthly',         amt:14.99, status:'Paid', method:'•••• 4242', no:'INV-2031' },
-  ];
-  const total = items.reduce((a,b)=>a+b.amt,0);
+  const u = (typeof window !== 'undefined' && window.__user) || {};
+  const isPaid = (u.plan === 'pro' || u.plan === 'max');
   return (
     <>
       <MobileHeader back title="Receipts"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b3Pre eyebrow={`${items.length} INVOICES · LAST 90 DAYS`} title="Your receipts" lede="Every charge to your account, ready to download as PDF for taxes or expense reports."/>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
-          <MCard style={{ padding:14 }}>
-            <div style={{ fontSize:9.5, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginBottom:6 }}>TOTAL · 90D</div>
-            <div style={{ fontFamily:T.serif, fontSize:28, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>${total.toFixed(2)}</div>
-          </MCard>
-          <MCard style={{ padding:14 }}>
-            <div style={{ fontSize:9.5, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginBottom:6 }}>NEXT CHARGE</div>
-            <div style={{ fontFamily:T.serif, fontSize:14, color:T.ink, lineHeight:1.2 }}>Jun 1</div>
-            <div style={{ fontSize:11, color:T.ink3, marginTop:3 }}>$14.99 · Pro</div>
-          </MCard>
-        </div>
-        {V5b3Lbl('PAST INVOICES')}
-        <MCard style={{ padding:0, overflow:'hidden' }}>
-          {items.map((it, i) => (
-            <button key={i} style={{ width:'100%', display:'flex', alignItems:'center', gap:11, padding:'13px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none', background:'none', textAlign:'left' }}>
-              <div style={{ width:36, height:36, borderRadius:9, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.invoice ? Icon.invoice({width:13,height:13}) : '$'}</div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, lineHeight:1.2 }}>{it.m}</div>
-                <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>{it.d} · {it.no} · {it.method}</div>
+        <V5b3Pre eyebrow="BILLING" title="Receipts & invoices" lede="Your payment history is kept in the secure billing portal."/>
+        <MCard style={{ padding:18 }}>
+          {isPaid ? (
+            <div>
+              <div style={{ fontSize:13, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+                View and download every invoice and receipt, update your card, or change your billing address in the secure billing portal.
               </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontFamily:T.serif, fontSize:14, color:T.ink, fontWeight:600 }}>${it.amt.toFixed(2)}</div>
-                <div style={{ fontSize:9, fontWeight:800, color:'#5A9C7A', letterSpacing:'.1em', marginTop:2 }}>{it.status.toUpperCase()}</div>
+              <button onClick={() => window.FL && window.FL.openBillingPortal && window.FL.openBillingPortal()} style={{ width:'100%', padding:'13px', borderRadius:11, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, border:'none' }}>Open billing portal</button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize:13, color:T.ink2, lineHeight:1.6, marginBottom:16 }}>
+                You're on the Free plan, so there are no charges or invoices yet. Upgrade and your receipts will appear in the billing portal.
               </div>
-            </button>
-          ))}
+              <button onClick={()=>nav('pricing')} style={{ width:'100%', padding:'13px', borderRadius:11, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, border:'none' }}>See plans</button>
+            </div>
+          )}
         </MCard>
-        <div style={{ marginTop:14, display:'flex', gap:8 }}>
-          <button style={{ flex:1, padding:'12px', borderRadius:11, background:T.card, color:T.ink, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}` }}>Export all (PDF)</button>
-          <button style={{ flex:1, padding:'12px', borderRadius:11, background:T.card, color:T.ink2, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}` }}>Email me a copy</button>
-        </div>
       </MobileBody>
     </>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// REFER A FRIEND
-// ══════════════════════════════════════════════════════════════════
 function MReferPageV5() {
   const [copied, setCopied] = useStV5B3(false);
   const nav = (id) => window.__nav && window.__nav(id);
