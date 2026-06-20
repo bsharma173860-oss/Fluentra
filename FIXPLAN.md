@@ -14,11 +14,11 @@ polished iteratively after.
 ---
 
 ## PHASE 1 — Hub tabs + small data fixes  (S)
-- [ ] Hub **Stats** tab: replace static `langPack` score + fake "+0.5" delta with real per-module
+- [x] Hub **Stats** tab: replace static `langPack` score + fake "+0.5" delta with real per-module
       best/avg, total sessions, and real trend from `window.__results`.
-- [ ] Hub **Study** tab: replace placeholder cards with real entry points (Course, Grammar,
+- [x] Hub **Study** tab: replace placeholder cards with real entry points (Course, Grammar,
       Vocab, recent lessons) + real recent activity for that language.
-- [ ] Mobile-v5 **checkout** price: `$14.99/$99` → real `$24/mo`, `$228/yr` from pricing constants.
+- [x] Mobile-v5 **checkout** price: `$14.99/$99` → real `$24/mo`, `$228/yr` from pricing constants.
 
 ## PHASE 2 — Exam meta-pages  (M)
 Runner is already real (chains real modules). 
@@ -72,4 +72,5 @@ Bharat runs the SQL migrations below in Supabase SQL editor.
 
 ## Status log
 - b50: hub tutor real, reopen-on-last-page, language count 26.
-- (next) Phase 1 …
+- b51: Phase 1 done — hub Stats real, hub Study real, mobile checkout price $24/$228.
+- (next) Phase 2 — exam meta-pages …

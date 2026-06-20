@@ -204,7 +204,7 @@ function MCheckoutPageV5() {
   const [billing, setBilling] = useStV5B3('annual');
   const [card, setCard] = useStV5B3('4242');
   const nav = (id) => window.__nav && window.__nav(id);
-  const total = billing === 'annual' ? 99 : 14.99;
+  const total = billing === 'annual' ? 228 : 24;
   return (
     <>
       <MobileHeader back title="Checkout"/>
@@ -214,8 +214,8 @@ function MCheckoutPageV5() {
         {V5b3Lbl('PLAN')}
         <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
           {[
-            { id:'annual',  l:'Annual',   p:'$99/yr',     sub:'$8.25/mo · save 45%', badge:'BEST VALUE' },
-            { id:'monthly', l:'Monthly',  p:'$14.99/mo',  sub:'Flexible · cancel anytime', badge:null },
+            { id:'annual',  l:'Annual',   p:'$228/yr',    sub:'$19/mo · save 21%', badge:'BEST VALUE' },
+            { id:'monthly', l:'Monthly',  p:'$24/mo',     sub:'Flexible · cancel anytime', badge:null },
           ].map(p => {
             const a = billing === p.id;
             return (
@@ -302,7 +302,7 @@ function MRateLimitPageV5() {
           ))}
         </MCard>
 
-        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, marginBottom:9 }}>Upgrade · $14.99/mo</button>
+        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, marginBottom:9 }}>Upgrade · {billing==='annual'?'$228/yr':'$24/mo'}</button>
         <button onClick={()=>nav('dashboard')} style={{ width:'100%', padding:'12px', fontSize:12, color:T.ink3, fontWeight:600, background:'transparent' }}>Wait for reset</button>
       </MobileBody>
     </>

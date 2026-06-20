@@ -193,89 +193,102 @@ function LangDetailPage() {
         )}
 
         {/* ── STATS TAB ── */}
-        {tab === 'stats' && (
+        {tab === 'stats' && (() => {
+          const rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(r => r.lang === lang.code) : [];
+          const scored = rows.filter(r => typeof r.score === 'number');
+          const bestPct = scored.length ? Math.max.apply(null, scored.map(r=>r.score)) : null;
+          const sessions = rows.length;
+          const weekAgo = Date.now() - 7*86400000;
+          const thisWeek = rows.filter(r => r.updated_at && new Date(r.updated_at).getTime() >= weekAgo).length;
+          const streak = (typeof computeStreak==='function') ? computeStreak(rows) : 0;
+          const series = scored.slice().sort((a,b)=> new Date(a.updated_at) - new Date(b.updated_at)).slice(-10);
+          const MODS = [
+            { key:'speaking',  ic:'mic',  c:T.speaking,  title:'Speaking'  },
+            { key:'writing',   ic:'pen',  c:T.writing,   title:'Writing'   },
+            { key:'listening', ic:'head', c:T.listening, title:'Listening' },
+            { key:'reading',   ic:'book', c:T.reading,   title:'Reading'   },
+          ];
+          const modStats = (key) => {
+            const xs = scored.filter(r => (r.detail&&r.detail.module)===key).sort((a,b)=> new Date(a.updated_at) - new Date(b.updated_at));
+            if (!xs.length) return null;
+            const best = Math.max.apply(null, xs.map(r=>r.score));
+            const change = xs.length>=2 ? (xs[xs.length-1].score - xs[xs.length-2].score) : 0;
+            return { best:best, change:change, count:xs.length };
+          };
+          // activity: last 84 days
+          const today0 = new Date(); today0.setHours(0,0,0,0);
+          const dayCount = {};
+          rows.forEach(r => { if(!r.updated_at) return; var t=new Date(r.updated_at); if(isNaN(t.getTime())) return; t.setHours(0,0,0,0); dayCount[t.getTime()] = (dayCount[t.getTime()]||0)+1; });
+          const tiles = [
+            { label:'Best score', value: bestPct!=null ? bestPct+'%' : '—', color:t.accent },
+            { label:'Sessions',   value: String(sessions) },
+            { label:'This week',  value: String(thisWeek), meta: thisWeek? 'keep going' : 'no sessions yet' },
+            { label:'Streak',     value: streak+'d' },
+          ];
+          return (
           <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
-            {/* Stat tiles */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
-              {[
-                { label: (langPack(lang.code).scoreLabel || 'Avg score'), value: (langPack(lang.code).score || '—'), delta:'+0.5', color:t.accent },
-                { label:'Sessions',   value:'24',  delta:'+6 this week' },
-                { label:'Study time', value:'18h', delta:'+2.4h vs last' },
-                { label:'Streak',     value:'23d', meta:'Longest: 31d' },
-              ].map(s => (
+              {tiles.map(s => (
                 <Card key={s.label} padding={20}>
                   <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>{s.label}</div>
-                  <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:4 }}>
-                    <div style={{ fontFamily:T.serif, fontSize:36, color:s.color||T.ink, lineHeight:1 }}>{s.value}</div>
-                  </div>
-                  {s.delta && <div style={{ fontSize:11, color:T.listening.c, fontWeight:600 }}>↑ {s.delta}</div>}
-                  {s.meta  && <div style={{ fontSize:11, color:T.ink4 }}>{s.meta}</div>}
+                  <div style={{ fontFamily:T.serif, fontSize:36, color:s.color||T.ink, lineHeight:1, marginBottom:4 }}>{s.value}</div>
+                  {s.meta && <div style={{ fontSize:11, color:T.ink4 }}>{s.meta}</div>}
                 </Card>
               ))}
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:20 }}>
-              {/* Band score mini-chart */}
+              {/* Real score-over-time */}
               <Card padding={22}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
-                  <div>
-                    <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>{(langPack(lang.code).exam?.scoreLabel) || 'Score'} over time</div>
-                    <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{lang.english} · last 30 days</div>
-                  </div>
-                  <div style={{ display:'flex', gap:3, padding:3, background:T.bg2, borderRadius:8 }}>
-                    {['7d','30d','90d'].map((p,i) => (
-                      <button key={p} style={{ padding:'4px 10px', fontSize:11, fontWeight:i===1?700:500, color:i===1?T.ink:T.ink4, background:i===1?T.card:'transparent', border:`1px solid ${i===1?T.border:'transparent'}`, borderRadius:6 }}>{p}</button>
-                    ))}
-                  </div>
+                <div style={{ marginBottom:18 }}>
+                  <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>Score over time</div>
+                  <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{lang.english} · your last {series.length} session{series.length===1?'':'s'}</div>
                 </div>
-                {/* SVG line chart */}
-                {(() => {
-                  const data = [{x:0,y:6.0},{x:1,y:6.0},{x:2,y:6.5},{x:3,y:6.5},{x:4,y:7.0},{x:5,y:7.0},{x:6,y:7.5}];
-                  const W2=540,H2=140,pl=28,pr=10,pt=14,pb=28;
-                  const iW=W2-pl-pr, iH=H2-pt-pb;
-                  const pts=data.map(d=>({ x:pl+(d.x/6)*iW, y:pt+(1-(d.y-4)/5)*iH }));
-                  const path=pts.reduce((a,p,i)=>{if(i===0)return`M${p.x} ${p.y}`;const prev=pts[i-1];const cx=prev.x+(p.x-prev.x)/2;return`${a} C${cx} ${prev.y} ${cx} ${p.y} ${p.x} ${p.y}`},'');
-                  const area=`${path} L${pts[pts.length-1].x} ${pt+iH} L${pts[0].x} ${pt+iH} Z`;
-                  const lbls=['Mar 12','Mar 19','Mar 26','Apr 2','Apr 5','Apr 9','Apr 12'];
+                {series.length < 2 ? (
+                  <div style={{ fontSize:12.5, color:T.ink4, padding:'30px 0', textAlign:'center' }}>Finish a few sessions to see your trend.</div>
+                ) : (() => {
+                  const W2=540,H2=150,pl=30,pr=12,pt=14,pb=26; const iW=W2-pl-pr, iH=H2-pt-pb;
+                  const n=series.length;
+                  const pts=series.map((d,i)=>({ x:pl+(n===1?0.5:i/(n-1))*iW, y:pt+(1-(d.score)/100)*iH }));
+                  const path=pts.reduce((a,p,i)=>{ if(i===0) return 'M'+p.x+' '+p.y; const prev=pts[i-1]; const cx=prev.x+(p.x-prev.x)/2; return a+' C'+cx+' '+prev.y+' '+cx+' '+p.y+' '+p.x+' '+p.y; },'');
+                  const area=path+' L'+pts[n-1].x+' '+(pt+iH)+' L'+pts[0].x+' '+(pt+iH)+' Z';
                   return (
-                    <svg width={W2} height={H2} style={{ overflow:'visible' }}>
-                      <defs><linearGradient id={`g-${lang.code}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t.accent} stopOpacity=".18"/><stop offset="100%" stopColor={t.accent} stopOpacity="0"/></linearGradient></defs>
-                      {[5,6,7,8,9].map(g=>{const y=pt+(1-(g-4)/5)*iH;return<g key={g}><line x1={pl} y1={y} x2={W2-pr} y2={y} stroke={T.hairline}/><text x={pl-4} y={y+4} fontSize="9" fill={T.ink4} textAnchor="end">{g}</text></g>;})}
-                      <path d={area} fill={`url(#g-${lang.code})`}/>
+                    <svg width={W2} height={H2} style={{ overflow:'visible', maxWidth:'100%' }}>
+                      <defs><linearGradient id={'g-'+lang.code} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t.accent} stopOpacity=".18"/><stop offset="100%" stopColor={t.accent} stopOpacity="0"/></linearGradient></defs>
+                      {[0,25,50,75,100].map(g=>{const y=pt+(1-g/100)*iH;return <g key={g}><line x1={pl} y1={y} x2={W2-pr} y2={y} stroke={T.hairline}/><text x={pl-4} y={y+4} fontSize="9" fill={T.ink4} textAnchor="end">{g}</text></g>;})}
+                      <path d={area} fill={'url(#g-'+lang.code+')'}/>
                       <path d={path} fill="none" stroke={t.accent} strokeWidth="2.5" strokeLinecap="round"/>
-                      {pts.map((p,i)=><g key={i}><circle cx={p.x} cy={p.y} r="4" fill="#fff" stroke={t.accent} strokeWidth="2"/><text x={p.x} y={H2-4} fontSize="9" fill={T.ink4} textAnchor="middle">{lbls[i].replace('Mar ','M').replace('Apr ','A')}</text></g>)}
+                      {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="4" fill="#fff" stroke={t.accent} strokeWidth="2"/>)}
                     </svg>
                   );
                 })()}
               </Card>
 
-              {/* Module breakdown */}
+              {/* Real by-module */}
               <Card padding={22}>
                 <div style={{ fontSize:13.5, fontWeight:700, color:T.ink, marginBottom:18 }}>By module</div>
-                {[
-                  { ic:'mic',  c:T.speaking,  title:'Speaking',  score:7.0, change:+0.5 },
-                  { ic:'pen',  c:T.writing,   title:'Writing',   score:6.5, change:-0.5 },
-                  { ic:'head', c:T.listening, title:'Listening', score:7.5, change:+1.0 },
-                  { ic:'book', c:T.reading,   title:'Reading',   score:7.0, change:+0.5 },
-                ].map(m=>(
+                {MODS.map(m => {
+                  const st = modStats(m.key);
+                  return (
                   <div key={m.title} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
                     <div style={{ width:30, height:30, borderRadius:8, background:m.c.bg, color:m.c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[m.ic]({ width:13, height:13 })}</div>
                     <div style={{ flex:1 }}>
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5 }}>
                         <span style={{ fontSize:12.5, fontWeight:600, color:T.ink }}>{m.title}</span>
                         <span style={{ display:'flex', alignItems:'baseline', gap:5 }}>
-                          <span style={{ fontFamily:T.serif, fontSize:16, color:T.ink, lineHeight:1 }}>{m.score.toFixed(1)}</span>
-                          <span style={{ fontSize:10.5, color:m.change>=0?T.listening.c:T.brand, fontWeight:700 }}>{m.change>=0?'+':''}{m.change.toFixed(1)}</span>
+                          <span style={{ fontFamily:T.serif, fontSize:16, color: st?T.ink:T.ink4, lineHeight:1 }}>{st ? st.best+'%' : '—'}</span>
+                          {st && st.change!==0 && <span style={{ fontSize:10.5, color:st.change>0?T.listening.c:T.brand, fontWeight:700 }}>{st.change>0?'+':''}{st.change}</span>}
                         </span>
                       </div>
-                      <Bar pct={(m.score/9)*100} color={m.c.c}/>
+                      <Bar pct={st ? st.best : 0} color={m.c.c}/>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </Card>
             </div>
 
-            {/* Activity heatmap */}
+            {/* Real activity heatmap */}
             <Card padding={22}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
                 <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>Activity · last 12 weeks</div>
@@ -285,15 +298,17 @@ function LangDetailPage() {
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(84,1fr)', gap:3 }}>
                 {Array.from({length:84}).map((_,i)=>{
-                  const v=(Math.sin(i*1.3)+Math.cos(i*0.7))/2;
-                  const lvl=v>.5?4:v>.2?3:v>-.1?2:v>-.4?1:0;
+                  const dayMs = today0.getTime() - (83-i)*86400000;
+                  const cnt = dayCount[dayMs] || 0;
+                  const lvl = cnt>=4?4:cnt===3?3:cnt===2?2:cnt===1?1:0;
                   const colors=[T.bg3,'#F0D9CF','#E5A78C',t.accent+'cc',t.accent];
-                  return <div key={i} style={{ aspectRatio:'1', borderRadius:3, background:colors[lvl] }}/>;
+                  return <div key={i} title={cnt+' session'+(cnt===1?'':'s')} style={{ aspectRatio:'1', borderRadius:3, background:colors[lvl] }}/>;
                 })}
               </div>
             </Card>
           </div>
-        )}
+          );
+        })()}
 
         {/* ── EXAMS TAB ── */}
         {tab === 'exams' && (() => {
@@ -551,181 +566,56 @@ function TutorTab({ lang }) {
 // ── Study tab: gives every language its own Course / Grammar / Vocab / Achievements / Results
 function StudyTab({ lang }) {
   const t = langTheme(lang.code);
-  // Per-language curriculum pulls — keeps Japanese stuff under JP, French under FR etc
-  const curriculum = {
-    en: {
-      course:  { unit:'Unit 8 · Academic Writing', next:'Cohesive devices in essays', pct:62, lessons:14, done:9 },
-      grammar: ['Conditionals — all 4 types','Reported speech','Passive voice nuances','Gerund vs infinitive'],
-      vocab:   { decks:[{ name:'IELTS Band 7+ Vocabulary', count:240, due:18 },{ name:'Academic Collocations', count:180, due:6 },{ name:'Phrasal Verbs', count:160, due:0 }] },
-    },
-    ja: {
-      course:  { unit:'Unit 5 · 中級表現', next:'敬語の基本 (keigo basics)', pct:34, lessons:18, done:6 },
-      grammar: ['て-form combinations','〜ようになる / 〜ようにする','謙譲語 humble form','受身形 passive'],
-      vocab:   { decks:[{ name:'JLPT N3 Kanji', count:367, due:42 },{ name:'Daily Conversation', count:120, due:8 },{ name:'Counters (助数詞)', count:48, due:0 }] },
-    },
-    fr: {
-      course:  { unit:'Unité 6 · Le passé', next:'Passé composé vs imparfait', pct:48, lessons:12, done:6 },
-      grammar: ['Passé composé','Imparfait usage','Subjonctif présent','Pronoms y et en'],
-      vocab:   { decks:[{ name:'DELF B2 Essentials', count:300, due:24 },{ name:'Faux amis', count:80, due:4 },{ name:'Idioms & expressions', count:140, due:0 }] },
-    },
-    es: {
-      course:  { unit:'Unidad 4 · Subjuntivo', next:'Presente de subjuntivo', pct:55, lessons:10, done:6 },
-      grammar: ['Subjuntivo presente','Ser vs estar','Por vs para','Pretérito vs imperfecto'],
-      vocab:   { decks:[{ name:'DELE B2 Vocabulary', count:280, due:16 },{ name:'Modismos', count:120, due:6 },{ name:'False cognates', count:60, due:0 }] },
-    },
-  };
-  // For any language without a curated curriculum entry, derive a reasonable starter from langPack().
-  const pkS = langPack(lang.code);
-  const c = curriculum[lang.code] || {
-    course:  { unit:`Unit 1 · ${lang.english} foundations`, next:'Greetings & introductions', pct:0, lessons:12, done:0 },
-    grammar: ['Articles & gender','Present tense basics','Question forms','Negation'],
-    vocab:   { decks: pkS.decks },
-  };
-
+  const rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(r => r.lang === lang.code) : [];
+  const recent = rows.slice().sort((a,b)=> new Date(b.updated_at) - new Date(a.updated_at)).slice(0,6);
+  const GRAMMAR = ['Past tenses — and when to use each','Articles, gender & number','Pronouns: subject, object, reflexive','Prepositions that trip people up','Questions & negation','Common irregular verbs'];
+  const openLesson = (title) => { window.__lessonTopic = { title:title, unit:'Grammar', level: lang.level || '' }; window.__nav && window.__nav('lesson_detail'); };
+  const _rel = (iso) => { if(!iso) return ''; var ms=Date.now()-new Date(iso).getTime(); if(isNaN(ms))return''; var d=Math.floor(ms/86400000); return d<=0?'today':d===1?'1d':d<7?d+'d':new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric'}); };
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
-      {/* Top section row: Course progress + Grammar topics */}
-      <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:20 }}>
-        {/* Course */}
-        <Card padding={0}>
-          <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <div>
-              <div style={{ fontSize:10, color:t.accent, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Course</div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>{c.course.unit}</div>
-            </div>
-            <button data-nav="course" style={{ fontSize:11.5, color:T.ink3, fontWeight:600, cursor:'pointer' }}>Open course →</button>
-          </div>
-          <div style={{ padding:'20px 22px' }}>
-            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:8 }}>
-              <div style={{ fontSize:12, color:T.ink3 }}>{c.course.done} of {c.course.lessons} lessons complete</div>
-              <div style={{ fontSize:12, fontWeight:700, color:t.accent }}>{c.course.pct}%</div>
-            </div>
-            <Bar pct={c.course.pct} color={t.accent}/>
-            <div style={{ display:'flex', alignItems:'center', gap:14, marginTop:18, padding:14, background:t.bg, borderRadius:12 }}>
-              <div style={{ width:40, height:40, borderRadius:11, background:t.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.play({ width:14, height:14 })}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:2 }}>Up next</div>
-                <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>{c.course.next}</div>
-              </div>
-              <Btn label="Start" nav="lesson_detail" accent={t.accent} size="sm"/>
-            </div>
-          </div>
-        </Card>
-
-        {/* Grammar — brand-orange themed feature card */}
-        <Card padding={0} style={{ background:`linear-gradient(160deg, ${T.brandSoft} 0%, #fff 60%)`, border:`1px solid ${T.brandLight}`, overflow:'hidden' }}>
-          <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.brandLight}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(255,255,255,.6)' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:34, height:34, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 12px ${T.brand}44` }}>{Icon.pen({ width:14, height:14 })}</div>
-              <div>
-                <div style={{ fontSize:10, color:T.brand, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Grammar</div>
-                <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Active topics</div>
-              </div>
-            </div>
-            <button data-nav="grammar" style={{ fontSize:11.5, color:T.brand, fontWeight:700, cursor:'pointer' }}>All topics →</button>
-          </div>
-          <div style={{ padding:'14px 22px 18px' }}>
-            {c.grammar.map((g,i) => (
-              <button key={g} onClick={function(){ window.__lessonTopic = { title: g, unit:'Grammar', level: lang.level }; window.__nav && window.__nav('lesson_detail'); }} style={{ display:'flex', alignItems:'center', gap:11, width:'100%', padding:'10px 0', borderBottom: i < c.grammar.length-1 ? `1px solid ${T.brandLight}80` : 'none', textAlign:'left', cursor:'pointer', background:'transparent' }}>
-                <div style={{ width:26, height:26, borderRadius:7, background:'#fff', color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:`1px solid ${T.brandLight}` }}>{Icon.pen({ width:11, height:11 })}</div>
-                <div style={{ flex:1, fontSize:12.5, fontWeight:600, color:T.ink }}>{g}</div>
-                {Icon.chev({ width:12, height:12, style:{ color:T.brand } })}
-              </button>
-            ))}
-          </div>
-        </Card>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+        {[
+          { title:'Course',     sub:'Structured lessons for ' + lang.english, ic:'book', nav:'course',  cta:'Open course'  },
+          { title:'Grammar',    sub:'Generate a lesson on any topic',          ic:'pen',  nav:'grammar', cta:'Browse topics' },
+          { title:'Vocabulary', sub:'Your saved words & flashcards',            ic:'book', nav:'vocab',   cta:'Review vocab'  },
+        ].map(card => (
+          <Card key={card.title} padding={20}>
+            <div style={{ width:38, height:38, borderRadius:11, background:t.bg, color:t.accent, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>{Icon[card.ic]({ width:16, height:16 })}</div>
+            <div style={{ fontSize:15, fontWeight:700, color:T.ink, marginBottom:4 }}>{card.title}</div>
+            <div style={{ fontSize:12, color:T.ink4, lineHeight:1.45, marginBottom:14, minHeight:34 }}>{card.sub}</div>
+            <Btn label={card.cta} nav={card.nav} accent={t.accent} size="sm"/>
+          </Card>
+        ))}
       </div>
 
-      {/* Vocab decks — brand-orange themed feature card */}
-      <Card padding={0} style={{ background:`linear-gradient(170deg, #fff 0%, ${T.brandSoft} 100%)`, border:`1px solid ${T.brandLight}`, overflow:'hidden' }}>
-        <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.brandLight}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(255,255,255,.6)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 12px ${T.brand}44` }}>{Icon.book({ width:14, height:14 })}</div>
-            <div>
-              <div style={{ fontSize:10, color:T.brand, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>{lang.english} Vocabulary</div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Your decks</div>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:8 }}>
-            <Btn label="New deck" nav="vocab" variant="outline" size="sm"/>
-            <Btn label="Practice all" nav="vocab" accent={T.brand} size="sm"/>
-          </div>
-        </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:0 }}>
-          {c.vocab.decks.map((d, i) => (
-            <button key={d.name} data-nav="vocab" style={{ padding:'18px 22px', textAlign:'left', cursor:'pointer', borderRight: i < c.vocab.decks.length - 1 ? `1px solid ${T.brandLight}80` : 'none', background:'transparent', display:'flex', flexDirection:'column', gap:8 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:9, background:'#fff', color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', border:`1px solid ${T.brandLight}` }}>{Icon.book({ width:13, height:13 })}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:T.ink, lineHeight:1.25 }}>{d.name}</div>
-              </div>
-              <div style={{ display:'flex', gap:14, marginTop:4 }}>
-                <div>
-                  <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1 }}>{d.count}</div>
-                  <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginTop:3 }}>Cards</div>
-                </div>
-                <div>
-                  <div style={{ fontFamily:T.serif, fontSize:22, color:d.due > 0 ? T.brand : T.ink5, lineHeight:1 }}>{d.due}</div>
-                  <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginTop:3 }}>Due</div>
-                </div>
-              </div>
+      <Card padding={0}>
+        <div style={{ padding:'16px 22px', borderBottom:'1px solid '+T.hairline, fontSize:13.5, fontWeight:700, color:T.ink }}>Grammar topics</div>
+        <div style={{ padding:'8px 22px 16px' }}>
+          {GRAMMAR.map((g,i,all) => (
+            <button key={g} onClick={()=>openLesson(g)} style={{ display:'flex', alignItems:'center', gap:11, width:'100%', padding:'11px 0', borderBottom: i<all.length-1?'1px solid '+T.hairline:'none', textAlign:'left', cursor:'pointer', background:'transparent' }}>
+              <div style={{ width:26, height:26, borderRadius:7, background:t.bg, color:t.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.pen({ width:11, height:11 })}</div>
+              <div style={{ flex:1, fontSize:12.5, fontWeight:600, color:T.ink }}>{g}</div>
+              <span style={{ fontSize:11, color:t.accent, fontWeight:700 }}>Generate →</span>
             </button>
           ))}
         </div>
       </Card>
 
-      {/* Bottom row: Module results + Achievements */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
-        <Card padding={0}>
-          <div style={{ padding:'18px 22px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <div>
-              <div style={{ fontSize:10, color:T.listening.c, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Module Results</div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>Recent in {lang.english}</div>
+      <Card padding={0}>
+        <div style={{ padding:'16px 22px', borderBottom:'1px solid '+T.hairline, fontSize:13.5, fontWeight:700, color:T.ink }}>Recent activity</div>
+        {recent.length === 0 ? (
+          <div style={{ padding:'18px 22px', fontSize:12.5, color:T.ink4 }}>No sessions yet. Practice a module and your history shows up here.</div>
+        ) : recent.map((r,i) => {
+          const mod = (r.detail&&r.detail.module)||'reading';
+          return (
+            <div key={i} style={{ padding:'13px 22px', borderBottom: i<recent.length-1?'1px solid '+T.hairline:'none', display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ flex:1, fontSize:13, color:T.ink, fontWeight:600, textTransform:'capitalize' }}>{mod}</div>
+              <div style={{ fontSize:12, color:T.ink4 }}>{_rel(r.updated_at)}</div>
+              <div style={{ fontSize:12.5, color:T.ink3, fontWeight:600, minWidth:42, textAlign:'right' }}>{typeof r.score==='number'?r.score+'%':'—'}</div>
             </div>
-            <button data-nav="mod_results" style={{ fontSize:11.5, color:T.ink3, fontWeight:600, cursor:'pointer' }}>All →</button>
-          </div>
-          {[
-            { mod:'Speaking', ic:'mic',  c:T.speaking,  date:'Today',     band:7.5 },
-            { mod:'Writing',  ic:'pen',  c:T.writing,   date:'Yesterday', band:6.5 },
-            { mod:'Listening',ic:'head', c:T.listening, date:'2 days',    band:7.5 },
-          ].map((r,i,all) => (
-            <button key={i} data-nav="mod_results" style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 22px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', textAlign:'left', width:'100%', background:'transparent', cursor:'pointer' }}>
-              <div style={{ width:32, height:32, borderRadius:9, background:r.c.bg, color:r.c.c, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[r.ic]({ width:13, height:13 })}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{r.mod}</div>
-                <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{r.date}</div>
-              </div>
-              <div style={{ fontFamily:T.serif, fontSize:20, color:r.c.c }}>{r.band}</div>
-            </button>
-          ))}
-        </Card>
-
-        <Card padding={22}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <div>
-              <div style={{ fontSize:10, color:T.brand, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Achievements</div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginTop:3 }}>{lang.english} badges</div>
-            </div>
-            <button data-nav="achievements" style={{ fontSize:11.5, color:T.ink3, fontWeight:600, cursor:'pointer' }}>All →</button>
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10 }}>
-            {[
-              { ic:'flame',  l:'30-day',   on:true },
-              { ic:'trophy', l:'Band 7',   on:true },
-              { ic:'check',  l:'100 sess', on:true },
-              { ic:'mic',    l:'Speaker',  on:true },
-              { ic:'book',   l:'Bookworm', on:false },
-              { ic:'pen',    l:'Writer',   on:false },
-              { ic:'head',   l:'Listener', on:true },
-              { ic:'spark',  l:'Mock 8.0', on:false },
-            ].map((b,i) => (
-              <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'10px 4px', borderRadius:10, background: b.on ? t.bg : T.bg2, border: `1px solid ${b.on ? t.accent + '33' : T.hairline}`, opacity: b.on ? 1 : .55 }}>
-                <div style={{ width:30, height:30, borderRadius:15, background: b.on ? t.accent : T.bg3, color: b.on ? '#fff' : T.ink5, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[b.ic]({ width:13, height:13 })}</div>
-                <div style={{ fontSize:10, fontWeight:600, color:T.ink2, textAlign:'center' }}>{b.l}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+          );
+        })}
+      </Card>
     </div>
   );
 }
