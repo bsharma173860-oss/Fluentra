@@ -77,4 +77,5 @@ Bharat runs the SQL migrations below in Supabase SQL editor.
 - b53: Phase 3 done — removed dev `states` route; marketing fake metrics (4,200 schools etc.) → real product facts; help FAQ corrected (language limits, exam-score honesty, removed invented streak-freeze/family-plan/pause); tutor persona made consistent (no fictional "Lía").
 - b54: Phase 4 foundation — FL.social client + SQL migration (docs/PHASE4_SOCIAL.sql, user must run).
 - b55: Phase 4 pages WIRED (web) — Leaderboard (real ranking + your position), Friends (real friends/requests/find-people + add/accept/remove), Public profile (real stats + add/message), DMs (realtime via Supabase Realtime), Activity feed (real), Phrasebook (real save/list/delete), Refer (honest invite link). Activity logged on every mock + lesson completion.
-- (next) Phase 4 follow-ups: mobile social parity (MFriendsPage + mobile social screens still mock); then Phase 5 — voice tutor call.
+- b56: Phase 5 done — TutorCallPage is a REAL voice call (browser SpeechRecognition → /api/tutor Claude brain → SpeechSynthesis spoken reply, per-language locale/voice, full conversation memory, typed fallback where speech unsupported). TutorHistoryPage now lists real AI-graded speaking/writing sessions.
+- (next) Phase 6 — mobile parity: MFriendsPage + mobile social/dashboard/hub/exam screens still mock; bring to parity with real web.
