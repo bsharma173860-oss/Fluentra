@@ -45,7 +45,7 @@ function MobileFrame({ children, statusBarStyle='dark', dark=false }) {
   const W = 390, H = 844;
   return (
     <div style={{ width:W, height:H, background:'#000', borderRadius:54, padding:8, boxShadow:'0 30px 80px rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.04)', flexShrink:0 }}>
-      <div style={{ width:'100%', height:'100%', background: dark ? '#0E0D0B' : MT.bg, borderRadius:46, overflow:'hidden', position:'relative', display:'flex', flexDirection:'column' }}>
+      <div style={{ width:'100%', height:'100%', background: dark ? '#0E0D0B' : 'radial-gradient(500px 360px at 10% -8%, rgba(255,176,142,0.28), transparent 60%), radial-gradient(440px 360px at 100% 0%, rgba(150,160,255,0.20), transparent 55%), radial-gradient(420px 420px at 50% 115%, rgba(150,220,180,0.16), transparent 60%), linear-gradient(160deg,#FAF7F2,#EFEBE4)', borderRadius:46, overflow:'hidden', position:'relative', display:'flex', flexDirection:'column' }}>
         <div style={{ position:'absolute', top:12, left:'50%', transform:'translateX(-50%)', width:120, height:34, background:'#000', borderRadius:20, zIndex:100 }}/>
         <div style={{ height:54, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 28px', fontSize:14, fontWeight:600, color: statusBarStyle==='light' ? '#fff' : '#000', flexShrink:0, position:'relative', zIndex:1 }}>
           <span>9:41</span>
@@ -210,10 +210,12 @@ function MobileBody({ children, padding=20, style={}, tabBarPad=true }) {
 function MCard({ children, style={}, raised=false, onClick }) {
   return (
     <div onClick={onClick} style={{
-      background:MT.card,
-      border:`1px solid ${MT.hairline}`,
+      background:T.glass,
+      backdropFilter:T.glassBlur,
+      WebkitBackdropFilter:T.glassBlur,
+      border:`1px solid ${T.glassBorder}`,
       borderRadius:20,
-      boxShadow: raised ? MT.shadowMd : MT.shadowSm,
+      boxShadow: raised ? MT.shadowMd : T.glassShadow,
       cursor: onClick ? 'pointer' : 'default',
       ...style,
     }}>{children}</div>

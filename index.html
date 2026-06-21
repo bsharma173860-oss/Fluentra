@@ -573,7 +573,7 @@ function App() {
     }
     const fullBleed = page === 'marketing' || page === 'auth_login' || page === 'auth_signup' || page === 'auth_onboarding' || page === 'otp' || page === 'forgot_pw' || page.startsWith('new_');
     return (
-      <div style={{ width:W, height:H, background:'#F9F8F5', overflow:'hidden', display:'flex' }}>
+      <div style={{ width:W, height:H, background:'radial-gradient(1100px 700px at 8% -10%, rgba(255,176,142,0.30), transparent 60%), radial-gradient(950px 700px at 100% -5%, rgba(150,160,255,0.22), transparent 55%), radial-gradient(850px 850px at 50% 120%, rgba(150,220,180,0.18), transparent 60%), linear-gradient(160deg,#FAF7F2,#EFEBE4)', overflow:'hidden', display:'flex' }}>
         {!fullBleed && <WebSidebar active={page === 'lang' ? 'home' : page} activeLang={page === 'lang' ? langCode : null} onNav={(id) => window.__nav(id)}/>}
         <div key={page + '-' + langCode + '-' + navTick} style={{ flex:1, display:'flex', minWidth:0 }}><ErrorBoundary>{WEB_PAGES[page]()}</ErrorBoundary></div>
       </div>

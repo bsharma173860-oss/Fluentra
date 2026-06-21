@@ -6,11 +6,17 @@
 
 const T = /* tokens */ {
   // Surfaces
-  bg:      '#F9F8F5',
+  bg:      'rgba(249,248,245,0.55)',
   bg2:     '#F4F1EB',
   bg3:     '#EDEAE3',
   card:    '#FFFFFF',
   paper:   '#FFFEFA',
+  // Glass (frosted) — translucent surfaces blurred over the ambient backdrop
+  glass:       'rgba(255,255,255,0.60)',
+  glassStrong: 'rgba(255,255,255,0.74)',
+  glassBorder: 'rgba(255,255,255,0.65)',
+  glassBlur:   'blur(20px) saturate(150%)',
+  glassShadow: '0 8px 30px rgba(60,45,35,0.08)',
   // Borders
   border:  '#EAEAEA',
   hairline:'#F4F4F4',
@@ -554,7 +560,7 @@ function SectionHead({ eyebrow, title, action, level=1 }) {
 // Surface card
 function Card({ children, style={}, padding=16, accent, ...rest }) {
   return (
-    <div {...rest} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding, ...(accent ? { borderTop:`3px solid ${accent}` } : {}), ...style }}>
+    <div {...rest} style={{ background:T.glass, backdropFilter:T.glassBlur, WebkitBackdropFilter:T.glassBlur, border:`1px solid ${T.glassBorder}`, borderRadius:16, boxShadow:T.glassShadow, padding, ...(accent ? { borderTop:`3px solid ${accent}` } : {}), ...style }}>
       {children}
     </div>
   );

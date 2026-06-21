@@ -16,7 +16,7 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
   ];
 
   return (
-    <aside style={{ width:248, background:T.paper, borderRight:`1px solid ${T.border}`, padding:'22px 16px 16px', display:'flex', flexDirection:'column', flexShrink:0 }}>
+    <aside style={{ width:248, background:T.glassStrong, backdropFilter:T.glassBlur, WebkitBackdropFilter:T.glassBlur, borderRight:`1px solid ${T.glassBorder}`, padding:'22px 16px 16px', display:'flex', flexDirection:'column', flexShrink:0 }}>
       {/* Brand */}
       <button onClick={() => nav('dashboard')} style={{ display:'flex', alignItems:'center', gap:9, marginBottom:30, padding:'0 8px', background:'none', cursor:'pointer' }}>
         <div style={{ width:30, height:30, borderRadius:9, background:T.brandGrad, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', boxShadow:`0 4px 10px ${T.brand}33` }}>{Icon.brandmark({ width:18, height:18 })}</div>
@@ -134,7 +134,7 @@ function WebTopbar({ search='Search lessons, phrases, grammar…', right=null })
   const nav = window.__nav || (() => {});
   const back = () => { if (window.__back) window.__back(); };
   return (
-    <div style={{ height:64, borderBottom:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 32px', background:T.bg, flexShrink:0 }}>
+    <div style={{ height:64, borderBottom:`1px solid ${T.glassBorder}`, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 32px', background:T.glassStrong, backdropFilter:T.glassBlur, WebkitBackdropFilter:T.glassBlur, flexShrink:0 }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, flex:1 }}>
       <button onClick={back} title="Back" style={{ width:36, height:36, borderRadius:10, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
