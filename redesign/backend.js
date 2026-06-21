@@ -126,6 +126,7 @@
         myProfile: function () { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').select('*').eq('id', id).maybeSingle().then(function (p) { return p.data; }); }); },
         getProfile: function (id) { return client.from('profiles').select('*').eq('id', id).maybeSingle().then(function (r) { return r.data; }); },
         setUsername: function (name) { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').update({ username: name }).eq('id', id); }); },
+        setProfilePublic: function (isPublic) { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').update({ is_public: !!isPublic }).eq('id', id); }); },
         searchUsers: function (q) { if (!q || q.length < 2) return Promise.resolve([]); var like = '%' + q.replace(/[%,]/g, '') + '%'; return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak').or('username.ilike.' + like + ',full_name.ilike.' + like).limit(20).then(function (r) { return r.data || []; }); },
 
         leaderboard: function (by, limit) { var col = (by === 'streak' ? 'streak' : 'xp'); return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak,best_score').eq('is_public', true).order(col, { ascending: false }).limit(limit || 50).then(function (r) { return r.data || []; }); },
@@ -538,7 +539,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b66-circle-ui';
+    window.__FL_BUILD = 'b67-circle-hub';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

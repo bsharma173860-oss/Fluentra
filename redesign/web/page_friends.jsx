@@ -93,7 +93,7 @@ function FriendsPage() {
               <Card padding={0}>
                 {d.friends.map(function (fr) { return (
                   <Row key={fr.friendshipId} p={fr.profile}>
-                    <MiniBtn label="Message" onClick={function () { window.__dmUser = fr.profile; window.__nav && window.__nav('dm_thread'); }}/>
+                    <MiniBtn label="Message" onClick={function () { window.__dmUser = fr.profile; window.__nav && window.__nav('activity_feed'); }}/>
                     <MiniBtn label="Remove" outline onClick={function () { act(S.removeFriend(fr.friendshipId)); }}/>
                   </Row>
                 ); })}
