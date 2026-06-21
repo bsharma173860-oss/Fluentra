@@ -169,7 +169,7 @@ function FeedPostCard(props) {
           {post.mine && <button onClick={removePost} style={{ fontSize:11, color:T.ink4, background:'transparent', cursor:'pointer' }}>Delete</button>}
         </div>
         <div style={{ fontSize:14, color:T.ink, lineHeight:1.55, whiteSpace:'pre-wrap' }}>{post.body}</div>
-        {post.image_url && <img src={post.image_url} style={{ width:'100%', borderRadius:12, marginTop:10, display:'block' }}/>}
+        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', borderRadius:12, marginTop:10, display:'block', background:'#000' }}/> : <img src={post.image_url} style={{ width:'100%', borderRadius:12, marginTop:10, display:'block' }}/>)}
         <div style={{ display:'flex', gap:18, marginTop:12 }}>
           <button onClick={toggleLike} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12.5, fontWeight:700, color: liked ? T.brand : T.ink3 }}>{liked ? '♥' : '♡'} {likeCount > 0 ? likeCount : ''} Like</button>
           <button onClick={openComments} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12.5, fontWeight:700, color:T.ink3 }}>💬 {cCount > 0 ? cCount : ''} Comment</button>
@@ -229,8 +229,14 @@ function ActivityFeedPage() {
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px' }}>
         <div style={{ maxWidth:600, margin:'0 auto' }}>
-          <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink, marginBottom:6 }}>Feed</div>
-          <div style={{ fontSize:13, color:T.ink4, marginBottom:16 }}>Share what you're working on. Choose who sees each post.</div>
+          <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:6 }}>
+            <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink }}>Community</div>
+            <div style={{ display:'flex', gap:16 }}>
+              <button onClick={function(){ window.__nav && window.__nav('friends'); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>Friends</button>
+              <button onClick={function(){ window.__nav && window.__nav('leaderboard'); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>Leaderboard</button>
+            </div>
+          </div>
+          <div style={{ fontSize:13, color:T.ink4, marginBottom:16 }}>Share what you're working on — photos and videos too. Choose who sees each post.</div>
 
           <div style={{ display:'flex', gap:8, marginBottom:16 }}>
             {[['posts','Posts'],['activity','Activity']].map(function (t) { var active = tab===t[0]; return <button key={t[0]} onClick={function () { setTab(t[0]); }} style={{ padding:'8px 15px', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', border:`1px solid ${active?T.brand:T.border}`, background:active?T.brandLight:T.card, color:active?T.brand:T.ink2 }}>{t[1]}</button>; })}
@@ -240,11 +246,11 @@ function ActivityFeedPage() {
             <>
               <Card padding={14} style={{ marginBottom:18 }}>
                 <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="What did you learn today?" rows={3} style={{ width:'100%', border:'none', resize:'vertical', fontSize:14, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit' }}/>
-                {img && <div style={{ marginTop:10, position:'relative', display:'inline-block' }}><img src={URL.createObjectURL(img)} style={{ maxHeight:140, borderRadius:10, display:'block' }}/><button onClick={function () { setImg(null); }} style={{ position:'absolute', top:6, right:6, width:24, height:24, borderRadius:12, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:13 }}>×</button></div>}
+                {img && <div style={{ marginTop:10, position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:140, borderRadius:10, display:'block' }}/> : <img src={URL.createObjectURL(img)} style={{ maxHeight:140, borderRadius:10, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:6, right:6, width:24, height:24, borderRadius:12, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:13 }}>×</button></div>}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingTop:10, borderTop:`1px solid ${T.hairline}` }}>
                   <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                    <input ref={composerFileRef} type="file" accept="image/*" onChange={function (e) { var f = e.target.files && e.target.files[0]; if (f) setImg(f); }} style={{ display:'none' }}/>
-                    <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>📷 Photo</button>
+                    <input ref={composerFileRef} type="file" accept="image/*,video/*" onChange={function (e) { var f = e.target.files && e.target.files[0]; if (f) setImg(f); }} style={{ display:'none' }}/>
+                    <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>📷 Photo / video</button>
                     <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12.5, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.card, cursor:'pointer' }}>
                       <option value="public">🌍 Public</option>
                       <option value="friends">👥 Friends only</option>

@@ -538,7 +538,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b63-feed-nav';
+    window.__FL_BUILD = 'b64-community-video';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

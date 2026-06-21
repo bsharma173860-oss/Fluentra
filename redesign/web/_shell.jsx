@@ -12,7 +12,7 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
     { id:'library',  ic:'book',   label:'Library' },
     { id:'progress', ic:'bars',   label:'Progress' },
     { id:'exams',    ic:'trophy', label:'Exams' },
-    { id:'activity_feed', ic:'users', label:'Feed' },
+    { id:'activity_feed', ic:'users', label:'Community' },
   ];
 
   return (
