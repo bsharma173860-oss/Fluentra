@@ -123,13 +123,7 @@ function MSettingsPageV5() {
 function MNotificationsPageV5() {
   const [filter, setFilter] = useStateMV5('all');
   const nav = (id) => window.__nav && window.__nav(id);
-  const NOTIFS = [
-    { id:1, type:'streak',  unread:true,  t:'2 min ago',  title:'42-day streak unlocked',  body:'You earned the Persistent badge.', ic:'flame', accent:'#E08F4D' },
-    { id:2, type:'social',  unread:true,  t:'1h ago',     title:'Anaís left feedback',     body:'"Loved your speaking sample on travel — great pacing."', ic:'heart', accent:'#D26890' },
-    { id:3, type:'system',  unread:false, t:'3h ago',     title:'New JLPT mock available', body:'8 fresh listening clips added to Library.', ic:'book',  accent:'#2A6FA0' },
-    { id:4, type:'social',  unread:false, t:'Yesterday',  title:'Marcus added you',        body:'Tap to view profile and send a hello.', ic:'users', accent:'#5A9C7A' },
-    { id:5, type:'system',  unread:false, t:'2 days ago', title:'Receipt available',       body:'May invoice for your Pro plan.', ic:'card',  accent:'#7C5BD6' },
-  ];
+  const NOTIFS = [];  // wire to a real notifications/activity backend when available
   const filtered = NOTIFS.filter(n => filter === 'all' ? true : filter === 'unread' ? n.unread : n.type === filter);
   const unread = NOTIFS.filter(n => n.unread).length;
   const tabs = [{id:'all',l:'All',n:NOTIFS.length},{id:'unread',l:'Unread',n:unread},{id:'social',l:'Social',n:NOTIFS.filter(n=>n.type==='social').length},{id:'system',l:'System',n:NOTIFS.filter(n=>n.type==='system').length}];
