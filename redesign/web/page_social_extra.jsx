@@ -230,7 +230,7 @@ function ActivityFeedPage() {
       <div style={{ flex:1, overflow:'auto', padding:'28px 36px' }}>
         <div style={{ maxWidth:600, margin:'0 auto' }}>
           <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:6 }}>
-            <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink }}>Community</div>
+            <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink }}>Circle</div>
             <div style={{ display:'flex', gap:16 }}>
               <button onClick={function(){ window.__nav && window.__nav('friends'); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>Friends</button>
               <button onClick={function(){ window.__nav && window.__nav('leaderboard'); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>Leaderboard</button>

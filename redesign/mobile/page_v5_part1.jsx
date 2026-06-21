@@ -320,7 +320,7 @@ function MFriendsPageV5() {
       <MobileHeader title="Friends"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
         <V5_pre eyebrow="COMMUNITY" title="Friends" lede="Connect with other learners and message each other."/>
-        <button onClick={function(){ window.__nav && window.__nav('activity_feed'); }} style={{ width:'100%', marginBottom:14, padding:'11px', borderRadius:11, border:`1px solid ${T.border}`, background:T.card, color:T.ink2, fontSize:13, fontWeight:700 }}>📣 Open Community feed →</button>
+        <button onClick={function(){ window.__nav && window.__nav('activity_feed'); }} style={{ width:'100%', marginBottom:14, padding:'11px', borderRadius:11, border:`1px solid ${T.border}`, background:T.card, color:T.ink2, fontSize:13, fontWeight:700 }}>📣 Open Circle →</button>
         <div style={{ display:'flex', gap:0, background:T.bg2, borderRadius:11, padding:3, marginBottom:14, border:`1px solid ${T.border}` }}>
           {[{id:'friends',l:'Friends · '+d.friends.length},{id:'requests',l:'Requests · '+d.incoming.length},{id:'find',l:'Find'}].map(function (t) { var a = tab===t.id; return <button key={t.id} onClick={function(){ setTab(t.id); }} style={{ flex:1, padding:'7px 4px', borderRadius:9, fontSize:11, fontWeight:a?700:500, color:a?T.ink:T.ink3, background:a?T.card:'transparent', boxShadow:a?MT.shadowSm:'none' }}>{t.l}</button>; })}
         </div>

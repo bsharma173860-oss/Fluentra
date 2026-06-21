@@ -75,7 +75,7 @@ function FriendsPage() {
         <div style={{ maxWidth:760, margin:'0 auto' }}>
           <div style={{ fontFamily:T.serif, fontSize:36, color:T.ink, lineHeight:1.05, marginBottom:6 }}>Friends</div>
           <div style={{ fontSize:13, color:T.ink4, marginBottom:14 }}>Connect with other learners, compare streaks, and message each other.</div>
-          <button onClick={function(){ window.__nav && window.__nav('activity_feed'); }} style={{ marginBottom:18, padding:'8px 14px', borderRadius:10, border:`1px solid ${T.border}`, background:T.card, color:T.ink2, fontSize:12.5, fontWeight:700, cursor:'pointer' }}>📣 Open Community feed →</button>
+          <button onClick={function(){ window.__nav && window.__nav('activity_feed'); }} style={{ marginBottom:18, padding:'8px 14px', borderRadius:10, border:`1px solid ${T.border}`, background:T.card, color:T.ink2, fontSize:12.5, fontWeight:700, cursor:'pointer' }}>📣 Open Circle →</button>
 
           <div style={{ display:'flex', gap:8, marginBottom:18 }}>
             {tabs.map(function (t) {
