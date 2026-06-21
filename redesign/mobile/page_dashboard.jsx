@@ -80,8 +80,8 @@ function MDashboard() {
                 <div style={{ width:42, height:42, borderRadius:12, background:topT.accent, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>{Icon.play({ width:16, height:16 })}</div>
                 <div style={{ fontSize:9.5, fontWeight:700, color:'rgba(255,255,255,.6)', letterSpacing:'.14em', textTransform:'uppercase' }}>Your 15 minutes today</div>
               </div>
-              <div style={{ fontFamily:T.serif, fontSize:21, color:'#fff', lineHeight:1.15, marginBottom:4 }}>Past tense — passé composé</div>
-              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.7)', marginBottom:14 }}>{topLang.english} · Grammar · 15 min</div>
+              <div style={{ fontFamily:T.serif, fontSize:21, color:'#fff', lineHeight:1.15, marginBottom:4 }}>Today's {topLang.english} practice</div>
+              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.7)', marginBottom:14 }}>Pick up where you left off</div>
               <div style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'10px 16px', background:topT.accent, borderRadius:10, fontSize:12.5, fontWeight:700, color:'#fff' }}>
                 Start now {Icon.arrow({ width:12, height:12 })}
               </div>
@@ -213,8 +213,8 @@ function MDashLangCard({ lang }) {
             <span style={{ fontSize:9.5, fontWeight:800, color:T.ink3, background:T.bg2, padding:'2px 7px', borderRadius:4, letterSpacing:'.06em', textTransform:'uppercase' }}>{lang.level}</span>
           </div>
           <div style={{ fontSize:9, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:1 }}>Next up</div>
-          <div style={{ fontSize:12, fontWeight:600, color:T.ink, lineHeight:1.25, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Past tense — passé composé</div>
-          <div style={{ fontSize:10, color:T.ink4, marginTop:1 }}>10 min · Grammar</div>
+          <div style={{ fontSize:12, fontWeight:600, color:T.ink, lineHeight:1.25, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Continue {lang.english}</div>
+          <div style={{ fontSize:10, color:T.ink4, marginTop:1 }}>Daily practice · 15 min</div>
         </div>
       </div>
     </button>

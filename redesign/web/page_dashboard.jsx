@@ -57,8 +57,8 @@ function DashLangCard({ lang, freshlyAdded=false }) {
           </div>
           <div style={{ marginBottom:10 }}>
             <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:2 }}>Next up</div>
-            <div style={{ fontSize:13, fontWeight:600, color:T.ink, lineHeight:1.25 }}>Past tense — passé composé</div>
-            <div style={{ fontSize:11, color:T.ink4, marginTop:1 }}>10 min · Grammar</div>
+            <div style={{ fontSize:13, fontWeight:600, color:T.ink, lineHeight:1.25 }}>Continue {lang.english}</div>
+            <div style={{ fontSize:11, color:T.ink4, marginTop:1 }}>Daily practice · 15 min</div>
           </div>
           <Btn label="Continue" nav="lang" iconRight={Icon.arrow({ width:12, height:12 })} accent={t.accent} variant="outline" size="sm" fullWidth/>
         </div>
