@@ -202,7 +202,7 @@ function AISpeakingSession() {
           var _avg = _bands.length ? _bands.reduce(function (a, b) { return a + b; }, 0) / _bands.length : 0;
           window.dispatchEvent(new CustomEvent('fl-exam-section-done', { detail: { module:'speaking', score: Math.round(_avg / 9 * 100) } }));
         } else {
-          window.__nav && window.__nav('ai_speaking_results');
+          window.__nav && window.__nav('mod_results');
         }
       }
     } catch (e) {

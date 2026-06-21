@@ -109,7 +109,7 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
                 <PopRow ic="users" label="Refer a friend" right="$10" onClick={() => { setMenuOpen(false); nav('refer'); }}/>
                 <PopRow ic="book" label="Help & support" onClick={() => { setMenuOpen(false); nav('help'); }}/>
                 <div style={{ height:1, background:T.hairline, margin:'4px 6px' }}/>
-                <PopRow ic="arrow" label="Sign out" danger onClick={() => { setMenuOpen(false); nav('login'); }}/>
+                <PopRow ic="arrow" label="Sign out" danger onClick={() => { setMenuOpen(false); nav('auth_login'); }}/>
               </div>
             </>
           )}

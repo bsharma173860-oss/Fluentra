@@ -384,7 +384,7 @@ function CircleSettings() {
   React.useEffect(function () { if (!S) { setMe(null); return; } S.myProfile().then(function (p) { setMe(p || null); if (p) { setUname(p.username || ''); setPub(p.is_public !== false); } }); }, []);
   function saveUsername() { if (!S) return; var v = uname.trim(); S.setUsername(v || null).then(function () { setSaved('Saved'); setTimeout(function () { setSaved(''); }, 1500); }); }
   function togglePublic(v) { setPub(v); if (S) S.setProfilePublic(v); }
-  function signOut() { if (window.FL && window.FL.auth) { window.FL.auth.signOut().then(function () { window.__nav && window.__nav('login'); }); } else { window.__nav && window.__nav('login'); } }
+  function signOut() { if (window.FL && window.FL.auth) { window.FL.auth.signOut().then(function () { window.__nav && window.__nav('auth_login'); }); } else { window.__nav && window.__nav('auth_login'); } }
   return (
     <div style={{ flex:1, overflow:'auto' }}>
       <div style={{ maxWidth:560, margin:'0 auto', padding:'28px 24px 48px' }}>

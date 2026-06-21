@@ -51,8 +51,8 @@ function MUnlockDay9Page() {
 
       <div style={{ position:'relative', zIndex:2, flex:1, display:'flex', flexDirection:'column', padding:'68px 24px 24px', color:'#fff' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:36 }}>
-          <button onClick={() => nav('m_dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:'rgba(255,255,255,.14)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', cursor:'pointer' }}>×</button>
-          <button onClick={() => nav('m_dashboard')} style={{ fontSize:13, color:'rgba(255,255,255,.75)', cursor:'pointer' }}>Later</button>
+          <button onClick={() => nav('dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:'rgba(255,255,255,.14)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', cursor:'pointer' }}>×</button>
+          <button onClick={() => nav('dashboard')} style={{ fontSize:13, color:'rgba(255,255,255,.75)', cursor:'pointer' }}>Later</button>
         </div>
 
         <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', maxWidth:300 }}>
@@ -91,7 +91,7 @@ function MUnlockDay9Page() {
           </div>
         </div>
 
-        <button onClick={() => nav('m_exam_preview')} style={{ width:'100%', padding:'17px', borderRadius:14, background:'#fff', color:T.ink, fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 12px 30px rgba(0,0,0,.18)' }}>
+        <button onClick={() => nav('exam_preview')} style={{ width:'100%', padding:'17px', borderRadius:14, background:'#fff', color:T.ink, fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:'0 12px 30px rgba(0,0,0,.18)' }}>
           {pickedTier === 'pro' ? 'Start Pro & take exam' : `Continue · ${ex.cost || '$5'}`}
           <span>→</span>
         </button>
@@ -119,7 +119,7 @@ function MExamPreviewPage() {
     <MobileFrame>
       <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
         <div style={{ padding:'24px 20px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <button onClick={() => nav('m_unlock_day9')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2 }}>←</button>
+          <button onClick={() => nav('unlock_day9')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2 }}>←</button>
           <span style={{ fontSize:11, fontWeight:700, color:t.brand, letterSpacing:'.16em', textTransform:'uppercase' }}>You unlocked</span>
           <div style={{ width:38 }}/>
         </div>
@@ -195,7 +195,7 @@ function MExamPreviewPage() {
 
       {/* Sticky CTA */}
       <div style={{ padding:'14px 20px 28px', background:'#fff', borderTop:`1px solid ${T.border}`, flexShrink:0 }}>
-        <button onClick={() => nav('m_pre_exam_ready')} style={{ width:'100%', padding:'15px', borderRadius:13, background:`linear-gradient(135deg, ${t.brand}, ${t.brand2 || t.brand})`, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:`0 8px 20px ${t.brand}40` }}>
+        <button onClick={() => nav('pre_exam_ready')} style={{ width:'100%', padding:'15px', borderRadius:13, background:`linear-gradient(135deg, ${t.brand}, ${t.brand2 || t.brand})`, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, boxShadow:`0 8px 20px ${t.brand}40` }}>
           Start exam now <span>→</span>
         </button>
       </div>
@@ -280,7 +280,7 @@ function MPreExamReadyPage() {
     <MobileFrame>
       <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
         <div style={{ padding:'24px 20px' }}>
-          <button onClick={() => nav('m_dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2, marginBottom:18 }}>←</button>
+          <button onClick={() => nav('dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2, marginBottom:18 }}>←</button>
 
           <div style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'5px 11px', background:'#1A8F4E14', color:'#1A8F4E', borderRadius:99, fontSize:10, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:18 }}>
             ✓ Payment confirmed
@@ -328,8 +328,8 @@ function MPreExamReadyPage() {
 
       {/* Sticky bottom action */}
       <div style={{ padding:'14px 20px 28px', background:'#fff', borderTop:`1px solid ${T.border}`, flexShrink:0, display:'flex', gap:10 }}>
-        <button onClick={() => nav('m_dashboard')} style={{ padding:'15px 20px', background:T.bg2, border:`1px solid ${T.border}`, borderRadius:12, fontSize:13, color:T.ink2, fontWeight:600, cursor:'pointer' }}>Save</button>
-        <button disabled={!agreed} onClick={() => nav('m_exam_runner')} style={{ flex:1, padding:'15px 20px', background: agreed ? `linear-gradient(135deg, ${t.brand}, ${t.brand2 || t.brand})` : T.bg2, color: agreed ? '#fff' : T.ink5, borderRadius:12, fontSize:14, fontWeight:700, cursor: agreed ? 'pointer' : 'not-allowed', boxShadow: agreed ? `0 8px 20px ${t.brand}40` : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+        <button onClick={() => nav('dashboard')} style={{ padding:'15px 20px', background:T.bg2, border:`1px solid ${T.border}`, borderRadius:12, fontSize:13, color:T.ink2, fontWeight:600, cursor:'pointer' }}>Save</button>
+        <button disabled={!agreed} onClick={() => nav('exam_runner')} style={{ flex:1, padding:'15px 20px', background: agreed ? `linear-gradient(135deg, ${t.brand}, ${t.brand2 || t.brand})` : T.bg2, color: agreed ? '#fff' : T.ink5, borderRadius:12, fontSize:14, fontWeight:700, cursor: agreed ? 'pointer' : 'not-allowed', boxShadow: agreed ? `0 8px 20px ${t.brand}40` : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
           Start exam {agreed && <span>→</span>}
         </button>
       </div>
@@ -355,7 +355,7 @@ function MPostExamUpsellPage() {
     <MobileFrame>
       <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
         <div style={{ padding:'24px 20px 20px' }}>
-          <button onClick={() => nav('m_dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2, marginBottom:24 }}>×</button>
+          <button onClick={() => nav('dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2, marginBottom:24 }}>×</button>
 
           {/* Score reveal — dramatic centered */}
           <div style={{ textAlign:'center', marginBottom:30 }}>
@@ -385,7 +385,7 @@ function MPostExamUpsellPage() {
               <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', opacity:.85, marginBottom:10 }}>Want to improve?</div>
               <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.1, marginBottom:14, letterSpacing:'-.015em' }}>Pro users average <strong>{target}</strong> after 30 days.</div>
               <div style={{ fontSize:13, lineHeight:1.5, opacity:.92, marginBottom:18 }}>Unlimited mock exams, AI grading, adaptive practice on your weak skills.</div>
-              <button onClick={() => nav('m_pricing')} style={{ width:'100%', padding:'14px', background:'#fff', color:t.brand, borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <button onClick={() => nav('pricing')} style={{ width:'100%', padding:'14px', background:'#fff', color:t.brand, borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
                 Start Pro · $24/mo<span>→</span>
               </button>
               <div style={{ fontSize:11, opacity:.85, marginTop:10, textAlign:'center' }}>7-day money back · cancel anytime</div>
@@ -418,7 +418,7 @@ function MPostExamUpsellPage() {
             </div>
           </div>
 
-          <button onClick={() => nav('m_progress')} style={{ width:'100%', padding:'12px', background:'transparent', fontSize:13, color:T.ink4, cursor:'pointer' }}>See full report without upgrading →</button>
+          <button onClick={() => nav('progress')} style={{ width:'100%', padding:'12px', background:'transparent', fontSize:13, color:T.ink4, cursor:'pointer' }}>See full report without upgrading →</button>
         </div>
       </div>
     </MobileFrame>
@@ -442,7 +442,7 @@ function MMilestonesReelPage() {
     <MobileFrame>
       <div style={{ flex:1, overflowY:'auto', overflowX:'hidden' }}>
         <div style={{ padding:'24px 20px' }}>
-          <button onClick={() => nav('m_dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2, marginBottom:18 }}>←</button>
+          <button onClick={() => nav('dashboard')} style={{ width:38, height:38, borderRadius:'50%', background:T.bg2, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.ink2, marginBottom:18 }}>←</button>
 
           <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:8 }}>Streak rewards</div>
           <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1.05, color:T.ink, letterSpacing:'-.02em', marginBottom:8 }}>Every milestone<br/>unlocks something.</div>
@@ -472,10 +472,10 @@ function MMilestonesReelPage() {
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                       <span style={{ fontSize:11, fontWeight:700, color:m.color }}>{m.reward}</span>
                       {m.status==='unlocked' && m.day===9 && (
-                        <button onClick={() => nav('m_unlock_day9')} style={{ padding:'6px 13px', background:m.color, color:'#fff', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer' }}>Open →</button>
+                        <button onClick={() => nav('unlock_day9')} style={{ padding:'6px 13px', background:m.color, color:'#fff', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer' }}>Open →</button>
                       )}
                       {m.status==='unlocked' && m.day===3 && (
-                        <button onClick={() => nav('m_practice')} style={{ padding:'6px 13px', background:T.bg2, color:T.ink2, borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', border:`1px solid ${T.border}` }}>Take it →</button>
+                        <button onClick={() => nav('practice')} style={{ padding:'6px 13px', background:T.bg2, color:T.ink2, borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', border:`1px solid ${T.border}` }}>Take it →</button>
                       )}
                     </div>
                   </div>

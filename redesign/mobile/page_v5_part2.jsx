@@ -211,7 +211,7 @@ function MGrammarPageV5() {
               <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink3 }}>"{e.t}"</div>
             </MCard>
           ))}
-          <button onClick={()=>window.__nav && window.__nav('mod_writing')} style={{ width:'100%', padding:'13px', borderRadius:12, background:T.brandGrad, color:'#fff', fontSize:13, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, marginTop:8 }}>Practice this rule</button>
+          <button onClick={()=>window.__nav && window.__nav('practice')} style={{ width:'100%', padding:'13px', borderRadius:12, background:T.brandGrad, color:'#fff', fontSize:13, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, marginTop:8 }}>Practice this rule</button>
         </MobileBody>
       </>
     );

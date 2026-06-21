@@ -306,7 +306,7 @@ function AchievementsPage() {
             <Card padding={18}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
                 <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, display:'flex', alignItems:'center', gap:6 }}>{Icon.spark({ width:13, height:13, fill:T.brand })} Active quests</div>
-                <button data-nav="quests" style={{ fontSize:10.5, color:T.ink3, cursor:'pointer', background:'none', border:'none' }}>Browse →</button>
+                
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 {quests.map(q => (
