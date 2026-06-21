@@ -4,7 +4,9 @@
 // for 390px width with strong mobile rhythm.
 
 function MProgressLineChart({ data, color, w=350, h=150 }) {
-  const minY = 4, maxY = 9;
+  const _vals = (data && data.length) ? data.map(function (d) { return d.score; }) : [0, 100];
+  let minY = Math.min.apply(null, _vals), maxY = Math.max.apply(null, _vals);
+  if (minY === maxY) { minY = Math.max(0, minY - 10); maxY = maxY + 10; }
   const pad = { l:28, r:8, t:12, b:22 };
   const innerW = w - pad.l - pad.r, innerH = h - pad.t - pad.b;
   const pts = data.map((d, i) => ({
@@ -20,11 +22,12 @@ function MProgressLineChart({ data, color, w=350, h=150 }) {
   const area = `${path} L ${pts[pts.length-1].x} ${pad.t+innerH} L ${pts[0].x} ${pad.t+innerH} Z`;
   return (
     <svg width={w} height={h} style={{ display:'block', maxWidth:'100%' }}>
-      {[5,6,7,8,9].map(g => {
+      {[0,1,2,3,4].map(k => {
+        const g = Math.round(minY + (maxY - minY) * k / 4);
         const y = pad.t + (1 - (g - minY) / (maxY - minY)) * innerH;
-        return <g key={g}>
+        return <g key={k}>
           <line x1={pad.l} y1={y} x2={w - pad.r} y2={y} stroke={T.hairline}/>
-          <text x={pad.l - 4} y={y + 3} fontSize="9" fill={T.ink4} textAnchor="end">{g}.0</text>
+          <text x={pad.l - 4} y={y + 3} fontSize="9" fill={T.ink4} textAnchor="end">{g}</text>
         </g>;
       })}
       <defs>
@@ -139,38 +142,38 @@ function MProgress() {
   const lang = (typeof langByCode === 'function') ? langByCode(code) : LANGUAGES[0];
   const t = langTheme(lang.code);
   const [period, setPeriod] = React.useState('Month');
+  const _R = (typeof window !== 'undefined' && window.__results) ? window.__results.slice() : [];
+  const _scoreOf = function (r) { return Number(r.score) || 0; };
+  const _modOf = function (r) { return (r.detail && r.detail.module) || 'reading'; };
+  const _sessions = _R.length;
+  const _scores = _R.map(_scoreOf);
+  const _avg = _sessions ? Math.round(_scores.reduce(function (a,b){return a+b;},0)/_sessions) : 0;
+  const _best = _sessions ? Math.round(Math.max.apply(null,_scores)) : 0;
+  const _streak = (window.__user && window.__user.streak) || 0;
+  const _fmtD = function (r) { return r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : 'Recent'; };
+  const _modMeta = { speaking:{ic:'mic',c:T.speaking,title:'Speaking',nav:'speaking'}, writing:{ic:'pen',c:T.writing,title:'Writing',nav:'writing'}, listening:{ic:'head',c:T.listening,title:'Listening',nav:'listening'}, reading:{ic:'book',c:T.reading,title:'Reading',nav:'reading'} };
+  const _week = _R.filter(function (r) { return r.updated_at && new Date(r.updated_at).getTime() >= (Date.now()-7*864e5); }).length;
 
-  const trend = [
-    { label:'Mar 12', score:6.0 }, { label:'Mar 19', score:6.5 },
-    { label:'Mar 26', score:7.0 }, { label:'Apr 2',  score:7.0 },
-    { label:'Apr 5',  score:7.0 }, { label:'Apr 12', score:7.5 },
-  ];
+  const trend = _R.slice(0,8).reverse().map(function (r) { return { label:_fmtD(r), score:_scoreOf(r) }; });
   const stats = [
-    { label:'Avg band',  value:'7.0', delta:'+0.5',         color:t.accent, up:true },
-    { label:'Sessions',  value:'24',  delta:'+6 this week', up:true },
-    { label:'Streak',    value:'23d', meta:'Longest 31d' },
-    { label:'Time',      value:'18h', delta:'+2.4h vs last',up:true },
+    { label:'Avg score', value:(_sessions ? _avg + '%' : '—'), color:t.accent },
+    { label:'Sessions',  value:String(_sessions) },
+    { label:'Streak',    value:(_streak + 'd') },
+    { label:'Best',      value:(_sessions ? _best + '%' : '—') },
   ];
-  const modules = [
-    { ic:'mic',  c:T.speaking,  title:'Speaking',  score:7.0, change:+0.5, nav:'speaking' },
-    { ic:'pen',  c:T.writing,   title:'Writing',   score:6.5, change:-0.5, nav:'writing' },
-    { ic:'head', c:T.listening, title:'Listening', score:7.5, change:+1.0, nav:'listening' },
-    { ic:'book', c:T.reading,   title:'Reading',   score:7.0, change:+0.5, nav:'reading' },
-  ];
-  const heatColors = [T.bg3, '#F0D9CF', '#E5A78C', '#C04A06', '#7A2E00'];
-  const heatCells = Array.from({ length:84 }).map((_,i) => {
-    const v = (Math.sin(i * 1.3) + Math.cos(i * 0.7)) / 2;
-    return v > .5 ? 4 : v > .2 ? 3 : v > -.1 ? 2 : v > -.4 ? 1 : 0;
+  const modules = ['speaking','writing','listening','reading'].map(function (k) {
+    var rs = _R.filter(function (r) { return _modOf(r) === k; });
+    var avg = rs.length ? Math.round(rs.reduce(function (a,r){return a+_scoreOf(r);},0)/rs.length) : null;
+    return Object.assign({}, _modMeta[k], { score:avg, count:rs.length });
   });
-  const recent = [
-    { ic:'mic',  c:T.speaking,  title:'Speaking · Part 2', meta:'2h ago · 12 min', score:'7.5', nav:'speaking' },
-    { ic:'pen',  c:T.writing,   title:'Task 2 essay',      meta:'Yesterday',       score:'6.5', nav:'writing' },
-    { ic:'head', c:T.listening, title:'Section 3',         meta:'2d ago',          score:'7.5', nav:'listening' },
-  ];
+  const heatColors = [T.bg3, '#F0D9CF', '#E5A78C', '#C04A06', '#7A2E00'];
+  const _dayCount = {};
+  _R.forEach(function (r) { if (r.updated_at) { var d=new Date(r.updated_at); var k=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); _dayCount[k]=(_dayCount[k]||0)+1; } });
+  const heatCells = Array.from({ length:84 }).map(function (_, i) { var d=new Date(); d.setDate(d.getDate()-(83-i)); var k=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); var c=_dayCount[k]||0; return c>=4?4:c===3?3:c===2?2:c===1?1:0; });
+  const recent = _R.slice(0,3).map(function (r) { var mm=_modMeta[_modOf(r)]||_modMeta.reading; return { ic:mm.ic, c:mm.c, title:mm.title, meta:_fmtD(r), score:String(Math.round(_scoreOf(r))), nav:mm.nav }; });
   const goals = [
-    { l:'Reach band 7.5',     pct:78, meta:'Avg 7.0 → 7.5' },
-    { l:'5 sessions / week',  pct:80, meta:'4 of 5 done' },
-    { l:'Master 500 words',   pct:82, meta:'412 / 500' },
+    { l:'5 sessions / week', pct:Math.min(100, Math.round(_week/5*100)), meta:(_week + ' of 5 done') },
+    { l:'Lift your average', pct:_avg, meta:(_sessions ? ('Avg ' + _avg + '%') : 'Complete a lesson to start') },
   ];
 
   return (
@@ -216,12 +219,12 @@ function MProgress() {
               <button onClick={()=>nav('streak')} style={{ fontSize:11, color:T.ink3, fontWeight:600, background:'transparent', border:'none', cursor:'pointer' }}>Calendar →</button>
             </div>
             <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:6 }}>
-              <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>23</div>
-              <div style={{ fontSize:12, color:T.ink3 }}>days · 2 from your longest</div>
+              <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{_streak}</div>
+              <div style={{ fontSize:12, color:T.ink3 }}>{_streak === 1 ? 'day' : 'days'}</div>
             </div>
             <div style={{ display:'flex', gap:3, marginTop:10 }}>
               {Array.from({ length:14 }).map((_,i) => (
-                <div key={i} style={{ flex:1, height:18, borderRadius:3, background: i < 12 ? T.brand : T.bg3 }}/>
+                <div key={i} style={{ flex:1, height:18, borderRadius:3, background: i < Math.min(_streak,14) ? T.brand : T.bg3 }}/>
               ))}
             </div>
           </MCard>
@@ -232,7 +235,7 @@ function MProgress() {
           <MCard style={{ padding:16 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
               <div>
-                <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Band over time</div>
+                <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Score over time</div>
                 <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>Last 30 days</div>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 9px', borderRadius:99, background:T.listening.bg, color:T.listening.c }}>
@@ -240,7 +243,7 @@ function MProgress() {
                 <span style={{ fontSize:10.5, fontWeight:700 }}>Trending</span>
               </div>
             </div>
-            <MProgressLineChart data={trend} color={T.brand} w={322} h={150}/>
+            {trend.length >= 2 ? <MProgressLineChart data={trend} color={T.brand} w={322} h={150}/> : <div style={{ padding:'30px 0', textAlign:'center', color:T.ink4, fontSize:12 }}>Complete a few lessons to see your trend.</div>}
           </MCard>
         </div>
 
@@ -261,12 +264,12 @@ function MProgress() {
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
                     <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{m.title}</div>
                     <div style={{ display:'flex', alignItems:'baseline', gap:5 }}>
-                      <span style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{m.score.toFixed(1)}</span>
-                      <span style={{ fontSize:10, color: m.change >= 0 ? T.listening.c : T.brand, fontWeight:800 }}>{m.change >= 0 ? '+' : ''}{m.change.toFixed(1)}</span>
+                      <span style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{m.score == null ? '—' : m.score + '%'}</span>
+                      <span style={{ fontSize:10, color:T.ink4, fontWeight:700 }}>{m.count} {m.count === 1 ? 'session' : 'sessions'}</span>
                     </div>
                   </div>
                   <div style={{ height:4, background:T.bg2, borderRadius:99, overflow:'hidden' }}>
-                    <div style={{ width:`${(m.score/9)*100}%`, height:'100%', background:m.c.c }}/>
+                    <div style={{ width:`${m.score == null ? 0 : m.score}%`, height:'100%', background:m.c.c }}/>
                   </div>
                 </div>
               </button>
@@ -329,6 +332,7 @@ function MProgress() {
               <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Recent sessions</div>
               <button onClick={()=>nav('practice')} style={{ fontSize:11, color:T.ink3, fontWeight:600, background:'transparent', border:'none', cursor:'pointer' }}>All →</button>
             </div>
+            {recent.length === 0 && (<div style={{ padding:'22px 16px', textAlign:'center', color:T.ink4, fontSize:12 }}>No sessions yet — your recent practice appears here.</div>)}
             {recent.map((r, i, all) => (
               <button key={i} onClick={()=>nav(r.nav)} style={{
                 width:'100%', textAlign:'left', cursor:'pointer', background:'transparent', border:'none',

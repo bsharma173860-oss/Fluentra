@@ -539,7 +539,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b78-real-history-course';
+    window.__FL_BUILD = 'b79-real-mobile-progress';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
