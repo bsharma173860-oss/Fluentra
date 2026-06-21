@@ -182,46 +182,54 @@ function MNotificationsPageV5() {
 // ══════════════════════════════════════════════════════════════════
 function MAchievementsPageV5() {
   const [tab, setTab] = useStateMV5('earned');
-  const earned = [
-    { title:'Café Master',    date:'Mar 14', rarity:'epic',   ic:'trophy',     c:'#7B4A2D' },
-    { title:'Dawn Streak',    date:'Mar 11', rarity:'rare',   ic:'flame',      c:'#E08F4D' },
-    { title:'Listening 100',  date:'Mar 5',  rarity:'epic',   ic:'head',       c:'#2A6FA0' },
-    { title:'First exam',     date:'Feb 28', rarity:'common', ic:'book',       c:'#5A9C7A' },
+  const _streak = (window.__user && window.__user.streak) || 0;
+  const _Rv = (typeof window!=='undefined' && window.__results) ? window.__results : [];
+  const _sessions = _Rv.length;
+  const _cnt = function (mod) { return _Rv.filter(function (r) { return (r.detail && r.detail.module) === mod; }).length; };
+  const _defs = [
+    { id:'streak3',  title:'3-day streak',  ic:'flame',  c:'#E08F4D', rarity:'common', cur:_streak,            thr:3 },
+    { id:'streak7',  title:'7-day streak',  ic:'flame',  c:'#E08F4D', rarity:'common', cur:_streak,            thr:7 },
+    { id:'streak30', title:'30-day streak', ic:'flame',  c:'#E08F4D', rarity:'rare',   cur:_streak,            thr:30 },
+    { id:'first',    title:'First lesson',  ic:'book',   c:'#5A9C7A', rarity:'common', cur:_sessions,          thr:1 },
+    { id:'ten',      title:'10 sessions',   ic:'spark',  c:'#7B4A2D', rarity:'common', cur:_sessions,          thr:10 },
+    { id:'fifty',    title:'50 sessions',   ic:'trophy', c:'#7B4A2D', rarity:'epic',   cur:_sessions,          thr:50 },
+    { id:'speak10',  title:'10 speaking',   ic:'mic',    c:'#D26890', rarity:'rare',   cur:_cnt('speaking'),   thr:10 },
+    { id:'read10',   title:'10 reading',    ic:'book',   c:'#2A6FA0', rarity:'common', cur:_cnt('reading'),    thr:10 },
   ];
-  const inProgress = [
-    { title:'500 words',     pct:72, ic:'book',  c:'#5A9C7A', sub:'362/500 vocab' },
-    { title:'90-day streak', pct:46, ic:'flame', c:'#E08F4D', sub:'42/90 days' },
-    { title:'Speak 1000m',   pct:28, ic:'mic',   c:'#D26890', sub:'285/1000 min' },
-  ];
+  const _earnedDefs = _defs.filter(function (d) { return d.cur >= d.thr; });
+  const earned = _earnedDefs.map(function (d) { return { title:d.title, date:'earned', rarity:d.rarity, ic:d.ic, c:d.c }; });
+  const inProgress = _defs.filter(function (d) { return d.cur < d.thr; }).map(function (d) { return { title:d.title, pct:Math.min(99, Math.round(d.cur/d.thr*100)), ic:d.ic, c:d.c, sub:(d.cur + '/' + d.thr) }; });
+  const _earnedN = earned.length, _rareN = _earnedDefs.filter(function (d) { return d.rarity !== 'common'; }).length, _totalN = _defs.length;
+  const _feat = earned[0] || null;
   const rarity = (r) => r==='epic'?{c:'#7C5BD6',bg:'#EFEBFB'}:r==='rare'?{c:'#2A6FA0',bg:'#E1ECF6'}:{c:T.ink3,bg:T.bg2};
 
   return (
     <>
       <MobileHeader title="Achievements"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5_pre eyebrow="42 EARNED · 8 RARE" title="Your trophies" lede="Milestones for streaks, study volume and exam progress — collect them all."/>
+        <V5_pre eyebrow={_earnedN + " EARNED · " + _rareN + " RARE"} title="Your trophies" lede="Milestones for streaks, study volume and exam progress — collect them all."/>
         {/* Featured trophy hero — dark */}
         <div style={{ background:T.ink, borderRadius:18, padding:'20px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
           <V5_dotgrid/>
           <div style={{ position:'relative' }}>
-            <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', textTransform:'uppercase', color:'rgba(255,255,255,.55)', marginBottom:10 }}>NEWLY UNLOCKED · 2 DAYS AGO</div>
+            <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', textTransform:'uppercase', color:'rgba(255,255,255,.55)', marginBottom:10 }}>{_feat ? 'RECENTLY EARNED' : 'GET STARTED'}</div>
             <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:12 }}>
               <div style={{ width:60, height:60, borderRadius:16, background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.16)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.trophy ? Icon.trophy({width:26,height:26}) : '🏆'}</div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.05, letterSpacing:'-.015em' }}>Café Master</div>
-                <div style={{ fontSize:11.5, color:'rgba(255,255,255,.65)', marginTop:4, lineHeight:1.4 }}>Held 30 conversations in food & drink topic.</div>
+                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.05, letterSpacing:'-.015em' }}>{_feat ? _feat.title : 'No trophies yet'}</div>
+                <div style={{ fontSize:11.5, color:'rgba(255,255,255,.65)', marginTop:4, lineHeight:1.4 }}>{_feat ? ('One of ' + _earnedN + ' earned so far — keep going.') : 'Complete a lesson to earn your first trophy.'}</div>
               </div>
             </div>
             <div style={{ display:'flex', gap:6 }}>
-              <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', background:'#7C5BD6', padding:'3px 8px', borderRadius:99, letterSpacing:'.08em' }}>EPIC</span>
-              <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', background:'rgba(255,255,255,.15)', padding:'3px 8px', borderRadius:99, letterSpacing:'.08em' }}>+50 XP</span>
+              <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', background:'#7C5BD6', padding:'3px 8px', borderRadius:99, letterSpacing:'.08em' }}>{_feat ? _feat.rarity.toUpperCase() : 'TROPHY'}</span>
+              <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', background:'rgba(255,255,255,.15)', padding:'3px 8px', borderRadius:99, letterSpacing:'.08em' }}>{_feat ? '+50 XP' : 'Start now'}</span>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
         <div style={{ display:'flex', gap:0, background:T.bg2, borderRadius:11, padding:3, marginBottom:14, border:`1px solid ${T.border}` }}>
-          {[{id:'earned',l:'Earned · 42'},{id:'progress',l:'In progress · 6'},{id:'all',l:'All · 80'}].map(t => {
+          {[{id:'earned',l:'Earned · '+_earnedN},{id:'progress',l:'In progress · '+inProgress.length},{id:'all',l:'All · '+_totalN}].map(t => {
             const a = tab === t.id;
             return <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:'7px 6px', borderRadius:9, fontSize:11.5, fontWeight: a?700:500, color: a?T.ink:T.ink3, background: a?T.card:'transparent', boxShadow: a?MT.shadowSm:'none' }}>{t.l}</button>;
           })}
