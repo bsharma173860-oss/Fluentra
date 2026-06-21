@@ -213,7 +213,7 @@ function PricingPage() {
           {/* Testimonials */}
           <div style={{ marginBottom:60 }}>
             <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.1, marginBottom:6 }}>Why people stay</div>
-            <div style={{ fontSize:13, color:T.ink4, marginBottom:24 }}>1.4 million learners, average 7-month subscription length.</div>
+            <div style={{ fontSize:13, color:T.ink4, marginBottom:24 }}>Everything in one place — 26 languages, four skills, and real exam formats.</div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14 }}>
               {TESTIMONIALS.map((t, i) => (
                 <Card key={i} padding={24}>

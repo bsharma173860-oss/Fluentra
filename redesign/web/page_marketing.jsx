@@ -47,10 +47,8 @@ function MarketingPage() {
        ))}
       </div>
       <div>
-       <div style={{ display:'flex', gap:1, marginBottom:2, color:T.brand }}>
-        {[1,2,3,4,5].map(i => Icon.star({ key:i, width:12, height:12, fill:'currentColor' }))}
-       </div>
-       <div style={{ fontSize:11.5, color:T.ink3 }}><strong style={{ color:T.ink }}>4.9 / 5</strong> · 38,000+ learners</div>
+       <div style={{ fontSize:12, fontWeight:700, color:T.ink, marginBottom:2 }}>26 languages, four skills</div>
+       <div style={{ fontSize:11.5, color:T.ink3 }}>Reading · listening · speaking · writing</div>
       </div>
      </div>
     </div>
@@ -290,10 +288,10 @@ function MarketingPage() {
     <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize:'22px 22px' }}/>
     <div style={{ maxWidth:1200, margin:'0 auto', position:'relative', display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:24 }}>
      {[
-      { v:'2.4M', l:'active learners',     s:'across 142 countries' },
-      { v:'94%',  l:'pass their target exam', s:'IELTS · DELE · JLPT' },
-      { v:'4.9★', l:'App Store · Play',     s:'over 38,000 reviews' },
-      { v:'26',  l:'languages and dialects',  s:'and growing' },
+      { v:'26',  l:'languages',          s:'and growing' },
+      { v:'4',   l:'core skills',        s:'reading · listening · speaking · writing' },
+      { v:'6+',  l:'exam formats',       s:'IELTS · DELE · JLPT · DELF · TOEFL · TOPIK' },
+      { v:'AI',  l:'tutor & feedback',   s:'instant and personalised' },
      ].map(s => (
       <div key={s.l} style={{ paddingRight:24, borderRight:'1px solid rgba(255,255,255,.1)' }}>
        <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:1, color:'#fff', letterSpacing:'-.02em', marginBottom:10 }}>{s.v}</div>

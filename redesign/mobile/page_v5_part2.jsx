@@ -629,7 +629,7 @@ function MMarketingPageV5() {
               ))}
             </div>
           </div>
-          <div style={{ flex:1, fontSize:11.5, color:T.ink3, lineHeight:1.4 }}><span style={{ fontWeight:700, color:T.ink }}>2.4M+</span> learners · <span style={{ fontWeight:700, color:T.ink }}>4.9 ★</span> on App Store</div>
+          <div style={{ flex:1, fontSize:11.5, color:T.ink3, lineHeight:1.4 }}><span style={{ fontWeight:700, color:T.ink }}>26 languages</span> · AI-powered exam prep</div>
         </div>
       </div>
 

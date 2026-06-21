@@ -78,7 +78,7 @@ function EmptyFriends() {
         <PLBtn label="Find people you know"/>
         <PLBtn label="Invite a friend" ghost/>
       </div>
-      <div style={{ paddingTop:14, borderTop:`1px solid ${T.hairline}`, fontSize:11, color:T.ink5, width:'100%', maxWidth:280 }}>2.4M learners are practicing right now.</div>
+      <div style={{ paddingTop:14, borderTop:`1px solid ${T.hairline}`, fontSize:11, color:T.ink5, width:'100%', maxWidth:280 }}>Built for serious language learners — be among the first.</div>
     </div>
   );
 }
