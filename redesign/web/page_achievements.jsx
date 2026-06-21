@@ -111,9 +111,9 @@ function AchievementsPage() {
 
   // ── Active quests + timeline ────────────────────────────
   const quests = [
-    { t:'Speaking practice', sub:'Start a session', c:T.speaking.c, nav:'speaking' },
-    { t:'Daily listening',   sub:'Start a session', c:T.listening.c, nav:'listening' },
-    { t:'Review vocabulary', sub:'Open your cards', c:T.reading.c,   nav:'vocab' },
+    { id:'q1', title:'Café roleplay sprint', desc:'5 speaking lessons in 7 days', pct:80, sub:'4 / 5 lessons', endsIn:'2 days', c:T.speaking, reward:'+200 XP · Epic badge', nav:'speaking' },
+    { id:'q2', title:'Listen daily',         desc:'Listen 5 min every day this week', pct:57, sub:'4 / 7 days', endsIn:'3 days', c:T.listening, reward:'+80 XP', nav:'listening' },
+    { id:'q3', title:'500-word milestone',   desc:'Master 500 vocabulary cards', pct:40, sub:'199 / 500', endsIn:'open', c:T.reading, reward:'+250 XP · Rare badge', nav:'vocab' },
   ];
   const timeline = [
     { date:'Today', events:[{ t:'Quest progress', desc:'4/5 lessons in "Café roleplay sprint"', ic:'spark', c:T.brand, nav:'progress' }] },
@@ -651,9 +651,9 @@ function MAchievementsPage() {
   const _streak = (window.__user && window.__user.streak) || 0;
   const _xp = (window.__user && window.__user.xp) || 0;
   const quests = [
-    { t:'Café roleplay sprint', sub:'4/5 lessons · 2d left', pct:80, c:T.speaking.c, nav:'speaking' },
-    { t:'Listen daily',          sub:'4/7 days · 3d left',    pct:57, c:T.listening.c, nav:'listening' },
-    { t:'500-word milestone',    sub:'199/500 cards',         pct:40, c:T.reading.c,   nav:'vocab' },
+    { t:'Speaking practice', sub:'Start a session', c:T.speaking.c, nav:'speaking' },
+    { t:'Daily listening',   sub:'Start a session', c:T.listening.c, nav:'listening' },
+    { t:'Review vocabulary', sub:'Open your cards', c:T.reading.c,   nav:'vocab' },
   ];
   const flat = [
     { id:'streak_7', name:'7 days', rarity:'common', ic:'flame', earned:_streak>=7 },
