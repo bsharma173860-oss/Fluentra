@@ -345,6 +345,7 @@ function ReadingSession() {
   const [submitted, setSubmitted] = React.useState(false);
   const [scorePct, setScorePct] = React.useState(0);
   const [err, setErr]           = React.useState('');
+  const [tick, setTick]         = React.useState(0);
   const lang = window.__langCode || 'en';
 
   React.useEffect(function () {
@@ -370,7 +371,7 @@ function ReadingSession() {
       }
     })();
     return function () { cancelled = true; };
-  }, []);
+  }, [tick]);
 
   function choose(qi, oi) {
     if (submitted) return;
@@ -409,8 +410,16 @@ function ReadingSession() {
   }
   if (err || !data) {
     return (
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center', color:T.ink3, background:T.bg }}>
-        <div>{err || 'No reading available.'}<br/><span style={{ fontSize:12, color:T.ink4 }}>Check the content-engine env vars are set in Vercel.</span></div>
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, background:T.bg }}>
+        <div style={{ textAlign:'center', maxWidth:340 }}>
+          <div style={{ width:54, height:54, borderRadius:27, background:T.reading.bg, color:T.reading.c, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:26 }}>↻</div>
+          <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:8 }}>We couldn't load this lesson</div>
+          <div style={{ fontSize:13.5, color:T.ink4, lineHeight:1.6, marginBottom:22 }}>Something went wrong preparing your {lang.toUpperCase()} reading. Let's try again.</div>
+          <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+            <button onClick={function () { setErr(''); setLoading(true); setTick(function (t) { return t + 1; }); }} style={{ padding:'11px 22px', borderRadius:11, background:T.reading.c, color:'#fff', fontSize:13.5, fontWeight:700, border:'none', cursor:'pointer' }}>Try again</button>
+            <button onClick={function () { window.__nav && window.__nav('dashboard'); }} style={{ padding:'11px 20px', borderRadius:11, background:'transparent', border:`1px solid ${T.border}`, color:T.ink2, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>Back to dashboard</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -492,6 +501,7 @@ function ListeningSession() {
   const [submitted, setSubmitted] = React.useState(false);
   const [scorePct, setScorePct]   = React.useState(0);
   const [err, setErr]             = React.useState('');
+  const [tick, setTick]           = React.useState(0);
 
   // BCP-47 voice hint for the speech synthesizer
   const VOICE = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', nl:'nl-NL', ru:'ru-RU', pl:'pl-PL', uk:'uk-UA', sv:'sv-SE', no:'nb-NO', da:'da-DK', fi:'fi-FI', el:'el-GR', cs:'cs-CZ', ro:'ro-RO', hu:'hu-HU', tr:'tr-TR', ar:'ar-SA', hi:'hi-IN', zh:'zh-CN', ja:'ja-JP', ko:'ko-KR', id:'id-ID', vi:'vi-VN' };
@@ -519,7 +529,7 @@ function ListeningSession() {
       }
     })();
     return function () { cancelled = true; try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} };
-  }, []);
+  }, [tick]);
 
   function speak() {
     if (!data || !data.passage || !window.speechSynthesis) { setErr('Audio playback is not supported in this browser.'); return; }
@@ -578,8 +588,16 @@ function ListeningSession() {
   }
   if (err || !data) {
     return (
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center', color:T.ink3, background:T.bg }}>
-        <div>{err || 'No listening clip available.'}<br/><span style={{ fontSize:12, color:T.ink4 }}>Generate some content first, and check the engine env vars in Vercel.</span></div>
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40, background:T.bg }}>
+        <div style={{ textAlign:'center', maxWidth:340 }}>
+          <div style={{ width:54, height:54, borderRadius:27, background:T.listening.bg, color:T.listening.c, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:26 }}>↻</div>
+          <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:8 }}>We couldn't load this lesson</div>
+          <div style={{ fontSize:13.5, color:T.ink4, lineHeight:1.6, marginBottom:22 }}>Something went wrong preparing your {lang.toUpperCase()} listening clip. Let's try again.</div>
+          <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+            <button onClick={function () { setErr(''); setLoading(true); setTick(function (t) { return t + 1; }); }} style={{ padding:'11px 22px', borderRadius:11, background:T.listening.c, color:'#fff', fontSize:13.5, fontWeight:700, border:'none', cursor:'pointer' }}>Try again</button>
+            <button onClick={function () { window.__nav && window.__nav('dashboard'); }} style={{ padding:'11px 20px', borderRadius:11, background:'transparent', border:`1px solid ${T.border}`, color:T.ink2, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>Back to dashboard</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1067,7 +1085,7 @@ function WritingSession() {
             </div>
           )}
           {feedback && feedback.error && (
-            <div style={{ borderTop:`1px solid ${T.border}`, padding:'12px 24px', fontSize:12.5, color:'#dc2626', flexShrink:0 }}>Grading failed: {feedback.error}. Check that ANTHROPIC_API_KEY is set in Vercel.</div>
+            <div style={{ borderTop:`1px solid ${T.border}`, padding:'12px 24px', fontSize:12.5, color:'#dc2626', flexShrink:0 }}>We couldn't grade this just now — your writing is saved. Try submitting again in a moment.</div>
           )}
           {/* Bottom bar */}
           <div style={{ height:56, borderTop:`1px solid ${T.border}`, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexShrink:0 }}>

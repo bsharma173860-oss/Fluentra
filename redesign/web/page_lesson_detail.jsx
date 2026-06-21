@@ -15,6 +15,7 @@ function LessonDetailPage() {
   const [tab, setTab]         = React.useState('lesson');
   const [ans, setAns]         = React.useState({});
   const [checked, setChecked] = React.useState(false);
+  const [tick, setTick]       = React.useState(0);
 
   React.useEffect(function () {
     var cancelled = false;
@@ -34,7 +35,7 @@ function LessonDetailPage() {
       }
     })();
     return function () { cancelled = true; };
-  }, []);
+  }, [tick]);
 
   function back() { window.__nav && window.__nav('course'); }
   const practice = (data && data.practice) || [];
@@ -58,9 +59,14 @@ function LessonDetailPage() {
     </div>
   );
   if (err || !data) return shell(
-    <div style={{ padding:40, textAlign:'center', color:T.ink3 }}>
-      <div style={{ fontSize:14, marginBottom:14 }}>{err || 'No lesson content.'}</div>
-      <Btn label="Back to course" accent={T.brand} onClick={back}/>
+    <div style={{ padding:40, textAlign:'center', maxWidth:380, margin:'40px auto 0' }}>
+      <div style={{ width:54, height:54, borderRadius:27, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:26 }}>↻</div>
+      <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:8 }}>We couldn't build this lesson</div>
+      <div style={{ fontSize:13.5, color:T.ink4, lineHeight:1.6, marginBottom:20 }}>Something went wrong preparing your lesson on “{title}”. Let's try again.</div>
+      <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+        <Btn label="Try again" accent={T.brand} onClick={function () { setErr(''); setLoading(true); setTick(function (t) { return t + 1; }); }}/>
+        <button onClick={back} style={{ padding:'11px 20px', borderRadius:11, background:'transparent', border:`1px solid ${T.border}`, color:T.ink2, fontSize:13.5, fontWeight:700, cursor:'pointer' }}>Back to course</button>
+      </div>
     </div>
   );
 
