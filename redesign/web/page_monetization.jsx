@@ -103,7 +103,7 @@ function UnlockDay9Page() {
   const { lang, ex, t, unlocked } = useActiveLang();
   const [pickedTier, setPickedTier] = useStateMon('pro');
   const examName = `${ex.name} Full Mock Exam`;
-  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'María';
+  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'there';
 
   return (
     <main style={{ flex:1, position:'relative', background:`linear-gradient(180deg, ${t.brandLight || '#FFF8F0'} 0%, ${T.bg} 60%)`, overflow:'auto' }}>
@@ -469,7 +469,7 @@ function PreExamReadyPage() {
   const nav = window.__nav || (() => {});
   const { ex, t, goodLuck } = useActiveLang();
   const [agreed, setAgreed] = useStateMon(false);
-  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'María';
+  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'there';
 
   const totalMins = (ex.modules || []).reduce((s,m) => s + (parseInt(m.time)||0), 0);
   const totalH = Math.floor(totalMins/60);

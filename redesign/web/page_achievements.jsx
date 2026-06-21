@@ -170,7 +170,7 @@ function AchievementsPage() {
           title="The trophy room."
           right={
             <div style={{ display:'flex', gap:8 }}>
-              <Btn label="Share progress" onClick={() => setShareOf({ ...heroBadge, asProfile:true, title:'Maya\'s progress', sub:'24 badges · Gold league · 14.2k XP' })} variant="outline" accent={T.ink} icon={Icon.send()}/>
+              <Btn label="Share progress" onClick={() => setShareOf({ ...heroBadge, asProfile:true, title:(USER.name && USER.name !== 'there' ? USER.name + ' · progress' : 'My progress'), sub:(_earnedN + ' badges · ' + USER.streak + 'd streak · ' + USER.xp + ' XP') })} variant="outline" accent={T.ink} icon={Icon.send()}/>
               <Btn label="Browse leagues" nav="leaderboard" accent={T.brand} iconRight={Icon.arrow()}/>
             </div>
           }

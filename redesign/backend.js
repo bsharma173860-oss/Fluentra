@@ -539,7 +539,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b76-achievements-fix';
+    window.__FL_BUILD = 'b77-real-share-data';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

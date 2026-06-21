@@ -38,7 +38,7 @@ function MobileConfetti({ count = 35, colors }) {
 function MUnlockDay9Page() {
   const nav = window.__nav || (() => {});
   const { lang, ex, t, unlocked } = useActiveLangM();
-  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'María';
+  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'there';
   const [pickedTier, setPickedTier] = useMonStateM('pro');
 
   return (
@@ -269,7 +269,7 @@ function MPreExamReadyPage() {
   const nav = window.__nav || (() => {});
   const { ex, t, goodLuck } = useActiveLangM();
   const [agreed, setAgreed] = useMonStateM(false);
-  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'María';
+  const userName = (USER && USER.name) ? USER.name.split(' ')[0] : 'there';
 
   const totalMins = (ex.modules || []).reduce((s,m) => s + (parseInt(m.time)||0), 0);
   const totalH = Math.floor(totalMins/60), totalM = totalMins % 60;
