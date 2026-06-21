@@ -6,17 +6,17 @@
 
 const T = /* tokens */ {
   // Surfaces
-  bg:      'rgba(249,248,245,0.55)',
+  bg:      'rgba(250,248,245,0.40)',
   bg2:     '#F4F1EB',
   bg3:     '#EDEAE3',
   card:    '#FFFFFF',
   paper:   '#FFFEFA',
   // Glass (frosted) — translucent surfaces blurred over the ambient backdrop
-  glass:       'rgba(255,255,255,0.60)',
-  glassStrong: 'rgba(255,255,255,0.74)',
-  glassBorder: 'rgba(255,255,255,0.65)',
-  glassBlur:   'blur(20px) saturate(150%)',
-  glassShadow: '0 8px 30px rgba(60,45,35,0.08)',
+  glass:       'rgba(255,255,255,0.46)',
+  glassStrong: 'rgba(255,255,255,0.60)',
+  glassBorder: 'rgba(255,255,255,0.85)',
+  glassBlur:   'blur(26px) saturate(180%)',
+  glassShadow: '0 10px 34px rgba(40,30,25,0.13), inset 0 1px 0 rgba(255,255,255,0.7)',
   // Borders
   border:  '#EAEAEA',
   hairline:'#F4F4F4',
