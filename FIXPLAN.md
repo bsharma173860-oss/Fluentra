@@ -84,3 +84,4 @@ Bharat runs the SQL migrations below in Supabase SQL editor.
 ## Phase 7 — Posts (Twitter-style feed)
 - b60: Web posts feed — posts table + likes + comments + per-post visibility (public/friends) via RLS (docs/PHASE7_POSTS.sql, user must run). FL.social: createPost/listPosts/deletePost/likePost/unlikePost/listComments/addComment/deleteComment. ActivityFeedPage now has Posts (composer + likes + comments) + Activity tabs. Avatars render from avatar_url with initials fallback.
 - (next) b61: mobile posts feed parity (MActivityFeedPageV5). Then Phase 7b: photo upload (Supabase Storage bucket + avatar/post-image upload UI).
+- b62: Phase 7b photo upload — Supabase Storage bucket 'public-media' + RLS (docs/PHASE7B_MEDIA.sql, user must run). FL.social.uploadMedia + setAvatar. Profile photo upload (web + mobile own-profile), avatar rendering, and image attach in post composer (web + mobile).

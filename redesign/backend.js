@@ -144,6 +144,9 @@
         subscribeMessages: function (onMsg) { var ch = client.channel('dm-' + Date.now()).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, function (payload) { if (payload && payload.new) onMsg(payload.new); }).subscribe(); return function () { try { client.removeChannel(ch); } catch (e) {} }; },
         conversations: function () { return this._uid().then(function (id) { if (!id) return []; return client.from('messages').select('*').or('sender.eq.' + id + ',recipient.eq.' + id).order('created_at', { ascending: false }).limit(300).then(function (res) { var rows = res.data || []; var seen = {}, convos = []; rows.forEach(function (m) { var other = m.sender === id ? m.recipient : m.sender; if (seen[other]) return; seen[other] = 1; convos.push({ otherId: other, last: m }); }); var ids = convos.map(function (c) { return c.otherId; }); var profP = ids.length ? client.from('profiles').select('id,full_name,username,avatar_url').in('id', ids).then(function (p) { return p.data || []; }) : Promise.resolve([]); return profP.then(function (profs) { var pm = {}; profs.forEach(function (p) { pm[p.id] = p; }); convos.forEach(function (c) { c.profile = pm[c.otherId] || { id: c.otherId }; }); return convos; }); }); }); },
 
+        uploadMedia: function (file, kind) { return this._uid().then(function (id) { if (!id || !file) return null; var ext = (file.name && file.name.indexOf('.') >= 0) ? file.name.split('.').pop() : 'jpg'; var path = id + '/' + (kind || 'media') + '-' + Date.now() + '.' + ext; return client.storage.from('public-media').upload(path, file, { upsert: true, contentType: file.type || undefined }).then(function (res) { if (res && res.error) { console.warn('[FL] upload:', res.error.message); return null; } var pub = client.storage.from('public-media').getPublicUrl(path); return (pub && pub.data && pub.data.publicUrl) || null; }); }); },
+        setAvatar: function (url) { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').update({ avatar_url: url }).eq('id', id); }); },
+
         createPost: function (body, imageUrl, visibility) { return this._uid().then(function (id) { if (!id) return null; return client.from('posts').insert({ author:id, body:body, image_url:imageUrl||null, visibility:(visibility==='friends'?'friends':'public') }).select().then(function (r) { return r.data && r.data[0]; }); }); },
         deletePost: function (id) { return client.from('posts').delete().eq('id', id); },
         listPosts: function (limit) {
@@ -535,7 +538,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b61-posts-mobile';
+    window.__FL_BUILD = 'b62-photos';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

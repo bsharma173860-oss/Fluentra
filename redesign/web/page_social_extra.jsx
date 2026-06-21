@@ -24,6 +24,9 @@ function PublicProfilePage() {
   }
   React.useEffect(load, [id]);
   function act(promise) { if (!promise) return; setBusy(true); Promise.resolve(promise).then(function () { setBusy(false); load(); }).catch(function () { setBusy(false); load(); }); }
+  const fileRef = React.useRef(null);
+  const [uploading, setUploading] = React.useState(false);
+  function onPickAvatar(e) { var file = e.target.files && e.target.files[0]; if (!file || !S) return; setUploading(true); S.uploadMedia(file, 'avatar').then(function (url) { if (url) return S.setAvatar(url); }).then(function () { setUploading(false); load(); }).catch(function () { setUploading(false); }); }
 
   if (p === undefined) return (<div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}><WebTopbar/><div style={{ padding:40, color:T.ink3 }}>Loading profile…</div></div>);
   if (!p) return (<div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}><WebTopbar/><div style={{ padding:40, color:T.ink3 }}>Profile not found.</div></div>);
@@ -34,7 +37,15 @@ function PublicProfilePage() {
       <div style={{ flex:1, overflow:'auto', padding:'32px 36px' }}>
         <div style={{ maxWidth:680, margin:'0 auto' }}>
           <div style={{ display:'flex', alignItems:'center', gap:20, marginBottom:24 }}>
-            <div style={{ width:84, height:84, borderRadius:42, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:36 }}>{name[0].toUpperCase()}</div>
+            <div style={{ position:'relative' }}>
+              {p.avatar_url
+                ? <img src={p.avatar_url} style={{ width:84, height:84, borderRadius:42, objectFit:'cover' }}/>
+                : <div style={{ width:84, height:84, borderRadius:42, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:36 }}>{name[0].toUpperCase()}</div>}
+              {rel && rel.k === 'me' && (<>
+                <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display:'none' }}/>
+                <button onClick={function () { if (fileRef.current) fileRef.current.click(); }} style={{ position:'absolute', bottom:-2, right:-2, width:28, height:28, borderRadius:14, background:T.brand, color:'#fff', border:`2px solid ${T.card}`, cursor:'pointer', fontSize:13 }}>{uploading ? '…' : '✎'}</button>
+              </>)}
+            </div>
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink }}>{name}</div>
               {p.username && <div style={{ fontSize:13, color:T.ink4, marginTop:2 }}>@{p.username}</div>}
@@ -195,13 +206,15 @@ function ActivityFeedPage() {
   const [draft, setDraft] = React.useState('');
   const [vis, setVis] = React.useState('public');
   const [posting, setPosting] = React.useState(false);
+  const [img, setImg] = React.useState(null);
+  const composerFileRef = React.useRef(null);
 
   function loadPosts() { if (!S) { setPosts([]); return; } S.listPosts(60).then(function (r) { setPosts(r || []); }).catch(function () { setPosts([]); }); }
   function loadActivity() { if (!S) { setActivity([]); return; } S.feed(60).then(function (r) { setActivity(r || []); }).catch(function () { setActivity([]); }); }
   React.useEffect(function () { loadPosts(); }, []);
   React.useEffect(function () { if (tab === 'activity' && activity === null) loadActivity(); }, [tab]);
 
-  function submit() { var b = draft.trim(); if (!b || !S) return; setPosting(true); S.createPost(b, null, vis).then(function () { setDraft(''); setPosting(false); loadPosts(); }).catch(function () { setPosting(false); }); }
+  function submit() { var b = draft.trim(); if ((!b && !img) || !S) return; setPosting(true); var up = img ? S.uploadMedia(img, 'post') : Promise.resolve(null); up.then(function (url) { return S.createPost(b, url, vis); }).then(function () { setDraft(''); setImg(null); setPosting(false); loadPosts(); }).catch(function () { setPosting(false); }); }
 
   function actLine(a) {
     var who = (a.profile && (a.profile.full_name || a.profile.username)) || 'A learner';
@@ -227,11 +240,16 @@ function ActivityFeedPage() {
             <>
               <Card padding={14} style={{ marginBottom:18 }}>
                 <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="What did you learn today?" rows={3} style={{ width:'100%', border:'none', resize:'vertical', fontSize:14, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit' }}/>
+                {img && <div style={{ marginTop:10, position:'relative', display:'inline-block' }}><img src={URL.createObjectURL(img)} style={{ maxHeight:140, borderRadius:10, display:'block' }}/><button onClick={function () { setImg(null); }} style={{ position:'absolute', top:6, right:6, width:24, height:24, borderRadius:12, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:13 }}>×</button></div>}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingTop:10, borderTop:`1px solid ${T.hairline}` }}>
-                  <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12.5, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.card, cursor:'pointer' }}>
-                    <option value="public">🌍 Public</option>
-                    <option value="friends">👥 Friends only</option>
-                  </select>
+                  <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                    <input ref={composerFileRef} type="file" accept="image/*" onChange={function (e) { var f = e.target.files && e.target.files[0]; if (f) setImg(f); }} style={{ display:'none' }}/>
+                    <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>📷 Photo</button>
+                    <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12.5, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.card, cursor:'pointer' }}>
+                      <option value="public">🌍 Public</option>
+                      <option value="friends">👥 Friends only</option>
+                    </select>
+                  </div>
                   <Btn label={posting ? 'Posting…' : 'Post'} accent={T.brand} onClick={submit}/>
                 </div>
               </Card>
