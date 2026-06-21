@@ -80,3 +80,7 @@ Bharat runs the SQL migrations below in Supabase SQL editor.
 - b56: Phase 5 done — TutorCallPage is a REAL voice call (browser SpeechRecognition → /api/tutor Claude brain → SpeechSynthesis spoken reply, per-language locale/voice, full conversation memory, typed fallback where speech unsupported). TutorHistoryPage now lists real AI-graded speaking/writing sessions.
 - b57: Phase 6 (social parity) done — mobile leaderboard, friends, public profile, realtime DMs, activity feed, and phrasebook (the live *V5 components) all wired to FL.social, matching web.
 - (next) Phase 6 remainder: mobile dashboard (MDashboard) + mobile hub/exam/settings screens still use mock data; bring to parity. Minor web leftovers: exam_book registration page, ArticleReaderPage, gamification reels.
+
+## Phase 7 — Posts (Twitter-style feed)
+- b60: Web posts feed — posts table + likes + comments + per-post visibility (public/friends) via RLS (docs/PHASE7_POSTS.sql, user must run). FL.social: createPost/listPosts/deletePost/likePost/unlikePost/listComments/addComment/deleteComment. ActivityFeedPage now has Posts (composer + likes + comments) + Activity tabs. Avatars render from avatar_url with initials fallback.
+- (next) b61: mobile posts feed parity (MActivityFeedPageV5). Then Phase 7b: photo upload (Supabase Storage bucket + avatar/post-image upload UI).

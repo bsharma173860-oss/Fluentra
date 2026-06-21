@@ -144,6 +144,34 @@
         subscribeMessages: function (onMsg) { var ch = client.channel('dm-' + Date.now()).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, function (payload) { if (payload && payload.new) onMsg(payload.new); }).subscribe(); return function () { try { client.removeChannel(ch); } catch (e) {} }; },
         conversations: function () { return this._uid().then(function (id) { if (!id) return []; return client.from('messages').select('*').or('sender.eq.' + id + ',recipient.eq.' + id).order('created_at', { ascending: false }).limit(300).then(function (res) { var rows = res.data || []; var seen = {}, convos = []; rows.forEach(function (m) { var other = m.sender === id ? m.recipient : m.sender; if (seen[other]) return; seen[other] = 1; convos.push({ otherId: other, last: m }); }); var ids = convos.map(function (c) { return c.otherId; }); var profP = ids.length ? client.from('profiles').select('id,full_name,username,avatar_url').in('id', ids).then(function (p) { return p.data || []; }) : Promise.resolve([]); return profP.then(function (profs) { var pm = {}; profs.forEach(function (p) { pm[p.id] = p; }); convos.forEach(function (c) { c.profile = pm[c.otherId] || { id: c.otherId }; }); return convos; }); }); }); },
 
+        createPost: function (body, imageUrl, visibility) { return this._uid().then(function (id) { if (!id) return null; return client.from('posts').insert({ author:id, body:body, image_url:imageUrl||null, visibility:(visibility==='friends'?'friends':'public') }).select().then(function (r) { return r.data && r.data[0]; }); }); },
+        deletePost: function (id) { return client.from('posts').delete().eq('id', id); },
+        listPosts: function (limit) {
+          var self = this;
+          return self._uid().then(function (uid) {
+            return client.from('posts').select('*').order('created_at', { ascending:false }).limit(limit||50).then(function (res) {
+              var posts = res.data || []; if (!posts.length) return [];
+              var ids = posts.map(function (p) { return p.id; });
+              var authorIds = Array.from(new Set(posts.map(function (p) { return p.author; })));
+              return Promise.all([
+                client.from('profiles').select('id,full_name,username,avatar_url').in('id', authorIds).then(function (r) { return r.data || []; }),
+                client.from('post_likes').select('post_id,user_id').in('post_id', ids).then(function (r) { return r.data || []; }),
+                client.from('post_comments').select('post_id').in('post_id', ids).then(function (r) { return r.data || []; })
+              ]).then(function (arr) {
+                var pm = {}; arr[0].forEach(function (p) { pm[p.id] = p; });
+                var likeCount = {}, myLike = {}; arr[1].forEach(function (l) { likeCount[l.post_id] = (likeCount[l.post_id]||0)+1; if (l.user_id === uid) myLike[l.post_id] = true; });
+                var cCount = {}; arr[2].forEach(function (c) { cCount[c.post_id] = (cCount[c.post_id]||0)+1; });
+                return posts.map(function (p) { p.author_profile = pm[p.author] || { id:p.author }; p.like_count = likeCount[p.id]||0; p.liked = !!myLike[p.id]; p.comment_count = cCount[p.id]||0; p.mine = p.author === uid; return p; });
+              });
+            });
+          });
+        },
+        likePost: function (postId) { return this._uid().then(function (id) { if (!id) return null; return client.from('post_likes').insert({ post_id:postId, user_id:id }); }); },
+        unlikePost: function (postId) { return this._uid().then(function (id) { if (!id) return null; return client.from('post_likes').delete().eq('post_id', postId).eq('user_id', id); }); },
+        listComments: function (postId) { return client.from('post_comments').select('*').eq('post_id', postId).order('created_at', { ascending:true }).then(function (res) { var rows = res.data || []; var ids = Array.from(new Set(rows.map(function (c) { return c.user_id; }))); var profP = ids.length ? client.from('profiles').select('id,full_name,username,avatar_url').in('id', ids).then(function (r) { return r.data || []; }) : Promise.resolve([]); return profP.then(function (profs) { var pm = {}; profs.forEach(function (p) { pm[p.id] = p; }); return rows.map(function (c) { c.profile = pm[c.user_id] || { id:c.user_id }; return c; }); }); }); },
+        addComment: function (postId, body) { return this._uid().then(function (id) { if (!id) return null; return client.from('post_comments').insert({ post_id:postId, user_id:id, body:body }).select().then(function (r) { return r.data && r.data[0]; }); }); },
+        deleteComment: function (id) { return client.from('post_comments').delete().eq('id', id); },
+
         listPhrases: function (lang) { var q = client.from('phrases').select('*').order('created_at', { ascending: false }); if (lang) q = q.eq('lang', lang); return q.then(function (r) { return r.data || []; }); },
         addPhrase: function (lang, front, back) { return this._uid().then(function (id) { if (!id) return null; return client.from('phrases').insert({ user_id: id, lang: lang, front: front, back: back || null }).select().then(function (res) { return res.data && res.data[0]; }); }); },
         deletePhrase: function (id) { return client.from('phrases').delete().eq('id', id); },
@@ -507,7 +535,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b59-fix-phrasebook-cats';
+    window.__FL_BUILD = 'b60-posts-web';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

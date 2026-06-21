@@ -118,39 +118,138 @@ function DMBubble({ side, name, children }) {
   );
 }
 
+function feedAvatar(p, size) {
+  var s = size || 40;
+  var url = p && p.avatar_url;
+  if (url) return <img src={url} style={{ width:s, height:s, borderRadius:s/2, objectFit:'cover', flexShrink:0 }}/>;
+  var n = (p && (p.full_name || p.username)) || '?';
+  var parts = n.trim().split(/\s+/);
+  var initials = (((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'')).toUpperCase();
+  return <div style={{ width:s, height:s, borderRadius:s/2, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:s*0.4, flexShrink:0 }}>{initials}</div>;
+}
+function feedAgo(ts) { if (!ts) return ''; var d = Date.now() - new Date(ts).getTime(); var m = Math.floor(d/60000); if (m < 1) return 'now'; if (m < 60) return m + 'm'; var h = Math.floor(m/60); if (h < 24) return h + 'h'; return Math.floor(h/24) + 'd'; }
+
+function FeedPostCard(props) {
+  const post = props.post;
+  const S = (window.FL && window.FL.social) ? window.FL.social : null;
+  const [liked, setLiked] = React.useState(post.liked);
+  const [likeCount, setLikeCount] = React.useState(post.like_count);
+  const [showComments, setShowComments] = React.useState(false);
+  const [comments, setComments] = React.useState(null);
+  const [ctext, setCtext] = React.useState('');
+  const [cCount, setCCount] = React.useState(post.comment_count);
+  const [deleted, setDeleted] = React.useState(false);
+  const a = post.author_profile || {};
+  const name = a.full_name || a.username || 'Learner';
+  function toggleLike() { if (!S) return; if (liked) { setLiked(false); setLikeCount(function (c) { return Math.max(0, c-1); }); S.unlikePost(post.id); } else { setLiked(true); setLikeCount(function (c) { return c+1; }); S.likePost(post.id); } }
+  function openComments() { var n = !showComments; setShowComments(n); if (n && comments === null && S) S.listComments(post.id).then(function (r) { setComments(r || []); }); }
+  function addC() { var b = ctext.trim(); if (!b || !S) return; setCtext(''); S.addComment(post.id, b).then(function (c) { if (c) { setComments(function (prev) { return (prev || []).concat([Object.assign({ profile:{ full_name:'You' } }, c)]); }); setCCount(function (x) { return x+1; }); } }); }
+  function removePost() { if (!S) return; setDeleted(true); S.deletePost(post.id); }
+  if (deleted) return null;
+  return (
+    <Card padding={0} style={{ marginBottom:12 }}>
+      <div style={{ padding:'14px 16px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:10 }}>
+          <button onClick={function () { window.__profileId = a.id; window.__nav && window.__nav('public_profile'); }} style={{ background:'transparent', cursor:'pointer' }}>{feedAvatar(a, 40)}</button>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:13.5, fontWeight:700, color:T.ink }}>{name}</div>
+            <div style={{ fontSize:11, color:T.ink4 }}>{a.username ? '@'+a.username+' · ' : ''}{feedAgo(post.created_at)}{post.visibility === 'friends' ? ' · friends' : ''}</div>
+          </div>
+          {post.mine && <button onClick={removePost} style={{ fontSize:11, color:T.ink4, background:'transparent', cursor:'pointer' }}>Delete</button>}
+        </div>
+        <div style={{ fontSize:14, color:T.ink, lineHeight:1.55, whiteSpace:'pre-wrap' }}>{post.body}</div>
+        {post.image_url && <img src={post.image_url} style={{ width:'100%', borderRadius:12, marginTop:10, display:'block' }}/>}
+        <div style={{ display:'flex', gap:18, marginTop:12 }}>
+          <button onClick={toggleLike} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12.5, fontWeight:700, color: liked ? T.brand : T.ink3 }}>{liked ? '♥' : '♡'} {likeCount > 0 ? likeCount : ''} Like</button>
+          <button onClick={openComments} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12.5, fontWeight:700, color:T.ink3 }}>💬 {cCount > 0 ? cCount : ''} Comment</button>
+        </div>
+      </div>
+      {showComments && (
+        <div style={{ borderTop:`1px solid ${T.hairline}`, padding:'12px 16px', background:T.bg }}>
+          {comments === null ? <div style={{ fontSize:12, color:T.ink4 }}>Loading…</div>
+           : comments.length === 0 ? <div style={{ fontSize:12, color:T.ink4, marginBottom:10 }}>No comments yet.</div>
+           : comments.map(function (c) { var cn = (c.profile && (c.profile.full_name || c.profile.username)) || 'Learner'; return (
+               <div key={c.id} style={{ display:'flex', gap:9, marginBottom:9 }}>
+                 {feedAvatar(c.profile, 28)}
+                 <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:'7px 11px', flex:1 }}>
+                   <div style={{ fontSize:11.5, fontWeight:700, color:T.ink }}>{cn}</div>
+                   <div style={{ fontSize:12.5, color:T.ink2, marginTop:1 }}>{c.body}</div>
+                 </div>
+               </div>
+             ); })}
+          <div style={{ display:'flex', gap:8, marginTop:6 }}>
+            <input value={ctext} onChange={function (e) { setCtext(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') addC(); }} placeholder="Write a comment…" style={{ flex:1, padding:'8px 12px', borderRadius:9, border:`1px solid ${T.border}`, fontSize:12.5, outline:'none', background:T.card }}/>
+            <button onClick={addC} style={{ padding:'8px 14px', borderRadius:9, background:T.brand, color:'#fff', fontSize:12.5, fontWeight:700 }}>Post</button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function ActivityFeedPage() {
   const S = (window.FL && window.FL.social) ? window.FL.social : null;
-  const [items, setItems] = React.useState(null);
-  React.useEffect(function () {
-    if (!S) { setItems([]); return; }
-    S.feed(60).then(function (rows) { setItems(rows || []); }).catch(function () { setItems([]); });
-  }, []);
-  function ago(ts) { if (!ts) return ''; var d = Date.now() - new Date(ts).getTime(); var m = Math.floor(d/60000); if (m < 1) return 'just now'; if (m < 60) return m + 'm ago'; var h = Math.floor(m/60); if (h < 24) return h + 'h ago'; return Math.floor(h/24) + 'd ago'; }
-  function line(a) {
+  const [tab, setTab] = React.useState('posts');
+  const [posts, setPosts] = React.useState(null);
+  const [activity, setActivity] = React.useState(null);
+  const [draft, setDraft] = React.useState('');
+  const [vis, setVis] = React.useState('public');
+  const [posting, setPosting] = React.useState(false);
+
+  function loadPosts() { if (!S) { setPosts([]); return; } S.listPosts(60).then(function (r) { setPosts(r || []); }).catch(function () { setPosts([]); }); }
+  function loadActivity() { if (!S) { setActivity([]); return; } S.feed(60).then(function (r) { setActivity(r || []); }).catch(function () { setActivity([]); }); }
+  React.useEffect(function () { loadPosts(); }, []);
+  React.useEffect(function () { if (tab === 'activity' && activity === null) loadActivity(); }, [tab]);
+
+  function submit() { var b = draft.trim(); if (!b || !S) return; setPosting(true); S.createPost(b, null, vis).then(function () { setDraft(''); setPosting(false); loadPosts(); }).catch(function () { setPosting(false); }); }
+
+  function actLine(a) {
     var who = (a.profile && (a.profile.full_name || a.profile.username)) || 'A learner';
     var lang = a.lang ? (' · ' + a.lang.toUpperCase()) : '';
     if (a.kind === 'mock') return who + ' finished a mock exam' + (a.detail && a.detail.score != null ? ' (' + Math.round(a.detail.score) + '%)' : '') + lang;
     if (a.kind === 'lesson') return who + ' completed a ' + ((a.detail && a.detail.module) || 'practice') + ' session' + (a.detail && a.detail.score != null ? ' · ' + Math.round(a.detail.score) + '%' : '') + lang;
-    if (a.kind === 'streak') return who + ' kept a ' + ((a.detail && a.detail.days) || '') + '-day streak going' + lang;
-    if (a.kind === 'achievement') return who + ' earned ' + ((a.detail && a.detail.name) || 'an achievement');
     return who + ' practiced' + lang;
   }
+
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
-      <div style={{ flex:1, overflow:'auto', padding:'32px 36px' }}>
-        <div style={{ maxWidth:640, margin:'0 auto' }}>
-          <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink, marginBottom:6 }}>Activity</div>
-          <div style={{ fontSize:13, color:T.ink4, marginBottom:20 }}>What you and your friends have been working on.</div>
-          {items === null ? <Card padding={36}><div style={{ color:T.ink3 }}>Loading…</div></Card>
-           : items.length === 0 ? <Card padding={36}><div style={{ color:T.ink3, fontSize:13.5, lineHeight:1.6 }}>No activity yet. Finish a session or add friends, and recent activity shows up here.</div></Card>
-           : <Card padding={0}>{items.map(function (a) { return (
-               <div key={a.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 20px', borderBottom:`1px solid ${T.hairline}` }}>
-                 <div style={{ width:38, height:38, borderRadius:19, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:16 }}>{(((a.profile && (a.profile.full_name || a.profile.username)) || 'A')[0]).toUpperCase()}</div>
-                 <div style={{ flex:1, fontSize:13.5, color:T.ink }}>{line(a)}</div>
-                 <div style={{ fontSize:11.5, color:T.ink4 }}>{ago(a.created_at)}</div>
-               </div>
-             ); })}</Card>}
+      <div style={{ flex:1, overflow:'auto', padding:'28px 36px' }}>
+        <div style={{ maxWidth:600, margin:'0 auto' }}>
+          <div style={{ fontFamily:T.serif, fontSize:32, color:T.ink, marginBottom:6 }}>Feed</div>
+          <div style={{ fontSize:13, color:T.ink4, marginBottom:16 }}>Share what you're working on. Choose who sees each post.</div>
+
+          <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+            {[['posts','Posts'],['activity','Activity']].map(function (t) { var active = tab===t[0]; return <button key={t[0]} onClick={function () { setTab(t[0]); }} style={{ padding:'8px 15px', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', border:`1px solid ${active?T.brand:T.border}`, background:active?T.brandLight:T.card, color:active?T.brand:T.ink2 }}>{t[1]}</button>; })}
+          </div>
+
+          {tab === 'posts' ? (
+            <>
+              <Card padding={14} style={{ marginBottom:18 }}>
+                <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="What did you learn today?" rows={3} style={{ width:'100%', border:'none', resize:'vertical', fontSize:14, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit' }}/>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingTop:10, borderTop:`1px solid ${T.hairline}` }}>
+                  <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12.5, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.card, cursor:'pointer' }}>
+                    <option value="public">🌍 Public</option>
+                    <option value="friends">👥 Friends only</option>
+                  </select>
+                  <Btn label={posting ? 'Posting…' : 'Post'} accent={T.brand} onClick={submit}/>
+                </div>
+              </Card>
+              {posts === null ? <Card padding={36}><div style={{ color:T.ink3 }}>Loading…</div></Card>
+               : posts.length === 0 ? <Card padding={36}><div style={{ color:T.ink3, fontSize:13.5, lineHeight:1.6 }}>No posts yet. Be the first — share a win, a question, or what you're studying.</div></Card>
+               : posts.map(function (p) { return <FeedPostCard key={p.id} post={p}/>; })}
+            </>
+          ) : (
+            activity === null ? <Card padding={36}><div style={{ color:T.ink3 }}>Loading…</div></Card>
+            : activity.length === 0 ? <Card padding={36}><div style={{ color:T.ink3, fontSize:13.5, lineHeight:1.6 }}>No activity yet. Finish a session or add friends, and recent activity shows up here.</div></Card>
+            : <Card padding={0}>{activity.map(function (a) { return (
+                <div key={a.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 20px', borderBottom:`1px solid ${T.hairline}` }}>
+                  {feedAvatar(a.profile, 38)}
+                  <div style={{ flex:1, fontSize:13.5, color:T.ink }}>{actLine(a)}</div>
+                  <div style={{ fontSize:11.5, color:T.ink4 }}>{feedAgo(a.created_at)}</div>
+                </div>
+              ); })}</Card>
+          )}
         </div>
       </div>
     </div>
