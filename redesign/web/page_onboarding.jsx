@@ -528,7 +528,7 @@ function OnboardingPage() {
     case 1: return <SLanguage value={data.language} onChange={v => upd('language', v)} onNext={next} onBack={back}/>;
     case 2: return <SGoal value={data.goal} onChange={v => upd('goal', v)} onNext={next} onBack={back}/>;
     case 3: return <SReason values={data.reasons} onToggle={r => upd('reasons', data.reasons.includes(r) ? data.reasons.filter(x => x !== r) : [...data.reasons, r])} onNext={next} onBack={back}/>;
-    case 4: return <SLevel value={data.level} onChange={v => upd('level', v)} onNext={next} onBack={back} onSkipPlacement={() => { upd('placedLevel', data.level); setStep(6); }}/>;
+    case 4: return <SLevel value={data.level} onChange={v => upd('level', v)} onNext={() => { if (data.language === 'es') { next(); } else { upd('placedLevel', data.level || 'A1'); setStep(6); } }} onBack={back} onSkipPlacement={() => { upd('placedLevel', data.level); setStep(6); }}/>;
     case 5: return <SPlacement qIdx={pIdx} answers={data.placement || []} onAnswer={onPAnswer} onNext={handlePlacementNext} onBack={back} onSkip={() => { upd('placedLevel', data.level); next(); }}/>;
     case 6: return <SSchedule value={data.schedule} onChange={v => upd('schedule', v)} reminderTime={data.reminderTime} onReminderChange={v => upd('reminderTime', v)} onNext={next} onBack={back}/>;
     case 7: return <SPlan data={data} onFinish={finishOnboarding} onBack={back}/>;
@@ -647,7 +647,7 @@ function MOnboardingPage() {
   );
 
   if (step === 4) return (
-    <MOBStep step={4} total={8} eyebrow="Current level" title="Where are you now?" sub="Pick honestly. We'll check next." onBack={back} onNext={next} nextDisabled={!data.level}
+    <MOBStep step={4} total={8} eyebrow="Current level" title="Where are you now?" sub="Pick honestly. We'll check next." onBack={back} onNext={() => { if (data.language === 'es') { next(); } else { upd('placedLevel', data.level || 'A1'); setStep(6); } }} nextDisabled={!data.level}
       footer={data.level ? <button onClick={() => { upd('placedLevel', data.level); setStep(6); }} style={{ fontSize:12, color:T.ink3, fontWeight:600, textDecoration:'underline' }}>Skip placement test</button> : null}>
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {OB_LEVELS.map(l => {

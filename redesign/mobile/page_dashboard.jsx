@@ -109,8 +109,8 @@ function MDashboard() {
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:6 }}>
               {['M','T','W','T','F','S','S'].map((d,i) => {
-                const done = i < 4;
-                const today = i === 4;
+                const done = i < Math.min(longestStreak, 7);
+                const today = i === Math.min(longestStreak, 7) && longestStreak < 7;
                 return (
                   <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
                     <div style={{ width:'100%', aspectRatio:'1', maxWidth:38, borderRadius:9, background: done ? T.brand : today ? T.brandLight : T.card, border: `1.5px solid ${ today ? T.brand : T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color: done ? '#fff' : today ? T.brand : T.ink5, fontWeight:700, fontSize:12 }}>
@@ -121,30 +121,7 @@ function MDashboard() {
                 );
               })}
             </div>
-            <div style={{ marginTop:12, fontSize:11.5, color:T.ink3, textAlign:'center' }}>4-day streak · keep it going</div>
-          </MCard>
-        </div>
-
-        {/* FRIENDS TODAY */}
-        <div style={{ padding:'0 18px', marginBottom:14 }}>
-          <MCard style={{ padding:16 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:11 }}>
-              <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Friends today</div>
-              <button onClick={()=>nav('friends')} style={{ fontSize:10.5, color:T.ink4, fontWeight:600 }}>See all →</button>
-            </div>
-            {[
-              { name:'Liam', avatar:'L', color:'#7B4BC4', mins:22, action:'practiced French' },
-              { name:'Yui',  avatar:'Y', color:'#1F8A5B', mins:18, action:'finished a JLPT mock' },
-              { name:'Anna', avatar:'A', color:'#D97757', mins:14, action:'extended to 31-day streak' },
-            ].map((f,i,all) => (
-              <button key={f.name} onClick={()=>nav('profile_user')} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', textAlign:'left', background:'transparent' }}>
-                <div style={{ width:32, height:32, borderRadius:16, background:f.color, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12.5, flexShrink:0 }}>{f.avatar}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12.5, color:T.ink, lineHeight:1.3 }}><b>{f.name}</b> {f.action}</div>
-                  <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{f.mins} min · today</div>
-                </div>
-              </button>
-            ))}
+            <div style={{ marginTop:12, fontSize:11.5, color:T.ink3, textAlign:'center' }}>{longestStreak > 0 ? longestStreak + '-day streak · keep it going' : 'Start your streak today'}</div>
           </MCard>
         </div>
 
