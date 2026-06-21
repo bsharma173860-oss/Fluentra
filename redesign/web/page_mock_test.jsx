@@ -11,11 +11,14 @@ function MockTestPage() {
   const [showSched, setShowSched] = useState(false);
 
   // History — synthesized practice attempts (NOT official records)
-  const history = [
-    { date:'Yesterday',   mod:'Listening', score: ex.scoreUnit==='/9'?7.0: ex.scoreUnit==='/180'?32:74, time:'28 min' },
-    { date:'4 days ago',  mod:'Reading',   score: ex.scoreUnit==='/9'?6.5: ex.scoreUnit==='/180'?28:68, time:'52 min' },
-    { date:'Last week',   mod:'Writing',   score: ex.scoreUnit==='/9'?6.5: ex.scoreUnit==='/180'?null:65, time:'48 min' },
-  ];
+  const _modName = { reading:'Reading', listening:'Listening', writing:'Writing', speaking:'Speaking' };
+  const _mh = (typeof window !== 'undefined' && window.__results)
+    ? window.__results.filter(function (r) { return r.lang === lang.code && r.detail && (r.detail.module === 'mock_exam' || r.detail.module === 'exam' || r.detail.module === 'mock'); })
+    : [];
+  const history = _mh.slice(0, 5).map(function (r) {
+    var when = r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : 'Recent';
+    return { date: when, mod: (r.detail && (_modName[r.detail.section] || r.detail.section)) || 'Full', score: (r.score != null ? Math.round(Number(r.score)) : null), time: '' };
+  });
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
@@ -128,6 +131,7 @@ function MockTestPage() {
               <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Recent practice attempts</div>
               <button data-nav="exam_history" style={{ fontSize:11.5, fontWeight:700, color:t.accent, background:'transparent', cursor:'pointer' }}>See all →</button>
             </div>
+            {history.length === 0 && (<div style={{ padding:'24px 22px', textAlign:'center', color:T.ink4, fontSize:12.5 }}>No mock attempts yet — start one above and it'll show up here.</div>)}
             {history.map((h, i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderBottom: i<history.length-1?`1px solid ${T.hairline}`:'none' }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>M{i+1}</div>

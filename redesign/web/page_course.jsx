@@ -51,16 +51,19 @@ function CourseOverviewPage() {
 }
 
 function MCourseOverviewPage({ onBack }) {
-  const [openUnit, setOpenUnit] = useState('u3');
+  const [openUnit, setOpenUnit] = useState('u1');
+  const _cdone = (typeof window!=='undefined' && window.__results) ? window.__results.filter(function(r){ return r.lang === lang; }).length : 0;
+  const _cpct = Math.min(100, Math.round(_cdone / 96 * 100));
+  const _cstreak = (window.__user && window.__user.streak) || 0;
 
   const chapters = [
-    { id:'c1', label:'Foundations', range:'A1', state:'done',
-      units:[{ id:'u1', title:'Hello, Spain', state:'done', lessons:8, done:8 }, { id:'u2', title:'At the café', state:'done', lessons:8, done:8 }] },
-    { id:'c2', label:'Everyday life', range:'A2', state:'current',
+    { id:'c1', label:'Foundations', range:'A1', state:'current',
+      units:[{ id:'u1', title:'Hello, Spain', state:'current', lessons:8, done:0 }, { id:'u2', title:'At the café', state:'next', lessons:8, done:0 }] },
+    { id:'c2', label:'Everyday life', range:'A2', state:'next',
       units:[
-        { id:'u3', title:'A day in the life', state:'current', lessons:10, done:6 },
-        { id:'u4', title:'Asking the way',    state:'next',    lessons:8,  done:0 },
-        { id:'u5', title:'Weekends & plans',  state:'locked',  lessons:9,  done:0 },
+        { id:'u3', title:'A day in the life', state:'next',   lessons:10, done:0 },
+        { id:'u4', title:'Asking the way',    state:'locked', lessons:8,  done:0 },
+        { id:'u5', title:'Weekends & plans',  state:'locked', lessons:9,  done:0 },
       ] },
     { id:'c3', label:'Stories & opinions', range:'B1', state:'locked',
       units:[{ id:'u6', title:'Once upon a time', state:'locked', lessons:11, done:0 }, { id:'u7', title:'In the news', state:'locked', lessons:10, done:0 }] },
@@ -95,18 +98,18 @@ function MCourseOverviewPage({ onBack }) {
           </div>
           <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1.1, marginBottom:12 }}>A 96-lesson path from greetings to opinions.</div>
           <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:12 }}>
-            <Ring pct={42} size={64} stroke={6} color={T.es.accent} trackColor="rgba(255,255,255,.6)">
-              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>42%</div>
+            <Ring pct={_cpct} size={64} stroke={6} color={T.es.accent} trackColor="rgba(255,255,255,.6)">
+              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{_cpct}%</div>
             </Ring>
             <div style={{ flex:1 }}>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:T.ink3, marginBottom:6 }}>
-                <span>40 / 96 lessons</span>
-                <span>14d streak</span>
+                <span>{_cdone} / 96 lessons</span>
+                <span>{_cstreak}d streak</span>
               </div>
               <div style={{ fontSize:11, color:T.ink4 }}>~12 weeks at your pace</div>
             </div>
           </div>
-          <Btn nav="reading" label="Continue lesson 7" accent={T.es.accent} fullWidth iconRight={Icon.arrow()}/>
+          <Btn nav="reading" label={_cdone > 0 ? "Continue learning" : "Start lesson 1"} accent={T.es.accent} fullWidth iconRight={Icon.arrow()}/>
         </div>
 
         {/* Chapters */}
@@ -124,7 +127,7 @@ function MCourseOverviewPage({ onBack }) {
 
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {ch.units.map(u => {
-                const isOpen = u.id === openUnit && u.id === 'u3';
+                const isOpen = u.id === openUnit;
                 const uLocked = u.state === 'locked';
                 return (
                   <div key={u.id}>
