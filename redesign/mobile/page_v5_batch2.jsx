@@ -261,27 +261,100 @@ function MDMThreadPageV5() {
   );
 }
 
+function MFeedPostCard(props) {
+  const post = props.post; const S = (window.FL && window.FL.social) ? window.FL.social : null;
+  const [liked, setLiked] = React.useState(post.liked);
+  const [lc, setLc] = React.useState(post.like_count);
+  const [open, setOpen] = React.useState(false);
+  const [comments, setComments] = React.useState(null);
+  const [ct, setCt] = React.useState('');
+  const [cc, setCc] = React.useState(post.comment_count);
+  const [del, setDel] = React.useState(false);
+  const a = post.author_profile || {}; const name = a.full_name || a.username || 'Learner';
+  function ini(n) { n = n || '?'; var p = n.trim().split(/\s+/); return (((p[0]||'')[0]||'') + ((p[1]||'')[0]||'')).toUpperCase(); }
+  function ago(ts) { if (!ts) return ''; var d = Date.now()-new Date(ts).getTime(); var m = Math.floor(d/60000); if (m<1) return 'now'; if (m<60) return m+'m'; var h = Math.floor(m/60); if (h<24) return h+'h'; return Math.floor(h/24)+'d'; }
+  function tl() { if (!S) return; if (liked) { setLiked(false); setLc(function (c) { return Math.max(0,c-1); }); S.unlikePost(post.id); } else { setLiked(true); setLc(function (c) { return c+1; }); S.likePost(post.id); } }
+  function oc() { var n = !open; setOpen(n); if (n && comments === null && S) S.listComments(post.id).then(function (r) { setComments(r || []); }); }
+  function addc() { var b = ct.trim(); if (!b || !S) return; setCt(''); S.addComment(post.id, b).then(function (c) { if (c) { setComments(function (p) { return (p||[]).concat([Object.assign({ profile:{ full_name:'You' } }, c)]); }); setCc(function (x) { return x+1; }); } }); }
+  function rm() { if (!S) return; setDel(true); S.deletePost(post.id); }
+  if (del) return null;
+  return (
+    <MCard style={{ padding:0, marginBottom:10, overflow:'hidden' }}>
+      <div style={{ padding:'12px 14px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+          {a.avatar_url ? <img src={a.avatar_url} style={{ width:36, height:36, borderRadius:18, objectFit:'cover' }}/> : V5_av(ini(name), 36, T.brandGrad)}
+          <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{name}</div><div style={{ fontSize:10.5, color:T.ink5 }}>{a.username?'@'+a.username+' · ':''}{ago(post.created_at)}{post.visibility==='friends'?' · friends':''}</div></div>
+          {post.mine && <button onClick={rm} style={{ fontSize:10.5, color:T.ink4, background:'transparent' }}>Delete</button>}
+        </div>
+        <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.5, whiteSpace:'pre-wrap' }}>{post.body}</div>
+        {post.image_url && <img src={post.image_url} style={{ width:'100%', borderRadius:10, marginTop:8, display:'block' }}/>}
+        <div style={{ display:'flex', gap:16, marginTop:10 }}>
+          <button onClick={tl} style={{ background:'transparent', fontSize:12, fontWeight:700, color: liked?T.brand:T.ink3 }}>{liked?'♥':'♡'} {lc>0?lc:''} Like</button>
+          <button onClick={oc} style={{ background:'transparent', fontSize:12, fontWeight:700, color:T.ink3 }}>💬 {cc>0?cc:''} Comment</button>
+        </div>
+      </div>
+      {open && (
+        <div style={{ borderTop:`1px solid ${T.hairline}`, padding:'10px 14px', background:T.bg }}>
+          {comments === null ? <div style={{ fontSize:11.5, color:T.ink4 }}>Loading…</div>
+           : comments.length === 0 ? <div style={{ fontSize:11.5, color:T.ink4, marginBottom:8 }}>No comments yet.</div>
+           : comments.map(function (c) { var cn = (c.profile && (c.profile.full_name || c.profile.username)) || 'Learner'; return <div key={c.id} style={{ marginBottom:7 }}><span style={{ fontSize:11.5, fontWeight:700, color:T.ink }}>{cn}</span> <span style={{ fontSize:12, color:T.ink2 }}>{c.body}</span></div>; })}
+          <div style={{ display:'flex', gap:7, marginTop:4 }}>
+            <input value={ct} onChange={function (e) { setCt(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') addc(); }} placeholder="Comment…" style={{ flex:1, padding:'8px 11px', borderRadius:9, border:`1px solid ${T.border}`, fontSize:12.5, outline:'none', background:T.card }}/>
+            <button onClick={addc} style={{ padding:'8px 13px', borderRadius:9, background:T.brand, color:'#fff', fontSize:12, fontWeight:700 }}>Send</button>
+          </div>
+        </div>
+      )}
+    </MCard>
+  );
+}
+
 function MActivityFeedPageV5() {
   const S = (window.FL && window.FL.social) ? window.FL.social : null;
-  const [items, setItems] = React.useState(null);
-  React.useEffect(function () { if (!S) { setItems([]); return; } S.feed(60).then(function (r) { setItems(r || []); }).catch(function () { setItems([]); }); }, []);
-  function ini(n) { n = n || 'A'; var parts = n.trim().split(/\s+/); return (((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'')).toUpperCase(); }
-  function ago(ts) { if (!ts) return ''; var d = Date.now() - new Date(ts).getTime(); var m = Math.floor(d/60000); if (m < 1) return 'now'; if (m < 60) return m + 'm'; var h = Math.floor(m/60); if (h < 24) return h + 'h'; return Math.floor(h/24) + 'd'; }
-  function line(a) { var who = (a.profile && (a.profile.full_name || a.profile.username)) || 'A learner'; var lang = a.lang ? (' · ' + a.lang.toUpperCase()) : ''; if (a.kind === 'mock') return who + ' finished a mock' + (a.detail && a.detail.score != null ? ' (' + Math.round(a.detail.score) + '%)' : '') + lang; if (a.kind === 'lesson') return who + ' did a ' + ((a.detail && a.detail.module) || 'practice') + ' session' + (a.detail && a.detail.score != null ? ' · ' + Math.round(a.detail.score) + '%' : '') + lang; return who + ' practiced' + lang; }
+  const [tab, setTab] = React.useState('posts');
+  const [posts, setPosts] = React.useState(null);
+  const [activity, setActivity] = React.useState(null);
+  const [draft, setDraft] = React.useState('');
+  const [vis, setVis] = React.useState('public');
+  const [posting, setPosting] = React.useState(false);
+  function loadPosts() { if (!S) { setPosts([]); return; } S.listPosts(60).then(function (r) { setPosts(r || []); }).catch(function () { setPosts([]); }); }
+  function loadAct() { if (!S) { setActivity([]); return; } S.feed(60).then(function (r) { setActivity(r || []); }).catch(function () { setActivity([]); }); }
+  React.useEffect(function () { loadPosts(); }, []);
+  React.useEffect(function () { if (tab === 'activity' && activity === null) loadAct(); }, [tab]);
+  function submit() { var b = draft.trim(); if (!b || !S) return; setPosting(true); S.createPost(b, null, vis).then(function () { setDraft(''); setPosting(false); loadPosts(); }).catch(function () { setPosting(false); }); }
+  function ini(n) { n = n || 'A'; var p = n.trim().split(/\s+/); return (((p[0]||'')[0]||'') + ((p[1]||'')[0]||'')).toUpperCase(); }
+  function ago(ts) { if (!ts) return ''; var d = Date.now()-new Date(ts).getTime(); var m = Math.floor(d/60000); if (m<1) return 'now'; if (m<60) return m+'m'; var h = Math.floor(m/60); if (h<24) return h+'h'; return Math.floor(h/24)+'d'; }
+  function al(a) { var who = (a.profile && (a.profile.full_name || a.profile.username)) || 'A learner'; var lang = a.lang ? (' · '+a.lang.toUpperCase()) : ''; if (a.kind === 'mock') return who+' finished a mock'+(a.detail && a.detail.score!=null?(' ('+Math.round(a.detail.score)+'%)'):'')+lang; if (a.kind === 'lesson') return who+' did a '+((a.detail && a.detail.module)||'practice')+' session'+(a.detail && a.detail.score!=null?(' · '+Math.round(a.detail.score)+'%'):'')+lang; return who+' practiced'+lang; }
   return (
     <>
-      <MobileHeader title="Activity"/>
+      <MobileHeader title="Feed"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5_pre eyebrow="COMMUNITY" title="Activity" lede="What you and your friends have been working on."/>
-        {items === null ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13 }}>Loading…</div></MCard>
-         : items.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink3, fontSize:12.5, lineHeight:1.5 }}>No activity yet. Finish a session or add friends.</div></MCard>
-         : <MCard style={{ padding:0, overflow:'hidden' }}>{items.map(function (a, i) { return (
-             <div key={a.id} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-               {V5_av(ini((a.profile && (a.profile.full_name || a.profile.username)) || 'A'), 34, T.brandGrad)}
-               <div style={{ flex:1, fontSize:12.5, color:T.ink, lineHeight:1.4 }}>{line(a)}</div>
-               <div style={{ fontSize:10.5, color:T.ink5 }}>{ago(a.created_at)}</div>
-             </div>
-           ); })}</MCard>}
+        <div style={{ display:'flex', gap:6, marginBottom:14, marginTop:4 }}>
+          {[['posts','Posts'],['activity','Activity']].map(function (t) { var a = tab===t[0]; return <button key={t[0]} onClick={function () { setTab(t[0]); }} style={{ flex:1, padding:'8px', borderRadius:9, background:a?T.ink:T.card, color:a?'#fff':T.ink3, fontSize:12.5, fontWeight:a?700:600, border:`1px solid ${a?T.ink:T.hairline}` }}>{t[1]}</button>; })}
+        </div>
+        {tab === 'posts' ? (
+          <>
+            <MCard style={{ padding:12, marginBottom:14 }}>
+              <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="What did you learn today?" rows={3} style={{ width:'100%', border:'none', resize:'vertical', fontSize:13.5, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit' }}/>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8, paddingTop:8, borderTop:`1px solid ${T.hairline}` }}>
+                <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 9px', background:T.card }}><option value="public">🌍 Public</option><option value="friends">👥 Friends</option></select>
+                <button onClick={submit} style={{ padding:'9px 18px', borderRadius:10, background:T.brandGrad, color:'#fff', fontSize:13, fontWeight:700 }}>{posting?'…':'Post'}</button>
+              </div>
+            </MCard>
+            {posts === null ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13 }}>Loading…</div></MCard>
+             : posts.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink3, fontSize:12.5, lineHeight:1.5 }}>No posts yet. Share a win or a question.</div></MCard>
+             : posts.map(function (p) { return <MFeedPostCard key={p.id} post={p}/>; })}
+          </>
+        ) : (
+          activity === null ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13 }}>Loading…</div></MCard>
+          : activity.length === 0 ? <MCard style={{ padding:20 }}><div style={{ color:T.ink3, fontSize:12.5 }}>No activity yet.</div></MCard>
+          : <MCard style={{ padding:0, overflow:'hidden' }}>{activity.map(function (a, i) { return (
+              <div key={a.id} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
+                {V5_av(ini((a.profile && (a.profile.full_name || a.profile.username)) || 'A'), 34, T.brandGrad)}
+                <div style={{ flex:1, fontSize:12.5, color:T.ink, lineHeight:1.4 }}>{al(a)}</div>
+                <div style={{ fontSize:10.5, color:T.ink5 }}>{ago(a.created_at)}</div>
+              </div>
+            ); })}</MCard>
+        )}
       </MobileBody>
     </>
   );
