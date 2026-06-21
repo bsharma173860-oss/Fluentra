@@ -111,9 +111,9 @@ function AchievementsPage() {
 
   // ── Active quests + timeline ────────────────────────────
   const quests = [
-    { id:'q1', title:'Café roleplay sprint', desc:'5 speaking lessons in 7 days', pct:80, sub:'4 / 5 lessons', endsIn:'2 days', c:T.speaking, reward:'+200 XP · Epic badge', nav:'speaking' },
-    { id:'q2', title:'Listen daily',         desc:'Listen 5 min every day this week', pct:57, sub:'4 / 7 days', endsIn:'3 days', c:T.listening, reward:'+80 XP', nav:'listening' },
-    { id:'q3', title:'500-word milestone',   desc:'Master 500 vocabulary cards', pct:40, sub:'199 / 500', endsIn:'open', c:T.reading, reward:'+250 XP · Rare badge', nav:'vocab' },
+    { t:'Speaking practice', sub:'Start a session', c:T.speaking.c, nav:'speaking' },
+    { t:'Daily listening',   sub:'Start a session', c:T.listening.c, nav:'listening' },
+    { t:'Review vocabulary', sub:'Open your cards', c:T.reading.c,   nav:'vocab' },
   ];
   const timeline = [
     { date:'Today', events:[{ t:'Quest progress', desc:'4/5 lessons in "Café roleplay sprint"', ic:'spark', c:T.brand, nav:'progress' }] },
@@ -648,27 +648,26 @@ function ShareModal({ badge: b, onClose }) {
 
 // ── Mobile · Achievements ──────────────────────────────────
 function MAchievementsPage() {
-  const featured = [
-    { title:'Café Master',     date:'Mar 14', rarity:'epic',     ic:'trophy',  c:T.es.accent,    bg:T.es.bg },
-    { title:'Month of fire',   date:'Mar 02', rarity:'rare',     ic:'flame',   c:T.brand,        bg:T.brandLight },
-    { title:'Lía\'s confidant', date:'Feb 27', rarity:'rare',     ic:'message', c:T.speaking.c,   bg:T.speaking.bg },
-  ];
+  const _streak = (window.__user && window.__user.streak) || 0;
+  const _xp = (window.__user && window.__user.xp) || 0;
   const quests = [
     { t:'Café roleplay sprint', sub:'4/5 lessons · 2d left', pct:80, c:T.speaking.c, nav:'speaking' },
     { t:'Listen daily',          sub:'4/7 days · 3d left',    pct:57, c:T.listening.c, nav:'listening' },
     { t:'500-word milestone',    sub:'199/500 cards',         pct:40, c:T.reading.c,   nav:'vocab' },
   ];
   const flat = [
-    { id:'streak_7', name:'7 days', rarity:'common', ic:'flame', earned:true },
-    { id:'streak_30', name:'30 days', rarity:'rare', ic:'flame', earned:true },
-    { id:'streak_60', name:'2 months', rarity:'epic', ic:'flame', earned:false, pct:23 },
-    { id:'vocab_100', name:'Lexicon', rarity:'common', ic:'book', earned:true },
+    { id:'streak_7', name:'7 days', rarity:'common', ic:'flame', earned:_streak>=7 },
+    { id:'streak_30', name:'30 days', rarity:'rare', ic:'flame', earned:_streak>=30 },
+    { id:'streak_60', name:'2 months', rarity:'epic', ic:'flame', earned:_streak>=60 },
+    { id:'vocab_100', name:'Lexicon', rarity:'common', ic:'book', earned:false },
     { id:'vocab_500', name:'Polyglot', rarity:'rare', ic:'book', earned:false, pct:40 },
     { id:'speaking_50', name:'Conversation pro', rarity:'epic', ic:'mic', earned:false, pct:62 },
-    { id:'cafe', name:'Café Master', rarity:'epic', ic:'trophy', earned:true },
-    { id:'lia50', name:'Lía\'s confidant', rarity:'rare', ic:'message', earned:true },
-    { id:'night', name:'Night owl', rarity:'common', ic:'eye', earned:true },
+    { id:'cafe', name:'Café Master', rarity:'epic', ic:'trophy', earned:false },
+    { id:'night', name:'Night owl', rarity:'common', ic:'eye', earned:false },
   ];
+  const _earnedN = flat.filter(function(b){return b.earned;}).length;
+  const featured = flat.filter(function(b){return b.earned;}).slice(0,3)
+    .map(function(b){ return { title:b.name, date:'earned', rarity:b.rarity, ic:b.ic, c:rarityColor(b.rarity), bg:T.bg2 }; });
   const [mTab, setMTab] = useState('All');
 
   const filt = (b) => mTab === 'All' ? true
@@ -678,10 +677,10 @@ function MAchievementsPage() {
 
   return (
     <>
-      <MobileHeader title="Achievements" eyebrow="24 of 86 earned" large/>
+      <MobileHeader title="Achievements" eyebrow={_earnedN + " of " + flat.length + " earned"} large/>
       <MobileBody padding={0}>
         <div style={{ padding:'4px 20px 14px', display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8 }}>
-          {[{v:'24',l:'badges'},{v:'14.2k',l:'XP'},{v:'Gold',l:'league'}].map(s => (
+          {[{v:String(_earnedN),l:'badges'},{v:String(_xp),l:'XP'},{v:_streak+'d',l:'streak'}].map(s => (
             <div key={s.l} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 12px' }}>
               <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, lineHeight:1 }}>{s.v}</div>
               <div style={{ fontSize:10.5, color:T.ink4, marginTop:3 }}>{s.l}</div>
@@ -702,15 +701,14 @@ function MAchievementsPage() {
           </div>
         </div>
         <div style={{ padding:'4px 20px 18px' }}>
-          <MobileSectionHead title="Active quests" action="3 active"/>
+          <MobileSectionHead title="Start here" action=""/>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {quests.map(q => (
               <button key={q.t} data-nav={q.nav} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:'12px 14px', textAlign:'left', cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
                   <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{q.t}</div>
-                  <div style={{ fontSize:11, fontWeight:700, color:q.c }}>{q.pct}%</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:q.c }}>Start →</div>
                 </div>
-                <Bar pct={q.pct} color={q.c} track={T.trackWarm} height={4}/>
                 <div style={{ fontSize:10.5, color:T.ink4, marginTop:5 }}>{q.sub}</div>
               </button>
             ))}
