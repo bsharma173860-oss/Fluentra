@@ -538,7 +538,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b65-circle';
+    window.__FL_BUILD = 'b66-circle-ui';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

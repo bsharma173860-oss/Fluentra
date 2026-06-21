@@ -129,6 +129,10 @@ function DMBubble({ side, name, children }) {
   );
 }
 
+function FeedIco_heart(filled, color) { return (<svg width="17" height="17" viewBox="0 0 24 24" fill={filled?color:'none'} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>); }
+function FeedIco_chat(color) { return (<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.6 8.6 0 0 1-3.9-.9L3 21l1.9-5.6a8.4 8.4 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>); }
+function FeedIco_media(color) { return (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>); }
+
 function feedAvatar(p, size) {
   var s = size || 40;
   var url = p && p.avatar_url;
@@ -169,10 +173,10 @@ function FeedPostCard(props) {
           {post.mine && <button onClick={removePost} style={{ fontSize:11, color:T.ink4, background:'transparent', cursor:'pointer' }}>Delete</button>}
         </div>
         <div style={{ fontSize:14, color:T.ink, lineHeight:1.55, whiteSpace:'pre-wrap' }}>{post.body}</div>
-        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', borderRadius:12, marginTop:10, display:'block', background:'#000' }}/> : <img src={post.image_url} style={{ width:'100%', borderRadius:12, marginTop:10, display:'block' }}/>)}
-        <div style={{ display:'flex', gap:18, marginTop:12 }}>
-          <button onClick={toggleLike} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12.5, fontWeight:700, color: liked ? T.brand : T.ink3 }}>{liked ? '♥' : '♡'} {likeCount > 0 ? likeCount : ''} Like</button>
-          <button onClick={openComments} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:6, fontSize:12.5, fontWeight:700, color:T.ink3 }}>💬 {cCount > 0 ? cCount : ''} Comment</button>
+        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', maxHeight:540, borderRadius:12, marginTop:10, display:'block', background:'#000' }}/> : <img src={post.image_url} style={{ width:'100%', maxHeight:540, objectFit:'cover', borderRadius:12, marginTop:10, display:'block', border:`1px solid ${T.hairline}` }}/>)}
+        <div style={{ display:'flex', gap:4, marginTop:12, paddingTop:8, borderTop:`1px solid ${T.hairline}` }}>
+          <button onClick={toggleLike} onMouseEnter={function(e){ e.currentTarget.style.background=T.bg2; }} onMouseLeave={function(e){ e.currentTarget.style.background='transparent'; }} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:7, fontSize:12.5, fontWeight:700, color: liked ? T.brand : T.ink3, padding:'7px 13px', borderRadius:9, transition:'background .15s' }}>{FeedIco_heart(liked, liked ? T.brand : T.ink3)}<span>{likeCount > 0 ? likeCount + ' ' : ''}Like</span></button>
+          <button onClick={openComments} onMouseEnter={function(e){ e.currentTarget.style.background=T.bg2; }} onMouseLeave={function(e){ e.currentTarget.style.background='transparent'; }} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:7, fontSize:12.5, fontWeight:700, color: showComments ? T.ink : T.ink3, padding:'7px 13px', borderRadius:9, transition:'background .15s' }}>{FeedIco_chat(showComments ? T.ink : T.ink3)}<span>{cCount > 0 ? cCount + ' ' : ''}Comment</span></button>
         </div>
       </div>
       {showComments && (
@@ -244,23 +248,25 @@ function ActivityFeedPage() {
 
           {tab === 'posts' ? (
             <>
-              <Card padding={14} style={{ marginBottom:18 }}>
-                <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="What did you learn today?" rows={3} style={{ width:'100%', border:'none', resize:'vertical', fontSize:14, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit' }}/>
-                {img && <div style={{ marginTop:10, position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:140, borderRadius:10, display:'block' }}/> : <img src={URL.createObjectURL(img)} style={{ maxHeight:140, borderRadius:10, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:6, right:6, width:24, height:24, borderRadius:12, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:13 }}>×</button></div>}
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingTop:10, borderTop:`1px solid ${T.hairline}` }}>
-                  <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+              <Card padding={0} style={{ marginBottom:18, overflow:'hidden' }}>
+                <div style={{ display:'flex', gap:12, padding:'16px 16px 0' }}>
+                  {feedAvatar((typeof window!=='undefined' ? window.__user : null), 40)}
+                  <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="Share something with your Circle…" rows={2} style={{ flex:1, border:'none', resize:'none', fontSize:15, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit', lineHeight:1.55, minHeight:46, paddingTop:9 }}/>
+                </div>
+                {img && <div style={{ padding:'2px 16px 0 68px' }}><div style={{ position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:200, borderRadius:12, display:'block' }}/> : <img src={URL.createObjectURL(img)} style={{ maxHeight:200, borderRadius:12, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:7, right:7, width:26, height:26, borderRadius:13, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:14, lineHeight:1 }}>×</button></div></div>}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', marginTop:12, borderTop:`1px solid ${T.hairline}` }}>
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                     <input ref={composerFileRef} type="file" accept="image/*,video/*" onChange={function (e) { var f = e.target.files && e.target.files[0]; if (f) setImg(f); }} style={{ display:'none' }}/>
-                    <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ background:'transparent', cursor:'pointer', fontSize:13, color:T.ink3, fontWeight:700 }}>📷 Photo / video</button>
-                    <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12.5, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', background:T.card, cursor:'pointer' }}>
-                      <option value="public">🌍 Public</option>
-                      <option value="friends">👥 Friends only</option>
-                    </select>
+                    <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 13px', borderRadius:9, background:T.bg2, cursor:'pointer', fontSize:12.5, color:T.ink2, fontWeight:700 }}>{FeedIco_media(T.ink3)} Media</button>
+                    <div style={{ display:'flex', background:T.bg2, borderRadius:9, padding:3 }}>
+                      {[['public','Public'],['friends','Friends']].map(function (o) { var a = vis===o[0]; return <button key={o[0]} onClick={function () { setVis(o[0]); }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11.5, fontWeight:700, cursor:'pointer', border:'none', background:a?T.card:'transparent', color:a?T.ink:T.ink4, boxShadow:a?'0 1px 2px rgba(0,0,0,.08)':'none' }}>{o[1]}</button>; })}
+                    </div>
                   </div>
                   <Btn label={posting ? 'Posting…' : 'Post'} accent={T.brand} onClick={submit}/>
                 </div>
               </Card>
               {posts === null ? <Card padding={36}><div style={{ color:T.ink3 }}>Loading…</div></Card>
-               : posts.length === 0 ? <Card padding={36}><div style={{ color:T.ink3, fontSize:13.5, lineHeight:1.6 }}>No posts yet. Be the first — share a win, a question, or what you're studying.</div></Card>
+               : posts.length === 0 ? <Card padding={40}><div style={{ textAlign:'center' }}><div style={{ width:52, height:52, borderRadius:26, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>{FeedIco_chat(T.brand)}</div><div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:6 }}>Your Circle is quiet</div><div style={{ fontSize:13.5, color:T.ink4, lineHeight:1.6, maxWidth:320, margin:'0 auto' }}>Be the first to post — share a win, ask a question, or show what you're studying today.</div></div></Card>
                : posts.map(function (p) { return <FeedPostCard key={p.id} post={p}/>; })}
             </>
           ) : (
