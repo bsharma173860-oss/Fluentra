@@ -103,29 +103,29 @@ function MLeaderboardPageV5() {
 }
 
 function MCoursePageV5() {
-  const [unit, setUnit] = useStateMV5b(2);
+  const [unit, setUnit] = useStateMV5b(1);
   const lang = (typeof window !== 'undefined' && window.__activeLang) || { name:'English', accent:T.brand, native:'English' };
   const units = [
-    { i:1, title:'Foundations',     pct:100, status:'done',    lessons:8 },
-    { i:2, title:'Daily life',      pct:62,  status:'active',  lessons:10 },
-    { i:3, title:'Travel',          pct:0,   status:'locked',  lessons:9 },
-    { i:4, title:'Work & study',    pct:0,   status:'locked',  lessons:11 },
-    { i:5, title:'Culture & media', pct:0,   status:'locked',  lessons:8 },
-    { i:6, title:'Advanced topics', pct:0,   status:'locked',  lessons:12 },
+    { i:1, title:'Foundations',     pct:0, status:'active',  lessons:8 },
+    { i:2, title:'Daily life',      pct:0, status:'locked',  lessons:10 },
+    { i:3, title:'Travel',          pct:0, status:'locked',  lessons:9 },
+    { i:4, title:'Work & study',    pct:0, status:'locked',  lessons:11 },
+    { i:5, title:'Culture & media', pct:0, status:'locked',  lessons:8 },
+    { i:6, title:'Advanced topics', pct:0, status:'locked',  lessons:12 },
   ];
   const lessons = [
-    { i:1, title:'Greetings & names',     min:'8 min',  state:'done' },
-    { i:2, title:'At the café',           min:'12 min', state:'done' },
-    { i:3, title:'Asking for directions', min:'14 min', state:'done' },
-    { i:4, title:'Phone conversations',   min:'15 min', state:'done' },
-    { i:5, title:'Weather & weekend',     min:'10 min', state:'done' },
-    { i:6, title:'At the doctor',         min:'18 min', state:'active' },
+    { i:1, title:'Greetings & names',     min:'8 min',  state:'active' },
+    { i:2, title:'At the café',           min:'12 min', state:'next' },
+    { i:3, title:'Asking for directions', min:'14 min', state:'next' },
+    { i:4, title:'Phone conversations',   min:'15 min', state:'next' },
+    { i:5, title:'Weather & weekend',     min:'10 min', state:'next' },
+    { i:6, title:'At the doctor',         min:'18 min', state:'next' },
     { i:7, title:'Shopping & money',      min:'14 min', state:'next' },
     { i:8, title:'Family & friends',      min:'12 min', state:'next' },
     { i:9, title:'Plans for tonight',     min:'16 min', state:'next' },
     { i:10,title:'Unit review',           min:'25 min', state:'next' },
   ];
-  const totalDone = units.filter(u=>u.status==='done').length * 8 + 5;
+  const totalDone = 0;
   const totalAll = units.reduce((a,u)=>a+u.lessons,0);
 
   return (
@@ -137,12 +137,12 @@ function MCoursePageV5() {
         <div style={{ background:T.ink, borderRadius:18, padding:'18px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
           <V5b_dotgrid/>
           <div style={{ position:'relative' }}>
-            <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.55)', marginBottom:8 }}>UNIT 2 · IN PROGRESS</div>
-            <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.05, letterSpacing:'-.02em', marginBottom:6 }}>Daily life</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', lineHeight:1.5, marginBottom:14 }}>Café orders, doctor visits, small talk and weekend plans — vocabulary and grammar you'll use every day.</div>
-            <div style={{ height:5, background:'rgba(255,255,255,.16)', borderRadius:99, marginBottom:8 }}><div style={{ height:'100%', width:'62%', background:lang.accent, borderRadius:99 }}/></div>
+            <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.55)', marginBottom:8 }}>UNIT 1 · START HERE</div>
+            <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.05, letterSpacing:'-.02em', marginBottom:6 }}>Foundations</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', lineHeight:1.5, marginBottom:14 }}>Start with the essentials — greetings, introductions and the everyday basics you build everything on.</div>
+            <div style={{ height:5, background:'rgba(255,255,255,.16)', borderRadius:99, marginBottom:8 }}><div style={{ height:'100%', width:'0%', background:lang.accent, borderRadius:99 }}/></div>
             <div style={{ display:'flex', justifyContent:'space-between', fontSize:10.5, color:'rgba(255,255,255,.65)', fontWeight:600 }}>
-              <span>5 of 10 lessons</span><span>62% complete</span>
+              <span>0 of 8 lessons</span><span>Start</span>
             </div>
           </div>
         </div>
