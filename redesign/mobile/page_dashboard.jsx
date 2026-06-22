@@ -8,6 +8,7 @@ function MDashboard() {
   const longestStreak = langs.length ? Math.max(...langs.map(l => l.streak)) : 0;
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const _firstName = (((typeof window !== 'undefined' && window.__user && window.__user.name) || '').trim().split(' ')[0]) || '';
   const showUnlock = longestStreak >= 9;
   const topLang = langs[0];
   const topT = topLang ? langTheme(topLang.code) : null;
@@ -19,13 +20,18 @@ function MDashboard() {
         <div style={{ padding:'10px 22px 22px' }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:14 }}>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>{greet}, María</div>
+              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>{greet}{_firstName ? ', ' + _firstName : ''}</div>
               <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.02, letterSpacing:'-.02em' }}>Keep the streaks alive.</div>
             </div>
-            <button onClick={()=>nav('notifications')} style={{ width:38, height:38, borderRadius:19, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, flexShrink:0, boxShadow:MT.shadowSm, position:'relative' }}>
-              {Icon.bell ? Icon.bell({ width:15, height:15 }) : Icon.message({ width:15, height:15 })}
-              <span style={{ position:'absolute', top:7, right:9, width:7, height:7, borderRadius:4, background:T.brand, boxShadow:`0 0 0 1.5px ${T.card}` }}/>
-            </button>
+            <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+              <button onClick={()=>nav('notifications')} style={{ width:38, height:38, borderRadius:19, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, flexShrink:0, boxShadow:MT.shadowSm, position:'relative' }}>
+                {Icon.bell ? Icon.bell({ width:15, height:15 }) : Icon.message({ width:15, height:15 })}
+                <span style={{ position:'absolute', top:7, right:9, width:7, height:7, borderRadius:4, background:T.brand, boxShadow:`0 0 0 1.5px ${T.card}` }}/>
+              </button>
+              <button onClick={()=>nav('settings')} aria-label="Profile and settings" style={{ width:38, height:38, borderRadius:19, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, flexShrink:0, boxShadow:MT.shadowSm }}>
+                {Icon.user ? Icon.user({ width:15, height:15 }) : (Icon.cog ? Icon.cog({ width:15, height:15 }) : '\u2699')}
+              </button>
+            </div>
           </div>
           <div style={{ display:'flex', gap:24, alignItems:'center', marginTop:16, paddingTop:14, borderTop:`1px solid ${T.hairline}` }}>
             <div>
@@ -96,7 +102,7 @@ function MDashboard() {
             {Icon.plus ? Icon.plus({ width:10, height:10 }) : '+'} Add
           </button>
         </div>
-        <div style={{ padding:'0 18px', display:'flex', flexDirection:'column', gap:14, marginBottom:22 }}>
+        <div style={{ padding:'0 18px', display:'flex', flexDirection:'column', gap:18, marginBottom:24 }}>
           {langs.map(l => <MDashLangCard key={l.code} lang={l}/>)}
         </div>
 

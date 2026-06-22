@@ -119,8 +119,6 @@ body[data-fl-ready] #fl-splash{
 <script type="text/babel" src="redesign/mobile/page_progress.jsx"></script>
 <script type="text/babel" src="redesign/mobile/page_exams.jsx"></script>
 <script type="text/babel" src="redesign/mobile/page_sessions.jsx"></script>
-<script type="text/babel" src="redesign/mobile/page_aux_w4.jsx"></script>
-<script type="text/babel" src="redesign/mobile/page_aux_w4_tier2.jsx"></script>
 <script type="text/babel" src="redesign/mobile/page_v5_part1.jsx"></script>
 <script type="text/babel" src="redesign/mobile/page_v5_part2.jsx"></script>
 <script type="text/babel" src="redesign/mobile/page_v5_batch1.jsx"></script>
@@ -526,9 +524,9 @@ function App() {
     };
     window.__back = () => {
       setHistory(h => {
-        if (h.length === 0) return h;
+        if (h.length === 0) { setPage('dashboard'); window.__page = 'dashboard'; return h; }
         const prev = h[h.length - 1];
-        setPage(prev);
+        setPage(prev); window.__page = prev;
         return h.slice(0, -1);
       });
     };

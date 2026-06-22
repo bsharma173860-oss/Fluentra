@@ -138,35 +138,44 @@ function MobileTabBar({ active='home', onNav }) {
 }
 
 // Mobile header — large-title iOS style with optional eyebrow + collapse.
-function MobileHeader({ title, eyebrow, back, onBack, right, large=false, dark=false }) {
+function MobileHeader({ title, eyebrow, back, onBack, right, large=false, dark=false, hideNav=false }) {
   const fg  = dark ? '#fff' : MT.ink;
   const sub = dark ? 'rgba(255,255,255,.62)' : MT.ink4;
   const btnBg = dark ? 'rgba(255,255,255,.10)' : MT.card;
-  return (
-    <div style={{ padding: large ? '8px 22px 14px' : '4px 14px 10px', flexShrink:0 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:10, minHeight:40 }}>
-        {back && (
-          <button onClick={onBack} style={{
-            width:38, height:38, borderRadius:19,
-            background:btnBg,
-            border: dark ? 'none' : `1px solid ${MT.hairline}`,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            color:fg, boxShadow: dark ? 'none' : MT.shadowSm,
-          }}>
-            {Icon.arrowL()}
-          </button>
-        )}
-        {!large && <div style={{ flex:1, fontSize:16, fontWeight:700, color:fg, textAlign:'center', letterSpacing:'-.01em' }}>{title}</div>}
-        {!large && right && <div style={{ marginLeft:'auto' }}>{right}</div>}
-        {!large && back && <div style={{ width:38 }}/>}
-        {large && <div style={{ marginLeft:'auto' }}>{right}</div>}
-      </div>
-      {large && (
+  const isSettings = (typeof window !== 'undefined' && window.__page === 'settings');
+  const showBack = back !== false && (large ? !!back : true);
+  const goBack = onBack || function(){ if (window.__back) window.__back(); else if (window.__nav) window.__nav('dashboard'); };
+  function HBtn({ onClick, label, children }) {
+    return (
+      <button onClick={onClick} aria-label={label} style={{ width:38, height:38, borderRadius:19, background:btnBg, border: dark ? 'none' : '1px solid ' + MT.hairline, display:'flex', alignItems:'center', justifyContent:'center', color:fg, boxShadow: dark ? 'none' : MT.shadowSm, flexShrink:0 }}>{children}</button>
+    );
+  }
+  const profileBtn = (!hideNav && !isSettings)
+    ? <HBtn onClick={function(){ window.__nav && window.__nav('settings'); }} label="Profile and settings">{Icon.user ? Icon.user({ width:16, height:16 }) : (Icon.cog ? Icon.cog({ width:16, height:16 }) : '\u2699')}</HBtn>
+    : null;
+  const rightCluster = <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>{right}{profileBtn}</div>;
+
+  if (large) {
+    return (
+      <div style={{ padding:'8px 22px 14px', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, minHeight:40 }}>
+          {showBack && <HBtn onClick={goBack} label="Back">{Icon.arrowL()}</HBtn>}
+          <div style={{ marginLeft:'auto' }}>{rightCluster}</div>
+        </div>
         <div style={{ marginTop:10 }}>
           {eyebrow && <div style={{ fontSize:11, fontWeight:700, color:sub, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>{eyebrow}</div>}
           <div style={{ fontFamily:T.serif, fontSize:MT.fzDisplay, color:fg, lineHeight:1.02, letterSpacing:'-.02em' }}>{title}</div>
         </div>
-      )}
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding:'4px 14px 10px', flexShrink:0 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, minHeight:40 }}>
+        {showBack ? <HBtn onClick={goBack} label="Back">{Icon.arrowL()}</HBtn> : <div style={{ width:38, flexShrink:0 }}/>}
+        <div style={{ flex:1, minWidth:0, fontSize:16, fontWeight:700, color:fg, textAlign:'center', letterSpacing:'-.01em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{title}</div>
+        {rightCluster}
+      </div>
     </div>
   );
 }
