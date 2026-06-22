@@ -9,7 +9,11 @@ function MLangDetail() {
   const pk  = (typeof langPack === 'function') ? langPack(lang.code) : null;
   const ex  = (typeof examFor === 'function') ? examFor(lang.code) : null;
   const nav = (id) => window.__nav && window.__nav(id);
-  const goal = cnt?.weeklyGoal || { done:4, target:7 };
+  const _rows = (typeof window !== 'undefined' && window.__results) ? window.__results.filter(r => r.lang === code) : [];
+  const _weekAgo = Date.now() - 7 * 86400000;
+  const goal = { done: _rows.filter(r => r.updated_at && new Date(r.updated_at).getTime() >= _weekAgo).length, target: 7 };
+  const _bestScore = _rows.filter(r => typeof r.score === 'number').reduce((m, r) => Math.max(m, r.score), 0);
+  const _realStreak = (typeof computeStreak === 'function') ? computeStreak(_rows) : ((typeof window !== 'undefined' && window.__user && window.__user.streak) || 0);
 
   const allMods = [
     { ic:'mic',  c:T.speaking,  title:'Speaking',  sub:'4-min monologue', n:'speaking', key:'speaking' },
@@ -19,7 +23,9 @@ function MLangDetail() {
   ];
   const mods = cnt?.hideSpeaking ? allMods.filter(m => m.key !== 'speaking') : allMods;
   const score = pk?.score || '—';
-  const lessons = (cnt?.currentLessons || []).slice(0, 3);
+  const _syl = (typeof lessonSyllabus === 'function') ? lessonSyllabus() : [];
+  const _flat = []; _syl.forEach(function (u) { (u.lessons || []).forEach(function (title) { _flat.push({ title: title, unit: u.unit, level: u.level }); }); });
+  const lessons = _flat.slice(0, 3);
 
   return (
     <>
@@ -49,20 +55,20 @@ function MLangDetail() {
                 <span style={{ fontSize:10, fontWeight:700, color:'#fff', background:'rgba(255,255,255,.18)', padding:'4px 10px', borderRadius:99, letterSpacing:'.06em', textTransform:'uppercase' }}>{lang.level}</span>
               </div>
               <div style={{ fontFamily:T.serif, fontSize:42, lineHeight:1, marginBottom:5, letterSpacing:'-.02em' }}>{lang.native}</div>
-              <div style={{ fontSize:12.5, opacity:.85, fontWeight:500 }}>{lang.english} · started {cnt?.startedDays || 148} days ago</div>
+              <div style={{ fontSize:12.5, opacity:.85, fontWeight:500 }}>{lang.english} · {_rows.length} session{_rows.length === 1 ? '' : 's'}</div>
 
               {/* Stat row inside hero */}
               <div style={{ display:'flex', gap:18, alignItems:'center', marginTop:22, paddingTop:18, borderTop:'1px solid rgba(255,255,255,.22)' }}>
                 <div>
                   <div style={{ display:'flex', alignItems:'baseline', gap:4 }}>
-                    <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1 }}>{lang.streak}</div>
+                    <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1 }}>{_realStreak}</div>
                     <div style={{ fontSize:12, opacity:.75, fontWeight:600 }}>days</div>
                   </div>
                   <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', opacity:.85, marginTop:4 }}>Streak</div>
                 </div>
                 <div style={{ width:1, alignSelf:'stretch', background:'rgba(255,255,255,.25)' }}/>
                 <div>
-                  <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1 }}>{ex?.bestScore ?? '—'}</div>
+                  <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1 }}>{_bestScore > 0 ? _bestScore + '%' : '—'}</div>
                   <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', opacity:.85, marginTop:4 }}>Best {ex?.scoreLabel || 'score'}</div>
                 </div>
               </div>
@@ -123,7 +129,7 @@ function MLangDetail() {
             {lessons.length === 0 ? (
               <div style={{ padding:'18px 16px', fontSize:12, color:T.ink4, textAlign:'center' }}>No active lessons</div>
             ) : lessons.map((row, i, all) => (
-              <button key={i} onClick={()=>nav('lesson_detail')} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 16px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', background:'transparent' }}>
+              <button key={i} onClick={()=>{ window.__lessonTopic = { title:row.title, unit:row.unit, level:row.level }; nav('lesson_detail'); }} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 16px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', background:'transparent' }}>
                 <div style={{ width:34, height:34, borderRadius:10, background:t.bg, color:t.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                   {Icon.book({ width:14, height:14 })}
                 </div>
