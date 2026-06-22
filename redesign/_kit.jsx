@@ -692,12 +692,16 @@ function useGenContent(skill) {
         var raw = d && d.content && d.content.payload;
         var over = _normSession(skill, raw);
         if (over) {
+          if (typeof window !== 'undefined') window.__genErr = null;
           var base = (typeof _sc === 'function') ? _sc(skill) : {};
           var merged = Object.assign({}, base, over);
           window.__sessionGen[key] = merged; setV(merged);
-        } else { setV('err'); }
+        } else {
+          if (typeof window !== 'undefined') window.__genErr = (d && d.error) ? (d.error + (d.detail ? (': ' + d.detail) : '')) : 'unexpected response';
+          setV('err');
+        }
       })
-      .catch(function () { if (!cancelled) setV('err'); });
+      .catch(function (e) { if (!cancelled) { if (typeof window !== 'undefined') window.__genErr = 'network: ' + String(e && e.message || e); setV('err'); } });
     return function () { cancelled = true; };
   }, [key]);
   return v; // null = loading, 'err' = use static fallback, object = real content
@@ -723,6 +727,15 @@ function MGenLoading(props) {
   );
 }
 if (typeof window !== 'undefined') window.MGenLoading = MGenLoading;
+
+// Honest, non-blocking note shown ONLY when live generation failed and the
+// session is falling back to a sample. window.__genErr carries the reason.
+function MGenNote() {
+  var err = (typeof window !== 'undefined') ? window.__genErr : null;
+  if (!err) return null;
+  return <div style={{ margin:'0 14px 8px', padding:'8px 11px', borderRadius:9, background:'#FBEED9', border:'1px solid #E6C58E', fontSize:11, color:'#8A5A1E', lineHeight:1.4 }}>Showing a sample for now — live AI content couldn’t be generated. Tap to retry, or check that the API key is set.</div>;
+}
+if (typeof window !== 'undefined') window.MGenNote = MGenNote;
 
 Object.assign(window, {
   T, LANGUAGES, USER, Flag, Icon, Ring, EXAMS, examFor, CATALOG_EXAMS, langPack,

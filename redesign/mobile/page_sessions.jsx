@@ -41,6 +41,7 @@ function MReadingSession() {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:MT.bg }}>
       <MSessionHeader title={_r.title} eyebrow="READING · IELTS" progress={progress} timeLeft={2180} color={T.reading.c}/>
+      {typeof MGenNote === 'function' && <MGenNote/>}
       {/* Tab toggle */}
       <div style={{ flexShrink:0, padding:'10px 14px 0', background:MT.bg }}>
         <div style={{ display:'flex', gap:0, background:MT.bg2, borderRadius:10, padding:3 }}>
@@ -133,6 +134,7 @@ function MListeningSession() {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:MT.bg, position:'relative' }}>
       <MSessionHeader title={_l.title} eyebrow={`LISTENING · ${_l.sectionLabel || 'Section 3'}`} progress={progress} timeLeft={1820} color={T.listening.c}/>
+      {typeof MGenNote === 'function' && <MGenNote/>}
 
       {/* Player card */}
       <div style={{ flexShrink:0, padding:'14px 14px 0' }}>
@@ -227,6 +229,7 @@ function MSpeakingSession() {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:`linear-gradient(180deg, ${T.speaking.bg} 0%, ${MT.bg} 60%)`, position:'relative' }}>
       <MSessionHeader title={_s.title} eyebrow={`SPEAKING · ${_s.partLabel || 'Part 2'}`} progress={phase === 'done' ? 100 : phase === 'recording' ? ringPct : 20} timeLeft={120} color={T.speaking.c}/>
+      {typeof MGenNote === 'function' && <MGenNote/>}
 
       <div style={{ flex:1, overflow:'auto', padding:'18px 18px 130px', display:'flex', flexDirection:'column' }}>
         {/* Cue card */}
@@ -322,6 +325,7 @@ function MWritingSession() {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%', background:MT.bg, position:'relative' }}>
       <MSessionHeader title={task === 'task1' ? _w.task1Title : _w.task2Title} eyebrow={`WRITING · ${task.toUpperCase()}`} progress={pct} timeLeft={task === 'task1' ? 1180 : 2380} color={T.writing.c}/>
+      {typeof MGenNote === 'function' && <MGenNote/>}
 
       {/* Task switch + tabs */}
       <div style={{ flexShrink:0, padding:'10px 14px 0', background:MT.bg, display:'flex', flexDirection:'column', gap:8 }}>

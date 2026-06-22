@@ -87,9 +87,11 @@ module.exports = async function handler(req, res) {
 
   var ANTHROPIC = process.env.ANTHROPIC_API_KEY;
   var SB_URL = process.env.SUPABASE_URL;
-  var SB_KEY = process.env.SUPABASE_SERVICE_KEY;
-  if (!ANTHROPIC || !SB_URL || !SB_KEY) {
-    return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY' });
+  var SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  // Only Anthropic is required to GENERATE content. Supabase is used to cache/persist
+  // the result, but a DB problem must never block content from reaching the learner.
+  if (!ANTHROPIC) {
+    return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' });
   }
 
   try {
@@ -116,15 +118,21 @@ module.exports = async function handler(req, res) {
     var payload;
     try { payload = JSON.parse(raw); } catch (e) { return res.status(502).json({ error: 'bad JSON from model', raw: raw.slice(0, 400) }); }
 
-    // Save to the pooled content table, tagged with lang
-    var row = { lang: lang, type: type, difficulty: difficulty, exam: exam, title: payload.title || null, payload: payload };
-    var sResp = await fetch(SB_URL + '/rest/v1/content', {
-      method: 'POST',
-      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-      body: JSON.stringify(row),
-    });
-    if (!sResp.ok) return res.status(502).json({ error: 'save failed', detail: (await sResp.text()).slice(0, 300) });
-    var saved = (await sResp.json())[0];
+    // Persist to the pooled content table (best-effort). A DB failure must NOT
+    // discard freshly generated content — return it either way.
+    var saved = null;
+    if (SB_URL && SB_KEY) {
+      try {
+        var row = { lang: lang, type: type, difficulty: difficulty, exam: exam, title: payload.title || null, payload: payload };
+        var sResp = await fetch(SB_URL + '/rest/v1/content', {
+          method: 'POST',
+          headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+          body: JSON.stringify(row),
+        });
+        if (sResp.ok) { var arr = await sResp.json(); saved = (arr && arr[0]) || null; }
+      } catch (e) { /* persistence is optional */ }
+    }
+    if (!saved) saved = { lang: lang, type: type, difficulty: difficulty, exam: exam, title: payload.title || null, payload: payload };
 
     return res.status(200).json({ content: saved });
   } catch (e) {
