@@ -539,7 +539,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b81-honest-notifs';
+    window.__FL_BUILD = 'b82-real-mobile-vocab';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

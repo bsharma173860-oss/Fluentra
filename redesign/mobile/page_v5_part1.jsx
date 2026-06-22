@@ -358,20 +358,48 @@ function MVocabPageV5() {
   const [cardIdx, setCardIdx] = useStateMV5(0);
   const [flipped, setFlipped] = useStateMV5(false);
   const nav = (id) => window.__nav && window.__nav(id);
-  const decks = [
-    { name:'Travel & food',     count:48,  due:12, lang:'EN', mastery:78, c:T.brand },
-    { name:'Verbi irregolari',  count:120, due:34, lang:'IT', mastery:42, c:'#5A9C7A' },
-    { name:'Business JP',       count:85,  due:8,  lang:'JP', mastery:65, c:'#7C5BD6' },
-    { name:'Academic vocab',    count:200, due:0,  lang:'EN', mastery:91, c:'#2A6FA0' },
-  ];
-  const cards = [
-    { front:'partir',     back:'to leave',                meta:'verb · French',         ex:'Je pars demain matin.' },
-    { front:'umbrella',   back:'paraguas',                meta:'noun · Spanish',        ex:'Brought an umbrella just in case.' },
-    { front:'頑張って',     back:'good luck / do your best', meta:'expression · Japanese', ex:'試験頑張って!' },
-  ];
-
+  const _vcode = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const [words, setWords] = React.useState([]);
+  const [srs, setSrs] = React.useState({});
+  const [vloading, setVloading] = React.useState(true);
+  React.useEffect(function () {
+    var cancelled = false;
+    (async function () {
+      var states = {};
+      try { if (window.FL && window.FL.srsStates) states = (await window.FL.srsStates(_vcode).catch(function(){return {};})) || {}; } catch(e){}
+      var items = [];
+      try { var r = await fetch('/api/content-list?lang=' + encodeURIComponent(_vcode) + '&type=vocab&full=1&limit=10'); var d = await r.json(); items = (d && d.items) || []; } catch(e){}
+      if (!items.length) { try { var gr = await fetch('/api/generate-content', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ lang:_vcode, type:'vocab', difficulty:'medium' }) }); var gen = await gr.json(); if (gen && gen.content) items = [gen.content]; } catch(e){} }
+      if (cancelled) return;
+      var out = [];
+      items.forEach(function (it) { ((it.payload && it.payload.words) || []).forEach(function (w) { if (w && w.term) out.push({ term:w.term, en:w.en||'', reading:w.reading||'', example:w.example||'' }); }); });
+      setSrs(states); setWords(out); setVloading(false);
+    })();
+    return function(){ cancelled = true; };
+  }, []);
+  const _vnow = Date.now();
+  const _isDue = function (term) { var st = srs[_vcode + '::' + term]; return !st || !st.due || new Date(st.due).getTime() <= _vnow; };
+  const _reps = function (term) { var st = srs[_vcode + '::' + term]; return (st && st.reps) || 0; };
+  const dueWords = words.filter(function (w) { return _isDue(w.term); });
+  const masteredWords = words.filter(function (w) { return _reps(w.term) >= 3; });
+  const studyWords = dueWords.length ? dueWords : words;
+  const cards = studyWords.map(function (w) { return { term:w.term, front:w.term, back:w.en, meta:(w.reading ? w.reading + ' · ' : '') + _vcode.toUpperCase(), ex:w.example }; });
+  const _newN = words.filter(function (w) { return !srs[_vcode + '::' + w.term]; }).length;
+  const _revN = words.filter(function (w) { return srs[_vcode + '::' + w.term] && _isDue(w.term); }).length;
+  const _learnN = Math.max(0, dueWords.length - _revN);
+  const _masteryPct = words.length ? Math.round(masteredWords.length / words.length * 100) : 0;
+  const _langName = (typeof langByCode === 'function' && langByCode(_vcode) && langByCode(_vcode).english) || _vcode.toUpperCase();
+  const decks = words.length ? [{ name:_langName + ' vocabulary', count:words.length, due:dueWords.length, lang:_vcode.toUpperCase(), mastery:_masteryPct, c:T.brand }] : [];
+  const _allCards = words.map(function (w) { var has = srs[_vcode + '::' + w.term]; return { f:w.term, b:w.en, m:_vcode.toUpperCase() + (w.reading ? ' · ' + w.reading : ''), d: has ? (_isDue(w.term) ? 'Due' : 'Learning') : 'New' }; });
+  function _grade(label) {
+    var card = cards[cardIdx] || cards[0]; if (!card) return;
+    var q = label === 'Again' ? 1 : label === 'Hard' ? 3 : label === 'Easy' ? 5 : 4;
+    try { if (window.FL && window.FL.srsSchedule) { var cur = srs[_vcode + '::' + card.term] || null; var ns = window.FL.srsSchedule(cur, q); if (window.FL.srsSave) window.FL.srsSave(_vcode, card.term, ns); setSrs(function (m) { var cc = Object.assign({}, m || {}); cc[_vcode + '::' + card.term] = Object.assign({ card:_vcode + '::' + card.term }, ns); return cc; }); } } catch(e){}
+    setFlipped(false); setCardIdx(function (i) { return (i + 1) % Math.max(cards.length, 1); });
+  }
   if (studying) {
-    const c = cards[cardIdx];
+    const c = cards[cardIdx] || cards[0];
+    if (!c) return (<><MobileHeader back onBack={()=>setStudying(false)} title="Studying"/><MobileBody padding={[10,16,30]} tabBarPad={false}><MCard style={{ padding:'34px 20px', textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:6 }}>All caught up</div><div style={{ fontSize:12.5, color:T.ink4 }}>No cards to review right now — finish a lesson to add more.</div></MCard></MobileBody></>);
     return (
       <>
         <MobileHeader back onBack={()=>setStudying(false)} title="Studying"/>
@@ -391,7 +419,7 @@ function MVocabPageV5() {
           {flipped && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:7, marginTop:14 }}>
               {[{l:'Again',sub:'<1m',c:'#D26890'},{l:'Hard',sub:'10m',c:'#E08F4D'},{l:'Good',sub:'1d',c:'#5A9C7A'},{l:'Easy',sub:'4d',c:'#2A6FA0'}].map(b => (
-                <button key={b.l} onClick={()=>{ setFlipped(false); setCardIdx(i => (i+1) % cards.length); }} style={{ padding:'11px 5px', borderRadius:11, background:T.card, border:`1.5px solid ${b.c}`, color:b.c, boxShadow:MT.shadowSm }}>
+                <button key={b.l} onClick={()=>_grade(b.l)} style={{ padding:'11px 5px', borderRadius:11, background:T.card, border:`1.5px solid ${b.c}`, color:b.c, boxShadow:MT.shadowSm }}>
                   <div style={{ fontSize:12, fontWeight:700 }}>{b.l}</div>
                   <div style={{ fontSize:9.5, opacity:.75, fontWeight:600, marginTop:1 }}>{b.sub}</div>
                 </button>
@@ -407,7 +435,7 @@ function MVocabPageV5() {
     <>
       <MobileHeader title="Vocabulary" right={<button onClick={()=>nav('search')} style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.search({width:13,height:13})}</button>}/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5_pre eyebrow={`${decks.reduce((a,d)=>a+d.due,0)} CARDS DUE TODAY`} title="Vocabulary" lede="Spaced-repetition decks across all your languages — review now to keep them sticky."/>
+        <V5_pre eyebrow={dueWords.length + ' CARDS DUE TODAY'} title="Vocabulary" lede="Spaced-repetition decks across all your languages — review now to keep them sticky."/>
         {/* Today's review hero — dark */}
         <button onClick={()=>setStudying(true)} style={{ width:'100%', textAlign:'left', background:T.ink, borderRadius:18, padding:'20px 18px', color:'#fff', position:'relative', overflow:'hidden', marginBottom:14, border:'none', cursor:'pointer' }}>
           <V5_dotgrid/>
@@ -415,13 +443,13 @@ function MVocabPageV5() {
             <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', textTransform:'uppercase', color:'rgba(255,255,255,.55)', marginBottom:7 }}>TODAY'S REVIEW</div>
             <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:14 }}>
               <div>
-                <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1, letterSpacing:'-.02em' }}>54 cards</div>
-                <div style={{ fontSize:11.5, color:'rgba(255,255,255,.55)', marginTop:5 }}>3 decks · ~12 minutes</div>
+                <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1, letterSpacing:'-.02em' }}>{dueWords.length} cards</div>
+                <div style={{ fontSize:11.5, color:'rgba(255,255,255,.55)', marginTop:5 }}>{vloading ? 'Loading your words…' : (dueWords.length ? 'Tap to review' : 'All caught up')}</div>
               </div>
               <div style={{ width:40, height:40, borderRadius:20, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 6px 14px ${T.brand}55`, flexShrink:0 }}>{Icon.play ? Icon.play({width:13,height:13}) : '▶'}</div>
             </div>
             <div style={{ display:'flex', gap:14, marginTop:14, paddingTop:12, borderTop:'1px solid rgba(255,255,255,.10)' }}>
-              {[{l:'NEW',v:18},{l:'LEARN',v:12},{l:'REVIEW',v:24}].map(s => (
+              {[{l:'NEW',v:_newN},{l:'LEARN',v:_learnN},{l:'REVIEW',v:_revN}].map(s => (
                 <div key={s.l}><div style={{ fontFamily:T.serif, fontSize:18, lineHeight:1 }}>{s.v}</div><div style={{ fontSize:9, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.1em', marginTop:3 }}>{s.l}</div></div>
               ))}
             </div>
@@ -465,13 +493,7 @@ function MVocabPageV5() {
         </>}
         {tab === 'all' && (
           <MCard style={{ padding:0, overflow:'hidden' }}>
-            {[
-              { f:'partir',      b:'to leave',     m:'FR · verb', d:'2d ago' },
-              { f:'umbrella',    b:'paraguas',     m:'ES · noun', d:'New' },
-              { f:'頑張って',      b:'good luck',    m:'JP · expr', d:'1d ago' },
-              { f:'irrespective',b:'sin importar', m:'EN · adv',  d:'Mastered' },
-              { f:'amaneció',    b:'dawned',       m:'ES · verb', d:'Due today' },
-            ].map((c, i) => (
+            {_allCards.map((c, i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
@@ -488,7 +510,7 @@ function MVocabPageV5() {
         {tab === 'mastered' && (
           <MCard style={{ padding:'24px 20px', textAlign:'center' }}>
             <div style={{ width:54, height:54, borderRadius:27, background:'#E2EEDF', color:'#5A9C7A', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>{Icon.check ? Icon.check({width:22,height:22}) : '✓'}</div>
-            <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, marginBottom:5, letterSpacing:'-.02em' }}>362 mastered</div>
+            <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, marginBottom:5, letterSpacing:'-.02em' }}>{masteredWords.length} mastered</div>
             <div style={{ fontSize:12, color:T.ink4, lineHeight:1.5, marginBottom:14 }}>Fully learned cards. They re-surface every 30+ days for retention.</div>
             <button style={{ padding:'9px 16px', borderRadius:10, background:T.bg2, color:T.ink2, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}` }}>Review mastered</button>
           </MCard>
