@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fluentra — Speak it. Score it. Own it.</title>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/icon.png">
@@ -559,18 +559,28 @@ function App() {
     window.addEventListener('resize', r); return () => window.removeEventListener('resize', r);
   }, []);
 
-  const isMobile = device === 'mobile';
-  const W = isMobile ? 390 : vp.w;       // desktop now fills the browser width
-  const H = isMobile ? 844 : vp.h;       // and the full viewport height
+  const isPhone = vp.w < 768;                     // actual phone / narrow viewport
+  const isMobile = device === 'mobile' || isPhone; // render the mobile app on phones
+  const framed = isMobile && !isPhone;             // desktop previewing mobile in a phone mockup
+  const W = framed ? 390 : vp.w;
+  const H = framed ? 844 : vp.h;
   const margin = 48 + 100;
-  const scale = isMobile ? Math.min(1, (vp.w - 80) / 390, (vp.h - margin) / 844) : 1;
+  const scale = framed ? Math.min(1, (vp.w - 80) / 390, (vp.h - margin) / 844) : 1;
 
   const renderFrame = () => {
     if (isMobile) {
+      if (framed) {
+        return (
+          <MobileFrame>
+            <ErrorBoundary key={page + navTick}>{MOBILE_PAGES[page]()}</ErrorBoundary>
+          </MobileFrame>
+        );
+      }
+      // Actual phone — render the mobile app full-screen (no fake bezel / notch / status bar)
       return (
-        <MobileFrame>
+        <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative', paddingTop:'env(safe-area-inset-top)', paddingBottom:'env(safe-area-inset-bottom)', boxSizing:'border-box', background:'radial-gradient(520px 380px at 6% -10%, rgba(255,142,98,0.54), transparent 58%), radial-gradient(480px 380px at 104% -2%, rgba(132,142,255,0.46), transparent 56%), radial-gradient(480px 480px at 50% 120%, rgba(108,212,164,0.38), transparent 60%), linear-gradient(150deg,#F6F1EA,#EAE4DB)' }}>
           <ErrorBoundary key={page + navTick}>{MOBILE_PAGES[page]()}</ErrorBoundary>
-        </MobileFrame>
+        </div>
       );
     }
     const fullBleed = page === 'marketing' || page === 'auth_login' || page === 'auth_signup' || page === 'auth_onboarding' || page === 'otp' || page === 'forgot_pw' || page.startsWith('new_');
@@ -583,7 +593,7 @@ function App() {
   };
 
   return (
-    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', background: isMobile ? '#EDEAE3' : '#F9F8F5', padding: isMobile ? '40px 40px 40px' : '0', overflow:'auto' }}>
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', background: framed ? '#EDEAE3' : '#F9F8F5', padding: framed ? '40px 40px 40px' : '0', overflow: framed ? 'auto' : 'hidden' }}>
       {!splashGone && <Splash/>}
       <FLBanner/>
       <div style={{ width:W*scale, height:H*scale, flexShrink:0 }}>

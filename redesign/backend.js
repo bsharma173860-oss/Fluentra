@@ -543,7 +543,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b96-discover-recent-real';
+    window.__FL_BUILD = 'b97-mobile-fullscreen';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
