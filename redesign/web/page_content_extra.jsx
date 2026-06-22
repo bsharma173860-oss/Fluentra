@@ -1,116 +1,139 @@
 // ── Lesson detail (video + transcript) + Article reader ──────────
 
 function LessonDetailPage() {
+  const topic = (typeof window !== 'undefined' && window.__lessonTopic) || { title:'Practice', level:'' };
+  const lang  = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const langName = (typeof langByCode === 'function' && langByCode(lang) && langByCode(lang).english) || lang.toUpperCase();
+  const [words, setWords]     = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [err, setErr]         = React.useState(false);
+  const [idx, setIdx]         = React.useState(0);
+  const [picked, setPicked]   = React.useState(null);
+  const [correctN, setCorrectN] = React.useState(0);
+  const [done, setDone]       = React.useState(false);
+  const [reload, setReload]   = React.useState(0);
+
+  React.useEffect(function () {
+    var cancelled = false; setLoading(true); setErr(false);
+    setIdx(0); setPicked(null); setCorrectN(0); setDone(false);
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ lang: lang, type:'vocab', difficulty:'medium', topic: topic.title }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (cancelled) return;
+        var ws = (d && d.content && d.content.payload && d.content.payload.words) || [];
+        var usable = ws.filter(function (w) { return w && w.term && w.example && w.example.toLowerCase().indexOf(String(w.term).toLowerCase()) >= 0; });
+        if (!usable.length) { setErr(true); setLoading(false); return; }
+        setWords(usable.slice(0, 8)); setLoading(false);
+      })
+      .catch(function () { if (!cancelled) { setErr(true); setLoading(false); } });
+    return function () { cancelled = true; };
+  }, [reload]);
+
+  function saveResult(pct) {
+    try {
+      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
+      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      if (token) fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+        body: JSON.stringify({ lang: lang, score: pct, detail:{ module:'lesson', topic: topic.title, unit:'%' } }) }).catch(function(){});
+    } catch (e) {}
+  }
+
+  const total = words.length;
+  const w = words[idx] || null;
+  // Build the cloze: blank the target word in its example sentence
+  const blanked = w ? w.example.replace(new RegExp(String(w.term).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'i'), '_____') : '';
+  // Options: correct term + 3 deterministic distractors from the set
+  const options = w ? (function () {
+    var opts = [w.term];
+    for (var k = 1; k < words.length && opts.length < 4; k++) { var cand = words[(idx + k) % words.length].term; if (opts.indexOf(cand) < 0) opts.push(cand); }
+    // stable shuffle by idx so the answer isn't always first
+    var shift = idx % opts.length;
+    return opts.slice(shift).concat(opts.slice(0, shift));
+  })() : [];
+
+  function pick(opt) {
+    if (picked) return;
+    setPicked(opt);
+    if (opt === w.term) setCorrectN(function (n) { return n + 1; });
+  }
+  function next() {
+    if (idx + 1 >= total) { var pct = Math.round((correctN / Math.max(total,1)) * 100); saveResult(pct); setDone(true); }
+    else { setIdx(function (i) { return i + 1; }); setPicked(null); }
+  }
+
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'24px 40px 60px' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11.5, color:T.ink4, marginBottom:14 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11.5, color:T.ink4, marginBottom:18 }}>
           <span data-nav="course" style={{ cursor:'pointer' }}>Course</span>
           <span>›</span>
-          <span data-nav="course" style={{ cursor:'pointer' }}>Unit 4 · Past tenses</span>
-          <span>›</span>
-          <span style={{ color:T.ink, fontWeight:700 }}>Lesson 12 · Pretérito vs Imperfecto</span>
+          <span style={{ color:T.ink, fontWeight:700 }}>{topic.title}</span>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:24 }}>
-          <div>
-            {/* Video player */}
-            <div style={{ position:'relative', aspectRatio:'16/9', borderRadius:16, overflow:'hidden', background:T.ink, marginBottom:18 }}>
-              <div style={{ position:'absolute', inset:0, background:`linear-gradient(135deg, ${T.brand}33, ${T.ink} 70%)` }}/>
-              <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <button style={{ width:84, height:84, borderRadius:42, background:'rgba(255,255,255,.95)', color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 20px 60px rgba(0,0,0,.4)' }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                </button>
+        <div style={{ maxWidth:680, margin:'0 auto' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Complete the sentence · {langName}</div>
+          <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.15, color:T.ink, marginBottom:18 }}>{topic.title}</div>
+
+          {loading && (
+            <Card padding={40} style={{ textAlign:'center' }}>
+              <div style={{ fontSize:14, color:T.ink3 }}>Building your {langName} lesson…</div>
+            </Card>
+          )}
+
+          {!loading && err && (
+            <Card padding={36} style={{ textAlign:'center' }}>
+              <div style={{ fontSize:15, color:T.ink, fontWeight:700, marginBottom:6 }}>Couldn't build this lesson</div>
+              <div style={{ fontSize:13, color:T.ink4, marginBottom:16 }}>Something went wrong generating practice for {langName}.</div>
+              <Btn label="Try again" accent={T.brand} onClick={function(){ setReload(function(x){return x+1;}); }}/>
+            </Card>
+          )}
+
+          {!loading && !err && !done && w && (
+            <div>
+              <div style={{ height:5, background:T.bg2, borderRadius:99, overflow:'hidden', marginBottom:20 }}>
+                <div style={{ height:'100%', width:((idx)/total*100)+'%', background:T.brand, borderRadius:99, transition:'width .25s' }}/>
               </div>
-              <div style={{ position:'absolute', top:14, left:14, padding:'4px 10px', background:'rgba(0,0,0,.55)', color:'#fff', fontSize:11, fontWeight:700, borderRadius:6, display:'flex', alignItems:'center', gap:6 }}>
-                <span style={{ width:6, height:6, borderRadius:3, background:'#FF3B30' }}/>HD · Native speaker
+              <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.1em', marginBottom:10 }}>SENTENCE {idx+1} OF {total}</div>
+              <Card padding={28} style={{ marginBottom:16 }}>
+                <div style={{ fontSize:21, color:T.ink, lineHeight:1.55, fontFamily:T.serif }}>{blanked}</div>
+                {picked && <div style={{ fontSize:13, color:T.ink4, marginTop:12, lineHeight:1.5 }}>“{w.example}” — {w.en}</div>}
+              </Card>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                {options.map(function (opt) {
+                  var isCorrect = opt === w.term;
+                  var state = !picked ? 'idle' : (isCorrect ? 'correct' : (opt === picked ? 'wrong' : 'idle'));
+                  var bg = state==='correct' ? T.listening.bg : state==='wrong' ? T.speaking.bg : T.card;
+                  var bd = state==='correct' ? T.listening.c : state==='wrong' ? T.speaking.c : T.border;
+                  var col= state==='correct' ? T.listening.c : state==='wrong' ? T.speaking.c : T.ink;
+                  return (
+                    <button key={opt} onClick={function(){ pick(opt); }} disabled={!!picked}
+                      style={{ padding:'15px 18px', borderRadius:13, background:bg, border:'1.5px solid '+bd, color:col, fontSize:15, fontWeight:700, textAlign:'left', cursor: picked ? 'default' : 'pointer' }}>
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
-              <div style={{ position:'absolute', bottom:14, right:14, padding:'4px 10px', background:'rgba(0,0,0,.55)', color:'#fff', fontSize:11, fontWeight:700, borderRadius:6 }}>06:42</div>
-              {/* Scrub bar */}
-              <div style={{ position:'absolute', bottom:0, left:0, right:0, height:40, background:'linear-gradient(to top, rgba(0,0,0,.6), transparent)', display:'flex', alignItems:'flex-end', padding:'0 14px 10px', gap:10 }}>
-                <div style={{ flex:1, height:3, background:'rgba(255,255,255,.3)', borderRadius:2, position:'relative' }}>
-                  <div style={{ width:'34%', height:'100%', background:T.brand, borderRadius:2 }}/>
-                  <div style={{ position:'absolute', left:'34%', top:'50%', transform:'translate(-50%, -50%)', width:11, height:11, borderRadius:6, background:'#fff' }}/>
+              {picked && (
+                <div style={{ marginTop:18, display:'flex', justifyContent:'flex-end' }}>
+                  <Btn label={idx+1>=total ? 'Finish' : 'Next sentence'} accent={T.brand} iconRight={Icon.arrow()} onClick={next}/>
                 </div>
-                <div style={{ fontSize:11, color:'#fff', fontWeight:600 }}>2:18 / 6:42</div>
-              </div>
+              )}
             </div>
+          )}
 
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, marginBottom:14 }}>
-              <div>
-                <div style={{ fontSize:11, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Lesson 12 · 12 min</div>
-                <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.15, color:T.ink }}>Pretérito vs Imperfecto</div>
-                <div style={{ fontSize:13, color:T.ink3, marginTop:6 }}>Two past tenses, one big distinction. By the end you'll know exactly when to reach for each.</div>
+          {!loading && !err && done && (
+            <Card padding={40} style={{ textAlign:'center' }}>
+              <div style={{ fontFamily:T.serif, fontSize:44, color:T.brand, lineHeight:1, marginBottom:8 }}>{Math.round((correctN/Math.max(total,1))*100)}%</div>
+              <div style={{ fontSize:15, color:T.ink, fontWeight:700, marginBottom:4 }}>{correctN} of {total} correct</div>
+              <div style={{ fontSize:13, color:T.ink4, marginBottom:20 }}>Nice work on “{topic.title}”.</div>
+              <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+                <Btn label="Practice again" variant="outline" accent={T.ink} onClick={function(){ setReload(function(x){return x+1;}); }}/>
+                <Btn label="Back to course" accent={T.brand} nav="course"/>
               </div>
-              <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-                <Btn label="Practice this" nav="practice" variant="outline" accent={T.ink} icon={Icon.play()}/>
-                <Btn label="Continue" nav="reading" accent={T.brand} iconRight={Icon.arrow()}/>
-              </div>
-            </div>
-
-            {/* Transcript */}
-            <Card padding={20}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:T.ink, letterSpacing:'.04em' }}>Transcript</div>
-                <div style={{ display:'flex', gap:6 }}>
-                  <Chip label="Show ENG" accent={T.brand} bg={T.brandLight} style={{ fontSize:10.5, padding:'4px 10px', cursor:'pointer' }}/>
-                  <Chip label="Slow" accent={T.ink3} bg={T.bg2} style={{ fontSize:10.5, padding:'4px 10px', cursor:'pointer' }}/>
-                </div>
-              </div>
-              {[
-                { t:'00:04', es:'Vamos a hablar de dos tiempos verbales que confunden a todos los estudiantes.', en:'We\'re going to talk about two verb tenses that confuse every student.', active:false },
-                { t:'00:11', es:'El pretérito describe acciones completadas, con principio y fin claros.',           en:'The preterite describes completed actions with a clear beginning and end.',         active:true },
-                { t:'00:18', es:'El imperfecto, en cambio, describe situaciones, hábitos y descripciones.',        en:'The imperfect, on the other hand, describes situations, habits, and descriptions.', active:false },
-                { t:'00:26', es:'Por ejemplo: "ayer comí paella" frente a "siempre comía paella los domingos".',   en:'For example: "yesterday I ate paella" vs "I always used to eat paella on Sundays."', active:false },
-              ].map((row, i) => (
-                <div key={i} style={{ display:'flex', gap:14, padding:'12px 0', borderTop: i ? `1px solid ${T.hairline}` : 'none', background: row.active ? T.brandLight : 'transparent', margin: row.active ? '0 -12px' : 0, paddingLeft: row.active ? 12 : 0, paddingRight: row.active ? 12 : 0, borderRadius: row.active ? 8 : 0 }}>
-                  <div style={{ fontFamily:T.mono, fontSize:11, color: row.active ? T.brand : T.ink4, fontWeight:700, flexShrink:0, paddingTop:2 }}>{row.t}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:14, color:T.ink, lineHeight:1.5 }}>{row.es}</div>
-                    <div style={{ fontSize:12, color:T.ink4, marginTop:2, lineHeight:1.5 }}>{row.en}</div>
-                  </div>
-                </div>
-              ))}
             </Card>
-          </div>
-
-          {/* Right rail — chapters + key vocab */}
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            <Card padding={18}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:12 }}>Chapters</div>
-              {[
-                { t:'00:00', l:'Intro & overview', a:false },
-                { t:'01:24', l:'When to use Pretérito', a:true },
-                { t:'03:48', l:'When to use Imperfecto', a:false },
-                { t:'05:32', l:'Side-by-side examples', a:false },
-              ].map((c, i) => (
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-                  <div style={{ fontFamily:T.mono, fontSize:11, color: c.a ? T.brand : T.ink4, fontWeight:700, width:36 }}>{c.t}</div>
-                  <div style={{ flex:1, fontSize:13, color: c.a ? T.brand : T.ink, fontWeight: c.a ? 700 : 500 }}>{c.l}</div>
-                </div>
-              ))}
-            </Card>
-
-            <Card padding={18}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:12 }}>Key vocabulary</div>
-              {[
-                { es:'comí', en:'I ate', kind:'pretérito' },
-                { es:'comía', en:'I used to eat', kind:'imperfecto' },
-                { es:'fui', en:'I went', kind:'pretérito' },
-                { es:'iba', en:'I was going / used to go', kind:'imperfecto' },
-              ].map((v, i) => (
-                <div key={i} style={{ padding:'10px 0', borderTop: i ? `1px solid ${T.hairline}` : 'none', display:'flex', alignItems:'center', gap:10 }}>
-                  <button style={{ width:28, height:28, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.play({ width:11, height:11 })}</button>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{v.es}</div>
-                    <div style={{ fontSize:11, color:T.ink4 }}>{v.en} · {v.kind}</div>
-                  </div>
-                </div>
-              ))}
-              <Btn label="Add all to deck" nav="vocab" variant="outline" accent={T.ink} fullWidth icon={Icon.plus()} style={{ marginTop:12 }}/>
-            </Card>
-          </div>
+          )}
         </div>
       </div>
     </div>
