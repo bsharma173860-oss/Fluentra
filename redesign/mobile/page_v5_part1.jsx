@@ -34,6 +34,17 @@ const V5_label = (text) => (
 function MSettingsPageV5() {
   const [view, setView] = useStateMV5('list');
   const nav = (id) => window.__nav && window.__nav(id);
+  const _u = (typeof window !== 'undefined' && window.__user) || {};
+  const _name = ((_u.name || '').trim()) || 'Your account';
+  const _email = _u.email || '';
+  const _initial = (_name[0] || 'U').toUpperCase();
+  const _plan = (_u.plan || 'free');
+  const _planLabel = _plan === 'max' ? 'MAX' : _plan === 'pro' ? 'PRO' : 'FREE';
+  const _langs = (typeof userLanguages === 'function') ? userLanguages() : [];
+  const _streak = _langs.length ? Math.max.apply(null, _langs.map(function (l) { return l.streak || 0; })) : 0;
+  const _R = (typeof window !== 'undefined' && window.__results) || [];
+  const _sessions = _R.length;
+  const _heroStats = [{ l:'STREAK', v:String(_streak) }, { l:'SESSIONS', v:String(_sessions) }, { l:'LANGUAGES', v:String(_langs.length) }];
   const subViews = { account:'AccountTab', subscription:'SubscriptionTab', billing:'BillingTab', preferences:'PreferencesTab', notifications:'NotificationsTab', data:'DataPrivacyTab' };
   if (view !== 'list') {
     const Comp = window[subViews[view]];
@@ -41,13 +52,13 @@ function MSettingsPageV5() {
   }
   const groups = [
     { title:'ACCOUNT', items: [
-      { id:'account',      label:'Profile & login',   ic:'user',   meta:'maria@example.com', c:T.brand },
-      { id:'subscription', label:'Subscription',      ic:'crown',  meta:'Pro · Renews May 28', c:'#7C5BD6' },
-      { id:'billing',      label:'Billing & receipts',ic:'card',   meta:'Visa ··4242', c:'#2A6FA0' },
+      { id:'account',      label:'Profile & login',   ic:'user',   meta:(_email || 'Profile & login'), c:T.brand },
+      { id:'subscription', label:'Subscription',      ic:'crown',  meta:(_plan === 'free' ? 'Free plan' : _planLabel + ' plan'), c:'#7C5BD6' },
+      { id:'billing',      label:'Billing & receipts',ic:'card',   meta:'Invoices & card', c:'#2A6FA0' },
     ]},
     { title:'APP', items: [
-      { id:'preferences',  label:'Preferences',       ic:'sliders', meta:'Light · 16h reminders', c:T.ink2 },
-      { id:'notifications',label:'Notifications',     ic:'bell',    meta:'12 active', c:'#E08F4D' },
+      { id:'preferences',  label:'Preferences',       ic:'sliders', meta:'Theme & reminders', c:T.ink2 },
+      { id:'notifications',label:'Notifications',     ic:'bell',    meta:'Manage alerts', c:'#E08F4D' },
       { id:'data',         label:'Data & privacy',    ic:'shield',  meta:'Export, delete', c:'#5A9C7A' },
     ]},
   ];
@@ -55,22 +66,22 @@ function MSettingsPageV5() {
     <>
       <MobileHeader title="Settings"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5_pre eyebrow="MARÍA GARCÍA · PRO" title="Settings" lede="Account, billing, preferences and your data — all in one place."/>
+        <V5_pre eyebrow={(_name + ' \u00b7 ' + _planLabel).toUpperCase()} title="Settings" lede="Account, billing, preferences and your data — all in one place."/>
         {/* Dark hero */}
         <div style={{ background:T.ink, borderRadius:18, padding:'18px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
           <V5_dotgrid/>
           <div style={{ position:'relative', display:'flex', alignItems:'center', gap:14, marginBottom:14 }}>
-            {V5_av('M', 56, `linear-gradient(135deg, ${T.brand}, #7B4A2D)`)}
+            {V5_av(_initial, 56, `linear-gradient(135deg, ${T.brand}, #7B4A2D)`)}
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontFamily:T.serif, fontSize:20, lineHeight:1.05, letterSpacing:'-.015em' }}>María García</div>
-              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.55)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>maria@example.com</div>
+              <div style={{ fontFamily:T.serif, fontSize:20, lineHeight:1.05, letterSpacing:'-.015em' }}>{_name}</div>
+              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.55)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{_email || 'Add your email'}</div>
               <div style={{ marginTop:6, display:'inline-flex', alignItems:'center', gap:5, padding:'3px 8px', borderRadius:99, background:'rgba(255,255,255,.12)', fontSize:9.5, fontWeight:800, letterSpacing:'.08em' }}>
-                <span style={{ width:5, height:5, borderRadius:3, background:'#FFC859' }}/> PRO · MAY 28
+                <span style={{ width:5, height:5, borderRadius:3, background:'#FFC859' }}/> {_planLabel}
               </div>
             </div>
           </div>
           <div style={{ position:'relative', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, paddingTop:12, borderTop:'1px solid rgba(255,255,255,.10)' }}>
-            {[{l:'STREAK',v:'42'},{l:'SESSIONS',v:'142'},{l:'AVG BAND',v:'7.5'}].map(s => (
+            {_heroStats.map(s => (
               <div key={s.l}>
                 <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1, letterSpacing:'-.02em' }}>{s.v}</div>
                 <div style={{ fontSize:9, color:'rgba(255,255,255,.55)', fontWeight:700, letterSpacing:'.1em', marginTop:4 }}>{s.l}</div>

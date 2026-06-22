@@ -55,12 +55,21 @@ function MReceiptsPageV5() {
 
 function MReferPageV5() {
   const [copied, setCopied] = useStV5B3(false);
+  const [code, setCode] = useStV5B3('');
   const nav = (id) => window.__nav && window.__nav(id);
-  const code = 'MARIA-GET-PRO';
-  const referrals = [
-    { who:'Yuki Tanaka',  init:'YT', g:'linear-gradient(135deg,#3D5BA8,#7C5BD6)', d:'May 2', s:'Joined' },
-    { who:'Carlos Ruíz',  init:'CR', g:'linear-gradient(135deg,#E08F4D,#D26890)', d:'Apr 28', s:'Subscribed', earned:'+1 month' },
-    { who:'Anaís R.',     init:'AR', g:'linear-gradient(135deg,#5A9C7A,#3D8A5F)', d:'Apr 14', s:'Pending' },
+  React.useEffect(function () {
+    if (window.FL && window.FL.social && window.FL.social._uid) {
+      window.FL.social._uid().then(function (id) { if (id) setCode('FL-' + String(id).slice(0, 8).toUpperCase()); }).catch(function () {});
+    }
+  }, []);
+  const link = code ? ((typeof window !== 'undefined' ? window.location.origin : '') + '/?ref=' + code) : '';
+  const copy = () => { if (!link) return; try { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch (e) {} };
+  const share = () => { if (!link) return; if (navigator.share) { navigator.share({ title: 'Join me on Fluentra', text: 'Learn a language with me on Fluentra', url: link }).catch(function () {}); } else { copy(); } };
+  const whatsapp = () => { if (!link) return; window.open('https://wa.me/?text=' + encodeURIComponent('Learn a language with me on Fluentra \u2014 ' + link), '_blank'); };
+  const steps = [
+    { n:'1', t:'Share your link', d:'Send your personal invite link to a friend.' },
+    { n:'2', t:'They join Fluentra', d:'Your friend signs up and starts learning.' },
+    { n:'3', t:'You both win', d:'When they subscribe, you each get a month of Pro free.' },
   ];
   return (
     <>
@@ -71,42 +80,31 @@ function MReferPageV5() {
           <div style={{ position:'relative' }}>
             <div style={{ fontSize:10.5, fontWeight:800, color:'rgba(255,255,255,.7)', letterSpacing:'.14em', marginBottom:9 }}>GIVE A MONTH · GET A MONTH</div>
             <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.02, letterSpacing:'-.02em', marginBottom:9 }}>Bring a friend along.</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,.85)', lineHeight:1.5 }}>They get <b style={{ color:'#fff' }}>1 month of Pro free</b>. You get <b style={{ color:'#fff' }}>1 month free</b> when they subscribe. No cap.</div>
-            <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.brand, marginTop:10, letterSpacing:'.02em' }}>Speak it. Score it. Own it.</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,.85)', lineHeight:1.5 }}>They get <b style={{ color:'#fff' }}>1 month of Pro free</b>. You get <b style={{ color:'#fff' }}>1 month free</b> when they subscribe.</div>
           </div>
         </div>
 
-        {V5b3Lbl('YOUR REFERRAL CODE')}
-        <div style={{ display:'flex', gap:8, alignItems:'stretch', marginBottom:14 }}>
-          <div style={{ flex:1, background:T.card, border:`1.5px dashed ${T.brand}`, borderRadius:13, padding:'14px 16px', textAlign:'center', boxShadow:MT.shadowSm }}>
-            <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, letterSpacing:'.04em', fontWeight:700 }}>{code}</div>
+        {V5b3Lbl('YOUR INVITE LINK')}
+        <div style={{ display:'flex', gap:8, alignItems:'stretch', marginBottom:12 }}>
+          <div style={{ flex:1, minWidth:0, background:T.card, border:`1.5px dashed ${T.brand}`, borderRadius:13, padding:'14px 16px', boxShadow:MT.shadowSm, display:'flex', alignItems:'center' }}>
+            <div style={{ fontSize:12.5, color:link ? T.ink : T.ink4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{link || 'Sign in to get your link'}</div>
           </div>
-          <button onClick={()=>{ setCopied(true); setTimeout(()=>setCopied(false), 1500); }} style={{ padding:'0 16px', borderRadius:13, background: copied ? '#5A9C7A' : T.brand, color:'#fff', fontSize:12, fontWeight:700, boxShadow:`0 4px 12px ${T.brand}55`, border:'none' }}>{copied ? 'Copied' : 'Copy'}</button>
+          <button onClick={copy} disabled={!link} style={{ padding:'0 16px', borderRadius:13, background: copied ? '#5A9C7A' : T.brand, color:'#fff', fontSize:12, fontWeight:700, boxShadow:`0 4px 12px ${T.brand}55`, border:'none', opacity: link ? 1 : .5 }}>{copied ? 'Copied' : 'Copy'}</button>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
-          <button style={{ padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.share ? Icon.share({width:13,height:13}) : '↗'} Share link</button>
-          <button style={{ padding:'13px', borderRadius:12, background:T.card, color:T.ink, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}` }}>WhatsApp</button>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
+          <button onClick={share} disabled={!link} style={{ padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:7, opacity: link ? 1 : .5 }}>{Icon.share ? Icon.share({width:13,height:13}) : '\u2197'} Share link</button>
+          <button onClick={whatsapp} disabled={!link} style={{ padding:'13px', borderRadius:12, background:T.card, color:T.ink, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}`, opacity: link ? 1 : .5 }}>WhatsApp</button>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-          {[{l:'INVITED',v:3},{l:'JOINED',v:2},{l:'EARNED',v:'1 mo'}].map(s => (
-            <MCard key={s.l} style={{ padding:'12px 10px', textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{s.v}</div><div style={{ fontSize:9, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginTop:5 }}>{s.l}</div></MCard>
-          ))}
-        </div>
-
-        {V5b3Lbl('YOUR REFERRALS')}
+        {V5b3Lbl('HOW IT WORKS')}
         <MCard style={{ padding:0, overflow:'hidden' }}>
-          {referrals.map((r, i) => (
-            <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-              <div style={{ width:36, height:36, borderRadius:18, background:r.g, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13, flexShrink:0 }}>{r.init}</div>
+          {steps.map((st, i) => (
+            <div key={st.n} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'14px 16px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
+              <div style={{ width:30, height:30, borderRadius:15, background:T.brandLight, color:T.brand, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14, fontWeight:700, flexShrink:0 }}>{st.n}</div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, lineHeight:1.2 }}>{r.who}</div>
-                <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>Invited {r.d}</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontSize:10.5, fontWeight:700, color: r.s === 'Subscribed' ? '#5A9C7A' : r.s === 'Joined' ? T.brand : T.ink4 }}>{r.s}</div>
-                {r.earned && <div style={{ fontSize:9.5, fontWeight:800, color:T.brand, letterSpacing:'.06em', marginTop:2 }}>{r.earned.toUpperCase()}</div>}
+                <div style={{ fontSize:13, fontWeight:700, color:T.ink, lineHeight:1.25 }}>{st.t}</div>
+                <div style={{ fontSize:11.5, color:T.ink4, marginTop:2, lineHeight:1.5 }}>{st.d}</div>
               </div>
             </div>
           ))}
@@ -115,6 +113,7 @@ function MReferPageV5() {
     </>
   );
 }
+
 
 // ══════════════════════════════════════════════════════════════════
 // ADD LANGUAGE
@@ -202,9 +201,15 @@ function MAddLanguageV5() {
 // ══════════════════════════════════════════════════════════════════
 function MCheckoutPageV5() {
   const [billing, setBilling] = useStV5B3('annual');
-  const [card, setCard] = useStV5B3('4242');
+  const [busy, setBusy] = useStV5B3(false);
   const nav = (id) => window.__nav && window.__nav(id);
   const total = billing === 'annual' ? 228 : 24;
+  const planKey = 'pro_' + (billing === 'annual' ? 'annual' : 'monthly');
+  const startPay = () => {
+    if (busy) return;
+    if (window.FL && window.FL.startCheckout) { setBusy(true); window.FL.startCheckout(planKey); setTimeout(()=>setBusy(false), 6000); }
+    else { window.__nav && window.__nav('auth_login'); }
+  };
   return (
     <>
       <MobileHeader back title="Checkout"/>
@@ -236,12 +241,12 @@ function MCheckoutPageV5() {
 
         {V5b3Lbl('PAYMENT METHOD')}
         <MCard style={{ padding:14, marginBottom:14, display:'flex', alignItems:'center', gap:11 }}>
-          <div style={{ width:44, height:30, borderRadius:6, background:'linear-gradient(135deg,#3D5BA8,#7C5BD6)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9.5, fontWeight:800, letterSpacing:'.04em' }}>VISA</div>
+          <div style={{ width:44, height:30, borderRadius:6, background:'linear-gradient(135deg,#635BFF,#8E7BFF)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8.5, fontWeight:800, letterSpacing:'.02em' }}>stripe</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>•••• •••• •••• {card}</div>
-            <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>Maria López · 09/27</div>
+            <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>Secure card entry</div>
+            <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>You'll enter your card on Stripe's secure page</div>
           </div>
-          <button style={{ fontSize:11, fontWeight:700, color:T.brand, background:'none', border:'none' }}>Change</button>
+          {Icon.lock ? Icon.lock({ width:14, height:14, color:T.ink4 }) : (Icon.shield ? Icon.shield({ width:14, height:14 }) : null)}
         </MCard>
 
         {V5b3Lbl('ORDER SUMMARY')}
@@ -255,7 +260,7 @@ function MCheckoutPageV5() {
           </div>
         </MCard>
 
-        <button onClick={()=>nav('pre_exam_ready')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Confirm payment · ${total.toFixed(2)}</button>
+        <button onClick={startPay} disabled={busy} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, opacity: busy ? .65 : 1 }}>{busy ? 'Redirecting to Stripe…' : 'Confirm payment · $' + total.toFixed(2)}</button>
         <div style={{ marginTop:11, textAlign:'center', fontSize:10.5, color:T.ink5, lineHeight:1.5 }}>By confirming, you agree to our <span style={{ color:T.brand, fontWeight:700 }}>Terms</span> and <span style={{ color:T.brand, fontWeight:700 }}>Privacy</span>. {Icon.shield ? Icon.shield({width:10,height:10}) : '🔒'} Secured by Stripe.</div>
       </MobileBody>
     </>

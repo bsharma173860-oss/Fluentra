@@ -203,9 +203,7 @@ function MPhrasebookPractice() {
   const prev = () => { setRevealed(false); if (idx > 0) setIdx(idx - 1); };
 
   return (
-    <MobileFrame statusBg={T.bg}>
-      <MobileBody>
-        <div style={{ flex:1, display:'flex', flexDirection:'column', background:T.bg }}>
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', background:T.bg }}>
           {/* Top bar */}
           <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background:T.card, borderBottom:`1px solid ${T.hairline}` }}>
             <button onClick={() => nav('phrasebook')} style={{ width:32, height:32, borderRadius:8, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, cursor:'pointer' }}>×</button>
@@ -251,9 +249,7 @@ function MPhrasebookPractice() {
             <button onClick={prev} disabled={idx===0} style={{ width:44, height:44, borderRadius:11, background:T.bg2, color:idx===0?T.ink5:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', cursor:idx===0?'default':'pointer', opacity:idx===0?.5:1 }}>←</button>
               <button onClick={next} style={{ flex:1, padding:'12px 0', borderRadius:11, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', border:'none' }}>{idx === total - 1 ? 'Finish' : 'Next phrase →'}</button>
           </div>
-        </div>
-      </MobileBody>
-    </MobileFrame>
+    </div>
   );
 }
 

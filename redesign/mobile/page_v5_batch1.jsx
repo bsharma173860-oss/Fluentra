@@ -51,7 +51,7 @@ function MOTPPageV5() {
     <>
       <MobileHeader back onBack={()=>nav('auth_signup')} title="Verify"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b1Pre eyebrow="STEP 2 OF 3 · CHECK YOUR INBOX" title="Enter the code" lede="We sent a 6-digit code to maria@example.com — it expires in 10 minutes."/>
+        <V5b1Pre eyebrow="STEP 2 OF 3 · CHECK YOUR INBOX" title="Enter the code" lede="We sent a 6-digit code to your email — it expires in 10 minutes."/>
         <div style={{ background:T.ink, borderRadius:18, padding:'24px 18px', marginBottom:16, position:'relative', overflow:'hidden' }}>
           <V5b1Dot/>
           <div style={{ position:'relative', display:'flex', gap:8, justifyContent:'center' }}>
@@ -75,7 +75,7 @@ function MOTPPageV5() {
 // ══════════════════════════════════════════════════════════════════
 function MForgotPwPageV5() {
   const [step, setStep] = useStV5B1(0);
-  const [email, setEmail] = useStV5B1('maria@example.com');
+  const [email, setEmail] = useStV5B1('');
   const nav = (id) => window.__nav && window.__nav(id);
   return (
     <>
