@@ -149,13 +149,28 @@ function MLessonDetailV5() {
 
   const total = words.length;
   const w = words[idx] || null;
-  const blanked = w ? w.example.replace(new RegExp(String(w.term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '_____') : '';
+  const _ti = w ? w.example.toLowerCase().indexOf(String(w.term).toLowerCase()) : -1;
+  const before = w && _ti >= 0 ? w.example.slice(0, _ti) : '';
+  const after  = w && _ti >= 0 ? w.example.slice(_ti + w.term.length) : '';
   const options = w ? (function () { var opts=[w.term]; for (var k=1;k<words.length&&opts.length<4;k++){ var c=words[(idx+k)%words.length].term; if(opts.indexOf(c)<0)opts.push(c);} var sh=idx%opts.length; return opts.slice(sh).concat(opts.slice(0,sh)); })() : [];
+  const isCorrect = picked && picked === w.term;
   function pick(o){ if(picked)return; setPicked(o); if(o===w.term) setCorrectN(function(n){return n+1;}); }
-  function next(){ if(idx+1>=total){ var pct=Math.round(correctN/Math.max(total,1)*100); saveResult(pct); setDone(true);} else { setIdx(function(i){return i+1;}); setPicked(null);} }
+  function next(){ if(idx+1>=total){ saveResult(Math.round(correctN/Math.max(total,1)*100)); setDone(true);} else { setIdx(function(i){return i+1;}); setPicked(null);} }
 
   return (
     <>
+      <style>{`
+        @keyframes csmPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+        @keyframes csmShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+        @keyframes csmFadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes csmPulse{0%,100%{opacity:.45}50%{opacity:.9}}
+        .csm-chip{transition:transform .12s ease, background .15s, border-color .15s}
+        .csm-chip:not(:disabled):active{transform:scale(.95)}
+        .csm-q{animation:csmFadeUp .3s ease both}
+        .csm-pop{animation:csmPop .35s cubic-bezier(.34,1.56,.64,1) both}
+        .csm-shake{animation:csmShake .4s ease both}
+        .csm-fb{animation:csmFadeUp .3s ease both}
+      `}</style>
       <MobileHeader back onBack={()=>nav('lang')} title="Complete the sentence" eyebrow={topic.title}/>
       <MobileBody padding={[6,16,30]} tabBarPad={false}>
         {loading && <MCard style={{ padding:'40px 20px', textAlign:'center' }}><div style={{ fontSize:13, color:T.ink3 }}>Building your {langName} lesson…</div></MCard>}
@@ -165,19 +180,48 @@ function MLessonDetailV5() {
           <button onClick={()=>setReload(function(x){return x+1;})} style={{ padding:'10px 18px', borderRadius:10, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, border:'none' }}>Try again</button>
         </MCard>)}
         {!loading && !err && !done && w && (<>
-          <div style={{ height:5, background:T.bg2, borderRadius:99, overflow:'hidden', marginBottom:16 }}><div style={{ height:'100%', width:(idx/total*100)+'%', background:T.brand, borderRadius:99, transition:'width .25s' }}/></div>
-          <div style={{ fontSize:10, fontWeight:800, color:T.ink4, letterSpacing:'.1em', marginBottom:8 }}>SENTENCE {idx+1} OF {total}</div>
-          <MCard style={{ padding:22, marginBottom:14 }}>
-            <div style={{ fontFamily:T.serif, fontSize:19, color:T.ink, lineHeight:1.55 }}>{blanked}</div>
-            {picked && <div style={{ fontSize:12, color:T.ink4, marginTop:10, lineHeight:1.5 }}>“{w.example}” — {w.en}</div>}
-          </MCard>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9 }}>
-            {options.map(function (opt) { var ok=opt===w.term; var st=!picked?'i':(ok?'c':(opt===picked?'x':'i')); var bg=st==='c'?T.listening.bg:st==='x'?T.speaking.bg:T.card; var bd=st==='c'?T.listening.c:st==='x'?T.speaking.c:T.border; var col=st==='c'?T.listening.c:st==='x'?T.speaking.c:T.ink; return (<button key={opt} onClick={()=>pick(opt)} disabled={!!picked} style={{ padding:'14px 14px', borderRadius:12, background:bg, border:'1.5px solid '+bd, color:col, fontSize:14, fontWeight:700, textAlign:'left' }}>{opt}</button>); })}
+          <div style={{ display:'flex', gap:5, marginBottom:16 }}>
+            {words.map(function (_, i) { return <div key={i} style={{ flex:1, height:5, borderRadius:99, background: i < idx ? T.brand : i === idx ? T.brandLight : T.bg2, transition:'background .3s' }}/>; })}
           </div>
-          {picked && <div style={{ marginTop:16, display:'flex', justifyContent:'flex-end' }}><button onClick={next} style={{ padding:'11px 20px', borderRadius:11, background:T.brand, color:'#fff', fontSize:13.5, fontWeight:700, border:'none' }}>{idx+1>=total?'Finish':'Next'} →</button></div>}
+          <div key={idx} className="csm-q">
+            <div style={{ fontSize:9.5, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginBottom:9 }}>TAP THE MISSING WORD</div>
+            <MCard style={{ padding:22, marginBottom:14 }}>
+              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.7 }}>
+                {before}
+                <span className={picked ? (isCorrect ? 'csm-pop' : 'csm-shake') : ''} style={{
+                  display:'inline-flex', alignItems:'center', justifyContent:'center', minWidth:64, padding:'1px 11px', margin:'0 3px',
+                  borderRadius:9, fontWeight:700,
+                  border: picked ? ('2px solid ' + (isCorrect ? T.listening.c : T.speaking.c)) : ('2px dashed ' + T.brand),
+                  background: picked ? (isCorrect ? T.listening.bg : T.speaking.bg) : T.brandLight,
+                  color: picked ? (isCorrect ? T.listening.c : T.speaking.c) : T.brand,
+                  animation: !picked ? 'csmPulse 1.6s ease-in-out infinite' : undefined,
+                }}>{picked ? picked : '?'}</span>
+                {after}
+              </div>
+              {picked && (<div className="csm-fb" style={{ marginTop:13, paddingTop:11, borderTop:'1px solid '+T.hairline, fontSize:12.5, color:T.ink3, lineHeight:1.5 }}>
+                <span style={{ fontWeight:800, color: isCorrect ? T.listening.c : T.speaking.c }}>{isCorrect ? 'Correct' : 'Answer: ' + w.term}</span> · {w.en}
+              </div>)}
+            </MCard>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9 }}>
+              {options.map(function (opt) {
+                var ok = opt === w.term, answered = !!picked, isP = opt === picked;
+                var bg = !answered ? T.card : ok ? T.listening.bg : isP ? T.speaking.bg : T.bg2;
+                var bd = !answered ? T.border : ok ? T.listening.c : isP ? T.speaking.c : T.border;
+                var col = !answered ? T.ink : ok ? T.listening.c : isP ? T.speaking.c : T.ink5;
+                return (<button key={opt} className={'csm-chip' + (answered && isP && !ok ? ' csm-shake' : '')} onClick={function(){ pick(opt); }} disabled={answered}
+                  style={{ padding:'15px 14px', borderRadius:13, background:bg, border:'2px solid '+bd, color:col, fontSize:15, fontWeight:700, textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', gap:6, opacity: answered && !ok && !isP ? .55 : 1 }}>
+                  <span>{opt}</span>
+                  {answered && ok && <span style={{ color:T.listening.c }}>{Icon.check ? Icon.check({ width:15, height:15 }) : '✓'}</span>}
+                </button>);
+              })}
+            </div>
+            {picked && (<div className="csm-fb" style={{ marginTop:16, display:'flex', justifyContent:'flex-end' }}>
+              <button onClick={next} style={{ padding:'12px 22px', borderRadius:12, background:T.brand, color:'#fff', fontSize:13.5, fontWeight:700, border:'none' }}>{idx+1>=total?'Finish':'Next'} →</button>
+            </div>)}
+          </div>
         </>)}
         {!loading && !err && done && (<MCard style={{ padding:'38px 20px', textAlign:'center' }}>
-          <div style={{ fontFamily:T.serif, fontSize:40, color:T.brand, lineHeight:1, marginBottom:8 }}>{Math.round(correctN/Math.max(total,1)*100)}%</div>
+          <div className="csm-pop" style={{ width:76, height:76, borderRadius:38, background:T.brandGrad || T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', fontFamily:T.serif, fontSize:26 }}>{Math.round(correctN/Math.max(total,1)*100)}%</div>
           <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:4 }}>{correctN} of {total} correct</div>
           <div style={{ fontSize:12.5, color:T.ink4, marginBottom:18 }}>Nice work on “{topic.title}”.</div>
           <div style={{ display:'flex', gap:10, justifyContent:'center' }}>

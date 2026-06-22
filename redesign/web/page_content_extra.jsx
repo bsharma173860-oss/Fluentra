@@ -4,14 +4,14 @@ function LessonDetailPage() {
   const topic = (typeof window !== 'undefined' && window.__lessonTopic) || { title:'Practice', level:'' };
   const lang  = (typeof window !== 'undefined' && window.__langCode) || 'en';
   const langName = (typeof langByCode === 'function' && langByCode(lang) && langByCode(lang).english) || lang.toUpperCase();
-  const [words, setWords]     = React.useState([]);
+  const [words, setWords] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [err, setErr]         = React.useState(false);
-  const [idx, setIdx]         = React.useState(0);
-  const [picked, setPicked]   = React.useState(null);
+  const [err, setErr] = React.useState(false);
+  const [idx, setIdx] = React.useState(0);
+  const [picked, setPicked] = React.useState(null);
   const [correctN, setCorrectN] = React.useState(0);
-  const [done, setDone]       = React.useState(false);
-  const [reload, setReload]   = React.useState(0);
+  const [done, setDone] = React.useState(false);
+  const [reload, setReload] = React.useState(0);
 
   React.useEffect(function () {
     var cancelled = false; setLoading(true); setErr(false);
@@ -41,99 +41,106 @@ function LessonDetailPage() {
 
   const total = words.length;
   const w = words[idx] || null;
-  // Build the cloze: blank the target word in its example sentence
-  const blanked = w ? w.example.replace(new RegExp(String(w.term).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'i'), '_____') : '';
-  // Options: correct term + 3 deterministic distractors from the set
+  const _ti = w ? w.example.toLowerCase().indexOf(String(w.term).toLowerCase()) : -1;
+  const before = w && _ti >= 0 ? w.example.slice(0, _ti) : '';
+  const after  = w && _ti >= 0 ? w.example.slice(_ti + w.term.length) : '';
   const options = w ? (function () {
     var opts = [w.term];
     for (var k = 1; k < words.length && opts.length < 4; k++) { var cand = words[(idx + k) % words.length].term; if (opts.indexOf(cand) < 0) opts.push(cand); }
-    // stable shuffle by idx so the answer isn't always first
-    var shift = idx % opts.length;
-    return opts.slice(shift).concat(opts.slice(0, shift));
+    var shift = idx % opts.length; return opts.slice(shift).concat(opts.slice(0, shift));
   })() : [];
+  const isCorrect = picked && picked === w.term;
 
-  function pick(opt) {
-    if (picked) return;
-    setPicked(opt);
-    if (opt === w.term) setCorrectN(function (n) { return n + 1; });
-  }
-  function next() {
-    if (idx + 1 >= total) { var pct = Math.round((correctN / Math.max(total,1)) * 100); saveResult(pct); setDone(true); }
-    else { setIdx(function (i) { return i + 1; }); setPicked(null); }
-  }
+  function pick(opt) { if (picked) return; setPicked(opt); if (opt === w.term) setCorrectN(function (n) { return n + 1; }); }
+  function next() { if (idx + 1 >= total) { saveResult(Math.round((correctN / Math.max(total,1)) * 100)); setDone(true); } else { setIdx(function (i) { return i + 1; }); setPicked(null); } }
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <style>{`
+        @keyframes csPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+        @keyframes csShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+        @keyframes csFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes csPulse{0%,100%{opacity:.45}50%{opacity:.9}}
+        .cs-chip{transition:transform .12s ease, background .15s, border-color .15s, box-shadow .15s; cursor:pointer}
+        .cs-chip:not(:disabled):hover{transform:translateY(-2px); box-shadow:0 8px 20px rgba(40,30,25,.10)}
+        .cs-chip:not(:disabled):active{transform:scale(.96)}
+        .cs-q{animation:csFadeUp .3s ease both}
+        .cs-pop{animation:csPop .35s cubic-bezier(.34,1.56,.64,1) both}
+        .cs-shake{animation:csShake .4s ease both}
+        .cs-fb{animation:csFadeUp .3s ease both}
+      `}</style>
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'24px 40px 60px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11.5, color:T.ink4, marginBottom:18 }}>
-          <span data-nav="course" style={{ cursor:'pointer' }}>Course</span>
-          <span>›</span>
+          <span data-nav="course" style={{ cursor:'pointer' }}>Course</span><span>›</span>
           <span style={{ color:T.ink, fontWeight:700 }}>{topic.title}</span>
         </div>
 
-        <div style={{ maxWidth:680, margin:'0 auto' }}>
-          <div style={{ fontSize:11, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Complete the sentence · {langName}</div>
-          <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.15, color:T.ink, marginBottom:18 }}>{topic.title}</div>
+        <div style={{ maxWidth:600, margin:'0 auto' }}>
+          <div style={{ fontSize:11, fontWeight:800, color:T.brand, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:6 }}>Complete the sentence · {langName}</div>
+          <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.15, color:T.ink, marginBottom:22 }}>{topic.title}</div>
 
-          {loading && (
-            <Card padding={40} style={{ textAlign:'center' }}>
-              <div style={{ fontSize:14, color:T.ink3 }}>Building your {langName} lesson…</div>
-            </Card>
-          )}
+          {loading && <Card padding={44} style={{ textAlign:'center' }}><div style={{ fontSize:14, color:T.ink3 }}>Building your {langName} lesson…</div></Card>}
 
-          {!loading && err && (
-            <Card padding={36} style={{ textAlign:'center' }}>
-              <div style={{ fontSize:15, color:T.ink, fontWeight:700, marginBottom:6 }}>Couldn't build this lesson</div>
-              <div style={{ fontSize:13, color:T.ink4, marginBottom:16 }}>Something went wrong generating practice for {langName}.</div>
-              <Btn label="Try again" accent={T.brand} onClick={function(){ setReload(function(x){return x+1;}); }}/>
-            </Card>
-          )}
+          {!loading && err && (<Card padding={36} style={{ textAlign:'center' }}>
+            <div style={{ fontSize:15, color:T.ink, fontWeight:700, marginBottom:6 }}>Couldn't build this lesson</div>
+            <div style={{ fontSize:13, color:T.ink4, marginBottom:16 }}>Something went wrong generating practice for {langName}.</div>
+            <Btn label="Try again" accent={T.brand} onClick={function(){ setReload(function(x){return x+1;}); }}/>
+          </Card>)}
 
           {!loading && !err && !done && w && (
             <div>
-              <div style={{ height:5, background:T.bg2, borderRadius:99, overflow:'hidden', marginBottom:20 }}>
-                <div style={{ height:'100%', width:((idx)/total*100)+'%', background:T.brand, borderRadius:99, transition:'width .25s' }}/>
+              <div style={{ display:'flex', gap:6, marginBottom:18 }}>
+                {words.map(function (_, i) { return <div key={i} style={{ flex:1, height:5, borderRadius:99, background: i < idx ? T.brand : i === idx ? T.brandLight : T.bg2, transition:'background .3s' }}/>; })}
               </div>
-              <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.1em', marginBottom:10 }}>SENTENCE {idx+1} OF {total}</div>
-              <Card padding={28} style={{ marginBottom:16 }}>
-                <div style={{ fontSize:21, color:T.ink, lineHeight:1.55, fontFamily:T.serif }}>{blanked}</div>
-                {picked && <div style={{ fontSize:13, color:T.ink4, marginTop:12, lineHeight:1.5 }}>“{w.example}” — {w.en}</div>}
-              </Card>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                {options.map(function (opt) {
-                  var isCorrect = opt === w.term;
-                  var state = !picked ? 'idle' : (isCorrect ? 'correct' : (opt === picked ? 'wrong' : 'idle'));
-                  var bg = state==='correct' ? T.listening.bg : state==='wrong' ? T.speaking.bg : T.card;
-                  var bd = state==='correct' ? T.listening.c : state==='wrong' ? T.speaking.c : T.border;
-                  var col= state==='correct' ? T.listening.c : state==='wrong' ? T.speaking.c : T.ink;
-                  return (
-                    <button key={opt} onClick={function(){ pick(opt); }} disabled={!!picked}
-                      style={{ padding:'15px 18px', borderRadius:13, background:bg, border:'1.5px solid '+bd, color:col, fontSize:15, fontWeight:700, textAlign:'left', cursor: picked ? 'default' : 'pointer' }}>
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-              {picked && (
-                <div style={{ marginTop:18, display:'flex', justifyContent:'flex-end' }}>
-                  <Btn label={idx+1>=total ? 'Finish' : 'Next sentence'} accent={T.brand} iconRight={Icon.arrow()} onClick={next}/>
+              <div key={idx} className="cs-q">
+                <div style={{ fontSize:10.5, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginBottom:10 }}>TAP THE MISSING WORD</div>
+                <Card padding={30} style={{ marginBottom:18, background:T.glass, backdropFilter:T.glassBlur, WebkitBackdropFilter:T.glassBlur, border:`1px solid ${T.glassBorder}`, boxShadow:T.glassShadow }}>
+                  <div style={{ fontFamily:T.serif, fontSize:23, color:T.ink, lineHeight:1.7 }}>
+                    {before}
+                    <span className={picked ? (isCorrect ? 'cs-pop' : 'cs-shake') : ''} style={{
+                      display:'inline-flex', alignItems:'center', justifyContent:'center', minWidth:90, padding:'2px 14px', margin:'0 4px',
+                      borderRadius:10, fontWeight:700,
+                      border: picked ? `2px solid ${isCorrect ? T.listening.c : T.speaking.c}` : `2px dashed ${T.brand}`,
+                      background: picked ? (isCorrect ? T.listening.bg : T.speaking.bg) : T.brandLight,
+                      color: picked ? (isCorrect ? T.listening.c : T.speaking.c) : T.brand,
+                      animation: !picked ? 'csPulse 1.6s ease-in-out infinite' : undefined,
+                    }}>{picked ? picked : '?'}</span>
+                    {after}
+                  </div>
+                  {picked && (<div className="cs-fb" style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${T.hairline}`, fontSize:13.5, color:T.ink3, lineHeight:1.5 }}>
+                    <span style={{ fontWeight:800, color: isCorrect ? T.listening.c : T.speaking.c }}>{isCorrect ? 'Correct' : 'Answer: ' + w.term}</span> · {w.en}
+                  </div>)}
+                </Card>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:11 }}>
+                  {options.map(function (opt) {
+                    var ok = opt === w.term, answered = !!picked, isP = opt === picked;
+                    var bg = !answered ? T.card : ok ? T.listening.bg : isP ? T.speaking.bg : T.bg2;
+                    var bd = !answered ? T.border : ok ? T.listening.c : isP ? T.speaking.c : T.border;
+                    var col = !answered ? T.ink : ok ? T.listening.c : isP ? T.speaking.c : T.ink5;
+                    return (<button key={opt} className={'cs-chip' + (answered && isP && !ok ? ' cs-shake' : '')} onClick={function(){ pick(opt); }} disabled={answered}
+                      style={{ padding:'16px 18px', borderRadius:14, background:bg, border:'2px solid '+bd, color:col, fontSize:16, fontWeight:700, textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, opacity: answered && !ok && !isP ? .55 : 1 }}>
+                      <span>{opt}</span>
+                      {answered && ok && <span style={{ color:T.listening.c }}>{Icon.check ? Icon.check({ width:16, height:16 }) : '✓'}</span>}
+                    </button>);
+                  })}
                 </div>
-              )}
+                {picked && (<div className="cs-fb" style={{ marginTop:20, display:'flex', justifyContent:'flex-end' }}>
+                  <Btn label={idx+1 >= total ? 'Finish' : 'Next sentence'} accent={T.brand} iconRight={Icon.arrow()} onClick={next}/>
+                </div>)}
+              </div>
             </div>
           )}
 
-          {!loading && !err && done && (
-            <Card padding={40} style={{ textAlign:'center' }}>
-              <div style={{ fontFamily:T.serif, fontSize:44, color:T.brand, lineHeight:1, marginBottom:8 }}>{Math.round((correctN/Math.max(total,1))*100)}%</div>
-              <div style={{ fontSize:15, color:T.ink, fontWeight:700, marginBottom:4 }}>{correctN} of {total} correct</div>
-              <div style={{ fontSize:13, color:T.ink4, marginBottom:20 }}>Nice work on “{topic.title}”.</div>
-              <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
-                <Btn label="Practice again" variant="outline" accent={T.ink} onClick={function(){ setReload(function(x){return x+1;}); }}/>
-                <Btn label="Back to course" accent={T.brand} nav="course"/>
-              </div>
-            </Card>
-          )}
+          {!loading && !err && done && (<Card padding={44} style={{ textAlign:'center', background:T.glass, backdropFilter:T.glassBlur, WebkitBackdropFilter:T.glassBlur, border:`1px solid ${T.glassBorder}`, boxShadow:T.glassShadow }}>
+            <div className="cs-pop" style={{ width:84, height:84, borderRadius:42, background:T.brandGrad || T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontFamily:T.serif, fontSize:30 }}>{Math.round((correctN/Math.max(total,1))*100)}%</div>
+            <div style={{ fontSize:16, color:T.ink, fontWeight:700, marginBottom:4 }}>{correctN} of {total} correct</div>
+            <div style={{ fontSize:13, color:T.ink4, marginBottom:22 }}>Nice work on “{topic.title}”.</div>
+            <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+              <Btn label="Practice again" variant="outline" accent={T.ink} onClick={function(){ setReload(function(x){return x+1;}); }}/>
+              <Btn label="Back to course" accent={T.brand} nav="course"/>
+            </div>
+          </Card>)}
         </div>
       </div>
     </div>
