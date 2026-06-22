@@ -104,7 +104,7 @@ function PlanCard({ plan, billing, recommended }) {
         ))}
       </div>
 
-      <button onClick={() => { if (plan.id === 'free') (window.__nav||(()=>{}))('new_payment_success'); else { const key = plan.id + '_' + (billing === 'yearly' ? 'yearly' : 'monthly'); window.payFor && window.payFor(key); } }} style={{ width:'100%', padding:'13px 16px', borderRadius:11, background: isPopular ? T.brand : (plan.id === 'free' ? T.bg2 : T.ink), color: isPopular ? '#fff' : (plan.id === 'free' ? T.ink2 : '#fff'), fontSize:13.5, fontWeight:700, cursor:'pointer', border: plan.id === 'free' ? `1px solid ${T.border}` : 'none' }}>{plan.cta}</button>
+      <button onClick={() => { if (plan.id === 'free') (window.__nav||(()=>{}))(window.__user ? 'dashboard' : 'auth_signup'); else { const key = plan.id + '_' + (billing === 'yearly' ? 'yearly' : 'monthly'); window.payFor && window.payFor(key); } }} style={{ width:'100%', padding:'13px 16px', borderRadius:11, background: isPopular ? T.brand : (plan.id === 'free' ? T.bg2 : T.ink), color: isPopular ? '#fff' : (plan.id === 'free' ? T.ink2 : '#fff'), fontSize:13.5, fontWeight:700, cursor:'pointer', border: plan.id === 'free' ? `1px solid ${T.border}` : 'none' }}>{plan.cta}</button>
       {plan.id === 'pro' && <div style={{ textAlign:'center', fontSize:11, color: 'rgba(255,255,255,.55)', marginTop:8 }}>Then $24/mo or $19/mo annually. Cancel any time.</div>}
     </div>
   );
@@ -237,7 +237,7 @@ function PricingPage() {
             <div style={{ position:'relative' }}>
               <div style={{ fontFamily:T.serif, fontSize:34, lineHeight:1.1, marginBottom:10 }}>Try Pro free for 7 days.</div>
               <div style={{ fontSize:14, opacity:.85, marginBottom:22, maxWidth:480, margin:'0 auto 22px' }}>Full access. No card charge until day 7. Cancel any time during the trial and pay nothing.</div>
-              <button data-nav="pre_exam_ready" style={{ padding:'14px 28px', borderRadius:11, background:'#fff', color:T.brand, fontSize:14, fontWeight:700, cursor:'pointer' }}>Start free trial →</button>
+              <button onClick={() => { window.payFor ? window.payFor('pro_monthly') : (window.__nav && window.__nav(window.__user ? 'pricing' : 'auth_signup')); }} style={{ padding:'14px 28px', borderRadius:11, background:'#fff', color:T.brand, fontSize:14, fontWeight:700, cursor:'pointer', border:'none' }}>Start free trial →</button>
             </div>
           </Card>
         </div>

@@ -486,6 +486,7 @@ function FLBanner() {
 
 function App() {
   const [page, setPage] = useState('dashboard');
+  useEffect(() => { window.__page = page; }, [page]);
   const [history, setHistory] = useState([]);
   const [device, setDevice] = useState('desktop'); // desktop | mobile
   const [splashGone, setSplashGone] = useState(false);
@@ -509,6 +510,7 @@ function App() {
       if (opts.langCode) { window.__langCode = opts.langCode; setLangCode(opts.langCode); }
       if (window.__langCode && id === 'lang') setLangCode(window.__langCode);
       setPage(id);
+      window.__page = id;
       setNavTick(t => t + 1);
       // Remember the last resumable page so reopening returns here (not the dashboard).
       try {

@@ -460,8 +460,12 @@
           window.dispatchEvent(new CustomEvent('fl-updated'));
         });
         if (event === 'SIGNED_IN') {
+          // Supabase re-fires SIGNED_IN on token refresh and tab refocus too, not just
+          // on actual login. Only jump to the dashboard when the user is sitting on an
+          // entry/auth screen — otherwise leave them on whatever page they're using.
+          var ENTRY = ['welcome','splash','prelaunch','marketing','auth_login','auth_signup','auth_onboarding','otp','forgot_pw','reset_password','onboarding', undefined, null, ''];
+          if (ENTRY.indexOf(window.__page) >= 0) { window.__nav && window.__nav('dashboard'); }
           window.__navResumed = true;
-          window.__nav && window.__nav('dashboard');
         }
       } else {
         window.FL.user = null;
@@ -539,7 +543,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b92-lesson-interactive';
+    window.__FL_BUILD = 'b93-nav-and-pricing-fix';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
