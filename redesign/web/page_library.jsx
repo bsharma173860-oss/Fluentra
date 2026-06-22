@@ -6,15 +6,6 @@ function LibraryPage() {
 
   // Featured guide ad removed per CEO review — replaced with "Continue reading" surfacing user's own saved item.
 
-  const collections = [
-    { title:'IELTS Speaking', count:24, color:T.speaking.c, bg:T.speaking.bg, ic:'mic' },
-    { title:'IELTS Writing Task 1', count:18, color:T.writing.c, bg:T.writing.bg, ic:'pen' },
-    { title:'IELTS Listening', count:32, color:T.listening.c, bg:T.listening.bg, ic:'head' },
-    { title:'IELTS Reading', count:21, color:T.reading.c, bg:T.reading.bg, ic:'book' },
-    { title:'DELE B2 Vocab', count:42, color:'#C04A06', bg:'#FFE5DE', ic:'globe' },
-    { title:'JLPT N4 Kanji', count:300, color:'#C84070', bg:'#FFE0EC', ic:'layers' },
-  ];
-
   const _libLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
   const [items, setItems] = useState([]);
   const [libLoading, setLibLoading] = useState(true);
@@ -39,6 +30,15 @@ function LibraryPage() {
       .catch(function () { if (!cancelled) { setItems([]); setLibLoading(false); } });
     return function () { cancelled = true; };
   }, []);
+
+  var _icByKind = { Article:'book', Audio:'head', Phrasebook:'globe', Lesson:'layers' };
+  const collections = Object.values(items.reduce(function (acc, it) {
+    var k = it.kind; if (!acc[k]) acc[k] = { title:k, count:0, color:(it.c && it.c.c) || T.reading.c, bg:(it.c && it.c.bg) || T.reading.bg, ic:_icByKind[k] || 'book' };
+    acc[k].count++; return acc;
+  }, {}));
+  var _recLbl = { reading:'Reading', listening:'Listening', writing:'Writing', speaking:'Speaking', mock_exam:'Mock exam', vocab:'Vocabulary' };
+  var _recNav = { reading:'reading', listening:'listening', writing:'writing', speaking:'speaking', mock_exam:'mock_test', vocab:'vocab' };
+  const _recent = ((typeof window!=='undefined' && window.__results) ? window.__results : []).slice(0,3).map(function (r) { var m=(r.detail&&r.detail.module)||'reading'; return { title:(_recLbl[m]||'Session'), meta:(r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : 'Recent'), n:(_recNav[m]||'reading') }; });
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -190,11 +190,8 @@ function LibraryPage() {
           <Card padding={16}>
             <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Recently read</div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {[
-                { title:'Cohesive devices in essays', meta:'Read 2d ago · 14 min', n:'lesson_article' },
-                { title:'Café Madrid pack',           meta:'Read 5d ago · audio', n:'listening' },
-                { title:'NHK Easy News — April',      meta:'Read 1w ago · 5 art.', n:'reading' },
-              ].map((it, i) => (
+              {_recent.length === 0 && (<div style={{ fontSize:11.5, color:T.ink4 }}>Nothing read yet — your recent practice shows here.</div>)}
+              {_recent.map((it, i) => (
                 <button key={i} data-nav={it.n} style={{ display:'block', textAlign:'left', background:'transparent' }}>
                   <div style={{ fontSize:12, fontWeight:600, color:T.ink, lineHeight:1.25, marginBottom:2 }}>{it.title}</div>
                   <div style={{ fontSize:10.5, color:T.ink4 }}>{it.meta}</div>

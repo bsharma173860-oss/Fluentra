@@ -2,10 +2,35 @@
 function MLibrary() {
   const nav = (id) => window.__nav && window.__nav(id);
   const [filter, setFilter] = React.useState('All');
+  const _libLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const [items, setItems] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(function () {
+    var cancelled = false;
+    fetch('/api/content-list?lang=' + encodeURIComponent(_libLang) + '&full=1&limit=40')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (cancelled) return;
+        var KIND = { reading:'Reading', writing:'Writing', vocab:'Vocab', listening:'Listening' };
+        var IC = { reading:'book', writing:'pen', vocab:'bookmark', listening:'head' };
+        var mapped = (d.items || []).map(function (it) {
+          var ty = it.type || 'reading';
+          return { kind: KIND[ty] || 'Lesson', title: (it.title || (it.payload && it.payload.title) || 'Untitled'), tag: _libLang, meta: (_libLang.toUpperCase() + ' \u00b7 ' + (it.difficulty || ty)), ic: IC[ty] || 'book', n: ty };
+        });
+        setItems(mapped); setLoading(false);
+      })
+      .catch(function () { if (!cancelled) { setItems([]); setLoading(false); } });
+    return function () { cancelled = true; };
+  }, []);
+  const _filtered = items.filter(function (it) { return filter === 'All' || it.kind === filter; });
+  var _mtheme = { Reading:T.reading, Writing:T.writing, Listening:T.listening, Vocab:{ c:T.brand, bg:T.brandLight }, Lesson:{ c:T.brand, bg:T.brandLight } };
+  var _mnav = { Reading:'reading', Writing:'writing', Listening:'listening', Vocab:'vocab', Lesson:'lesson_detail' };
+  var _micon = { Reading:'book', Writing:'pen', Listening:'head', Vocab:'bookmark', Lesson:'pen' };
+  const _mcolls = Object.values(items.reduce(function (acc, it) { var k=it.kind; if(!acc[k]){ var th=_mtheme[k]||{c:T.brand,bg:T.brandLight}; acc[k]={ title:k, count:0, n:_mnav[k]||'reading', ic:_micon[k]||'book', c:(th.c||th), bg:(th.bg||T.brandLight) }; } acc[k].count++; return acc; }, {})).map(function(c){ return { title:c.title, meta:c.count + (c.count===1?' item':' items'), n:c.n, ic:c.ic, c:c.c, bg:c.bg }; });
 
   return (
     <>
-      <MobileHeader title="Library" eyebrow="24 saved items" large right={
+      <MobileHeader title="Library" eyebrow={items.length + (items.length===1?" item":" items")} large right={
         <button onClick={()=>nav('search')} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, boxShadow:MT.shadowSm }}>{Icon.search({ width:14, height:14 })}</button>
       }/>
       <MobileBody padding={0}>
@@ -22,7 +47,7 @@ function MLibrary() {
 
         {/* FEATURED — gradient card */}
         <div style={{ padding:'0 18px 14px' }}>
-          <button onClick={()=>nav('listening')} style={{
+          <button onClick={()=>nav(items[0] ? items[0].n : 'reading')} style={{
             width:'100%', textAlign:'left',
             borderRadius:16, padding:16, border:'none',
             background:`linear-gradient(135deg, ${T.es.accent} 0%, ${T.es.accent}dd 100%)`,
@@ -33,9 +58,9 @@ function MLibrary() {
               {Array.from({ length:48 }).map((_,i) => <div key={i} style={{ width:4, height:4, borderRadius:2, background:'#fff' }}/>)}
             </div>
             <div style={{ position:'relative' }}>
-              <span style={{ fontSize:9.5, fontWeight:700, color:'#fff', background:'rgba(255,255,255,.22)', padding:'4px 9px', borderRadius:99, letterSpacing:'.08em', textTransform:'uppercase' }}>Editor's pick</span>
-              <div style={{ fontFamily:T.serif, fontSize:24, color:'#fff', lineHeight:1.1, marginTop:11, marginBottom:5, letterSpacing:'-.015em' }}>Café Madrid<br/>listening pack</div>
-              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.85)', marginBottom:13 }}>8 audio clips · 24 min · B1</div>
+              <span style={{ fontSize:9.5, fontWeight:700, color:'#fff', background:'rgba(255,255,255,.22)', padding:'4px 9px', borderRadius:99, letterSpacing:'.08em', textTransform:'uppercase' }}>{items[0] ? 'Recently added' : 'Get started'}</span>
+              <div style={{ fontFamily:T.serif, fontSize:24, color:'#fff', lineHeight:1.1, marginTop:11, marginBottom:5, letterSpacing:'-.015em' }}>{items[0] ? items[0].title : 'Start learning'}</div>
+              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.85)', marginBottom:13 }}>{items[0] ? items[0].meta : 'Your generated lessons are saved here'}</div>
               <span style={{ display:'inline-flex', alignItems:'center', gap:6, background:'#fff', color:T.es.accent, fontSize:12, fontWeight:700, padding:'8px 14px', borderRadius:10 }}>Open pack {Icon.arrow({ width:11, height:11 })}</span>
             </div>
           </button>
@@ -45,14 +70,8 @@ function MLibrary() {
         <div style={{ padding:'0 18px' }}>
           <MobileSectionHead title="All saved" action="Sort"/>
           <MCard style={{ padding:0 }}>
-            {[
-              { tag:'es', kind:'Vocab',     title:'Restaurant phrases',     meta:'24 cards',    ic:'bookmark', n:'vocab' },
-              { tag:'en', kind:'Listening', title:'BBC Podcast — climate',  meta:'18 min · C1', ic:'head',     n:'listening' },
-              { tag:'fr', kind:'Grammar',   title:'Subjonctif présent',     meta:'9 examples',  ic:'pen',      n:'grammar' },
-              { tag:'ja', kind:'Reading',   title:'NHK Easy News (April)',  meta:'5 articles',  ic:'book',     n:'article' },
-              { tag:'es', kind:'Speaking',  title:'Subway directions',      meta:'4 min',       ic:'mic',      n:'speaking' },
-              { tag:'en', kind:'Writing',   title:'IELTS Task 2 — opinion', meta:'12 prompts',  ic:'edit',     n:'writing' },
-            ].map((it, i, all) => {
+            {!loading && _filtered.length === 0 && (<div style={{ padding:'24px 14px', textAlign:'center', color:T.ink4, fontSize:12.5 }}>Nothing here yet — lessons you do are saved automatically.</div>)}
+            {_filtered.map((it, i, all) => {
               const lt = langTheme(it.tag);
               return (
                 <button key={i} onClick={()=>nav(it.n)} style={{
@@ -84,12 +103,7 @@ function MLibrary() {
         <div style={{ padding:'18px 18px 0' }}>
           <MobileSectionHead title="Collections"/>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            {[
-              { title:'Phrasebook',     meta:'42 phrases', n:'phrasebook',  ic:'bookmark', c:T.brand,        bg:T.brandLight },
-              { title:'Long-form articles', meta:'8 reads', n:'article',     ic:'book',     c:T.reading.c,    bg:T.reading.bg },
-              { title:'Lesson notes',   meta:'12 notes',   n:'lesson_detail', ic:'pen',     c:T.writing.c,    bg:T.writing.bg },
-              { title:'Audio packs',    meta:'24 clips',   n:'listening',   ic:'head',     c:T.listening.c,  bg:T.listening.bg },
-            ].map((c, i) => (
+            {_mcolls.map((c, i) => (
               <button key={i} onClick={()=>nav(c.n)} style={{
                 textAlign:'left', background:T.card, border:`1px solid ${T.border}`,
                 borderRadius:14, padding:14, boxShadow:MT.shadowSm,
