@@ -50,11 +50,7 @@ const PRICING_PLANS = [
   },
 ];
 
-const TESTIMONIALS = [
-  { q:'I went from 6.0 to 7.5 IELTS in 11 weeks. The AI feedback on my essays is what made the difference.',  who:'Maria S.', loc:'Madrid', score:'IELTS 7.5' },
-  { q:"I'd tried 4 apps before. Pro is the first one that actually held my attention past week 2.",            who:'David K.',  loc:'Berlin',  score:'120 day streak' },
-  { q:'The practice exams felt eerily close to the real thing. Came in with no nerves.',                       who:'Hiroko T.', loc:'Osaka',   score:'TOEFL 108' },
-];
+const TESTIMONIALS = [];
 
 const FAQ = [
   { q:'Can I cancel any time?',         a:'Yes — cancel from Settings → Subscription. You keep Pro access until the end of your billing period, then drop to Free with no data loss.' },
@@ -210,27 +206,6 @@ function PricingPage() {
             </Card>
           </div>
 
-          {/* Testimonials */}
-          <div style={{ marginBottom:60 }}>
-            <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.1, marginBottom:6 }}>Why people stay</div>
-            <div style={{ fontSize:13, color:T.ink4, marginBottom:24 }}>Everything in one place — 26 languages, four skills, and real exam formats.</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14 }}>
-              {TESTIMONIALS.map((t, i) => (
-                <Card key={i} padding={24}>
-                  <div style={{ fontFamily:T.serif, fontSize:28, color:T.brand, lineHeight:1, marginBottom:6 }}>"</div>
-                  <div style={{ fontSize:14, color:T.ink, lineHeight:1.6, marginBottom:18 }}>{t.q}</div>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, paddingTop:14, borderTop:`1px solid ${T.hairline}` }}>
-                    <div style={{ width:36, height:36, borderRadius:18, background:T.brandGrad || T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700 }}>{t.who[0]}</div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{t.who}</div>
-                      <div style={{ fontSize:11, color:T.ink4 }}>{t.loc} · {t.score}</div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-
           {/* Trust strip */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14, marginBottom:60 }}>
             {[
@@ -338,13 +313,6 @@ function MPricingPage() {
         </Card>
       </div>
 
-      <div style={{ padding:'4px 16px 18px' }}>
-        <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:10 }}>What learners say</div>
-        <Card padding={16}>
-          <div style={{ fontSize:13, color:T.ink, lineHeight:1.55, marginBottom:12 }}>"{TESTIMONIALS[0].q}"</div>
-          <div style={{ fontSize:11, color:T.ink4 }}>— {TESTIMONIALS[0].who}, {TESTIMONIALS[0].loc} · {TESTIMONIALS[0].score}</div>
-        </Card>
-      </div>
 
       <div style={{ padding:'4px 16px 14px' }}>
         <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:10 }}>FAQ</div>

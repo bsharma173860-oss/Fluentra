@@ -247,41 +247,6 @@ function MarketingPage() {
     ))}
    </div>
 
-   {/* TESTIMONIALS */}
-   <div style={{ background:T.bg2, padding:'80px 32px' }}>
-    <div style={{ maxWidth:1200, margin:'0 auto' }}>
-     <div style={{ textAlign:'center', marginBottom:48 }}>
-      <h2 style={{ fontFamily:T.serif, fontSize:42, color:T.ink, lineHeight:1.05, margin:0, marginBottom:10, letterSpacing:'-.01em' }}>Stories from learners.</h2>
-      <p style={{ fontSize:15, color:T.ink3 }}>Real timelines, real exam scores.</p>
-     </div>
-     <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:20 }}>
-      {[
-       { name:'Sara K.', loc:'Berlin → Madrid', flag:'es', stars:5, body:'I\'d been "learning Spanish" for three years before this. Six months in I held a 40-minute conversation with my landlord. it never made me feel slow.', stat:'A2 → B2', time:'in 6 months' },
-       { name:'Aki T.', loc:'Tokyo',      flag:'en', stars:5, body:'Got my IELTS band 8 on the first try. The mock exams felt eerily close to the real thing — and the speaking practice took the nerves out.', stat:'IELTS 8.0', time:'first attempt' },
-       { name:'Luca M.', loc:'Milan → Lyon',   flag:'fr', stars:5, body:'I tried Duolingo, Babbel, italki. Fluentra was the first one that respected my time. 15 minutes a day, no streak guilt-tripping, real results.', stat:'A1 → B1', time:'in 4 months' },
-      ].map(t => (
-       <div key={t.name} style={{ background:T.card, borderRadius:18, padding:28, border:`1px solid ${T.border}` }}>
-        <div style={{ display:'flex', gap:1, color:T.brand, marginBottom:14 }}>
-         {Array.from({ length:t.stars }).map((_,i) => Icon.star({ key:i, width:13, height:13, fill:'currentColor' }))}
-        </div>
-        <div style={{ fontSize:15, color:T.ink2, lineHeight:1.55, marginBottom:20, textWrap:'pretty' }}>"{t.body}"</div>
-        <div style={{ display:'flex', alignItems:'center', gap:12, paddingTop:18, borderTop:`1px solid ${T.hairline}` }}>
-         <div style={{ width:38, height:38, borderRadius:19, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:16 }}>{t.name[0]}</div>
-         <div style={{ flex:1 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{t.name}</div>
-          <div style={{ fontSize:11, color:T.ink4, display:'flex', alignItems:'center', gap:6 }}>{t.loc} <Flag code={t.flag} w={14} h={9}/></div>
-         </div>
-         <div style={{ textAlign:'right' }}>
-          <div style={{ fontFamily:T.serif, fontSize:18, color:T.brand, lineHeight:1 }}>{t.stat}</div>
-          <div style={{ fontSize:10, color:T.ink4, marginTop:2 }}>{t.time}</div>
-         </div>
-        </div>
-       </div>
-      ))}
-     </div>
-    </div>
-   </div>
-
    {/* STAT BAND — big numbers */}
    <div style={{ background:T.ink, color:'#fff', padding:'70px 32px', position:'relative', overflow:'hidden' }}>
     <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 15% 100%, rgba(217,119,87,.20) 0%, transparent 50%), radial-gradient(circle at 85% 0%, rgba(124,91,214,.16) 0%, transparent 50%)' }}/>
@@ -480,36 +445,6 @@ function MarketingPage() {
      <div style={{ marginTop:30, padding:'18px 24px', background:'#FFF8EE', border:'1px dashed #F4D58A', borderRadius:14, textAlign:'center', fontSize:14, color:T.ink2 }}>
       <b style={{ color:T.ink }}>The longest streak on Fluentra is 3,420 days</b> — held by Ines from Lisbon, learning Mandarin since launch.
      </div>
-    </div>
-   </div>
-
-   {/* MORE TESTIMONIALS */}
-   <div style={{ maxWidth:1200, margin:'0 auto', padding:'90px 32px' }}>
-    <div style={{ textAlign:'center', marginBottom:48 }}>
-     <Chip label="More learners" accent={T.ink2} bg={T.bg2} style={{ marginBottom:16 }}/>
-     <h2 style={{ fontFamily:T.serif, fontSize:46, color:T.ink, lineHeight:1.05, margin:0, marginBottom:14, letterSpacing:'-.01em' }}>Different starting points. Same arrival.</h2>
-    </div>
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:18 }}>
-     {[
-      {q:'I quit Babbel and Duolingo for this. The AI tutor closes the gap.',           n:'Henrik J.', m:'Researcher · Stockholm',   g:'linear-gradient(135deg,#1F8A5B,#3D8A5F)'},
-      {q:'Reading novels in French at 4 months in. Fluentra unlocked the part everyone says is hardest.', n:'Naomi T.', m:'Author · Oakland',      g:'linear-gradient(135deg,#7C5BD6,#A6486B)'},
-      {q:'Started learning Mandarin at 56. The tutor never gets impatient. That\'s rare in any teacher.',   n:'Alan G.',  m:'Retired · Brighton',     g:'linear-gradient(135deg,#E08F4D,#D26890)'},
-      {q:'My JLPT N2 went from a dream to "next December" thanks to the structured exam track.',    n:'Riko O.',  m:'Translator · Osaka',     g:'linear-gradient(135deg,#3D5BA8,#7C5BD6)'},
-      {q:'Free tier is genuinely useful. I\'ve been on it 4 months before upgrading.',         n:'Mike K.',  m:'Student · Toronto',      g:'linear-gradient(135deg,#2A6FA0,#5A9C7A)'},
-      {q:'I run Spanish stand-up shows now. Six months ago I couldn\'t order coffee.',         n:'Priya R.', m:'Comedian · London',      g:'linear-gradient(135deg,#A6486B,#D97757)'},
-     ].map((t,i)=>(
-      <div key={i} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:18, padding:26 }}>
-       <div style={{ display:'flex', gap:1, marginBottom:12 }}>{[1,2,3,4,5].map(s => <span key={s} style={{ color:'#E0A23A', fontSize:13 }}>★</span>)}</div>
-       <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:16, color:T.ink, lineHeight:1.45, marginBottom:18 }}>"{t.q}"</div>
-       <div style={{ display:'flex', alignItems:'center', gap:11, paddingTop:14, borderTop:`1px solid ${T.hairline}` }}>
-        <div style={{ width:34, height:34, borderRadius:17, background:t.g, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14 }}>{t.n[0]}</div>
-        <div>
-         <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{t.n}</div>
-         <div style={{ fontSize:11.5, color:T.ink4 }}>{t.m}</div>
-        </div>
-       </div>
-      </div>
-     ))}
     </div>
    </div>
 
