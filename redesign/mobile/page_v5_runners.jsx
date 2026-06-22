@@ -129,13 +129,18 @@ function MExamResultsV5({ mode = 'monthly' }) {
   const code = window.__langCode || 'en';
   const lang = (typeof LANGUAGES !== 'undefined') ? (LANGUAGES.find(l => l.code === code) || LANGUAGES[0]) : { code:'en', english:'English' };
   const ex = (typeof examFor === 'function') ? examFor(lang.code) : { name:'IELTS', short:'IELTS' };
-  const overall = mode === 'practice' ? 'B2.1' : '6.5';
+  const _R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; });
+  const _lastOf = function (mod) { for (var i = _R.length - 1; i >= 0; i--) { if (_R[i].module === mod) return _R[i]; } return null; };
+  const _bandOf = function (mod, fb) { var r = _lastOf(mod); return r ? +(r.score / 100 * 9).toFixed(1) : fb; };
+  const _recent = _R.slice(-4);
+  const _overallNum = _recent.length ? (_recent.reduce(function (a, r) { return a + r.score; }, 0) / _recent.length) / 100 * 9 : null;
+  const overall = mode === 'practice' ? 'B2.1' : (_overallNum != null ? _overallNum.toFixed(1) : '6.5');
   const tag = mode === 'monthly' ? 'OFFICIAL · BAND SCORE' : mode === 'mock' ? 'MOCK · AI-GRADED' : mode === 'practice' ? 'PRACTICE · CEFR' : 'YOUR RESULT';
   const breakdown = [
-    { l:'Listening', v:7.0, max:9, c:'#5A9C7A' },
-    { l:'Reading',   v:6.5, max:9, c:T.brand },
-    { l:'Writing',   v:6.0, max:9, c:'#E0A23A' },
-    { l:'Speaking',  v:6.5, max:9, c:'#7C5BD6' },
+    { l:'Listening', v:_bandOf('listening', 7.0), max:9, c:'#5A9C7A' },
+    { l:'Reading',   v:_bandOf('reading', 6.5),   max:9, c:T.brand },
+    { l:'Writing',   v:_bandOf('writing', 6.0),   max:9, c:'#E0A23A' },
+    { l:'Speaking',  v:_bandOf('speaking', 6.5),  max:9, c:'#7C5BD6' },
   ];
   const upsell = mode === 'monthly' || mode === 'mock';
   return (

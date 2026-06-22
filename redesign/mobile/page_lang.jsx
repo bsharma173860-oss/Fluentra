@@ -169,7 +169,7 @@ function MLangDetail() {
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{lang.exam} mock</div>
-                <div style={{ fontSize:10.5, color:T.ink3, marginTop:2 }}>Apr 28 · 2h 45m</div>
+                <div style={{ fontSize:10.5, color:T.ink3, marginTop:2 }}>2h 45m · full exam</div>
               </div>
             </div>
             <button onClick={()=>nav('mock_test')} style={{ width:'100%', marginTop:11, padding:'10px', borderRadius:10, border:`1.5px solid ${t.accent}`, background:'transparent', color:t.accent, fontSize:12, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
