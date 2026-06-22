@@ -12,11 +12,11 @@ const T = /* tokens */ {
   card:    '#FFFFFF',
   paper:   '#FFFEFA',
   // Glass (frosted) — translucent surfaces blurred over the ambient backdrop
-  glass:       'rgba(255,255,255,0.46)',
-  glassStrong: 'rgba(255,255,255,0.60)',
-  glassBorder: 'rgba(255,255,255,0.85)',
-  glassBlur:   'blur(26px) saturate(180%)',
-  glassShadow: '0 10px 34px rgba(40,30,25,0.13), inset 0 1px 0 rgba(255,255,255,0.7)',
+  glass:       'rgba(255,255,255,0.40)',
+  glassStrong: 'rgba(255,255,255,0.54)',
+  glassBorder: 'rgba(255,255,255,0.92)',
+  glassBlur:   'blur(34px) saturate(195%)',
+  glassShadow: '0 16px 44px rgba(40,30,25,0.17), inset 0 1px 0 rgba(255,255,255,0.8)',
   // Borders
   border:  '#EAEAEA',
   hairline:'#F4F4F4',
