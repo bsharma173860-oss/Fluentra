@@ -157,7 +157,7 @@ function MListeningSession() {
             {/* Controls */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:18 }}>
               <button onClick={()=>setPct(Math.max(0, pct-10))} style={{ width:36, height:36, borderRadius:18, background:'rgba(255,255,255,.14)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>‹‹</button>
-              <button onClick={()=>setPlaying(p=>!p)} style={{ width:54, height:54, borderRadius:27, background:'#fff', color:T.listening.c, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 6px 14px rgba(0,0,0,.18)' }}>
+              <button onClick={()=>{ var c=(typeof window!=='undefined' && window.__langCode) || 'en'; if (playing) { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){} setPlaying(false); } else { if (window.flSpeak) window.flSpeak(_l.passage, c); setPlaying(true); } }} style={{ width:54, height:54, borderRadius:27, background:'#fff', color:T.listening.c, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 6px 14px rgba(0,0,0,.18)' }}>
                 {playing ? <span style={{ fontSize:20, fontWeight:800 }}>‖</span> : Icon.play({ width:18, height:18 })}
               </button>
               <button onClick={()=>setPct(Math.min(100, pct+10))} style={{ width:36, height:36, borderRadius:18, background:'rgba(255,255,255,.14)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>››</button>

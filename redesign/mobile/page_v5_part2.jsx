@@ -348,13 +348,21 @@ function MHelpPageV5() {
 // MODULE RESULTS · v5
 // ══════════════════════════════════════════════════════════════════
 function MModuleResultsPageV5() {
-  const [mod, setMod] = useStateMV5b('reading');
+  const _R = (typeof window !== 'undefined' && window.__results) || [];
+  const _isMod = function (m) { return ['reading','writing','listening','speaking'].indexOf(m) >= 0; };
+  const _lastMod = (_R.length && _isMod((_R[_R.length-1]||{}).module)) ? _R[_R.length-1].module : 'reading';
+  const [mod, setMod] = useStateMV5b(_lastMod);
   const M = {
     reading:   { name:'Reading',   c:T.reading.c,   bg:T.reading.bg,   ic:'book', score:'7.5', sub:'Band', delta:'+0.5' },
     writing:   { name:'Writing',   c:T.writing.c,   bg:T.writing.bg,   ic:'pen',  score:'6.5', sub:'Band', delta:'+0.5' },
     listening: { name:'Listening', c:T.listening.c, bg:T.listening.bg, ic:'head', score:'8.0', sub:'Band', delta:'+1.0' },
     speaking:  { name:'Speaking',  c:T.speaking.c,  bg:T.speaking.bg,  ic:'mic',  score:'7.0', sub:'Band', delta:'+0.5' },
   }[mod];
+  const _att = _R.filter(function (r) { return r && r.module === mod && typeof r.score === 'number'; });
+  const _lastA = _att.length ? _att[_att.length-1] : null;
+  const _prevA = _att.length > 1 ? _att[_att.length-2] : null;
+  const score = _lastA ? (_lastA.score/100*9).toFixed(1) : M.score;
+  const deltaNum = (_lastA && _prevA) ? ((_lastA.score - _prevA.score)/100*9) : null;
   const breakdown = mod === 'writing' ? [
     { k:'Task response',     v:6.5 },
     { k:'Coherence',         v:7.0 },
@@ -389,8 +397,8 @@ function MModuleResultsPageV5() {
           <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', gap:14 }}>
             <div>
               <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.7)', marginBottom:7 }}>YOUR BAND</div>
-              <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:.95, letterSpacing:'-.04em' }}>{M.score}</div>
-              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.85)', fontWeight:700, marginTop:6 }}>↑ {M.delta} vs last week</div>
+              <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:.95, letterSpacing:'-.04em' }}>{score}</div>
+              {deltaNum != null && <div style={{ fontSize:11.5, color:'rgba(255,255,255,.85)', fontWeight:700, marginTop:6 }}>{deltaNum >= 0 ? '↑ +' : '↓ '}{Math.abs(deltaNum).toFixed(1)} vs previous</div>}
             </div>
             <div style={{ width:72, height:72, borderRadius:36, background:'rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[M.ic] ? Icon[M.ic]({width:30,height:30}) : '★'}</div>
           </div>
