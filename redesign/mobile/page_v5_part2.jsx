@@ -193,6 +193,7 @@ function MCoursePageV5() {
 // ══════════════════════════════════════════════════════════════════
 function MGrammarPageV5() {
   const [topic, setTopic] = useStateMV5b(null);
+  const [q, setQ] = useStateMV5b('');
   const lang = (typeof window !== 'undefined' && window.__activeLang) || { name:'English', accent:T.brand };
   if (topic) {
     return (
@@ -230,18 +231,18 @@ function MGrammarPageV5() {
 
   return (
     <>
-      <MobileHeader title={`${lang.name} grammar`} right={<button style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.search({width:13,height:13})}</button>}/>
+      <MobileHeader title={`${lang.name} grammar`}/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
         <V5b_pre eyebrow="59 RULES · 9 CATEGORIES" title="Grammar reference" lede={`Search rules, see real examples, then practice them in writing — all the ${lang.name} grammar you'll need.`}/>
         {/* Search box */}
         <div style={{ position:'relative', marginBottom:14 }}>
           <div style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search({width:14,height:14})}</div>
-          <input placeholder="e.g. past perfect, conditionals…" style={{ width:'100%', padding:'12px 14px 12px 38px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, fontSize:13, color:T.ink, outline:'none', boxShadow:MT.shadowSm }}/>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="e.g. past perfect, conditionals…" style={{ width:'100%', padding:'12px 14px 12px 38px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, fontSize:13, color:T.ink, outline:'none', boxShadow:MT.shadowSm }}/>
         </div>
 
         {V5b_label('CATEGORIES')}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
-          {cats.map(c => (
+          {cats.filter(c => !q || ((c.title||'')+' '+(c.sub||'')).toLowerCase().indexOf(q.toLowerCase())>=0).map(c => (
             <button key={c.title} onClick={()=>setTopic(sample[0])} style={{ background:T.card, border:`1px solid ${T.hairline}`, borderRadius:13, padding:'13px 13px', textAlign:'left', boxShadow:MT.shadowSm }}>
               <div style={{ width:32, height:32, borderRadius:9, background:c.bg, color:c.c, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:9 }}>{Icon[c.ic] ? Icon[c.ic]({width:13,height:13}) : Icon.book({width:13,height:13})}</div>
               <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, marginBottom:3 }}>{c.title}</div>
@@ -253,7 +254,7 @@ function MGrammarPageV5() {
 
         {V5b_label('FREQUENTLY VIEWED')}
         <MCard style={{ padding:0, overflow:'hidden' }}>
-          {['Present perfect vs simple past','Subjunctive mood','When to use "the"','Reported speech'].map((s, i) => (
+          {['Present perfect vs simple past','Subjunctive mood','When to use "the"','Reported speech'].filter(x => !q || x.toLowerCase().indexOf(q.toLowerCase())>=0).map((s, i) => (
             <button key={s} onClick={()=>setTopic(sample[0])} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', background:'transparent' }}>
               <div style={{ width:26, height:26, borderRadius:7, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:11, fontWeight:600 }}>{i+1}</div>
               <div style={{ flex:1, fontSize:12.5, fontWeight:600, color:T.ink }}>{s}</div>
@@ -314,7 +315,7 @@ function MHelpPageV5() {
         {V5b_label('BROWSE BY TOPIC')}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
           {cats.map(c => (
-            <button key={c.t} style={{ background:T.card, border:`1px solid ${T.hairline}`, borderRadius:13, padding:'12px 13px', textAlign:'left', boxShadow:MT.shadowSm }}>
+            <button key={c.t} onClick={()=>{ window.location.href = 'mailto:help@fluentra.app?subject=' + encodeURIComponent(c.t); }} style={{ background:T.card, border:`1px solid ${T.hairline}`, borderRadius:13, padding:'12px 13px', textAlign:'left', boxShadow:MT.shadowSm }}>
               <div style={{ width:32, height:32, borderRadius:9, background:c.bg, color:c.c, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:9 }}>{Icon[c.ic] ? Icon[c.ic]({width:13,height:13}) : Icon.book({width:13,height:13})}</div>
               <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, marginBottom:3 }}>{c.t}</div>
               <div style={{ fontSize:9.5, color:c.c, fontWeight:800, letterSpacing:'.05em' }}>{c.n} ARTICLES</div>

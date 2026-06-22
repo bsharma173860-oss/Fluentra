@@ -47,7 +47,6 @@ function MTutorCallPageV5() {
           <div style={{ width:6, height:6, borderRadius:3, background:'#5BD17A', boxShadow:'0 0 6px #5BD17A' }}/>
           <span style={{ fontSize:10, fontWeight:700, letterSpacing:'.06em' }}>LIVE · {fmt(secs)}</span>
         </div>
-        <button style={{ width:32, height:32, borderRadius:8, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.14)', color:'#fff', fontSize:14 }}>⋯</button>
       </div>
 
       {/* Tutor card */}

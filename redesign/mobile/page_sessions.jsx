@@ -388,7 +388,7 @@ function MWritingSession() {
           <div style={{ fontSize:11, fontWeight:700, color: wordCount >= TARGET ? T.listening.c : MT.ink3 }}>{wordCount}/{TARGET}</div>
         </div>
         <div style={{ display:'flex', gap:7 }}>
-          <button style={{ flex:1, padding:'12px', borderRadius:11, background:MT.bg2, color:T.writing.c, fontSize:12.5, fontWeight:700, border:`1px solid ${T.writing.c}33`, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+          <button onClick={()=>window.__nav && window.__nav('ai_grading')} style={{ flex:1, padding:'12px', borderRadius:11, background:MT.bg2, color:T.writing.c, fontSize:12.5, fontWeight:700, border:`1px solid ${T.writing.c}33`, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5 }}>
             {Icon.spark({ width:11, height:11 })} AI feedback
           </button>
           <button onClick={()=>window.__nav && window.__nav('mod_results')} style={{ flex:1.4, padding:'12px', borderRadius:11, background:T.writing.c, color:'#fff', fontSize:12.5, fontWeight:700, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:5, boxShadow:`0 6px 14px ${T.writing.c}55` }}>

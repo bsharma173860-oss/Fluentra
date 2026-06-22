@@ -612,6 +612,25 @@ function Bar({ pct, color=T.brand, track=T.trackWarm, height=4 }) {
 // Helpers
 function langTheme(code) { return T[code] || { bg:T.bg2, accent:T.ink, accentLight:T.bg2 }; }
 
+// Browser-native text-to-speech (no backend). flSpeak('hola','es') -> speaks it.
+function flSpeak(text, code) {
+  if (typeof window === 'undefined' || !window.speechSynthesis || !text) return false;
+  var map = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', ja:'ja-JP', zh:'zh-CN', ko:'ko-KR', ru:'ru-RU', ar:'ar-SA', hi:'hi-IN', nl:'nl-NL', pl:'pl-PL', tr:'tr-TR', sv:'sv-SE' };
+  try {
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(String(text));
+    u.lang = map[code] || (code ? code + '-' + String(code).toUpperCase() : 'en-US');
+    u.rate = 0.92;
+    var voices = window.speechSynthesis.getVoices() || [];
+    var pref = u.lang.toLowerCase().slice(0, 2);
+    var v = voices.filter(function (vo) { return vo.lang && vo.lang.toLowerCase().indexOf(pref) === 0; })[0];
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
+}
+if (typeof window !== 'undefined') window.flSpeak = flSpeak;
+
 Object.assign(window, {
   T, LANGUAGES, USER, Flag, Icon, Ring, EXAMS, examFor, CATALOG_EXAMS, langPack,
   userLanguages, langByCode, addUserLang, removeUserLang, STARTER_CODES,
