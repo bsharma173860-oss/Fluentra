@@ -526,29 +526,35 @@ function MVocabPageV5() {
 function MTutorPageV5() {
   const [input, setInput] = useStateMV5('');
   const [msgs, setMsgs] = useStateMV5([
-    { role:'ai',   text:"Hi María — welcome back! Want to keep working on Writing Task 2, or start something new?", t:'2 min ago' },
-    { role:'user', text:"Let's continue Writing. I want to practice Task 2 essays.", t:'1 min ago' },
-    { role:'ai',   text:"Great. Here's a fresh prompt: 'Some people believe universities should focus on academic knowledge, while others argue they should prepare students for careers. Discuss both views.' Type your response or tap Outline to plan first.", t:'just now', actions:['Outline first','See sample'] },
+    { role:'ai', text:"Hi! I'm your Fluentra tutor. Ask me anything — a word, a grammar point, or let's practice a conversation.", t:'now' },
   ]);
-  const sessions = [
-    { topic:'Writing Task 2 — Education',  ago:'2h ago', ic:'pen',  c:T.writing.c, bg:T.writing.bg, n:24 },
-    { topic:'Speaking Part 2 — Travel',     ago:'Yesterday', ic:'mic',  c:T.speaking.c, bg:T.speaking.bg, n:18 },
-    { topic:'Reading vocab — Academic',     ago:'2 days ago', ic:'book', c:T.reading.c, bg:T.reading.bg, n:12 },
-  ];
+  async function send() {
+    var text = (input || '').trim(); if (!text) return;
+    var userMsg = { role:'user', text:text, t:'now' };
+    var history = msgs.concat([userMsg]).map(function (m) { return { role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }; });
+    setMsgs(function (m) { return m.concat([userMsg]); }); setInput('');
+    try {
+      var resp = await fetch('/api/tutor', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ messages: history, lang: (window.__langCode || 'en') }) });
+      var data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || 'tutor error');
+      setMsgs(function (m) { return m.concat([{ role:'ai', text: data.reply || '\u2026', t:'now' }]); });
+    } catch (e) { setMsgs(function (m) { return m.concat([{ role:'ai', text:'Sorry \u2014 I had trouble responding. Please try again.', t:'now' }]); }); }
+  }
+  const sessions = [];
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:T.bg }}>
       <MobileHeader title="Fluentra AI" right={<button style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.more ? Icon.more({width:13,height:13}) : '⋯'}</button>}/>
       <div style={{ flex:1, overflow:'auto', padding:'0 16px 14px' }}>
-        <V5_pre eyebrow="GPT-4 · ALWAYS-ON · UNLIMITED" title="Your AI tutor" lede="Conversational drills, on-the-fly feedback and personalised practice — any time."/>
+        <V5_pre eyebrow="CLAUDE-POWERED · ALWAYS-ON" title="Your AI tutor" lede="Conversational drills, on-the-fly feedback and personalised practice — any time."/>
         {/* Active session — dark */}
         <div style={{ background:T.ink, borderRadius:16, padding:'14px 16px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
           <V5_dotgrid/>
           <div style={{ position:'relative', display:'flex', alignItems:'center', gap:11 }}>
             <div style={{ width:38, height:38, borderRadius:11, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.spark({width:15,height:15})}</div>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.55)', marginBottom:2 }}>ACTIVE SESSION</div>
-              <div style={{ fontSize:13, fontWeight:700 }}>Writing Task 2 · Education</div>
+              <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.55)', marginBottom:2 }}>YOUR TUTOR</div>
+              <div style={{ fontSize:13, fontWeight:700 }}>Ask anything — grammar, words, conversation</div>
             </div>
             <button style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.12)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x ? Icon.x({width:11,height:11}) : '×'}</button>
           </div>
@@ -588,8 +594,8 @@ function MTutorPageV5() {
       {/* Input bar */}
       <div style={{ padding:'10px 14px 14px', background:T.card, borderTop:`1px solid ${T.hairline}`, flexShrink:0, display:'flex', gap:8, alignItems:'center' }}>
         <button style={{ width:36, height:36, borderRadius:10, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'}</button>
-        <input value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask anything…" style={{ flex:1, padding:'10px 13px', borderRadius:11, background:T.bg2, border:`1px solid ${T.border}`, fontSize:13, color:T.ink, outline:'none', minWidth:0 }}/>
-        <button style={{ width:36, height:36, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 10px ${T.brand}55`, flexShrink:0 }}>{Icon.arrow ? Icon.arrow({width:13,height:13}) : '→'}</button>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{ if (e.key==="Enter") send(); }} placeholder="Ask anything…" style={{ flex:1, padding:'10px 13px', borderRadius:11, background:T.bg2, border:`1px solid ${T.border}`, fontSize:13, color:T.ink, outline:'none', minWidth:0 }}/>
+        <button onClick={()=>send()} style={{ width:36, height:36, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 10px ${T.brand}55`, flexShrink:0 }}>{Icon.arrow ? Icon.arrow({width:13,height:13}) : '→'}</button>
       </div>
     </div>
   );
