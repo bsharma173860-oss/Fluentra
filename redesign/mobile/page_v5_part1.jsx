@@ -366,6 +366,7 @@ function MFriendsPageV5() {
 function MVocabPageV5() {
   const [tab, setTab] = useStateMV5('decks');
   const [studying, setStudying] = useStateMV5(false);
+  const [studyMastered, setStudyMastered] = useStateMV5(false);
   const [cardIdx, setCardIdx] = useStateMV5(0);
   const [flipped, setFlipped] = useStateMV5(false);
   const nav = (id) => window.__nav && window.__nav(id);
@@ -393,7 +394,7 @@ function MVocabPageV5() {
   const _reps = function (term) { var st = srs[_vcode + '::' + term]; return (st && st.reps) || 0; };
   const dueWords = words.filter(function (w) { return _isDue(w.term); });
   const masteredWords = words.filter(function (w) { return _reps(w.term) >= 3; });
-  const studyWords = dueWords.length ? dueWords : words;
+  const studyWords = studyMastered ? masteredWords : (dueWords.length ? dueWords : words);
   const cards = studyWords.map(function (w) { return { term:w.term, front:w.term, back:w.en, meta:(w.reading ? w.reading + ' · ' : '') + _vcode.toUpperCase(), ex:w.example }; });
   const _newN = words.filter(function (w) { return !srs[_vcode + '::' + w.term]; }).length;
   const _revN = words.filter(function (w) { return srs[_vcode + '::' + w.term] && _isDue(w.term); }).length;
@@ -448,7 +449,7 @@ function MVocabPageV5() {
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
         <V5_pre eyebrow={dueWords.length + ' CARDS DUE TODAY'} title="Vocabulary" lede="Spaced-repetition decks across all your languages — review now to keep them sticky."/>
         {/* Today's review hero — dark */}
-        <button onClick={()=>setStudying(true)} style={{ width:'100%', textAlign:'left', background:T.ink, borderRadius:18, padding:'20px 18px', color:'#fff', position:'relative', overflow:'hidden', marginBottom:14, border:'none', cursor:'pointer' }}>
+        <button onClick={()=>{ setStudyMastered(false); setStudying(true); }} style={{ width:'100%', textAlign:'left', background:T.ink, borderRadius:18, padding:'20px 18px', color:'#fff', position:'relative', overflow:'hidden', marginBottom:14, border:'none', cursor:'pointer' }}>
           <V5_dotgrid/>
           <div style={{ position:'relative' }}>
             <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', textTransform:'uppercase', color:'rgba(255,255,255,.55)', marginBottom:7 }}>TODAY'S REVIEW</div>
@@ -523,7 +524,7 @@ function MVocabPageV5() {
             <div style={{ width:54, height:54, borderRadius:27, background:'#E2EEDF', color:'#5A9C7A', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>{Icon.check ? Icon.check({width:22,height:22}) : '✓'}</div>
             <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, marginBottom:5, letterSpacing:'-.02em' }}>{masteredWords.length} mastered</div>
             <div style={{ fontSize:12, color:T.ink4, lineHeight:1.5, marginBottom:14 }}>Fully learned cards. They re-surface every 30+ days for retention.</div>
-            <button style={{ padding:'9px 16px', borderRadius:10, background:T.bg2, color:T.ink2, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}` }}>Review mastered</button>
+            <button onClick={()=>{ if(masteredWords.length){ setStudyMastered(true); setStudying(true); } }} disabled={!masteredWords.length} style={{ padding:'9px 16px', borderRadius:10, background:T.bg2, color:T.ink2, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}`, opacity: masteredWords.length ? 1 : .5 }}>Review mastered</button>
           </MCard>
         )}
       </MobileBody>

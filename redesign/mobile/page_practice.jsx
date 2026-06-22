@@ -73,7 +73,6 @@ function MPractice() {
         {/* DAILY CHALLENGES — horizontal scroller */}
         <div style={{ padding:'18px 18px 6px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Daily challenges</div>
-          <button style={{ fontSize:11, color:T.ink3, fontWeight:600 }}>See all →</button>
         </div>
         <div className="fluentra-challenges" style={{ display:'flex', gap:10, overflowX:'auto', padding:'10px 18px 12px' }}>
           <style>{`.fluentra-challenges::-webkit-scrollbar{display:none}`}</style>

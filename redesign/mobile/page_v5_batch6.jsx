@@ -215,7 +215,7 @@ function MMilestonesReelPageV5() {
 
       <div style={{ padding:'14px 16px 22px', display:'flex', gap:10, background:'rgba(0,0,0,.4)' }}>
         <button onClick={()=>nav('dashboard')} style={{ flex:1, padding:'13px', borderRadius:12, background:'rgba(255,255,255,.12)', color:'#fff', fontSize:12.5, fontWeight:700, border:'1px solid rgba(255,255,255,.2)' }}>Done</button>
-        <button style={{ flex:1, padding:'13px', borderRadius:12, background:'#fff', color:T.ink, fontSize:12.5, fontWeight:700, border:'none' }}>Share story</button>
+        <button onClick={()=>{ var u=(typeof window!=='undefined'?window.location.origin:''); if(navigator.share){navigator.share({title:'My Fluentra milestone',text:'I just hit a milestone on Fluentra!',url:u}).catch(function(){});}else if(navigator.clipboard){navigator.clipboard.writeText(u);} }} style={{ flex:1, padding:'13px', borderRadius:12, background:'#fff', color:T.ink, fontSize:12.5, fontWeight:700, border:'none' }}>Share story</button>
       </div>
     </div>
   );
@@ -278,7 +278,7 @@ function MAISpeakingPageV5() {
 
       {/* Bottom controls */}
       <div style={{ position:'relative', padding:'14px 16px 22px', borderTop:'1px solid rgba(255,255,255,.08)', display:'flex', gap:10 }}>
-        <button style={{ flex:1, padding:'13px', borderRadius:12, background:'rgba(255,255,255,.08)', color:'#fff', fontSize:12.5, fontWeight:700, border:'1px solid rgba(255,255,255,.14)' }}>Skip prompt</button>
+        <button onClick={()=>nav('ai_grading')} style={{ flex:1, padding:'13px', borderRadius:12, background:'rgba(255,255,255,.08)', color:'#fff', fontSize:12.5, fontWeight:700, border:'1px solid rgba(255,255,255,.14)' }}>Skip prompt</button>
         <button onClick={()=>nav('ai_grading')} disabled={secs < 5} style={{ flex:1, padding:'13px', borderRadius:12, background: secs >= 5 ? '#fff' : 'rgba(255,255,255,.16)', color: secs >= 5 ? T.ink : 'rgba(255,255,255,.5)', fontSize:12.5, fontWeight:700, border:'none', opacity: secs >= 5 ? 1 : .7 }}>Submit · grade me</button>
       </div>
     </div>

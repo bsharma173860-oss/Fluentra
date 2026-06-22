@@ -306,8 +306,8 @@ function MHelpPageV5() {
             </div>
           </div>
           <div style={{ position:'relative', display:'grid', gridTemplateColumns:'1fr 1fr', gap:7 }}>
-            <button style={{ padding:'9px 6px', borderRadius:10, background:T.brand, color:'#fff', fontSize:12, fontWeight:700 }}>Start chat</button>
-            <button style={{ padding:'9px 6px', borderRadius:10, background:'rgba(255,255,255,.12)', color:'#fff', fontSize:12, fontWeight:700, border:'1px solid rgba(255,255,255,.18)' }}>Email us</button>
+            <button onClick={()=>{ window.location.href = 'mailto:help@fluentra.app?subject=Fluentra%20support'; }} style={{ padding:'9px 6px', borderRadius:10, background:T.brand, color:'#fff', fontSize:12, fontWeight:700, border:'none' }}>Email support</button>
+            <button onClick={()=>{ window.location.href = 'mailto:help@fluentra.app'; }} style={{ padding:'9px 6px', borderRadius:10, background:'rgba(255,255,255,.12)', color:'#fff', fontSize:12, fontWeight:700, border:'1px solid rgba(255,255,255,.18)' }}>Email us</button>
           </div>
         </div>
 

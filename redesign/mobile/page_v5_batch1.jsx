@@ -236,54 +236,39 @@ function MLessonDetailV5() {
 
 function MArticleReaderPageV5() {
   const [scroll, setScroll] = useStV5B1(0);
-  const [size, setSize] = useStV5B1(15);
-  const article = {
-    eyebrow:'CULTURE · 6 MIN READ',
-    title:'How to order coffee like a Spaniard',
-    lede:'A short guide to café culture in Madrid, Barcelona and beyond — the rituals, the vocab, and the unwritten rules.',
-    author:'Anaís Rodríguez',
-    date:'May 4',
-    body:[
-      ['p','In Spain, coffee is less a drink than a punctuation mark. It opens the morning, breaks up work, signals friendship and ends meals. Knowing what to order — and how — is half the battle.'],
-      ['h','The morning lineup'],
-      ['p','Most Spaniards start with a <b>café con leche</b>: half espresso, half steamed milk, served in a wide cup. Stronger? <b>Café solo</b> (a straight espresso). Lighter? <b>Café cortado</b> — espresso with a splash of milk in a small glass.'],
-      ['quote','"Un café, por favor" gets you a basic espresso almost anywhere.'],
-      ['h','When to order what'],
-      ['p','Coffee with milk is a morning thing — order a milky drink after lunch and you\'ll get a polite raised eyebrow. Afternoon is the time for <b>cortado</b> or <b>solo</b>, often with a small piece of dark chocolate on the side.'],
-      ['p','One last rule: never rush. Coffee here is meant to be sat with, not carried. Pull up a chair, watch the street, and let the morning unfold.'],
-    ]
-  };
+  const [size, setSize] = useStV5B1(16);
+  const _r = (typeof _sc === 'function') ? _sc('reading') : null;
+  const passage = (_r && _r.passage) ? String(_r.passage) : '';
+  const title = (_r && _r.title) ? _r.title : 'Reading';
+  const paras = passage ? passage.split(/\n+/).filter(function (p) { return p.trim(); }) : [];
+  const sizeBtns = (
+    <div style={{ display:'flex', gap:6 }}>
+      <button onClick={()=>setSize(Math.max(13, size-1))} style={{ width:30, height:30, borderRadius:8, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink3, fontSize:11, fontWeight:700 }}>A\u2212</button>
+      <button onClick={()=>setSize(Math.min(22, size+1))} style={{ width:30, height:30, borderRadius:8, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, fontSize:13, fontWeight:700 }}>A+</button>
+    </div>
+  );
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', background:T.bg, overflow:'hidden' }}>
       <div style={{ height:3, background:T.bg2, position:'relative' }}><div style={{ height:'100%', width:`${scroll}%`, background:T.brand, transition:'width .15s' }}/></div>
-      <MobileHeader back title="Article" right={<div style={{ display:'flex', gap:6 }}>
-        <button onClick={()=>setSize(Math.max(13, size-1))} style={{ width:30, height:30, borderRadius:8, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink3, fontSize:11, fontWeight:700 }}>A−</button>
-        <button onClick={()=>setSize(Math.min(20, size+1))} style={{ width:30, height:30, borderRadius:8, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, fontSize:13, fontWeight:700 }}>A+</button>
-      </div>}/>
-      <div onScroll={e=>{ const el=e.target; setScroll((el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight)) * 100); }} style={{ flex:1, overflow:'auto', padding:'14px 18px 30px' }}>
-        <div style={{ fontSize:10.5, fontWeight:800, color:T.brand, letterSpacing:'.16em', marginBottom:10 }}>{article.eyebrow}</div>
-        <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.05, letterSpacing:'-.02em', marginBottom:12 }}>{article.title}</div>
-        <div style={{ fontSize:14, color:T.ink3, lineHeight:1.55, marginBottom:18, fontFamily:T.serif }}>{article.lede}</div>
-        <div style={{ display:'flex', alignItems:'center', gap:10, paddingBottom:18, marginBottom:18, borderBottom:`1px solid ${T.hairline}` }}>
-          <div style={{ width:32, height:32, borderRadius:16, background:'linear-gradient(135deg,#D26890,#E08F4D)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13 }}>AR</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:T.ink }}>{article.author}</div>
-            <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{article.date} · 4 min read · Spanish · A2</div>
-          </div>
+      <MobileHeader back title="Article" right={paras.length ? sizeBtns : null}/>
+      {paras.length === 0 ? (
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'30px 28px', textAlign:'center' }}>
+          <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, marginBottom:8 }}>No article loaded</div>
+          <div style={{ fontSize:13, color:T.ink4, lineHeight:1.6, marginBottom:18 }}>Start a reading session and we'll generate a passage tailored to your level.</div>
+          <button onClick={()=>window.__nav && window.__nav('reading')} style={{ padding:'12px 20px', borderRadius:12, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, border:'none' }}>Start reading</button>
         </div>
-        {article.body.map((b, i) => {
-          if (b[0] === 'h') return <div key={i} style={{ fontFamily:T.serif, fontSize:22, color:T.ink, marginTop:24, marginBottom:10, letterSpacing:'-.015em' }}>{b[1]}</div>;
-          if (b[0] === 'quote') return <div key={i} style={{ borderLeft:`3px solid ${T.brand}`, padding:'8px 0 8px 14px', margin:'18px 0', fontFamily:T.serif, fontStyle:'italic', fontSize:18, color:T.ink2, lineHeight:1.4 }}>{b[1]}</div>;
-          return <div key={i} dangerouslySetInnerHTML={{ __html: b[1] }} style={{ fontSize:size, color:T.ink2, lineHeight:1.7, marginBottom:14, fontFamily:T.serif }}/>;
-        })}
-        <div style={{ marginTop:24, padding:'14px 16px', background:T.brandLight, border:`1px dashed ${T.brand}55`, borderRadius:13 }}>
-          <div style={{ fontSize:10.5, fontWeight:800, color:T.brand, letterSpacing:'.14em', marginBottom:6 }}>SAVE TO LEARN</div>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.ink, lineHeight:1.5 }}>"Tap any word in the article to add it to your vocab deck — we'll surface it again tomorrow."</div>
+      ) : (
+        <div onScroll={e=>{ const el=e.target; setScroll((el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight)) * 100); }} style={{ flex:1, overflow:'auto', padding:'16px 18px 30px' }}>
+          <div style={{ fontFamily:T.serif, fontSize:28, color:T.ink, lineHeight:1.08, letterSpacing:'-.02em', marginBottom:16 }}>{title}</div>
+          {paras.map((p, i) => (
+            <div key={i} style={{ fontSize:size, color:T.ink2, lineHeight:1.7, marginBottom:14, fontFamily:T.serif }}>{p}</div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
+
 
 // ══════════════════════════════════════════════════════════════════
 // PHRASEBOOK

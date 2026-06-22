@@ -288,7 +288,7 @@ function MSpeakingSession() {
           </button>
         ) : (
           <div style={{ display:'flex', gap:8 }}>
-            <button style={{ flex:1, padding:'12px', borderRadius:11, background:MT.bg2, color:MT.ink, fontSize:13, fontWeight:600, border:`1px solid ${MT.hairline}` }}>Skip prep</button>
+            <button onClick={() => setPhase('recording')} style={{ flex:1, padding:'12px', borderRadius:11, background:MT.bg2, color:MT.ink, fontSize:13, fontWeight:600, border:`1px solid ${MT.hairline}` }}>Skip prep</button>
             <button onClick={() => setPhase(phase === 'prep' ? 'recording' : 'done')} style={{ flex:2, padding:'12px', borderRadius:11, background:T.speaking.c, color:'#fff', fontSize:13, fontWeight:700, boxShadow:`0 6px 14px ${T.speaking.c}55` }}>
               {phase === 'prep' ? 'Start recording' : 'Stop recording'}
             </button>

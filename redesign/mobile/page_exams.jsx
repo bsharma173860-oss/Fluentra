@@ -1,6 +1,17 @@
 // ── Mobile · Exams v4 — WEB VOCABULARY ──────────────────────
 function MExams() {
   const nav = (id) => window.__nav && window.__nav(id);
+  const [lb, setLb] = React.useState(null);
+  const [meId, setMeId] = React.useState(null);
+  React.useEffect(function () {
+    if (window.FL && window.FL.social) {
+      window.FL.social._uid().then(function (id) { setMeId(id); }).catch(function () {});
+      window.FL.social.leaderboard('xp', 50).then(function (r) {
+        var arr = (r || []).slice().sort(function (a, b) { return (b.best_score || 0) - (a.best_score || 0); }).slice(0, 4);
+        setLb(arr);
+      }).catch(function () { setLb([]); });
+    } else { setLb([]); }
+  }, []);
   const exams = [
     { name:'IELTS Academic',   flag:'en', color:T.speaking.c, bg:T.speaking.bg, next:'Apr 28', score:'7.0', unit:'/9' },
     { name:'TOEFL iBT',        flag:'en', color:'#1558B0',    bg:'#EEF6FF',     next:'May 12', score:'92',  unit:'/120' },
@@ -69,24 +80,27 @@ function MExams() {
 
         {/* LEADERBOARD */}
         <div style={{ padding:'4px 18px 0' }}>
-          <MobileSectionHead title="IELTS leaderboard" action="View" onAction={()=>nav('leaderboard')}/>
+          <MobileSectionHead title="Leaderboard" action="View" onAction={()=>nav('leaderboard')}/>
           <MCard style={{ padding:6 }}>
-            {[
-              { rank:1,  name:'Akira Tanaka',   country:'ja', score:'8.5' },
-              { rank:2,  name:'Lena Nowak',     country:'de', score:'8.5' },
-              { rank:3,  name:'Pierre Dubois',  country:'fr', score:'8.0' },
-              { rank:18, name:'María García',   country:'es', score:'7.5', you:true },
-            ].map((row, i, all) => (
-              <div key={row.rank} style={{ display:'grid', gridTemplateColumns:'26px 1fr auto auto', padding:'9px 10px', alignItems:'center', gap:9, borderRadius:9, background: row.you ? T.brandLight : 'transparent', marginBottom: i < all.length - 1 ? 1 : 0 }}>
-                <div style={{ fontFamily:T.serif, fontSize:14, color: row.rank <= 3 ? T.brand : T.ink3, lineHeight:1 }}>#{row.rank}</div>
-                <div style={{ display:'flex', alignItems:'center', gap:7, minWidth:0 }}>
-                  <div style={{ width:24, height:24, borderRadius:12, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, flexShrink:0 }}>{row.name[0]}</div>
-                  <div style={{ fontSize:11.5, fontWeight: row.you ? 700 : 600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.name}{row.you && <span style={{ color:T.brand }}> · you</span>}</div>
+            {lb === null ? (
+              <div style={{ padding:'18px 10px', textAlign:'center', color:T.ink4, fontSize:12 }}>Loading…</div>
+            ) : lb.length === 0 ? (
+              <div style={{ padding:'16px 12px', color:T.ink3, fontSize:12.5, lineHeight:1.5 }}>No public learners yet. Make your profile public and keep practicing to appear here.</div>
+            ) : lb.map((row, i, all) => {
+              const you = meId && row.id === meId;
+              const nm = row.full_name || row.username || 'Learner';
+              const band = row.best_score ? (row.best_score / 100 * 9).toFixed(1) : '\u2014';
+              return (
+                <div key={row.id || i} style={{ display:'grid', gridTemplateColumns:'26px 1fr auto', padding:'9px 10px', alignItems:'center', gap:9, borderRadius:9, background: you ? T.brandLight : 'transparent', marginBottom: i < all.length - 1 ? 1 : 0 }}>
+                  <div style={{ fontFamily:T.serif, fontSize:14, color: i < 3 ? T.brand : T.ink3, lineHeight:1 }}>#{i + 1}</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:7, minWidth:0 }}>
+                    <div style={{ width:24, height:24, borderRadius:12, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, flexShrink:0 }}>{(nm[0] || '?').toUpperCase()}</div>
+                    <div style={{ fontSize:11.5, fontWeight: you ? 700 : 600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nm}{you && <span style={{ color:T.brand }}> · you</span>}</div>
+                  </div>
+                  <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, letterSpacing:'-.01em' }}>{band}</div>
                 </div>
-                <Flag code={row.country} w={16} h={11} radius={2}/>
-                <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, letterSpacing:'-.01em' }}>{row.score}</div>
-              </div>
-            ))}
+              );
+            })}
           </MCard>
         </div>
       </MobileBody>
