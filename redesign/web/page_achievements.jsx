@@ -69,7 +69,7 @@ function AchievementsPage() {
   };
   const supporting = [
     { id:'streak_30',   title:'Month of fire',    sub:'30-day streak — burning bright', date:'Mar 02', rarity:'rare', ic:'flame',   accent:T.brand,      bg:T.brandLight },
-    { id:'lia_chat_50', title:'Lía\'s confidant', sub:'50 conversations with the tutor',date:'Feb 27', rarity:'rare', ic:'message', accent:T.speaking.c, bg:T.speaking.bg },
+    { id:'lia_chat_50', title:'Tutor confidant', sub:'50 conversations with the tutor',date:'Feb 27', rarity:'rare', ic:'message', accent:T.speaking.c, bg:T.speaking.bg },
   ];
 
   // ── Collections ──────────────────────────────────────────
@@ -121,7 +121,7 @@ function AchievementsPage() {
       { t:'Earned · Café Master', desc:'Epic badge — Restaurant module · 95%', ic:'trophy', c:T.es.accent, openId:'cafe_master' },
       { t:'Level up · B1 Spanish', desc:'Reading skill crossed 80% mastery', ic:'arrow', c:T.reading.c, nav:'progress' },
     ]},
-    { date:'Mar 12', events:[{ t:'Earned · Lía\'s confidant', desc:'50 tutor conversations', ic:'message', c:T.speaking.c, openId:'lia_chat_50' }] },
+    { date:'Mar 12', events:[{ t:'Earned · Tutor confidant', desc:'50 tutor conversations', ic:'message', c:T.speaking.c, openId:'lia_chat_50' }] },
     { date:'Mar 2',  events:[{ t:'Earned · Month of fire', desc:'30-day streak unbroken', ic:'flame', c:T.brand, openId:'streak_30' }] },
     { date:'Feb 27', events:[{ t:'League promotion', desc:'Silver → Gold (rank #14)', ic:'trophy', c:T.writing.c, nav:'leaderboard' }] },
   ];

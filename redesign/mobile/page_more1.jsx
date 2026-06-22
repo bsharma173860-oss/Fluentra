@@ -129,8 +129,8 @@ function MLessonDetail() {
           {/* Stuck card */}
           <div style={{ margin:'4px 18px 24px', padding:'14px 14px', background:t.accentLight || T.brandLight, border:`1px solid ${(t.accent || T.brand)}33`, borderRadius:12 }}>
             <div style={{ fontSize:10.5, fontWeight:700, color:t.accent || T.brand, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:5 }}>Stuck?</div>
-            <div style={{ fontSize:12.5, color:T.ink2, lineHeight:1.5, marginBottom:10 }}>Lía can explain anything in this lesson in your own language.</div>
-            <button onClick={() => nav('tutor')} style={{ padding:'8px 14px', borderRadius:8, background:t.accent || T.brand, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Ask Lía</button>
+            <div style={{ fontSize:12.5, color:T.ink2, lineHeight:1.5, marginBottom:10 }}>Your tutor can explain anything in this lesson in your own language.</div>
+            <button onClick={() => nav('tutor')} style={{ padding:'8px 14px', borderRadius:8, background:t.accent || T.brand, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Ask the tutor</button>
           </div>
         </div>
       </MobileBody>

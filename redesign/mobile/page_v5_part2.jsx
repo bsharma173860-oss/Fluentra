@@ -652,7 +652,7 @@ function MMarketingPageV5() {
         <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.05, letterSpacing:'-.02em', textAlign:'center', marginBottom:26, padding:'0 12px' }}>Three things, done remarkably well.</div>
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           {[
-            { n:'01', t:'A tutor in your pocket', d:'Lía answers, corrects, and adapts in seconds. Speak to her like a person — she replies like one.', accent:T.brand },
+            { n:'01', t:'A tutor in your pocket', d:'Your tutor answers, corrects, and adapts in seconds. Talk to it like a person — it replies like one.', accent:T.brand },
             { n:'02', t:'Real exam preparation',  d:'IELTS, TOEFL, JLPT, DELF and more. Mock tests scored against the real rubric, with band-level feedback.', accent:'#7C5BD6' },
             { n:'03', t:'Native content, leveled', d:'Articles, podcasts, songs and shows — chosen for your level, captioned, instantly looked up.', accent:'#5A9C7A' },
           ].map(f => (

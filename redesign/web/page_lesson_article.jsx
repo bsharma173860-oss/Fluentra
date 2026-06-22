@@ -9,7 +9,7 @@ function LessonDetailPage() {
       { kind:'video',     label:'Watch overview',          duration:'3:24', state:'done' },
       { kind:'reading',   label:'Pretérito vs imperfecto', duration:'4 min', state:'done' },
       { kind:'practice',  label:'Drill · 12 questions',    duration:'6 min', state:'current' },
-      { kind:'speaking',  label:'Roleplay with Lía',       duration:'5 min', state:'locked' },
+      { kind:'speaking',  label:'Roleplay with your tutor',       duration:'5 min', state:'locked' },
     ],
   };
   return (
@@ -21,7 +21,7 @@ function LessonDetailPage() {
           <div style={{ padding:'30px 40px 60px' }}>
             <div style={{ fontSize:11, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>{lesson.eyebrow}</div>
             <div style={{ fontFamily:T.serif, fontSize:38, color:T.ink, lineHeight:1.1, marginBottom:10 }}>{lesson.title}</div>
-            <div style={{ fontSize:13, color:T.ink3, marginBottom:24 }}>{lesson.duration} · 4 parts · graded by Lía</div>
+            <div style={{ fontSize:13, color:T.ink3, marginBottom:24 }}>{lesson.duration} · 4 parts · graded by your tutor</div>
 
             {/* Video player */}
             <div style={{ aspectRatio:'16/9', background:T.ink, borderRadius:16, position:'relative', overflow:'hidden', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -126,7 +126,7 @@ function ArticlePage() {
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 0', borderTop:`1px solid ${T.hairline}`, borderBottom:`1px solid ${T.hairline}` }}>
             <div style={{ display:'flex', gap:8 }}>
               <Btn label="Save to library" nav="library" variant="outline" accent={T.ink} icon={Icon.bookmark()}/>
-              <Btn label="Discuss with Lía" nav="tutor" variant="soft" accent={T.brand} icon={Icon.message()}/>
+              <Btn label="Discuss with your tutor" nav="tutor" variant="soft" accent={T.brand} icon={Icon.message()}/>
             </div>
             <div style={{ fontSize:12, color:T.ink4 }}>3 saved words from this article</div>
           </div>

@@ -160,7 +160,7 @@ function MaintenanceState() {
       </div>
       <div style={{ fontSize:11, fontWeight:800, letterSpacing:'.18em', color:T.brand, marginBottom:14, textTransform:'uppercase' }}>Scheduled maintenance</div>
       <div style={{ fontFamily:T.serif, fontSize:32, lineHeight:1.05, marginBottom:10 }}>Back in about 20 minutes.</div>
-      <div style={{ fontSize:13, color:'rgba(255,255,255,.7)', lineHeight:1.6, maxWidth:360, marginBottom:24 }}>We're rolling out a smarter Lía. Your streak is paused — you won't lose it.</div>
+      <div style={{ fontSize:13, color:'rgba(255,255,255,.7)', lineHeight:1.6, maxWidth:360, marginBottom:24 }}>We're rolling out a smarter tutor. Your streak is paused — you won't lose it.</div>
       <div style={{ padding:'12px 18px', background:'rgba(255,255,255,.08)', borderRadius:11, fontSize:12, fontFamily:T.mono }}>Estimated complete · 14:20 UTC</div>
       <div style={{ marginTop:24, fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.brand }}>Speak it. Score it. Own it.</div>
     </div>
@@ -355,7 +355,7 @@ function CancelConfirm() {
       <div style={{ fontSize:11, color:T.ink5, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>Step 3 of 3 · Final check</div>
       <div style={{ fontFamily:T.serif, fontSize:23, color:T.ink, lineHeight:1.1, marginBottom:14 }}>Here's what you'll lose.</div>
       <div style={{ padding:'14px 16px', background:T.bg2, border:`1px solid ${T.border}`, borderRadius:11, marginBottom:14 }}>
-        {[{t:'14-day streak', s:'Resets to 0 if you cancel'},{t:'Unlimited Lía conversations', s:'Drops to 5 / day'},{t:'All exam practice', s:'Locked'},{t:'24 saved phrases', s:'Stay accessible'}].map((r,i) => (
+        {[{t:'14-day streak', s:'Resets to 0 if you cancel'},{t:'Unlimited tutor conversations', s:'Drops to 5 / day'},{t:'All exam practice', s:'Locked'},{t:'24 saved phrases', s:'Stay accessible'}].map((r,i) => (
           <div key={r.t} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom: i<3 ? `1px solid ${T.hairline}` : 'none' }}>
             <div>
               <div style={{ fontSize:12, fontWeight:700, color:T.ink }}>{r.t}</div>
@@ -381,7 +381,7 @@ function ExportData() {
       <div style={{ fontFamily:T.serif, fontSize:23, color:T.ink, lineHeight:1.1, marginBottom:6 }}>Export your data</div>
       <div style={{ fontSize:12, color:T.ink4, marginBottom:18, lineHeight:1.55 }}>Everything we have on you, in machine-readable JSON. We'll email a download link.</div>
       <div style={{ display:'flex', flexDirection:'column', gap:7, marginBottom:14 }}>
-        {['Profile + settings','All lesson history (240 lessons)','24 saved phrases','Streak + badge log','Subscription invoices','Lía conversation transcripts'].map(t => (
+        {['Profile + settings','All lesson history (240 lessons)','24 saved phrases','Streak + badge log','Subscription invoices','Tutor conversation transcripts'].map(t => (
           <label key={t} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:T.card, border:`1px solid ${T.border}`, borderRadius:10, cursor:'pointer', fontSize:12.5, color:T.ink2 }}>
             <div style={{ width:18, height:18, borderRadius:5, background:T.brand, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4"><polyline points="5 13 10 18 19 7"/></svg>
@@ -460,7 +460,7 @@ function WhatsNew() {
       <div style={{ display:'inline-block', padding:'4px 10px', borderRadius:99, background:T.brandLight, color:T.brand, fontSize:10.5, fontWeight:800, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:12 }}>v3.4 · This week</div>
       <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1.05, marginBottom:14 }}>Three things, sharper.</div>
       {[
-        { t:'Lía remembers your café order', d:'Tutor now keeps context across days. Pick up where you left off without re-explaining.', tag:'AI' },
+        { t:'Your tutor remembers your café order', d:'Tutor now keeps context across days. Pick up where you left off without re-explaining.', tag:'AI' },
         { t:'JLPT N5 pack', d:'Full kanji + listening prep, mock test included. Free for Pro.', tag:'Exams' },
         { t:'Pause your streak (legitimately)', d:'Travelling? Sick? Lock your streak for up to 7 days.', tag:'Streaks' },
       ].map((r, i) => (

@@ -134,7 +134,7 @@ function MTutorCallPage() {
         <button onClick={()=>nav('tutor')} style={{ width:36, height:36, borderRadius:18, background:'rgba(255,255,255,.10)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.arrowL()}</button>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:9.5, color:'rgba(255,255,255,.5)', fontWeight:800, letterSpacing:'.16em', textTransform:'uppercase' }}>Voice · Spanish</div>
-          <div style={{ fontFamily:T.serif, fontSize:15, marginTop:2 }}>Lía · Café roleplay</div>
+          <div style={{ fontFamily:T.serif, fontSize:15, marginTop:2 }}>Tutor · Café roleplay</div>
         </div>
         <button style={{ width:36, height:36, borderRadius:18, background:'rgba(255,255,255,.10)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.cog ? Icon.cog({ width:13, height:13 }) : '⚙'}</button>
       </div>
@@ -197,7 +197,7 @@ function MTutorHistoryPage() {
         <div style={{ padding:'4px 6px 14px' }}>
           <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>AI TUTOR</div>
           <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.02, letterSpacing:'-.02em' }}>Conversations</div>
-          <div style={{ fontSize:12.5, color:T.ink4, marginTop:6 }}>Every chat with Lía. Searchable, anchored to lessons.</div>
+          <div style={{ fontSize:12.5, color:T.ink4, marginTop:6 }}>Every chat with your tutor. Searchable, anchored to lessons.</div>
         </div>
 
         {/* Search */}

@@ -72,7 +72,7 @@ function MTutorPageW4() {
         <div style={{ flex:1, display:'flex', alignItems:'center', gap:9 }}>
           {w4t2Avatar('L', 36, `linear-gradient(135deg, ${T.brand} 0%, #C97A4F 100%)`)}
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:MT.ink, letterSpacing:'-.01em', display:'flex', alignItems:'center', gap:5 }}>Lía <span style={{ width:6, height:6, borderRadius:3, background:'#5A9C7A' }}/></div>
+            <div style={{ fontSize:14, fontWeight:700, color:MT.ink, letterSpacing:'-.01em', display:'flex', alignItems:'center', gap:5 }}>Tutor <span style={{ width:6, height:6, borderRadius:3, background:'#5A9C7A' }}/></div>
             <div style={{ fontSize:10.5, color:MT.ink4 }}>AI tutor · IELTS English</div>
           </div>
         </div>
@@ -113,7 +113,7 @@ function MTutorPageW4() {
       {/* Composer */}
       <div style={{ padding:'8px 14px 14px', flexShrink:0, background:`linear-gradient(to top, ${MT.bg} 60%, transparent)` }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 6px 6px 16px', background:MT.card, borderRadius:26, border:`1px solid ${MT.hairline}`, boxShadow:MT.shadowMd }}>
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Ask Lía anything…" style={{ flex:1, border:'none', outline:'none', background:'transparent', fontSize:14, color:MT.ink, padding:'8px 0', minWidth:0 }}/>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Ask your tutor anything…" style={{ flex:1, border:'none', outline:'none', background:'transparent', fontSize:14, color:MT.ink, padding:'8px 0', minWidth:0 }}/>
           <button style={{ width:34, height:34, borderRadius:17, background:MT.bg2, color:MT.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.mic ? Icon.mic({ width:14, height:14 }) : '🎙'}</button>
           <button onClick={send} style={{ width:38, height:38, borderRadius:19, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 10px ${T.brand}55` }}>↑</button>
         </div>
@@ -264,7 +264,7 @@ function MSearchPageW4() {
     { kind:'Vocab',    title:'Time expressions: ago, since, for',  sub:'12 cards',     ic:'star', c:T.listening,lang:'en' },
     { kind:'Library',  title:'How to remember past tenses',        sub:'Article · 6 min', ic:'book', c:T.reading, lang:'en' },
     { kind:'Exam Q',   title:'IELTS — Narrate a memory',           sub:'Speaking · Part 2', ic:'mic', c:T.speaking, lang:'en' },
-    { kind:'Tutor',    title:"Ask Lía: explain past tenses",       sub:'AI tutor',     ic:'spark',c:{ c:T.brand, bg:T.brandLight }, lang:'en' },
+    { kind:'Tutor',    title:"Ask the tutor: explain past tenses",       sub:'AI tutor',     ic:'spark',c:{ c:T.brand, bg:T.brandLight }, lang:'en' },
   ];
   const tabs = [
     { id:'all', label:'All' },
@@ -714,7 +714,7 @@ function MHelpPageW4() {
               <div style={{ position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,.5)' }}>{Icon.search ? Icon.search({ width:15, height:15 }) : '🔍'}</div>
             </div>
             <button onClick={()=>window.__nav && window.__nav('tutor')} style={{ width:'100%', padding:'10px', borderRadius:12, background:'rgba(255,255,255,.16)', border:'1px solid rgba(255,255,255,.22)', color:'#fff', fontSize:12.5, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:8, backdropFilter:'blur(8px)' }}>
-              <span style={{ fontSize:14 }}>✦</span> Ask Lía about your account
+              <span style={{ fontSize:14 }}>✦</span> Ask about your account
             </button>
           </div>
         </div>
