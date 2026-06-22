@@ -117,106 +117,79 @@ function MForgotPwPageV5() {
 // LESSON DETAIL
 // ══════════════════════════════════════════════════════════════════
 function MLessonDetailV5() {
-  const [tab, setTab] = useStV5B1('overview');
-  const [playing, setPlaying] = useStV5B1(false);
+  const topic = (typeof window !== 'undefined' && window.__lessonTopic) || { title:'Practice' };
+  const lang  = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const langName = (typeof langByCode === 'function' && langByCode(lang) && langByCode(lang).english) || lang.toUpperCase();
+  const [words, setWords] = useStV5B1([]);
+  const [loading, setLoading] = useStV5B1(true);
+  const [err, setErr] = useStV5B1(false);
+  const [idx, setIdx] = useStV5B1(0);
+  const [picked, setPicked] = useStV5B1(null);
+  const [correctN, setCorrectN] = useStV5B1(0);
+  const [done, setDone] = useStV5B1(false);
+  const [reload, setReload] = useStV5B1(0);
   const nav = (id) => window.__nav && window.__nav(id);
-  const lesson = { unit:'Unit 2 · Daily life', n:6, title:'At the doctor', sub:'Symptoms, appointments and medical vocabulary in everyday Spanish.', min:18, items:14, level:'A2', xp:120 };
-  const objectives = ['Describe common symptoms in Spanish','Make and reschedule a doctor\'s appointment','Understand basic medical instructions','Use polite forms with healthcare staff'];
-  const vocab = [
-    { es:'la fiebre',     en:'fever',     ex:'Tengo fiebre desde anoche' },
-    { es:'el dolor',      en:'pain',      ex:'Siento un dolor en la espalda' },
-    { es:'la receta',     en:'prescription', ex:'¿Puede darme una receta?' },
-    { es:'la cita',       en:'appointment', ex:'Quisiera una cita para mañana' },
-    { es:'el resfriado',  en:'cold',      ex:'Creo que tengo un resfriado' },
-  ];
+
+  React.useEffect(function () {
+    var cancelled = false; setLoading(true); setErr(false); setIdx(0); setPicked(null); setCorrectN(0); setDone(false);
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang:lang, type:'vocab', difficulty:'medium', topic:topic.title }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (cancelled) return;
+        var ws = (d && d.content && d.content.payload && d.content.payload.words) || [];
+        var usable = ws.filter(function (w) { return w && w.term && w.example && w.example.toLowerCase().indexOf(String(w.term).toLowerCase()) >= 0; });
+        if (!usable.length) { setErr(true); setLoading(false); return; }
+        setWords(usable.slice(0, 8)); setLoading(false);
+      })
+      .catch(function () { if (!cancelled) { setErr(true); setLoading(false); } });
+    return function () { cancelled = true; };
+  }, [reload]);
+
+  function saveResult(pct) { try { var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token'); var token = raw ? (JSON.parse(raw).access_token || null) : null; if (token) fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token }, body: JSON.stringify({ lang:lang, score:pct, detail:{ module:'lesson', topic:topic.title, unit:'%' } }) }).catch(function(){}); } catch (e) {} }
+
+  const total = words.length;
+  const w = words[idx] || null;
+  const blanked = w ? w.example.replace(new RegExp(String(w.term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '_____') : '';
+  const options = w ? (function () { var opts=[w.term]; for (var k=1;k<words.length&&opts.length<4;k++){ var c=words[(idx+k)%words.length].term; if(opts.indexOf(c)<0)opts.push(c);} var sh=idx%opts.length; return opts.slice(sh).concat(opts.slice(0,sh)); })() : [];
+  function pick(o){ if(picked)return; setPicked(o); if(o===w.term) setCorrectN(function(n){return n+1;}); }
+  function next(){ if(idx+1>=total){ var pct=Math.round(correctN/Math.max(total,1)*100); saveResult(pct); setDone(true);} else { setIdx(function(i){return i+1;}); setPicked(null);} }
 
   return (
     <>
-      <MobileHeader back title={lesson.unit} right={<button style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.bookmark ? Icon.bookmark({width:13,height:13}) : '☆'}</button>}/>
-      <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b1Pre eyebrow={`LESSON ${lesson.n} · ${lesson.level} · ${lesson.min} MIN`} title={lesson.title} lede={lesson.sub}/>
-        {/* Hero · video card */}
-        <div style={{ background:T.ink, borderRadius:18, padding:0, marginBottom:14, position:'relative', overflow:'hidden', aspectRatio:'16/9' }}>
-          <V5b1Dot/>
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,#7B4A2D 0%,#1F1812 100%)', opacity:.5 }}/>
-          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'14px 16px' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-              <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', letterSpacing:'.14em', padding:'3px 8px', borderRadius:99, background:'rgba(0,0,0,.4)', backdropFilter:'blur(8px)' }}>VIDEO · 4:32</span>
-              <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', letterSpacing:'.14em', padding:'3px 8px', borderRadius:99, background:'rgba(0,0,0,.4)', backdropFilter:'blur(8px)' }}>HD</span>
-            </div>
-            <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between' }}>
-              <div>
-                <div style={{ fontSize:10.5, fontWeight:800, color:'rgba(255,255,255,.7)', letterSpacing:'.12em', marginBottom:4 }}>WATCH FIRST</div>
-                <div style={{ fontFamily:T.serif, fontSize:18, color:'#fff', lineHeight:1.1 }}>Anita visits the clinic</div>
-              </div>
-              <button onClick={()=>setPlaying(true)} style={{ width:54, height:54, borderRadius:27, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 8px 22px ${T.brand}55`, border:'none' }}>{Icon.play ? Icon.play({width:18,height:18}) : '▶'}</button>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display:'flex', gap:0, background:T.bg2, borderRadius:11, padding:3, marginBottom:14, border:`1px solid ${T.border}` }}>
-          {[{id:'overview',l:'Overview'},{id:'vocab',l:`Vocab · ${vocab.length}`},{id:'practice',l:'Practice'}].map(t => {
-            const a = tab === t.id;
-            return <button key={t.id} onClick={()=>setTab(t.id)} style={{ flex:1, padding:'7px 6px', borderRadius:9, fontSize:11.5, fontWeight: a?700:500, color: a?T.ink:T.ink3, background: a?T.card:'transparent', boxShadow: a?MT.shadowSm:'none' }}>{t.l}</button>;
-          })}
-        </div>
-
-        {tab === 'overview' && <>
-          {V5b1Lbl("WHAT YOU'LL LEARN")}
-          <MCard style={{ padding:14, marginBottom:14 }}>
-            {objectives.map((o, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom: i < objectives.length-1 ? 9 : 0 }}>
-                <div style={{ width:18, height:18, borderRadius:9, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:10, fontWeight:700, marginTop:1 }}>{i+1}</div>
-                <div style={{ fontSize:12.5, color:T.ink, lineHeight:1.45 }}>{o}</div>
-              </div>
-            ))}
+      <MobileHeader back onBack={()=>nav('lang')} title="Complete the sentence" eyebrow={topic.title}/>
+      <MobileBody padding={[6,16,30]} tabBarPad={false}>
+        {loading && <MCard style={{ padding:'40px 20px', textAlign:'center' }}><div style={{ fontSize:13, color:T.ink3 }}>Building your {langName} lesson…</div></MCard>}
+        {!loading && err && (<MCard style={{ padding:'34px 20px', textAlign:'center' }}>
+          <div style={{ fontSize:15, fontWeight:700, color:T.ink, marginBottom:6 }}>Couldn't build this lesson</div>
+          <div style={{ fontSize:12.5, color:T.ink4, marginBottom:16 }}>Something went wrong for {langName}.</div>
+          <button onClick={()=>setReload(function(x){return x+1;})} style={{ padding:'10px 18px', borderRadius:10, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, border:'none' }}>Try again</button>
+        </MCard>)}
+        {!loading && !err && !done && w && (<>
+          <div style={{ height:5, background:T.bg2, borderRadius:99, overflow:'hidden', marginBottom:16 }}><div style={{ height:'100%', width:(idx/total*100)+'%', background:T.brand, borderRadius:99, transition:'width .25s' }}/></div>
+          <div style={{ fontSize:10, fontWeight:800, color:T.ink4, letterSpacing:'.1em', marginBottom:8 }}>SENTENCE {idx+1} OF {total}</div>
+          <MCard style={{ padding:22, marginBottom:14 }}>
+            <div style={{ fontFamily:T.serif, fontSize:19, color:T.ink, lineHeight:1.55 }}>{blanked}</div>
+            {picked && <div style={{ fontSize:12, color:T.ink4, marginTop:10, lineHeight:1.5 }}>“{w.example}” — {w.en}</div>}
           </MCard>
-          {V5b1Lbl('STATS')}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-            {[{l:'DURATION',v:`${lesson.min}m`},{l:'ITEMS',v:lesson.items},{l:'XP',v:`+${lesson.xp}`}].map(s => (
-              <MCard key={s.l} style={{ padding:'12px 10px', textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{s.v}</div><div style={{ fontSize:9, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginTop:5 }}>{s.l}</div></MCard>
-            ))}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:9 }}>
+            {options.map(function (opt) { var ok=opt===w.term; var st=!picked?'i':(ok?'c':(opt===picked?'x':'i')); var bg=st==='c'?T.listening.bg:st==='x'?T.speaking.bg:T.card; var bd=st==='c'?T.listening.c:st==='x'?T.speaking.c:T.border; var col=st==='c'?T.listening.c:st==='x'?T.speaking.c:T.ink; return (<button key={opt} onClick={()=>pick(opt)} disabled={!!picked} style={{ padding:'14px 14px', borderRadius:12, background:bg, border:'1.5px solid '+bd, color:col, fontSize:14, fontWeight:700, textAlign:'left' }}>{opt}</button>); })}
           </div>
-        </>}
-        {tab === 'vocab' && (
-          <MCard style={{ padding:0, overflow:'hidden' }}>
-            {vocab.map((v, i) => (
-              <div key={i} style={{ padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none' }}>
-                <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:3 }}>
-                  <span style={{ fontFamily:T.serif, fontSize:16, color:T.ink, fontWeight:600 }}>{v.es}</span>
-                  <span style={{ fontSize:11.5, color:T.ink3 }}>{v.en}</span>
-                </div>
-                <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink4, lineHeight:1.4 }}>"{v.ex}"</div>
-              </div>
-            ))}
-          </MCard>
-        )}
-        {tab === 'practice' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {[{ic:'pen',  l:'Writing exercise', m:'Form 5 sentences with vocab', t:'8 min', c:T.writing.c, bg:T.writing.bg},
-              {ic:'mic',  l:'Speaking drill',   m:'Roleplay: book an appointment', t:'10 min', c:T.speaking.c, bg:T.speaking.bg},
-              {ic:'head', l:'Listen & answer',  m:'Audio comprehension · 6 Qs', t:'7 min', c:T.listening.c, bg:T.listening.bg}].map((r, i) => (
-              <button key={i} onClick={()=>nav(r.ic === 'mic' ? 'speaking' : r.ic === 'head' ? 'listening' : 'writing')} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 13px', borderRadius:13, background:T.card, border:`1px solid ${T.hairline}`, boxShadow:MT.shadowSm, textAlign:'left' }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:r.bg, color:r.c, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[r.ic] ? Icon[r.ic]({width:14,height:14}) : '★'}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{r.l}</div>
-                  <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>{r.m} · {r.t}</div>
-                </div>
-                <span style={{ color:T.ink5, fontSize:18 }}>›</span>
-              </button>
-            ))}
+          {picked && <div style={{ marginTop:16, display:'flex', justifyContent:'flex-end' }}><button onClick={next} style={{ padding:'11px 20px', borderRadius:11, background:T.brand, color:'#fff', fontSize:13.5, fontWeight:700, border:'none' }}>{idx+1>=total?'Finish':'Next'} →</button></div>}
+        </>)}
+        {!loading && !err && done && (<MCard style={{ padding:'38px 20px', textAlign:'center' }}>
+          <div style={{ fontFamily:T.serif, fontSize:40, color:T.brand, lineHeight:1, marginBottom:8 }}>{Math.round(correctN/Math.max(total,1)*100)}%</div>
+          <div style={{ fontSize:14, fontWeight:700, color:T.ink, marginBottom:4 }}>{correctN} of {total} correct</div>
+          <div style={{ fontSize:12.5, color:T.ink4, marginBottom:18 }}>Nice work on “{topic.title}”.</div>
+          <div style={{ display:'flex', gap:10, justifyContent:'center' }}>
+            <button onClick={()=>setReload(function(x){return x+1;})} style={{ padding:'10px 16px', borderRadius:10, background:T.bg2, color:T.ink2, fontSize:12.5, fontWeight:700, border:'1px solid '+T.hairline }}>Again</button>
+            <button onClick={()=>nav('course')} style={{ padding:'10px 16px', borderRadius:10, background:T.brand, color:'#fff', fontSize:12.5, fontWeight:700, border:'none' }}>Course</button>
           </div>
-        )}
-
-        <button onClick={()=>nav('writing')} style={{ width:'100%', padding:'14px', marginTop:18, borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>Start lesson · ~{lesson.min} min {Icon.arrow ? Icon.arrow({width:12,height:12}) : '→'}</button>
+        </MCard>)}
       </MobileBody>
     </>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// ARTICLE READER
-// ══════════════════════════════════════════════════════════════════
 function MArticleReaderPageV5() {
   const [scroll, setScroll] = useStV5B1(0);
   const [size, setSize] = useStV5B1(15);

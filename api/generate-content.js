@@ -68,11 +68,12 @@ function prompt(type, langName, difficulty, exam, topic) {
       `All "label", "desc" and "prompt" text must be written in ${langName}; "n" is 1, 2 and 3.`;
   }
   if (type === 'vocab') {
-    return `Create a ${difficulty} themed vocabulary set in ${langName}.${examLine} ` +
+    var vTopic = topic ? ` Focus the set on the topic: "${topic}".` : '';
+    return `Create a ${difficulty} themed vocabulary set in ${langName}.${vTopic}${examLine} ` +
       `Return ONLY minified JSON: {"title":string,"theme":string,"words":[{"term":string,` +
       `"reading":string,"en":string,"example":string}]}. 10–15 words. "term" in ${langName}, ` +
       `"reading" is romanization if non-Latin (else ""), "en" is the English meaning, ` +
-      `"example" a short sentence in ${langName}.`;
+      `"example" a short natural sentence in ${langName} that CONTAINS the term verbatim.`;
   }
   return null;
 }
