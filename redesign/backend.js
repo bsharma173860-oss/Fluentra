@@ -543,7 +543,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b94-mobile-langhub-real';
+    window.__FL_BUILD = 'b95-real-search';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

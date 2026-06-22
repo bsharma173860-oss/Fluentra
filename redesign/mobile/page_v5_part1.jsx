@@ -685,67 +685,71 @@ function MPricingPageV5() {
 // SEARCH · v5
 // ══════════════════════════════════════════════════════════════════
 function MSearchPageV5() {
-  const [q, setQ] = useStateMV5('past tense');
+  const [q, setQ] = useStateMV5('');
   const [tab, setTab] = useStateMV5('all');
+  const [content, setContent] = useStateMV5([]);
   const nav = (id) => window.__nav && window.__nav(id);
-  const recent = ['Travel vocab','IELTS Writing Task 2','Past tense Spanish','Anaís Rodríguez'];
-  const trending = ['Subjunctive','Phrasal verbs','C1 reading','日本語 N3'];
-  const results = [
-    { kind:'lesson',     title:'Past tense — Preterite (ES)',     meta:'15 min · A2 · Spanish',     ic:'book',  c:T.reading.c, bg:T.reading.bg },
-    { kind:'grammar',    title:'Past simple vs past continuous',  meta:'Reading rule · English',    ic:'pen',   c:T.writing.c, bg:T.writing.bg },
-    { kind:'vocab',      title:'Past tense conjugations · 24 cards', meta:'Spanish · 12 due',       ic:'book',  c:'#7C5BD6', bg:'#EFEBFB' },
-    { kind:'article',    title:'How the past tense shapes memory', meta:'Reading · 6 min',          ic:'book',  c:'#2A6FA0', bg:'#E1ECF6' },
-    { kind:'friend',     title:'Anaís Rodríguez',                  meta:'Spanish · 14-day streak',  ic:'user',  c:'#D26890', bg:'#F9E6EE' },
-    { kind:'tutor',      title:'Ask AI: past tense in Italian',    meta:'Tutor session · ~5 min',   ic:'spark', c:T.brand,    bg:T.brandLight },
-  ];
-  const tabs = [{id:'all',l:'All'},{id:'lesson',l:'Lessons'},{id:'vocab',l:'Vocab'},{id:'grammar',l:'Grammar'},{id:'friend',l:'Friends'}];
-  const filtered = tab === 'all' ? results : results.filter(r => r.kind === tab);
+  React.useEffect(function () { if (typeof _searchContent === 'function') _searchContent(setContent); }, []);
+
+  const pool = ((typeof _searchDestinations === 'function') ? _searchDestinations() : []).concat(content);
+  const topicPool = pool.filter(function (d) { return d.kind === 'Lesson'; });
+  const trending = topicPool.slice(0, 6).map(function (d) { return d.label; });
+  const recentResults = (typeof window !== 'undefined' && window.__results) ? window.__results.slice(0, 5).map(function (r) { var m=(r.detail&&r.detail.module)||'reading'; return ({reading:'Reading',listening:'Listening',writing:'Writing',speaking:'Speaking',vocab:'Vocabulary',mock_exam:'Mock exam',lesson:'Lesson'}[m]||'Practice'); }) : [];
+  const recent = recentResults.length ? Array.from(new Set(recentResults)).slice(0,4) : topicPool.slice(6, 10).map(function (d) { return d.label; });
+
+  const ql = q.trim().toLowerCase();
+  const matched = pool.filter(function (d) { return d.label.toLowerCase().indexOf(ql) !== -1 || (d.sub && d.sub.toLowerCase().indexOf(ql) !== -1) || d.kind.toLowerCase().indexOf(ql) !== -1; });
+  const KINDTAB = { lesson:'Lesson', vocab:'Vocab', practice:'Practice', language:'Language' };
+  const filtered = tab === 'all' ? matched : matched.filter(function (r) { return r.kind === KINDTAB[tab]; });
+  const tabs = [{id:'all',l:'All'},{id:'lesson',l:'Lessons'},{id:'vocab',l:'Vocab'},{id:'practice',l:'Practice'},{id:'language',l:'Languages'}];
+  function go(d) { if (typeof _searchGo === 'function') _searchGo(d); else nav('dashboard'); }
+  var KINDC = { Lesson:{c:T.reading.c,bg:T.reading.bg}, Vocab:{c:'#7C5BD6',bg:'#EFEBFB'}, Practice:{c:T.brand,bg:T.brandLight}, Language:{c:T.listening.c,bg:T.listening.bg}, Page:{c:T.ink3,bg:T.bg2}, Action:{c:T.brand,bg:T.brandLight}, Reading:{c:T.reading.c,bg:T.reading.bg}, Writing:{c:T.writing.c,bg:T.writing.bg}, Listening:{c:T.listening.c,bg:T.listening.bg} };
 
   return (
     <>
       <MobileHeader back onBack={()=>nav('dashboard')} title="Search"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        {/* Search input */}
         <div style={{ position:'relative', marginBottom:14 }}>
           <div style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search({width:14,height:14})}</div>
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search lessons, vocab, friends…" style={{ width:'100%', padding:'12px 40px 12px 38px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, fontSize:13, color:T.ink, outline:'none', boxShadow:MT.shadowSm }}/>
+          <input value={q} onChange={e=>setQ(e.target.value)} autoFocus placeholder="Search lessons, vocab, languages…" style={{ width:'100%', padding:'12px 40px 12px 38px', borderRadius:12, background:T.card, border:'1px solid '+T.hairline, fontSize:13, color:T.ink, outline:'none', boxShadow:MT.shadowSm }}/>
           {q && <button onClick={()=>setQ('')} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', width:26, height:26, borderRadius:13, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x ? Icon.x({width:11,height:11}) : '×'}</button>}
         </div>
 
         {!q ? (
           <>
-            <V5_pre eyebrow="WHAT WOULD YOU LIKE TO STUDY?" title="Search anything" lede="Lessons, vocab decks, articles, grammar rules and friends — all in one place."/>
-            {V5_label('RECENT')}
-            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:18 }}>
-              {recent.map(r => <button key={r} onClick={()=>setQ(r)} style={{ padding:'7px 12px', borderRadius:99, background:T.card, border:`1px solid ${T.hairline}`, fontSize:11.5, color:T.ink2, fontWeight:600, display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.clock ? Icon.clock({width:11,height:11}) : '⏱'} {r}</button>)}
-            </div>
-            {V5_label('TRENDING')}
+            <V5_pre eyebrow="WHAT WOULD YOU LIKE TO STUDY?" title="Search anything" lede="Lessons, vocab, grammar topics, languages and pages — all in one place."/>
+            {recent.length > 0 && V5_label('RECENT')}
+            {recent.length > 0 && <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:18 }}>
+              {recent.map(r => <button key={r} onClick={()=>setQ(r)} style={{ padding:'7px 12px', borderRadius:99, background:T.card, border:'1px solid '+T.hairline, fontSize:11.5, color:T.ink2, fontWeight:600, display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.clock ? Icon.clock({width:11,height:11}) : '⏱'} {r}</button>)}
+            </div>}
+            {trending.length > 0 && V5_label('TOPICS TO TRY')}
             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-              {trending.map(t => <button key={t} onClick={()=>setQ(t)} style={{ padding:'7px 12px', borderRadius:99, background:T.brandLight, color:T.brand, fontSize:11.5, fontWeight:700, border:`1px solid ${T.brand}33`, display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.spark ? Icon.spark({width:11,height:11}) : '✦'} {t}</button>)}
+              {trending.map(t => <button key={t} onClick={()=>setQ(t)} style={{ padding:'7px 12px', borderRadius:99, background:T.brandLight, color:T.brand, fontSize:11.5, fontWeight:700, border:'1px solid '+T.brand+'33', display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.spark ? Icon.spark({width:11,height:11}) : '✦'} {t}</button>)}
             </div>
           </>
         ) : (
           <>
             <div style={{ display:'flex', gap:6, marginBottom:14, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
-              {tabs.map(t => {
-                const a = tab === t.id;
-                return <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:'7px 13px', borderRadius:99, background: a ? T.ink : T.card, color: a ? '#fff' : T.ink2, fontSize:11.5, fontWeight:700, border:`1px solid ${a ? T.ink : T.hairline}` }}>{t.l}</button>;
-              })}
+              {tabs.map(t => { const a = tab === t.id; return <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:'7px 13px', borderRadius:99, background: a ? T.ink : T.card, color: a ? '#fff' : T.ink2, fontSize:11.5, fontWeight:700, border:'1px solid '+(a ? T.ink : T.hairline) }}>{t.l}</button>; })}
             </div>
-            <div style={{ fontSize:10.5, color:T.ink4, fontWeight:700, padding:'0 4px', marginBottom:8 }}>{filtered.length} results for "{q}"</div>
+            <div style={{ fontSize:10.5, color:T.ink4, fontWeight:700, padding:'0 4px', marginBottom:8 }}>{filtered.length} result{filtered.length===1?'':'s'} for "{q}"</div>
+            {filtered.length === 0 ? (
+              <MCard style={{ padding:'24px', textAlign:'center' }}><div style={{ fontSize:12.5, color:T.ink4 }}>No matches. Try a topic, language, or module.</div></MCard>
+            ) : (
             <MCard style={{ padding:0, overflow:'hidden' }}>
-              {filtered.map((r, i) => (
-                <button key={i} onClick={()=>r.kind === 'friend' ? nav('public_profile') : r.kind === 'tutor' ? nav('tutor') : nav('lesson_detail')} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 14px', borderTop: i ? `1px solid ${T.hairline}` : 'none', width:'100%', textAlign:'left', background:'transparent' }}>
-                  <div style={{ width:34, height:34, borderRadius:9, background:r.bg, color:r.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[r.ic] ? Icon[r.ic]({width:13,height:13}) : Icon.book({width:13,height:13})}</div>
+              {filtered.map((r, i) => { var col = KINDC[r.kind] || {c:T.ink3,bg:T.bg2}; return (
+                <button key={i} onClick={()=>go(r)} style={{ display:'flex', alignItems:'center', gap:11, padding:'12px 14px', borderTop: i ? '1px solid '+T.hairline : 'none', width:'100%', textAlign:'left', background:'transparent' }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:col.bg, color:col.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[r.ic] ? Icon[r.ic]({width:13,height:13}) : Icon.book({width:13,height:13})}</div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:9, color:r.c, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:2 }}>{r.kind}</div>
-                    <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, lineHeight:1.3 }}>{r.title}</div>
-                    <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>{r.meta}</div>
+                    <div style={{ fontSize:9, color:col.c, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:2 }}>{r.kind}</div>
+                    <div style={{ fontSize:12.5, fontWeight:700, color:T.ink, lineHeight:1.3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.label}</div>
+                    {r.sub ? <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>{r.sub}</div> : null}
                   </div>
                   <span style={{ color:T.ink5, fontSize:18 }}>›</span>
                 </button>
-              ))}
+              ); })}
             </MCard>
+            )}
           </>
         )}
       </MobileBody>
