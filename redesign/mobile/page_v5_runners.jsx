@@ -22,6 +22,15 @@ function MExamRunnerV5({ mode = 'monthly' }) {
   const done = Object.keys(completed).length;
   const headerTag = mode === 'monthly' ? 'MONTHLY EXAM' : mode === 'mock' ? 'MOCK EXAM' : mode === 'practice' ? 'PRACTICE' : 'EXAM';
   const allDone = done === modules.length;
+  const _gen = (typeof useGenContent === 'function') ? useGenContent(m.color) : 'err';
+  const _c = (_gen && _gen !== 'err') ? _gen : null;
+  const _firstQ = _c && _c.questions && _c.questions[0];
+  const _opts = (_firstQ && _firstQ.options) ? _firstQ.options : ['Option A — concise statement', 'Option B — slightly different', 'Option C — common distractor', 'Option D — clearly wrong'];
+  const _promptText = _c ? (
+    (m.color === 'reading' || m.color === 'listening') ? (_firstQ ? _firstQ.stem : (_c.title || '')) :
+    (m.color === 'writing') ? (_c.task2Topic || _c.task1Prompt || '') :
+    (m.color === 'speaking') ? (_c.prompt || '') : ''
+  ) : null;
 
   const goSubmit = () => {
     setCompleted(prev => ({ ...prev, [step]: true }));
@@ -73,15 +82,23 @@ function MExamRunnerV5({ mode = 'monthly' }) {
           })}
         </MCard>
 
-        {/* Module body · placeholder for live module */}
+        {/* Module body · live generated content when available */}
         <MCard style={{ padding:18, marginBottom:14, minHeight:220 }}>
-          <div style={{ fontSize:9.5, fontWeight:800, color:c.c, letterSpacing:'.14em', marginBottom:9 }}>{m.label.toUpperCase()} · TASK 1 OF {m.q}</div>
+          <div style={{ fontSize:9.5, fontWeight:800, color:c.c, letterSpacing:'.14em', marginBottom:9 }}>{m.label.toUpperCase()} · {_gen === null ? 'LOADING…' : (_c ? (_firstQ ? 'QUESTION 1' : 'TASK 1') : 'TASK 1 OF ' + m.q)}</div>
+          {(m.color === 'reading' || m.color === 'listening') && _c && _c.passage && (
+            <div style={{ maxHeight:150, overflowY:'auto', fontSize:12.5, color:T.ink2, lineHeight:1.6, marginBottom:12, paddingRight:4, WebkitOverflowScrolling:'touch' }}>{_c.passage}</div>
+          )}
           <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.4, marginBottom:14 }}>
-            {m.color === 'reading'   && 'Read the passage about urban planning, then answer the comprehension questions.'}
-            {m.color === 'listening' && 'Listen to the audio clip — a conversation between two students — and answer multiple choice questions.'}
-            {m.color === 'writing'   && 'Write a 250-word essay describing a memorable journey, including specific sensory details.'}
-            {m.color === 'speaking'  && 'Speak for 2 minutes about a hobby you\'ve picked up recently. Be detailed and natural.'}
+            {_promptText ? _promptText : (<>
+              {m.color === 'reading'   && 'Read the passage about urban planning, then answer the comprehension questions.'}
+              {m.color === 'listening' && 'Listen to the audio clip — a conversation between two students — and answer multiple choice questions.'}
+              {m.color === 'writing'   && 'Write a 250-word essay describing a memorable journey, including specific sensory details.'}
+              {m.color === 'speaking'  && 'Speak for 2 minutes about a hobby you\'ve picked up recently. Be detailed and natural.'}
+            </>)}
           </div>
+          {m.color === 'listening' && _c && _c.passage && (
+            <button onClick={()=>window.flSpeak && window.flSpeak(_c.passage, code)} style={{ marginBottom:12, padding:'9px 14px', borderRadius:10, background:c.bg, color:c.c, fontSize:12, fontWeight:700, border:`1px solid ${c.c}33`, display:'inline-flex', alignItems:'center', gap:6 }}>{Icon.play ? Icon.play({width:12,height:12}) : '▶'} Play audio</button>
+          )}
           {m.color === 'writing' && (
             <textarea placeholder="Start writing…" style={{ width:'100%', minHeight:120, padding:'11px 12px', borderRadius:11, background:T.bg2, border:`1px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:T.serif, lineHeight:1.5, resize:'vertical', outline:'none' }}/>
           )}
@@ -90,7 +107,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
           )}
           {(m.color === 'reading' || m.color === 'listening') && (
             <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-              {['Option A — concise statement', 'Option B — slightly different', 'Option C — common distractor', 'Option D — clearly wrong'].map((o, i) => (
+              {_opts.map((o, i) => (
                 <button key={i} style={{ padding:'10px 12px', borderRadius:10, background:T.bg2, border:`1px solid ${T.hairline}`, fontSize:12, color:T.ink, textAlign:'left' }}>{o}</button>
               ))}
             </div>

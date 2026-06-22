@@ -13,18 +13,16 @@ function MExams() {
     } else { setLb([]); }
   }, []);
   const exams = [
-    { name:'IELTS Academic',   flag:'en', color:T.speaking.c, bg:T.speaking.bg, next:'Apr 28', score:'7.0', unit:'/9' },
-    { name:'TOEFL iBT',        flag:'en', color:'#1558B0',    bg:'#EEF6FF',     next:'May 12', score:'92',  unit:'/120' },
-    { name:'DELE B2',          flag:'es', color:T.brand,      bg:T.brandLight,  next:'Jun 04', score:'72',  unit:'/100' },
-    { name:'DELF B2',          flag:'fr', color:'#1558B0',    bg:'#EEF6FF',     next:'May 30', score:'68',  unit:'/100' },
-    { name:'JLPT N4',          flag:'ja', color:'#C84070',    bg:'#FFE0EC',     next:'Jul 07', score:'B',   unit:'pass' },
+    { name:'IELTS Academic',   flag:'en', color:T.speaking.c, bg:T.speaking.bg, scale:'Band scale /9' },
+    { name:'TOEFL iBT',        flag:'en', color:'#1558B0',    bg:'#EEF6FF',     scale:'Scored /120' },
+    { name:'DELE B2',          flag:'es', color:T.brand,      bg:T.brandLight,  scale:'CEFR B2 · /100' },
+    { name:'DELF B2',          flag:'fr', color:'#1558B0',    bg:'#EEF6FF',     scale:'CEFR B2 · /100' },
+    { name:'JLPT N4',          flag:'ja', color:'#C84070',    bg:'#FFE0EC',     scale:'Levels N5–N1' },
   ];
 
   return (
     <>
-      <MobileHeader title="Exams" eyebrow="Certification · 4 active" large
-        right={<span style={{ fontSize:10, fontWeight:700, color:T.brand, background:T.brandLight, padding:'5px 10px', borderRadius:99, letterSpacing:'.08em' }}>P82 · TOP 2%</span>}
-      />
+      <MobileHeader title="Exams" eyebrow="Certification prep" large/>
       <MobileBody padding={0}>
         {/* NEXT MOCK — bold orange CTA card */}
         <div style={{ padding:'4px 18px 14px' }}>
@@ -67,11 +65,11 @@ function MExams() {
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{e.name}</div>
-                  <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>Mock · {e.next}</div>
+                  <div style={{ fontSize:10.5, color:T.ink4, marginTop:2 }}>{e.scale}</div>
                 </div>
-                <div style={{ textAlign:'right', flexShrink:0 }}>
-                  <div style={{ fontFamily:T.serif, fontSize:18, color:e.color, lineHeight:1 }}>{e.score}</div>
-                  <div style={{ fontSize:9, color:T.ink4, fontWeight:800, letterSpacing:'.08em', textTransform:'uppercase', marginTop:2 }}>Best</div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+                  <span style={{ fontSize:10, fontWeight:800, color:e.color, background:e.bg, padding:'4px 9px', borderRadius:99, letterSpacing:'.04em' }}>PREP</span>
+                  <span style={{ color:T.ink5, fontSize:18 }}>›</span>
                 </div>
               </button>
             ))}
