@@ -29,9 +29,11 @@ function MSessionHeader({ title, eyebrow, progress, timeLeft, color, onExit }) {
 // MOBILE READING
 // ═══════════════════════════════════════════════════════════
 function MReadingSession() {
-  const _r = (typeof _sc === 'function') ? _sc('reading') : { title:'Reading', passage:'', questions:[], passageLabel:'PASSAGE', qLabel:'QUESTIONS', placeholder:'Type answer…', submit:'Submit' };
+  const _gen = (typeof useGenContent === 'function') ? useGenContent('reading') : 'err';
   const [tab, setTab] = React.useState('passage'); // passage | questions
   const [answered, setAnswered] = React.useState({});
+  const _r = (_gen && _gen !== 'err') ? _gen : ((typeof _sc === 'function') ? _sc('reading') : { title:'Reading', passage:'', questions:[], passageLabel:'PASSAGE', qLabel:'QUESTIONS', placeholder:'Type answer…', submit:'Submit' });
+  if (_gen === null) return <MGenLoading skill="reading" color={T.reading.c}/>;
   const total = (_r.questions || []).length || 5;
   const done = Object.keys(answered).length;
   const progress = (done / total) * 100;
@@ -118,10 +120,12 @@ function MReadingSession() {
 // MOBILE LISTENING
 // ═══════════════════════════════════════════════════════════
 function MListeningSession() {
-  const _l = (typeof _sc === 'function') ? _sc('listening') : { title:'Listening', sectionLabel:'Section 3', taskLabel:'Multiple choice', questions:[], speakers:[], submit:'Submit' };
+  const _gen = (typeof useGenContent === 'function') ? useGenContent('listening') : 'err';
   const [playing, setPlaying] = React.useState(false);
   const [pct, setPct] = React.useState(34);
   const [answered, setAnswered] = React.useState({});
+  const _l = (_gen && _gen !== 'err') ? _gen : ((typeof _sc === 'function') ? _sc('listening') : { title:'Listening', sectionLabel:'Section 3', taskLabel:'Multiple choice', questions:[], speakers:[], submit:'Submit' });
+  if (_gen === null) return <MGenLoading skill="listening" color={T.listening.c}/>;
   const total = (_l.questions || []).length || 4;
   const done = Object.keys(answered).length;
   const progress = (done / total) * 100;
@@ -206,7 +210,7 @@ function MListeningSession() {
 // MOBILE SPEAKING
 // ═══════════════════════════════════════════════════════════
 function MSpeakingSession() {
-  const _s = (typeof _sc === 'function') ? _sc('speaking') : { title:'Speaking', partLabel:'Part 2', prompt:'Describe a place you would like to visit.', followups:[], submit:'Submit' };
+  const _gen = (typeof useGenContent === 'function') ? useGenContent('speaking') : 'err';
   const [phase, setPhase] = React.useState('prep'); // prep | recording | done
   const [secs, setSecs] = React.useState(60);
 
@@ -216,6 +220,8 @@ function MSpeakingSession() {
     return () => clearInterval(id);
   }, [phase]);
 
+  const _s = (_gen && _gen !== 'err') ? _gen : ((typeof _sc === 'function') ? _sc('speaking') : { title:'Speaking', partLabel:'Part 2', prompt:'Describe a place you would like to visit.', followups:[], submit:'Submit' });
+  if (_gen === null) return <MGenLoading skill="speaking" color={T.speaking.c}/>;
   const ringPct = phase === 'recording' ? ((60 - secs) / 60) * 100 : 0;
 
   return (
@@ -303,10 +309,12 @@ function MSpeakingSession() {
 // MOBILE WRITING
 // ═══════════════════════════════════════════════════════════
 function MWritingSession() {
-  const _w = (typeof _sc === 'function') ? _sc('writing') : { task1Title:'Task 1', task2Title:'Task 2', task1Meta:'150 words', task2Meta:'250 words', task1Prompt:'', task2Intro:'', task2Topic:'', task2Outro:'', task1Tips:[], task2Tips:[], submit:'Submit', tipsLabel:'Tips' };
+  const _gen = (typeof useGenContent === 'function') ? useGenContent('writing') : 'err';
   const [task, setTask] = React.useState('task2');
   const [tab, setTab] = React.useState('prompt'); // prompt | write
   const [text, setText] = React.useState('');
+  const _w = (_gen && _gen !== 'err') ? _gen : ((typeof _sc === 'function') ? _sc('writing') : { task1Title:'Task 1', task2Title:'Task 2', task1Meta:'150 words', task2Meta:'250 words', task1Prompt:'', task2Intro:'', task2Topic:'', task2Outro:'', task1Tips:[], task2Tips:[], submit:'Submit', tipsLabel:'Tips' });
+  if (_gen === null) return <MGenLoading skill="writing" color={T.writing.c}/>;
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
   const TARGET = task === 'task1' ? 150 : 250;
   const pct = Math.min(100, (wordCount / TARGET) * 100);

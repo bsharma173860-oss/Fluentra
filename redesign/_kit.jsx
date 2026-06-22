@@ -631,6 +631,99 @@ function flSpeak(text, code) {
 }
 if (typeof window !== 'undefined') window.flSpeak = flSpeak;
 
+// ── Real module content: fetch from /api/generate-content, normalise to the
+// shape the session screens expect, cache per skill+lang. _normSession merges
+// over the static template so all labels/format stay intact. ──────────────
+function _normSession(skill, raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (skill === 'reading' || skill === 'listening') {
+    var qs = raw.questions;
+    if (!raw.passage || !Array.isArray(qs) || !qs.length) return null;
+    return {
+      title: raw.title || (skill === 'reading' ? 'Reading' : 'Listening'),
+      cardTitle: raw.title || null,
+      passage: raw.passage,
+      passageLabel: skill === 'listening' ? 'Transcript' : 'Passage',
+      qLabel: 'Questions 1\u2013' + qs.length,
+      questions: qs.map(function (q, i) { return { n: i + 1, type: 'Multiple Choice', stem: q.q || q.stem || '', options: q.options || null, answer: (typeof q.answer === 'number' ? q.answer : undefined) }; }),
+      placeholder: 'Type your answer\u2026',
+      submit: 'Submit & get feedback',
+      __real: true,
+    };
+  }
+  if (skill === 'speaking') {
+    var parts = raw.parts;
+    if (!Array.isArray(parts) || !parts.length) return null;
+    var p2 = null, i;
+    for (i = 0; i < parts.length; i++) { if (parts[i].n === 2) { p2 = parts[i]; break; } }
+    if (!p2) p2 = parts[1] || parts[0];
+    var fu = [];
+    parts.forEach(function (x) { if (x !== p2) { var t = x.prompt || x.desc || x.label; if (t) fu.push(t); } });
+    return { title: raw.title || 'Speaking', partLabel: p2.label || 'Part 2', prompt: p2.prompt || p2.desc || '', followups: fu, submit: 'Submit', __real: true };
+  }
+  if (skill === 'writing') {
+    if (!raw.task1 && !raw.task2) return null;
+    return {
+      task1Title: 'Task 1', task2Title: 'Task 2',
+      task1Meta: (raw.min_words ? ('~' + raw.min_words + ' words') : '150 words'),
+      task2Meta: (raw.time_minutes ? (raw.time_minutes + ' min') : '250 words'),
+      task1Prompt: (raw.task1 && raw.task1.prompt) || '',
+      task2Intro: '', task2Topic: (raw.task2 && raw.task2.prompt) || (raw.task1 && raw.task1.prompt) || '', task2Outro: '',
+      task1Tips: [], task2Tips: [], submit: 'Submit & get feedback', tipsLabel: 'Tips', __real: true,
+    };
+  }
+  return null;
+}
+
+function useGenContent(skill) {
+  var c = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  var key = skill + '_' + c;
+  if (typeof window !== 'undefined') window.__sessionGen = window.__sessionGen || {};
+  var st = React.useState((typeof window !== 'undefined' && window.__sessionGen[key]) || null);
+  var v = st[0], setV = st[1];
+  React.useEffect(function () {
+    if (typeof window === 'undefined') return;
+    if (window.__sessionGen[key]) { setV(window.__sessionGen[key]); return; }
+    var cancelled = false;
+    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: 'medium' }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (cancelled) return;
+        var raw = d && d.content && d.content.payload;
+        var over = _normSession(skill, raw);
+        if (over) {
+          var base = (typeof _sc === 'function') ? _sc(skill) : {};
+          var merged = Object.assign({}, base, over);
+          window.__sessionGen[key] = merged; setV(merged);
+        } else { setV('err'); }
+      })
+      .catch(function () { if (!cancelled) setV('err'); });
+    return function () { cancelled = true; };
+  }, [key]);
+  return v; // null = loading, 'err' = use static fallback, object = real content
+}
+if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; }
+
+function MGenLoading(props) {
+  var color = (props && props.color) || T.brand;
+  var skill = (props && props.skill) || 'content';
+  var nice = skill.charAt(0).toUpperCase() + skill.slice(1);
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:T.ink, color:'#fff', padding:'30px 24px', textAlign:'center' }}>
+      <div style={{ position:'relative', width:110, height:110, marginBottom:26 }}>
+        <div style={{ position:'absolute', inset:0, borderRadius:55, border:`1.5px solid ${color}`, opacity:.3, animation:'flGenRing 2.4s ease-out infinite' }}/>
+        <div style={{ position:'absolute', inset:14, borderRadius:41, border:`1.5px solid ${color}`, opacity:.5, animation:'flGenRing 2.4s ease-out 0.5s infinite' }}/>
+        <div style={{ position:'absolute', inset:26, borderRadius:29, background:`radial-gradient(circle, ${color} 0%, ${color}55 50%, transparent 70%)`, animation:'flGenPulse 1.6s ease-in-out infinite' }}/>
+        <style>{`@keyframes flGenRing{0%{transform:scale(.7);opacity:.6}100%{transform:scale(1.4);opacity:0}}@keyframes flGenPulse{0%,100%{transform:scale(.92);opacity:.85}50%{transform:scale(1.05);opacity:1}}`}</style>
+      </div>
+      <div style={{ fontSize:10.5, fontWeight:800, color:'rgba(255,255,255,.5)', letterSpacing:'.18em', marginBottom:12 }}>BUILDING YOUR {nice.toUpperCase()}</div>
+      <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.12, letterSpacing:'-.02em', maxWidth:260 }}>Crafting a {skill} task at your level…</div>
+      <div style={{ fontSize:12, color:'rgba(255,255,255,.55)', marginTop:14, lineHeight:1.5, maxWidth:240 }}>Generating fresh content with AI. This takes a few seconds.</div>
+    </div>
+  );
+}
+if (typeof window !== 'undefined') window.MGenLoading = MGenLoading;
+
 Object.assign(window, {
   T, LANGUAGES, USER, Flag, Icon, Ring, EXAMS, examFor, CATALOG_EXAMS, langPack,
   userLanguages, langByCode, addUserLang, removeUserLang, STARTER_CODES,
