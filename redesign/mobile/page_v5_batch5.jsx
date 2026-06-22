@@ -57,7 +57,17 @@ function MExamUnlockPageV5() {
 // STREAK CALENDAR
 function MStreakCalendarPageV5() {
   const nav = (id) => window.__nav && window.__nav(id);
-  const days = Array.from({length:35}, (_,i) => ({ d: i - 5, on: i >= 5 && i < 33 && Math.random() > 0.18 }));
+  const _langs = (typeof userLanguages === 'function') ? userLanguages() : [];
+  const streak = _langs.length ? Math.max.apply(null, _langs.map(function (l) { return l.streak || 0; })) : 0;
+  const _now = new Date();
+  const _y = _now.getFullYear(), _m = _now.getMonth();
+  const _firstDow = (new Date(_y, _m, 1).getDay() + 6) % 7;
+  const _dim = new Date(_y, _m + 1, 0).getDate();
+  const _today = _now.getDate();
+  const days = [];
+  for (var _i = 0; _i < _firstDow; _i++) days.push({ d: 0, on: false });
+  for (var _dn = 1; _dn <= _dim; _dn++) days.push({ d: _dn, on: (_dn <= _today && _dn > _today - streak), today: _dn === _today });
+  const _sessions = ((typeof window !== 'undefined' && window.__results) || []).length;
   return (
     <>
       <MobileHeader back title="Streak"/>
@@ -66,9 +76,9 @@ function MStreakCalendarPageV5() {
           <V5b5Dot/>
           <div style={{ position:'relative', textAlign:'center' }}>
             <div style={{ fontSize:64, marginBottom:6 }}>🔥</div>
-            <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:.9, letterSpacing:'-.04em', fontWeight:600 }}>42</div>
+            <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:.9, letterSpacing:'-.04em', fontWeight:600 }}>{streak}</div>
             <div style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,.85)', letterSpacing:'.18em', marginTop:9 }}>DAY STREAK</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:8 }}>Personal best: 47 days</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:8 }}>{streak > 0 ? 'Keep it going — practice today to extend it.' : 'Practice today to start a streak.'}</div>
           </div>
         </div>
 
@@ -79,7 +89,7 @@ function MStreakCalendarPageV5() {
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:5 }}>
             {days.map((dy, i) => (
-              <div key={i} style={{ aspectRatio:'1', borderRadius:8, background: dy.d > 0 ? (dy.on ? T.brand : T.bg2) : 'transparent', color: dy.on ? '#fff' : T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight: dy.on ? 700 : 500, border: dy.d === 5 ? `2px solid ${T.ink}` : 'none' }}>
+              <div key={i} style={{ aspectRatio:'1', borderRadius:8, background: dy.d > 0 ? (dy.on ? T.brand : T.bg2) : 'transparent', color: dy.on ? '#fff' : T.ink4, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight: dy.on ? 700 : 500, border: dy.today ? `2px solid ${T.ink}` : 'none' }}>
                 {dy.d > 0 ? dy.d : ''}
               </div>
             ))}
@@ -87,7 +97,7 @@ function MStreakCalendarPageV5() {
         </MCard>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-          {[{l:'BEST',v:'47d'},{l:'TOTAL',v:'182d'},{l:'KEPT',v:'92%'}].map(s => (
+          {[{l:'CURRENT',v:streak+'d'},{l:'LANGUAGES',v:_langs.length},{l:'SESSIONS',v:_sessions}].map(s => (
             <MCard key={s.l} style={{ padding:'12px 10px', textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{s.v}</div><div style={{ fontSize:9, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginTop:5 }}>{s.l}</div></MCard>
           ))}
         </div>

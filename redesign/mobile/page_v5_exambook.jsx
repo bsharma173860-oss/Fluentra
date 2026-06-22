@@ -70,25 +70,31 @@ function MExamBookPageV5() {
 
 function MExamHistoryPageV5() {
   const nav = (id) => window.__nav && window.__nav(id);
-  const attempts = [
-    { d:'May 4',  n:'Monthly · DELE B2',  s:7.0, t:'AI-graded · Online',     mode:'monthly' },
-    { d:'Apr 27', n:'Mock · DELE B2',     s:6.5, t:'Free practice',          mode:'mock' },
-    { d:'Apr 20', n:'Practice · Reading', s:6.5, t:'Module attempt',         mode:'practice' },
-    { d:'Apr 13', n:'Mock · DELE B2',     s:6.0, t:'Free practice',          mode:'mock' },
-    { d:'Mar 30', n:'Monthly · DELE B1',  s:7.5, t:'AI-graded · Online',     mode:'monthly' },
+  const _R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; });
+  const _band = function (pct) { return (pct / 100 * 9).toFixed(1); };
+  const attempts = _R.slice().reverse().slice(0, 20).map(function (r, i) {
+    var m = r.module || 'practice';
+    var label = m.charAt(0).toUpperCase() + m.slice(1);
+    return { d: '#' + (_R.length - i), n: label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), s: _band(r.score), t: 'Module attempt', mode: 'practice' };
+  });
+  const _scores = _R.map(function (r) { return r.score; });
+  const stats = [
+    { l:'BEST',  v: _scores.length ? _band(Math.max.apply(null, _scores)) : '\u2014' },
+    { l:'AVG',   v: _scores.length ? _band(_scores.reduce(function (a, b) { return a + b; }, 0) / _scores.length) : '\u2014' },
+    { l:'TREND', v: _scores.length >= 2 ? (_scores[_scores.length-1] >= _scores[0] ? '\u2197' : '\u2198') : '\u2014' },
   ];
   return (
     <>
       <MobileHeader back title="Exam history"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
         <div style={{ padding:'4px 6px 14px' }}>
-          <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.14em', marginBottom:8 }}>{attempts.length} ATTEMPTS · LAST 90 DAYS</div>
+          <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.14em', marginBottom:8 }}>{attempts.length} ATTEMPTS</div>
           <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.02, letterSpacing:'-.02em' }}>Past exams</div>
           <div style={{ fontSize:13, color:T.ink3, marginTop:8, lineHeight:1.55 }}>Every attempt and how you scored. Tap any to see the full breakdown.</div>
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-          {[{l:'BEST',v:'7.5'},{l:'AVG',v:'6.7'},{l:'TREND',v:'↗'}].map(s => (
+          {stats.map(s => (
             <MCard key={s.l} style={{ padding:'12px 10px', textAlign:'center' }}>
               <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{s.v}</div>
               <div style={{ fontSize:9, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginTop:5 }}>{s.l}</div>
@@ -96,7 +102,7 @@ function MExamHistoryPageV5() {
           ))}
         </div>
 
-        <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>ATTEMPTS</div>
+        {attempts.length === 0 ? <MCard style={{ padding:24 }}><div style={{ color:T.ink3, fontSize:13, lineHeight:1.55 }}>No attempts yet. Finish a module or exam and your scores will appear here.</div></MCard> : <><div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>ATTEMPTS</div>
         <MCard style={{ padding:0, overflow:'hidden' }}>
           {attempts.map((a, i) => {
             const tagBg = a.mode === 'monthly' ? T.brandLight : a.mode === 'mock' ? '#5A9C7A1a' : '#7C5BD61a';
@@ -116,7 +122,7 @@ function MExamHistoryPageV5() {
               <span style={{ color:T.ink5 }}>›</span>
             </button>;
           })}
-        </MCard>
+        </MCard></>}
 
         <button onClick={()=>nav('exam_book')} style={{ width:'100%', marginTop:14, padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12.5, fontWeight:700 }}>Book another exam</button>
       </MobileBody>

@@ -113,26 +113,22 @@ function MTutorCallPageV5() {
 // ══════════════════════════════════════════════════════════════════
 function MTutorHistoryPageV5() {
   const nav = (id) => window.__nav && window.__nav(id);
-  const sessions = [
-    { date:'May 4',  d:'Today',     t:'18:00–18:30', tutor:'Sofía Martínez', topic:'Office vocabulary', xp:120, score:92, summary:'Strong pronunciation. Mixed up ser/estar twice.' },
-    { date:'May 1',  d:'Wednesday', t:'18:00–18:30', tutor:'Sofía Martínez', topic:'Past-tense review', xp:115, score:88, summary:'Good control of preterite. Imperfect needs work.' },
-    { date:'Apr 27', d:'Saturday',  t:'10:00–10:30', tutor:'Carlos Ruíz',    topic:'Travel & directions', xp:130, score:95, summary:'Excellent pace. Vocabulary very natural.' },
-    { date:'Apr 24', d:'Wednesday', t:'18:00–18:30', tutor:'Sofía Martínez', topic:'Restaurants & food', xp:110, score:90, summary:'Confident roleplay. Watch gendered articles.' },
-  ];
+  const sessions = [];  // AI-tutor session history will populate here once persisted
   return (
     <>
       <MobileHeader back title="Tutor history"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b2Pre eyebrow={`${sessions.length} SESSIONS · 7 H 30 M TOTAL`} title="Your tutor sessions" lede="Every conversation, with notes Sofía wrote afterwards. Tap any to replay or review."/>
+        <V5b2Pre eyebrow={`${sessions.length} SESSIONS`} title="Your tutor sessions" lede="Your conversations with the AI tutor are saved here."/>
 
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-          {[{l:'SESSIONS',v:sessions.length},{l:'AVG SCORE',v:'91'},{l:'STREAK',v:'4w'}].map(s => (
+          {[{l:'SESSIONS',v:sessions.length},{l:'AVG SCORE',v:'\u2014'},{l:'STREAK',v:'\u2014'}].map(s => (
             <MCard key={s.l} style={{ padding:'12px 10px', textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1, letterSpacing:'-.02em' }}>{s.v}</div><div style={{ fontSize:9, fontWeight:800, color:T.ink4, letterSpacing:'.12em', marginTop:5 }}>{s.l}</div></MCard>
           ))}
         </div>
 
         {V5b2Lbl('PAST SESSIONS')}
+        {sessions.length === 0 && <MCard style={{ padding:24, textAlign:'center' }}><div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:6 }}>No sessions yet</div><div style={{ fontSize:12.5, color:T.ink4, lineHeight:1.55, marginBottom:16 }}>Talk to your AI tutor and your sessions will appear here.</div><button onClick={()=>nav('tutor')} style={{ padding:'11px 18px', borderRadius:11, background:T.brand, color:'#fff', fontSize:12.5, fontWeight:700, border:'none' }}>Talk to your tutor</button></MCard>}
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
           {sessions.map((s, i) => (
             <button key={i} onClick={()=>nav('tutor_call')} style={{ background:T.card, border:`1px solid ${T.hairline}`, borderRadius:13, padding:14, textAlign:'left', boxShadow:MT.shadowSm }}>
