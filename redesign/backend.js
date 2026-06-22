@@ -543,7 +543,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b109-results-real';
+    window.__FL_BUILD = 'b110-auth-scroll-fix';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

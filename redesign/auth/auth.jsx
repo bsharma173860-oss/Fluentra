@@ -530,9 +530,9 @@ function AuthLoginDesktop() {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', background:T.bg2 }}>
       <WebTopbar search=""/>
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', overflowY:'auto' }}>
         {/* Split: brand left, form right */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', width:'100%', height:'100%', maxWidth:1200 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', width:'100%', minHeight:'100%', maxWidth:1200, margin:'0 auto' }}>
           {/* Left brand panel */}
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-start', justifyContent:'center', padding:'60px 64px', background:T.ink, color:'#fff', position:'relative', overflow:'hidden' }}>
             <div style={{ position:'absolute', inset:0, display:'grid', gridTemplateColumns:'repeat(20,1fr)', gap:14, opacity:.05, pointerEvents:'none', padding:20 }}>
@@ -556,8 +556,8 @@ function AuthLoginDesktop() {
             </div>
           </div>
           {/* Right form panel */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:40, background:T.bg }}>
-            <div style={{ width:'100%', maxWidth:400, background:T.card, borderRadius:20, padding:36, border:`1px solid ${T.border}` }}>
+          <div style={{ display:'flex', flexDirection:'column', overflowY:'auto', padding:40, background:T.bg }}>
+            <div style={{ width:'100%', maxWidth:400, margin:'auto', background:T.card, borderRadius:20, padding:36, border:`1px solid ${T.border}` }}>
               <LoginCard/>
             </div>
           </div>
@@ -571,8 +571,8 @@ function AuthSignupDesktop() {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', background:T.bg2 }}>
       <WebTopbar search=""/>
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:40 }}>
-        <div style={{ width:'100%', maxWidth:480, background:T.card, borderRadius:20, padding:40, border:`1px solid ${T.border}` }}>
+      <div style={{ flex:1, minHeight:0, display:'flex', flexDirection:'column', overflowY:'auto', padding:40 }}>
+        <div style={{ width:'100%', maxWidth:480, margin:'auto', background:T.card, borderRadius:20, padding:40, border:`1px solid ${T.border}` }}>
           <SignupCard/>
         </div>
       </div>
