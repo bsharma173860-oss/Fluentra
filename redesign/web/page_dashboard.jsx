@@ -392,6 +392,18 @@ function RecentAttemptsPanel() {
   const unit = ex.scoreUnit;
   const fmtScore = (n) => unit === '/9' ? n.toFixed(1) : Math.round(n);
 
+  function _realRows(kinds) {
+    var R = ((typeof window !== 'undefined' && window.__results) ? window.__results : []).filter(function (r) { return r.detail && kinds.indexOf(r.detail.module) >= 0; });
+    var MOD = { reading:'Reading drill', listening:'Listening drill', writing:'Writing drill', speaking:'Speaking drill', vocab:'Vocab review', lesson:'Lesson', mock_exam:'Full mock' };
+    return R.slice(0, 6).map(function (r) {
+      var u = (r.detail && r.detail.unit) || '%'; var sc = Number(r.score) || 0;
+      var val = u === '%' ? String(Math.round(sc)) : (Math.round(sc / 100 * 9 * 2) / 2).toFixed(1);
+      return { date: r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : 'Recent', mod: MOD[r.detail.module] || 'Session', scoreText: val, scoreUnit: u, time:'', meta:'' };
+    });
+  }
+  var _mockRows = _realRows(['mock_exam']);
+  var _practiceRows = _realRows(['reading','listening','writing','speaking','vocab','lesson']);
+
   const STREAMS = {
     monthly: {
       label:'Monthly · Official',
@@ -399,10 +411,7 @@ function RecentAttemptsPanel() {
       empty:`No official attempts yet. Take the ${ex.short} when you're ready — results post to the leaderboard.`,
       cta:{ label:'Schedule official exam', nav:'exam_entry' },
       resultsRoute:'monthly_results',
-      rows:[
-        { date:'Apr 28',  mod:'Full exam',     score:unit==='/9'?7.5:unit==='/180'?38:74, time:'2h 45m', meta:'Rank #12 · Top 2%' },
-        { date:'Mar 24',  mod:'Full exam',     score:unit==='/9'?7.0:unit==='/180'?34:70, time:'2h 41m', meta:'Rank #28 · Top 6%' },
-      ],
+      rows: [],
     },
     mock: {
       label:'Mock · Practice',
@@ -410,11 +419,7 @@ function RecentAttemptsPanel() {
       empty:'No mock attempts yet. Take a free full-format mock to see where you stand.',
       cta:{ label:'Take a mock', nav:'mock_test' },
       resultsRoute:'mock_results',
-      rows:[
-        { date:'Yesterday', mod:'Full mock',   score:unit==='/9'?7.0:unit==='/180'?32:74, time:'2h 38m', meta:'Private · not on record' },
-        { date:'4 days ago',mod:'Full mock',   score:unit==='/9'?6.5:unit==='/180'?28:68, time:'2h 12m', meta:'Private · not on record' },
-        { date:'Last week', mod:'Full mock',   score:unit==='/9'?6.5:unit==='/180'?null:65, time:'1h 56m', meta:'Private · not on record' },
-      ],
+      rows: _mockRows,
     },
     practice: {
       label:'Practice · Drills',
@@ -422,11 +427,7 @@ function RecentAttemptsPanel() {
       empty:'No drills yet. Pick a skill from Practice to start a focused session.',
       cta:{ label:'Open practice', nav:'practice' },
       resultsRoute:'practice_results',
-      rows:[
-        { date:'Today',     mod:'Reading drill',   score:unit==='/9'?7.5:unit==='/180'?40:78, time:'18 min', meta:'10 questions' },
-        { date:'Today',     mod:'Listening drill', score:unit==='/9'?8.0:unit==='/180'?42:82, time:'14 min', meta:'8 questions' },
-        { date:'Yesterday', mod:'Writing drill',   score:unit==='/9'?6.5:unit==='/180'?null:68, time:'22 min', meta:'1 task · AI graded' },
-      ],
+      rows: _practiceRows,
     },
   };
 
@@ -450,18 +451,18 @@ function RecentAttemptsPanel() {
             <div style={{ width:32, height:32, borderRadius:9, background:stream.accent+'1f', color:stream.accent, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10.5, fontWeight:800, flexShrink:0, letterSpacing:'.04em' }}>{tab[0].toUpperCase()}</div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{r.mod}</div>
-              <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{r.date} · {r.time} · {r.meta}</div>
+              <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{[r.date, r.time, r.meta].filter(Boolean).join(' · ')}</div>
             </div>
             <div style={{ textAlign:'right', minWidth:54 }}>
-              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{r.score == null ? '—' : fmtScore(r.score)}</div>
-              <div style={{ fontSize:10, color:T.ink4, marginTop:2 }}>{ex.scoreLabel}</div>
+              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{r.scoreText}</div>
+              <div style={{ fontSize:10, color:T.ink4, marginTop:2 }}>{r.scoreUnit === '%' ? '%' : 'band'}</div>
             </div>
             <div style={{ color:T.ink4 }}>{Icon.arrow({ width:11, height:11 })}</div>
           </button>
         ))}
       </div>
       <div style={{ padding:'10px 18px', borderTop:`1px solid ${T.hairline}`, background:T.bg2, fontSize:11.5, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <span>Backend stream: <code style={{ background:T.card, padding:'2px 6px', borderRadius:5, color:stream.accent, fontWeight:700 }}>{tab}</code></span>
+        <span style={{ fontWeight:600 }}>{stream.label}</span>
         <button data-nav={stream.cta.nav} style={{ fontSize:11.5, fontWeight:700, color:stream.accent, background:'transparent', cursor:'pointer' }}>{stream.cta.label} →</button>
       </div>
     </Card>

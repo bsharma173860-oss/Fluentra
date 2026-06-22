@@ -8,6 +8,7 @@ function FriendsPage() {
   const [q, setQ] = React.useState('');
   const [results, setResults] = React.useState(null);
   const [searching, setSearching] = React.useState(false);
+  const [suggested, setSuggested] = React.useState([]);
 
   const S = (window.FL && window.FL.social) ? window.FL.social : null;
 
@@ -17,6 +18,18 @@ function FriendsPage() {
       .catch(function () { setData({ friends:[], incoming:[], outgoing:[] }); });
   }
   React.useEffect(function () { refresh(); }, []);
+  React.useEffect(function () {
+    if (!S) return;
+    S.leaderboard('xp', 14).then(function (rows) {
+      S._uid().then(function (me) {
+        var known = {};
+        ((data && data.friends) || []).forEach(function (x) { known[x.profile.id] = 1; });
+        ((data && data.outgoing) || []).forEach(function (x) { known[x.profile.id] = 1; });
+        ((data && data.incoming) || []).forEach(function (x) { known[x.profile.id] = 1; });
+        setSuggested((rows || []).filter(function (u) { return u.id !== me && !known[u.id]; }).slice(0, 6));
+      });
+    }).catch(function () {});
+  }, [data]);
 
   function initial(p) { var n = (p && (p.full_name || p.username)) || '?'; return n[0].toUpperCase(); }
   function label(p) { return (p && (p.full_name || p.username)) || 'Learner'; }
@@ -290,19 +303,18 @@ function MFriendsPage({ onBack }) {
         {tab === 'discover' && (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <div>
-              <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>2 requests</div>
+              <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>{((data && data.incoming) || []).length} request{((data && data.incoming) || []).length === 1 ? '' : 's'}</div>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {[
-                  { name:'Diego H.', lang:'es', mutual:3, accent:T.es.accent, initial:'D' },
-                  { name:'Min-Jun P.', lang:'en', mutual:1, accent:T.en.accent, initial:'M' },
-                ].map((r, i) => (
-                  <Card key={i} padding={12} style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:36, height:36, borderRadius:18, background:r.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14 }}>{r.initial}</div>
+                {((data && data.incoming) || []).length === 0 ? (
+                  <div style={{ fontSize:12.5, color:T.ink4 }}>No pending requests.</div>
+                ) : ((data && data.incoming) || []).map((r, i) => (
+                  <Card key={r.friendshipId} padding={12} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <Avatar p={r.profile} size={36}/>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{r.name}</div>
-                      <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{r.mutual} mutual</div>
+                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{label(r.profile)}</div>
+                      <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{handle(r.profile) || 'Wants to connect'}</div>
                     </div>
-                    <Btn label="Accept" size="sm" accent={T.brand}/>
+                    <Btn label="Accept" size="sm" accent={T.brand} onClick={function(){ act(S && S.respondFriendRequest(r.friendshipId, true)); }}/>
                   </Card>
                 ))}
               </div>
@@ -311,18 +323,16 @@ function MFriendsPage({ onBack }) {
             <div>
               <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8, marginTop:8 }}>Suggested for you</div>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {[
-                  { name:'Yuki N.', lang:'ja', mutual:'4 mutual', accent:T.ja.accent, initial:'Y' },
-                  { name:'Marcus H.', lang:'en', mutual:'IELTS · April', accent:T.en.accent, initial:'M' },
-                  { name:'Priya S.', lang:'en', mutual:'In your league', accent:T.en.accent, initial:'P' },
-                ].map((d, i) => (
-                  <Card key={i} padding={12} style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:36, height:36, borderRadius:18, background:d.accent, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:14 }}>{d.initial}</div>
+                {suggested.length === 0 ? (
+                  <div style={{ fontSize:12.5, color:T.ink4 }}>No suggestions yet — use search to find people.</div>
+                ) : suggested.map((d, i) => (
+                  <Card key={d.id} padding={12} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <Avatar p={d} size={36}/>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{d.name}</div>
-                      <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{d.mutual}</div>
+                      <div style={{ fontSize:12.5, fontWeight:700, color:T.ink }}>{label(d)}</div>
+                      <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{(d.xp || 0) + ' XP' + (d.streak ? ' \u00b7 ' + d.streak + 'd' : '')}</div>
                     </div>
-                    <Btn label="Add" size="sm" variant="outline" accent={T.brand}/>
+                    <Btn label="Add" size="sm" variant="outline" accent={T.brand} onClick={function(){ act(S && S.sendFriendRequest(d.id)); }}/>
                   </Card>
                 ))}
               </div>
