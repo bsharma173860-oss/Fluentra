@@ -42,44 +42,33 @@ function MiniLineChart({ data, color, w=520, h=140 }) {
 }
 
 // ── Exam-attempt streams (3 separate logs) ────────────────────
-const EXAM_STREAMS = {
-  monthly: {
-    key:'monthly', label:'Monthly · Official', subtitle:'Counts toward your record · $5 each',
-    accent:T.brand, bg:T.brandLight, ic:'trophy',
-    runs:[
-      { date:'Apr 12', score:7.5, unit:'/9', label:'IELTS Academic · Full', delta:+0.5, dur:'2h 45m', verified:true },
-      { date:'Mar 14', score:7.0, unit:'/9', label:'IELTS Academic · Full', delta:+0.5, dur:'2h 40m', verified:true },
-      { date:'Feb 10', score:6.5, unit:'/9', label:'IELTS Academic · Full', delta:null, dur:'2h 50m', verified:true },
-    ],
-  },
-  mock: {
-    key:'mock', label:'Mock · Practice run', subtitle:'Free · Not on your record',
-    accent:'#5B7CFF', bg:'#EEF2FF', ic:'play',
-    runs:[
-      { date:'Apr 18', score:7.5, unit:'/9', label:'Full mock', delta:+0.5, dur:'2h 38m' },
-      { date:'Apr 6',  score:7.0, unit:'/9', label:'Full mock', delta:0,    dur:'2h 42m' },
-      { date:'Mar 28', score:7.0, unit:'/9', label:'Full mock', delta:+0.5, dur:'2h 50m' },
-      { date:'Mar 18', score:6.5, unit:'/9', label:'Full mock', delta:null, dur:'2h 55m' },
-    ],
-  },
-  practice: {
-    key:'practice', label:'Practice · Single skill', subtitle:'Drills · Logged for analytics',
-    accent:T.listening.c, bg:T.listening.bg, ic:'bars',
-    runs:[
-      { date:'Today',     score:7.5, unit:'/9',   label:'Reading · Passage 2', delta:+0.5, dur:'18 min' },
-      { date:'Yesterday', score:6.5, unit:'/9',   label:'Writing · Task 2',    delta:-0.5, dur:'42 min' },
-      { date:'2d ago',    score:8.0, unit:'/9',   label:'Listening · Sec 3',   delta:+1.0, dur:'14 min' },
-      { date:'3d ago',    score:7.0, unit:'/9',   label:'Speaking · Part 2',   delta:0,    dur:'12 min' },
-      { date:'5d ago',    score:7.0, unit:'/9',   label:'Reading · Passage 1', delta:+0.5, dur:'20 min' },
-    ],
-  },
-};
+function getExamStreams() {
+  var R = (typeof window !== 'undefined' && window.__results) ? window.__results : [];
+  function toRun(r) {
+    var unit = (r.detail && r.detail.unit) ? r.detail.unit : '/9';
+    var sc = Number(r.score) || 0;
+    var val = unit === '%' ? Math.round(sc) : Math.round(sc / 100 * 9 * 2) / 2;
+    var mod = (r.detail && r.detail.module) || '';
+    var labelMap = { reading:'Reading', listening:'Listening', writing:'Writing', speaking:'Speaking', mock_exam:'Full mock' };
+    return { date: r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : 'Recent', score: val, unit: unit, label: labelMap[mod] || 'Session', delta: null, dur: '' };
+  }
+  var exams = R.filter(function (r) { return r.detail && r.detail.module === 'mock_exam'; }).map(toRun);
+  var practice = R.filter(function (r) { return r.detail && ['reading','listening','writing','speaking'].indexOf(r.detail.module) >= 0; }).map(toRun);
+  return {
+    monthly:  { key:'monthly',  label:'Monthly · Official', subtitle:'Official record · $5 each', accent:T.brand, bg:T.brandLight, ic:'trophy', runs: [] },
+    mock:     { key:'mock',     label:'Mock · Practice run', subtitle:'Free · not on your record', accent:'#5B7CFF', bg:'#EEF2FF', ic:'play', runs: exams },
+    practice: { key:'practice', label:'Practice · Single skill', subtitle:'Drills · logged for analytics', accent:T.listening.c, bg:T.listening.bg, ic:'bars', runs: practice },
+  };
+}
 
 function ExamStreamsPanel() {
   const [tab, setTab] = React.useState('monthly');
-  const stream = EXAM_STREAMS[tab];
-  const avg = (stream.runs.reduce((s,r)=>s+r.score,0) / stream.runs.length).toFixed(1);
-  const best = Math.max(...stream.runs.map(r=>r.score)).toFixed(1);
+  const STREAMS = getExamStreams();
+  const stream = STREAMS[tab];
+  const hasRuns = stream.runs.length > 0;
+  const _u = hasRuns ? stream.runs[0].unit : '';
+  const avg = hasRuns ? (stream.runs.reduce((s,r)=>s+r.score,0) / stream.runs.length).toFixed(1) : '\u2014';
+  const best = hasRuns ? Math.max(...stream.runs.map(r=>r.score)).toFixed(1) : '\u2014';
   return (
     <Card padding={0} style={{ overflow:'hidden' }}>
       {/* Tabs */}
@@ -91,14 +80,14 @@ function ExamStreamsPanel() {
         <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase' }}>Stream · <span style={{ color:T.ink2, fontFamily:'ui-monospace,monospace', textTransform:'none', letterSpacing:0 }}>attempts.{stream.key}</span></div>
       </div>
       <div style={{ display:'flex', gap:6, padding:'14px 22px 0' }}>
-        {Object.values(EXAM_STREAMS).map(s => {
+        {Object.values(STREAMS).map(s => {
           const on = s.key === tab;
           return (
             <button key={s.key} onClick={()=>setTab(s.key)}
               style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 13px', borderRadius:9, border:`1px solid ${on?s.accent:T.border}`, background:on?s.bg:T.card, cursor:'pointer' }}>
               <div style={{ width:18, height:18, borderRadius:5, background:s.bg, color:s.accent, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[s.ic]({ width:10, height:10 })}</div>
               <div style={{ fontSize:11.5, fontWeight:on?700:600, color:on?s.accent:T.ink2 }}>{s.label}</div>
-              <div style={{ fontSize:10, color:T.ink4, fontWeight:600 }}>{EXAM_STREAMS[s.key].runs.length}</div>
+              <div style={{ fontSize:10, color:T.ink4, fontWeight:600 }}>{STREAMS[s.key].runs.length}</div>
             </button>
           );
         })}
@@ -107,8 +96,8 @@ function ExamStreamsPanel() {
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:0, padding:'18px 22px', borderBottom:`1px solid ${T.hairline}`, marginTop:14 }}>
         {[
           { l:'Attempts', v:stream.runs.length },
-          { l:'Avg',      v:`${avg}${stream.runs[0].unit}` },
-          { l:'Best',     v:`${best}${stream.runs[0].unit}` },
+          { l:'Avg',      v:`${avg}${_u}` },
+          { l:'Best',     v:`${best}${_u}` },
         ].map((s,i) => (
           <div key={s.l} style={{ borderLeft: i>0 ? `1px solid ${T.hairline}` : 'none', paddingLeft: i>0 ? 18 : 0 }}>
             <div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:5 }}>{s.l}</div>
@@ -118,6 +107,7 @@ function ExamStreamsPanel() {
       </div>
       {/* Run rows */}
       <div style={{ padding:'8px 12px 14px' }}>
+        {!hasRuns && (<div style={{ padding:'24px', textAlign:'center', color:T.ink4, fontSize:12.5 }}>No attempts in this stream yet — take one to start your log.</div>)}
         {stream.runs.map((r,i) => (
           <button key={i} data-nav={tab==='monthly'?'monthly_results':tab==='mock'?'mock_results':'practice_results'}
             style={{ width:'100%', display:'grid', gridTemplateColumns:'72px 1fr auto auto', gap:12, alignItems:'center', padding:'12px 10px', borderRadius:9, background:'transparent', border:'none', textAlign:'left', cursor:'pointer' }}

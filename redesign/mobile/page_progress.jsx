@@ -48,7 +48,7 @@ function MProgressLineChart({ data, color, w=350, h=150 }) {
 
 // Mobile exam-stream tabs — the web ExamStreamsPanel ported
 function MExamStreamsPanel() {
-  const STREAMS = (typeof EXAM_STREAMS !== 'undefined') ? EXAM_STREAMS : null;
+  const STREAMS = (typeof getExamStreams === 'function') ? getExamStreams() : null;
   const fallback = {
     monthly: { key:'monthly', label:'Monthly', subtitle:'Official · counts', accent:T.brand, bg:T.brandLight, ic:'trophy', runs:[
       { date:'Apr 12', score:7.5, unit:'/9', label:'IELTS · Full', delta:+0.5, dur:'2h 45m', verified:true },
@@ -70,8 +70,10 @@ function MExamStreamsPanel() {
   const src = STREAMS || fallback;
   const [tab, setTab] = React.useState('monthly');
   const stream = src[tab];
-  const avg = (stream.runs.reduce((s,r)=>s+r.score,0) / stream.runs.length).toFixed(1);
-  const best = Math.max(...stream.runs.map(r=>r.score)).toFixed(1);
+  const hasRuns = stream.runs.length > 0;
+  const _u = hasRuns ? stream.runs[0].unit : '';
+  const avg = hasRuns ? (stream.runs.reduce((s,r)=>s+r.score,0) / stream.runs.length).toFixed(1) : '\u2014';
+  const best = hasRuns ? Math.max(...stream.runs.map(r=>r.score)).toFixed(1) : '\u2014';
   const tabKeys = ['monthly','mock','practice'];
 
   return (
@@ -100,8 +102,8 @@ function MExamStreamsPanel() {
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', padding:'14px 16px', borderTop:`1px solid ${T.hairline}`, borderBottom:`1px solid ${T.hairline}` }}>
         {[
           { l:'Attempts', v:stream.runs.length },
-          { l:'Avg',      v:`${avg}${stream.runs[0].unit}` },
-          { l:'Best',     v:`${best}${stream.runs[0].unit}` },
+          { l:'Avg',      v:`${avg}${_u}` },
+          { l:'Best',     v:`${best}${_u}` },
         ].map((s,i) => (
           <div key={s.l} style={{ borderLeft: i>0 ? `1px solid ${T.hairline}` : 'none', paddingLeft: i>0 ? 14 : 0 }}>
             <div style={{ fontSize:9.5, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:4 }}>{s.l}</div>
@@ -111,6 +113,7 @@ function MExamStreamsPanel() {
       </div>
       {/* Run rows */}
       <div style={{ padding:'4px 8px 8px' }}>
+        {!hasRuns && (<div style={{ padding:'20px', textAlign:'center', color:T.ink4, fontSize:12 }}>No attempts yet.</div>)}
         {stream.runs.map((r,i) => (
           <button key={i} onClick={()=>window.__nav && window.__nav(tab==='monthly'?'monthly_results':tab==='mock'?'mock_results':'practice_results')}
             style={{ width:'100%', display:'grid', gridTemplateColumns:'56px 1fr auto auto', gap:8, alignItems:'center', padding:'10px 8px', borderRadius:9, background:'transparent', border:'none', textAlign:'left', cursor:'pointer' }}>

@@ -502,7 +502,7 @@ function ExamRunnerResults({ results, lang }) {
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
       if (token) {
         fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
-          body: JSON.stringify({ lang: lang, score: overall, detail: { module:'mock_exam', sections: results } }) }).catch(function(){});
+          body: JSON.stringify({ lang: lang, score: overall, detail: { module:'mock_exam', sections: results, unit: '/9' } }) }).catch(function(){});
         try { if (window.FL && window.FL.social) window.FL.social.logActivity('mock', lang, { score: overall }); } catch (e) {}
       }
     } catch (e) {}

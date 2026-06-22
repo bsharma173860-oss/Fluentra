@@ -17,7 +17,7 @@ function MockTestPage() {
     : [];
   const history = _mh.slice(0, 5).map(function (r) {
     var when = r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : 'Recent';
-    return { date: when, mod: (r.detail && (_modName[r.detail.section] || r.detail.section)) || 'Full', score: (r.score != null ? Math.round(Number(r.score)) : null), time: '' };
+    return { date: when, mod: (r.detail && (_modName[r.detail.section] || r.detail.section)) || 'Full', score: (r.score != null ? ((r.detail && r.detail.unit === '%') ? Math.round(Number(r.score)) : Math.round(Number(r.score)/100*9*2)/2) : null), time: '' };
   });
 
   return (

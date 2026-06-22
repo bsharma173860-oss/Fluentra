@@ -393,7 +393,7 @@ function ReadingSession() {
         fetch('/api/save-result', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-          body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module: 'reading', correct: correct, total: qs.length, answered: answered } }),
+          body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module: 'reading', correct: correct, total: qs.length, answered: answered, unit: '%' } }),
         }).catch(function () {});
       }
     } catch (e) {}
@@ -567,7 +567,7 @@ function ListeningSession() {
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
       if (token) {
         fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
-          body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length } }) }).catch(function(){});
+          body: JSON.stringify({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length, unit: '%' } }) }).catch(function(){});
       }
     } catch (e) {}
     if (window.__exam && window.__exam.active) {
@@ -772,7 +772,7 @@ function SpeakingSession() {
     if (savedRef.current) return; savedRef.current = true;
     var band = Number(ev.overall_band || 0);
     var token = _tok(); if (!token) return;
-    fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ lang: window.__langCode||'en', score: Math.round(band/9*100), detail:{ module:'speaking', part: partIdx }, status:'completed' }) }).catch(function(){});
+    fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify({ lang: window.__langCode||'en', score: Math.round(band/9*100), detail:{ module:'speaking', part: partIdx, band: band, unit: '/9' }, status:'completed' }) }).catch(function(){});
   }
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -974,7 +974,7 @@ function WritingSession() {
       try {
         var _raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
         var _tok = _raw ? (JSON.parse(_raw).access_token || null) : null;
-        if (_tok) fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+_tok }, body: JSON.stringify({ lang: window.__langCode||'en', score: Math.round(Number(_ev.overall_band||0)/9*100), detail:{ module:'writing', task: task } }) }).catch(function(){});
+        if (_tok) fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+_tok }, body: JSON.stringify({ lang: window.__langCode||'en', score: Math.round(Number(_ev.overall_band||0)/9*100), detail:{ module:'writing', task: task, band: Number(_ev.overall_band||0), unit: '/9' } }) }).catch(function(){});
       } catch(e){}
     }
     if (thenNav) window.__nav && window.__nav('mod_results');
