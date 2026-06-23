@@ -603,7 +603,7 @@ function PostExamUpsellPage() {
         <div style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:20, padding:'24px 32px', marginBottom:18 }}>
           <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:18 }}>
             <div style={{ fontSize:11, fontWeight:800, color:T.ink4, letterSpacing:'.16em', textTransform:'uppercase' }}>How users improve</div>
-            <div style={{ fontSize:11.5, color:T.ink5 }}>Based on 8,400+ users · vertical line = your score</div>
+            <div style={{ fontSize:11.5, color:T.ink5 }}>Vertical line marks your score</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             {(() => {

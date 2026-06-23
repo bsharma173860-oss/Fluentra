@@ -546,7 +546,7 @@ function AuthLoginDesktop() {
               <div style={{ fontFamily:T.serif, fontSize:48, lineHeight:1.1, marginBottom:20, color:'#fff' }}>Language fluency,<br/>on your terms.</div>
               <div style={{ fontSize:15, color:'rgba(255,255,255,.65)', lineHeight:1.6, marginBottom:40, maxWidth:380 }}>AI-powered IELTS prep and multilingual practice — learn smarter, streak longer, score higher.</div>
               <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                {['143,000+ learners worldwide', '7.4 avg band score improvement', 'Top-ranked exam prep'].map(s => (
+                {['AI lessons across 10+ languages', 'Real exam-format practice', 'A tutor that talks back'].map(s => (
                   <div key={s} style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, color:'rgba(255,255,255,.75)', fontWeight:500 }}>
                     <div style={{ width:18, height:18, borderRadius:9, background:T.brand, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon.check({ width:10, height:10, color:'#fff' })}</div>
                     {s}

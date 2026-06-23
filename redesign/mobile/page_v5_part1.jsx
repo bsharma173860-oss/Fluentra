@@ -687,7 +687,7 @@ function MPricingPageV5() {
           <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12.5, color:T.ink, lineHeight:1.5 }}>"Cancel any time within 30 days for a full refund. No questions asked."</div>
         </div>
 
-        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:price>0 ? T.brandGrad : T.bg3, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow: price > 0 ? `0 8px 22px ${T.brand}40` : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
+        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px 12px', borderRadius:13, background:price>0 ? T.brandGrad : T.bg3, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow: price > 0 ? `0 8px 22px ${T.brand}40` : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:7, flexWrap:'wrap', lineHeight:1.3, textAlign:'center' }}>
           {price > 0 ? `Upgrade to ${cur.name} — $${price}/${billing === 'yearly' ? 'yr' : 'mo'}` : 'Continue with Free'}{Icon.arrow ? Icon.arrow({width:12,height:12}) : '→'}
         </button>
         <div style={{ textAlign:'center', fontSize:10.5, color:T.ink4, marginTop:10, lineHeight:1.5 }}>{sub} · Tax may apply</div>

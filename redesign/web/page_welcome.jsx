@@ -55,7 +55,7 @@ function WelcomePage() {
 
         {/* Subhead */}
         <p style={{ fontSize: 'clamp(15px, 4vw, 16.5px)', lineHeight: 1.6, color: T.ink3, margin: '0 auto 32px', maxWidth: 460 }}>
-          AI-powered lessons, real exam practice, and a tutor that talks back — across 26 languages.
+          AI-powered lessons, real exam practice, and a tutor that talks back — across 10+ languages.
           Pick one to begin; you can add more anytime.
         </p>
 

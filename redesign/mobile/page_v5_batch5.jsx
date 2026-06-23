@@ -198,7 +198,7 @@ function MExamPreviewPageV5() {
         </MCard>
 
         <div style={{ padding:'12px 14px', background:T.brandLight, border:`1px dashed ${T.brand}55`, borderRadius:11, marginBottom:14 }}>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink, lineHeight:1.5 }}>"4,200 students unlocked the exam this month — average band score: 6.5."</div>
+          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink, lineHeight:1.5 }}>"Reach a 9-day streak and the real exam unlocks — practice a little every day."</div>
         </div>
 
         <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Unlock exam · £5</button>

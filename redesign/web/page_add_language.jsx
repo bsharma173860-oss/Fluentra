@@ -25,7 +25,7 @@ function AddLanguagePage() {
     { code:'hi', native:'हिन्दी',          english:'Hindi',      speakers:'600M', exam:'HPT',               accent:'#C9501C', light:'#FBEDE2', tier:'full', region:'Asia' },
     { code:'tr', native:'Türkçe',      english:'Turkish',    speakers:'80M',  exam:'TYS',               accent:'#B61C2A', light:'#FBE7E9', tier:'full', region:'Europe' },
 
-    // Tier 2 — CEFR-aligned curriculum (15+ languages — full module set, generic exam)
+    // Tier 2 — CEFR-aligned curriculum (10+ languages — full module set, generic exam)
     { code:'nl', native:'Nederlands',  english:'Dutch',      speakers:'24M',  exam:'CNaVT / NT2',       accent:'#1B4FA3', light:'#E5ECF7', tier:'cefr', region:'Europe' },
     { code:'sv', native:'Svenska',     english:'Swedish',    speakers:'10M',  exam:'Swedex / SFI',      accent:'#3A6FA5', light:'#EAF0F7', tier:'cefr', region:'Europe' },
     { code:'no', native:'Norsk',       english:'Norwegian',  speakers:'5M',   exam:'Bergenstesten',     accent:'#BA0C2F', light:'#FBE7EB', tier:'cefr', region:'Europe' },
@@ -108,7 +108,7 @@ function AddLanguagePage() {
     { code:'rw', native:'Ikinyarwanda',english:'Kinyarwanda',speakers:'12M',  exam:'UR',                accent:'#00A1DE', light:'#E0F4FB', tier:'soon', region:'Africa' },
   ];
 
-  // Only the 26 languages that actually work end-to-end (Whisper speaking + content engine)
+  // Only the 10+ languages that actually work end-to-end (Whisper speaking + content engine)
   const LIVE = ['en','es','fr','de','it','pt','nl','ru','pl','uk','sv','no','da','fi','el','cs','ro','hu','tr','ar','hi','zh','ja','ko','id','vi'];
   const catalogue = fullCatalogue.filter(l => LIVE.includes(l.code) && !owned.includes(l.code));
 

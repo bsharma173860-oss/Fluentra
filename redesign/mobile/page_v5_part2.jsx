@@ -638,7 +638,7 @@ function MMarketingPageV5() {
               ))}
             </div>
           </div>
-          <div style={{ flex:1, fontSize:11.5, color:T.ink3, lineHeight:1.4 }}><span style={{ fontWeight:700, color:T.ink }}>26 languages</span> · AI-powered exam prep</div>
+          <div style={{ flex:1, fontSize:11.5, color:T.ink3, lineHeight:1.4 }}><span style={{ fontWeight:700, color:T.ink }}>10+ languages</span> · AI-powered exam prep</div>
         </div>
       </div>
 

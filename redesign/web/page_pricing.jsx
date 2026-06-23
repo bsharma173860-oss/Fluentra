@@ -21,7 +21,7 @@ const PRICING_PLANS = [
     id:'pro', name:'Pro', tagline:'For serious learners.',
     monthly:24, yearly:19, yearlyTotal:228,
     features:[
-      { t:'All 26 languages', on:true },
+      { t:'All 10+ languages', on:true },
       { t:'Unlimited daily sessions', on:true },
       { t:'Detailed progress & analytics', on:true },
       { t:'Unlimited AI Tutor', on:true },
