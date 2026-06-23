@@ -127,6 +127,16 @@
             options: { emailRedirectTo: (typeof window !== 'undefined' ? window.location.origin : undefined) },
           });
         },
+        // Verify the 6-digit code from the confirmation email (no link click needed).
+        // Tries the signup type first, then the unified email type for newer projects.
+        verifyOtp: function (email, token) {
+          return client.auth.verifyOtp({ email: email, token: token, type: 'signup' }).then(function (res) {
+            if (res && res.error) {
+              return client.auth.verifyOtp({ email: email, token: token, type: 'email' });
+            }
+            return res;
+          });
+        },
       },
 
       // ── API helpers ──────────────────────────────────────────
@@ -558,7 +568,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b117-apple-hidden';
+    window.__FL_BUILD = 'b118-signup-otp';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

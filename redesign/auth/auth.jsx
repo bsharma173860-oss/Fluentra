@@ -242,6 +242,20 @@ function SignupCard() {
   const [error, setError] = React.useState('');
   const [done, setDone] = React.useState(false);
   const [resent, setResent] = React.useState(false);
+  const [code, setCode] = React.useState('');
+  const [verifying, setVerifying] = React.useState(false);
+
+  const verify = async () => {
+    if (!window.FL) return;
+    const c = (code || '').trim();
+    if (c.length < 6) { setError('Enter the 6-digit code from your email.'); return; }
+    setVerifying(true); setError('');
+    try {
+      const { error: e } = await window.FL.auth.verifyOtp(email, c);
+      if (e) setError(friendlyError(e));
+    } catch (e) { setError(friendlyError(e)); }
+    setVerifying(false);
+  };
 
   const handleSignUp = async () => {
     if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
@@ -249,24 +263,28 @@ function SignupCard() {
     if (pw.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (pw !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true); setError('');
-    const { error: err } = await window.FL.auth.signUp(email, pw, name);
+    const { data, error: err } = await window.FL.auth.signUp(email, pw, name);
     setLoading(false);
-    if (err) setError(friendlyError(err));
-    else setDone(true);
+    if (err) { setError(friendlyError(err)); return; }
+    if (data && data.session) return; // confirmation off -> straight into the app
+    setDone(true);
   };
 
   if (done) return (
     <div style={{ display:'flex', flexDirection:'column', gap:20, alignItems:'center', textAlign:'center', paddingTop:32 }}>
       <AuthLogo/>
-      <div style={{ fontSize:40 }}>📬</div>
-      <div style={{ fontSize:20, fontWeight:700, color:T.ink }}>Check your inbox</div>
+      <div style={{ fontSize:40 }}>✉️</div>
+      <div style={{ fontSize:20, fontWeight:700, color:T.ink }}>Enter your code</div>
       <div style={{ fontSize:13.5, color:T.ink3, lineHeight:1.6, maxWidth:320 }}>
-        We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then sign in.
+        We emailed a 6-digit code to <strong>{email}</strong>. Enter it below to finish — no need to leave this page.
       </div>
-      <Btn label="Go to sign in" fullWidth accent={T.brand} size="lg" onClick={() => window.__nav && window.__nav('auth_login')}/>
+      {error && <div style={{ fontSize:12.5, color:'#C0392B' }}>{error}</div>}
+      <input value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} inputMode="numeric" placeholder="······" style={{ width:'100%', maxWidth:320, textAlign:'center', letterSpacing:'.4em', fontSize:26, fontWeight:700, padding:'14px', borderRadius:12, border:`1.5px solid ${T.border}`, color:T.ink, outline:'none', boxSizing:'border-box' }}/>
+      <Btn label={verifying ? 'Verifying…' : 'Verify & continue'} fullWidth accent={T.brand} size="lg" onClick={verify} disabled={verifying}/>
       <div style={{ fontSize:12.5, color:T.ink4 }}>
-        Didn't get it? {resent ? <span style={{ color:T.listening.c, fontWeight:600 }}>Sent again ✓</span> : <span onClick={async () => { if (window.FL) { try { await window.FL.auth.resendVerification(email); } catch (e) {} setResent(true); } }} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Resend email</span>}
+        Didn't get it? {resent ? <span style={{ color:T.listening.c, fontWeight:600 }}>Sent again ✓</span> : <span onClick={async () => { if (window.FL) { try { await window.FL.auth.resendVerification(email); } catch (e) {} setResent(true); } }} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Resend code</span>}
       </div>
+      <div style={{ fontSize:11.5, color:T.ink5, lineHeight:1.5, maxWidth:320 }}>Prefer the email link? Clicking it still works.</div>
     </div>
   );
 
@@ -324,6 +342,20 @@ function SignupMobile() {
   const [error, setError] = React.useState('');
   const [done, setDone] = React.useState(false);
   const [resent, setResent] = React.useState(false);
+  const [code, setCode] = React.useState('');
+  const [verifying, setVerifying] = React.useState(false);
+
+  const verify = async () => {
+    if (!window.FL) return;
+    const c = (code || '').trim();
+    if (c.length < 6) { setError('Enter the 6-digit code from your email.'); return; }
+    setVerifying(true); setError('');
+    try {
+      const { error: e } = await window.FL.auth.verifyOtp(email, c);
+      if (e) setError(friendlyError(e)); // on success onAuthStateChange enters the app
+    } catch (e) { setError(friendlyError(e)); }
+    setVerifying(false);
+  };
 
   const handleSignUp = async () => {
     if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
@@ -331,23 +363,29 @@ function SignupMobile() {
     if (pw.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (pw !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true); setError('');
-    const { error: err } = await window.FL.auth.signUp(email, pw, name);
+    const { data, error: err } = await window.FL.auth.signUp(email, pw, name);
     setLoading(false);
-    if (err) setError(friendlyError(err));
-    else setDone(true);
+    if (err) { setError(friendlyError(err)); return; }
+    // Confirmation OFF -> Supabase returns a session -> onAuthStateChange enters the app.
+    if (data && data.session) return;
+    // Confirmation ON -> finish in-app with the emailed 6-digit code (no broken link).
+    setDone(true);
   };
 
   if (done) return (
     <MobileBody>
       <div style={{ display:'flex', flexDirection:'column', gap:18, alignItems:'center', textAlign:'center', paddingTop:32, paddingBottom:40 }}>
         <AuthLogo size="sm"/>
-        <div style={{ fontSize:36 }}>📬</div>
-        <div style={{ fontSize:18, fontWeight:700, color:T.ink }}>Check your inbox</div>
-        <div style={{ fontSize:13, color:T.ink3, lineHeight:1.6 }}>Confirmation link sent to <strong>{email}</strong></div>
-        <Btn label="Go to sign in" fullWidth accent={T.brand} size="lg" onClick={() => window.__nav && window.__nav('auth_login')}/>
+        <div style={{ fontSize:36 }}>✉️</div>
+        <div style={{ fontSize:18, fontWeight:700, color:T.ink }}>Enter your code</div>
+        <div style={{ fontSize:13, color:T.ink3, lineHeight:1.6 }}>We emailed a 6-digit code to <strong>{email}</strong>. Enter it here to finish — no need to leave the app.</div>
+        {error && <div style={{ fontSize:12.5, color:'#C0392B' }}>{error}</div>}
+        <input value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} inputMode="numeric" placeholder="······" style={{ width:'100%', textAlign:'center', letterSpacing:'.4em', fontSize:24, fontWeight:700, padding:'14px', borderRadius:12, border:`1.5px solid ${T.border}`, color:T.ink, outline:'none', boxSizing:'border-box' }}/>
+        <Btn label={verifying ? 'Verifying…' : 'Verify & continue'} fullWidth accent={T.brand} size="lg" onClick={verify} disabled={verifying}/>
         <div style={{ fontSize:12, color:T.ink4 }}>
           Didn't get it? {resent ? <span style={{ color:T.listening.c, fontWeight:600 }}>Sent ✓</span> : <span onClick={async () => { if (window.FL) { try { await window.FL.auth.resendVerification(email); } catch (e) {} setResent(true); } }} style={{ color:T.brand, fontWeight:700, cursor:'pointer' }}>Resend</span>}
         </div>
+        <div style={{ fontSize:11.5, color:T.ink5, lineHeight:1.5 }}>Prefer the email link? Tapping it works too.</div>
       </div>
     </MobileBody>
   );
