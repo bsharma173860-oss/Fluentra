@@ -543,7 +543,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b113-confirm-password';
+    window.__FL_BUILD = 'b114-oauth-graceful';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

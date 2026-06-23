@@ -105,6 +105,8 @@ function friendlyError(err) {
     return 'An account with this email already exists. Try signing in instead.';
   if (m.includes('Password should be'))
     return 'Password must be at least 6 characters.';
+  if (m.includes('provider is not enabled') || m.includes('Unsupported provider') || m.includes('validation_failed'))
+    return 'That sign-up option isn\u2019t enabled yet. Please sign up with your email below.';
   return m;
 }
 
@@ -145,7 +147,7 @@ function LoginCard() {
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={handleGoogle}/>
-        <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple"/>
+        <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple" onClick={() => setError('Apple sign-in isn\u2019t enabled yet \u2014 please continue with your email.')}/>
       </div>
 
       <OrDivider/>
@@ -203,7 +205,7 @@ function LoginMobile() {
             <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:11.5, color:T.brand, marginTop:6, letterSpacing:'.02em' }}>Speak it. Score it. Own it.</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={() => window.FL && window.FL.auth.signInWithGoogle()}/>
+            <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
             <SocialBtn icon={<AppleIcon color="#000"/>} label="Continue with Apple"/>
           </div>
           <OrDivider/>
@@ -274,8 +276,8 @@ function SignupCard() {
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-        <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={() => window.FL && window.FL.auth.signInWithGoogle()}/>
-        <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple"/>
+        <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
+        <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={() => setError('Apple sign-up isn\u2019t enabled yet \u2014 please sign up with your email below.')}/>
       </div>
 
       <OrDivider/>
@@ -355,8 +357,8 @@ function SignupMobile() {
           <div style={{ fontSize:13, color:T.ink3 }}>Free forever on your first language</div>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={() => window.FL && window.FL.auth.signInWithGoogle()}/>
-          <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple"/>
+          <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
+          <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={() => setError('Apple sign-up isn\u2019t enabled yet \u2014 please sign up with your email below.')}/>
         </div>
         <OrDivider/>
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
