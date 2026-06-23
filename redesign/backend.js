@@ -558,7 +558,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b116-apple-oauth';
+    window.__FL_BUILD = 'b117-apple-hidden';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

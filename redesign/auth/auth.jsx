@@ -94,6 +94,10 @@ function AuthAlert({ msg, type='error' }) {
   );
 }
 
+// Apple sign-in: keep code ready but hidden until an Apple Developer account
+// is set up. Flip to true (after enabling Apple in Supabase) to show the buttons.
+var APPLE_AUTH_ENABLED = false;
+
 function friendlyError(err) {
   if (!err) return 'Something went wrong — please try again.';
   var m = err.message || String(err);
@@ -147,7 +151,7 @@ function LoginCard() {
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={handleGoogle}/>
-        <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
+        {APPLE_AUTH_ENABLED && <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>}
       </div>
 
       <OrDivider/>
@@ -206,7 +210,7 @@ function LoginMobile() {
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
-            <SocialBtn icon={<AppleIcon color="#000"/>} label="Continue with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
+            {APPLE_AUTH_ENABLED && <SocialBtn icon={<AppleIcon color="#000"/>} label="Continue with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>}
           </div>
           <OrDivider/>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -277,7 +281,7 @@ function SignupCard() {
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
-        <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
+        {APPLE_AUTH_ENABLED && <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>}
       </div>
 
       <OrDivider/>
@@ -358,7 +362,7 @@ function SignupMobile() {
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
-          <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
+          {APPLE_AUTH_ENABLED && <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>}
         </div>
         <OrDivider/>
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
