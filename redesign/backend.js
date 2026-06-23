@@ -85,7 +85,12 @@
           return client.auth.signUp({
             email: email,
             password: pw,
-            options: { data: { full_name: name } },
+            options: {
+              data: { full_name: name },
+              // Send the confirmation link back to wherever the app is actually
+              // hosted (not Supabase's default Site URL, which may be localhost).
+              emailRedirectTo: (typeof window !== 'undefined' ? window.location.origin : undefined),
+            },
           });
         },
         signOut: function () {
@@ -110,7 +115,11 @@
           return client.auth.updateUser({ password: newPassword });
         },
         resendVerification: function (email) {
-          return client.auth.resend({ type: 'signup', email: email });
+          return client.auth.resend({
+            type: 'signup',
+            email: email,
+            options: { emailRedirectTo: (typeof window !== 'undefined' ? window.location.origin : undefined) },
+          });
         },
       },
 
@@ -543,7 +552,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b114-oauth-graceful';
+    window.__FL_BUILD = 'b115-email-redirect';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
