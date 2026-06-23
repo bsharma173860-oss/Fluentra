@@ -65,10 +65,10 @@ const T = /* tokens */ {
 // (an array of codes) so any page can read it.
 const STARTER_CODES = ['en', 'es', 'ja', 'fr'];
 const LANGUAGES = [
-  { code:'en', native:'English',  english:'English',  streak:23, level:'B2', exam:'IELTS', flag:'en' },
-  { code:'es', native:'Español',  english:'Spanish',  streak:14, level:'B1', exam:'DELE',  flag:'es' },
-  { code:'ja', native:'日本語',     english:'Japanese', streak:7,  level:'A2', exam:'JLPT N4', flag:'ja' },
-  { code:'fr', native:'Français', english:'French',   streak:21, level:'B1', exam:'DELF',  flag:'fr' },
+  { code:'en', native:'English',  english:'English',  streak:0, level:'A1', exam:'IELTS', flag:'en' },
+  { code:'es', native:'Español',  english:'Spanish',  streak:0, level:'A1', exam:'DELE',  flag:'es' },
+  { code:'ja', native:'日本語',     english:'Japanese', streak:0,  level:'A1', exam:'JLPT N4', flag:'ja' },
+  { code:'fr', native:'Français', english:'French',   streak:0, level:'A1', exam:'DELF',  flag:'fr' },
 ];
 
 // Languages the user adds at runtime via the Add Language flow.
@@ -107,6 +107,8 @@ function removeUserLang(code) {
 // Merged view: only languages the user has chosen + anything added at runtime.
 function userLanguages() {
   if (typeof window === 'undefined') return LANGUAGES;
+  // Real languages loaded from the backend (real streak/level/xp) always win.
+  if (window.__userLanguages && window.__userLanguages.length) return window.__userLanguages;
   const codes = window.__userLangCodes || STARTER_CODES;
   const all = [...LANGUAGES, ...(window.__addedLangs || [])];
   // Preserve the order in __userLangCodes so newly-added langs land at the end.

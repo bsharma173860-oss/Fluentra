@@ -98,6 +98,24 @@ function AuthAlert({ msg, type='error' }) {
 // is set up. Flip to true (after enabling Apple in Supabase) to show the buttons.
 var APPLE_AUTH_ENABLED = false;
 
+// Catch the most common wrong-email cause (domain typos) without forcing
+// verification — suggests a fix the user can tap. e.g. gmial.com -> gmail.com
+function flEmailTypo(email) {
+  if (!email || email.indexOf('@') < 1) return null;
+  var parts = String(email).toLowerCase().trim().split('@');
+  var domain = parts[1] || '';
+  var fixes = {
+    'gmial.com':'gmail.com','gmai.com':'gmail.com','gmal.com':'gmail.com','gmail.co':'gmail.com','gmail.con':'gmail.com','gmail.cm':'gmail.com','gnail.com':'gmail.com','gamil.com':'gmail.com','gmaill.com':'gmail.com','googlemail.con':'googlemail.com',
+    'yaho.com':'yahoo.com','yahooo.com':'yahoo.com','yahoo.co':'yahoo.com','yahoo.con':'yahoo.com','yhaoo.com':'yahoo.com',
+    'hotmial.com':'hotmail.com','hotmai.com':'hotmail.com','hotmal.com':'hotmail.com','hotmail.co':'hotmail.com','hotmail.con':'hotmail.com',
+    'outlok.com':'outlook.com','outloo.com':'outlook.com','outlook.co':'outlook.com','outlook.con':'outlook.com',
+    'iclod.com':'icloud.com','iclould.com':'icloud.com','icloud.co':'icloud.com','icloud.con':'icloud.com',
+    'protonmai.com':'protonmail.com','proton.me ':'proton.me',
+  };
+  if (fixes[domain]) return parts[0] + '@' + fixes[domain];
+  return null;
+}
+
 function friendlyError(err) {
   if (!err) return 'Something went wrong — please try again.';
   var m = err.message || String(err);
@@ -307,6 +325,7 @@ function SignupCard() {
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
         <Field label="Full name" placeholder="María García" value={name} onChange={setName}/>
         <Field label="Email" type="email" placeholder="you@example.com" value={email} onChange={setEmail}/>
+        {(function(){ var sg = flEmailTypo(email); return sg ? <div onClick={()=>setEmail(sg)} style={{ fontSize:11.5, color:T.brand, cursor:'pointer', marginTop:-4, fontWeight:600 }}>Did you mean <strong>{sg}</strong>?</div> : null; })()}
         <Field label="Password" type="password" placeholder="8+ characters" value={pw} onChange={setPw}/>
         <Field label="Confirm password" type="password" placeholder="Re-enter your password" value={confirm} onChange={setConfirm}/>
       </div>
@@ -406,6 +425,7 @@ function SignupMobile() {
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
           <Field label="Full name" placeholder="María García" value={name} onChange={setName}/>
           <Field label="Email" type="email" placeholder="you@example.com" value={email} onChange={setEmail}/>
+        {(function(){ var sg = flEmailTypo(email); return sg ? <div onClick={()=>setEmail(sg)} style={{ fontSize:11.5, color:T.brand, cursor:'pointer', marginTop:-4, fontWeight:600 }}>Did you mean <strong>{sg}</strong>?</div> : null; })()}
           <Field label="Password" type="password" placeholder="8+ characters" value={pw} onChange={setPw}/>
           <Field label="Confirm password" type="password" placeholder="Re-enter your password" value={confirm} onChange={setConfirm}/>
         </div>
