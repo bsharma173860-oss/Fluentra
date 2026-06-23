@@ -231,6 +231,7 @@ function SignupCard() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [pw, setPw] = React.useState('');
+  const [confirm, setConfirm] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [done, setDone] = React.useState(false);
@@ -240,6 +241,7 @@ function SignupCard() {
     if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
     if (!name || !email || !pw) { setError('Please fill in all fields.'); return; }
     if (pw.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (pw !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true); setError('');
     const { error: err } = await window.FL.auth.signUp(email, pw, name);
     setLoading(false);
@@ -282,6 +284,7 @@ function SignupCard() {
         <Field label="Full name" placeholder="María García" value={name} onChange={setName}/>
         <Field label="Email" type="email" placeholder="you@example.com" value={email} onChange={setEmail}/>
         <Field label="Password" type="password" placeholder="8+ characters" value={pw} onChange={setPw}/>
+        <Field label="Confirm password" type="password" placeholder="Re-enter your password" value={confirm} onChange={setConfirm}/>
       </div>
 
       {/* Password strength */}
@@ -310,6 +313,7 @@ function SignupMobile() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [pw, setPw] = React.useState('');
+  const [confirm, setConfirm] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [done, setDone] = React.useState(false);
@@ -319,6 +323,7 @@ function SignupMobile() {
     if (!window.FL) { setError('Backend not initialised — please refresh.'); return; }
     if (!name || !email || !pw) { setError('Please fill in all fields.'); return; }
     if (pw.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (pw !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true); setError('');
     const { error: err } = await window.FL.auth.signUp(email, pw, name);
     setLoading(false);
@@ -358,6 +363,7 @@ function SignupMobile() {
           <Field label="Full name" placeholder="María García" value={name} onChange={setName}/>
           <Field label="Email" type="email" placeholder="you@example.com" value={email} onChange={setEmail}/>
           <Field label="Password" type="password" placeholder="8+ characters" value={pw} onChange={setPw}/>
+          <Field label="Confirm password" type="password" placeholder="Re-enter your password" value={confirm} onChange={setConfirm}/>
         </div>
         <AuthAlert msg={error}/>
         <Btn label={loading ? 'Creating account…' : 'Create account'} fullWidth accent={T.brand} size="lg" onClick={handleSignUp}/>
