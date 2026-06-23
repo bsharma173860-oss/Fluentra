@@ -147,7 +147,7 @@ function LoginCard() {
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={handleGoogle}/>
-        <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple" onClick={() => setError('Apple sign-in isn\u2019t enabled yet \u2014 please continue with your email.')}/>
+        <SocialBtn icon={<AppleIcon/>}  label="Continue with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
       </div>
 
       <OrDivider/>
@@ -206,7 +206,7 @@ function LoginMobile() {
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             <SocialBtn icon={<GoogleIcon/>} label="Continue with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
-            <SocialBtn icon={<AppleIcon color="#000"/>} label="Continue with Apple"/>
+            <SocialBtn icon={<AppleIcon color="#000"/>} label="Continue with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
           </div>
           <OrDivider/>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -277,7 +277,7 @@ function SignupCard() {
 
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
-        <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={() => setError('Apple sign-up isn\u2019t enabled yet \u2014 please sign up with your email below.')}/>
+        <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
       </div>
 
       <OrDivider/>
@@ -358,7 +358,7 @@ function SignupMobile() {
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           <SocialBtn icon={<GoogleIcon/>} label="Sign up with Google" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithGoogle(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
-          <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={() => setError('Apple sign-up isn\u2019t enabled yet \u2014 please sign up with your email below.')}/>
+          <SocialBtn icon={<AppleIcon/>}  label="Sign up with Apple" onClick={async () => { if (!window.FL) return; try { const r = await window.FL.auth.signInWithApple(); if (r && r.error) setError(friendlyError(r.error)); } catch (e) { setError(friendlyError(e)); } }}/>
         </div>
         <OrDivider/>
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>

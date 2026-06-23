@@ -102,6 +102,12 @@
             options: { redirectTo: window.location.origin },
           });
         },
+        signInWithApple: function () {
+          return client.auth.signInWithOAuth({
+            provider: 'apple',
+            options: { redirectTo: window.location.origin },
+          });
+        },
         getSession: function () {
           return client.auth.getSession();
         },
@@ -552,7 +558,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b115-email-redirect';
+    window.__FL_BUILD = 'b116-apple-oauth';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
