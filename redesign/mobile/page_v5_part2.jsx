@@ -495,14 +495,24 @@ function MStatesPageV5() {
 function MOnboardingPageV5() {
   const [step, setStep] = useStateMV5b(0);
   const [data, setData] = useStateMV5b({ language:'es', goal:'travel', reasons:[], level:'a2', schedule:'regular', reminder:'08:30' });
-  const langs = [{id:'es',n:'Spanish',f:'🇪🇸'},{id:'fr',n:'French',f:'🇫🇷'},{id:'jp',n:'Japanese',f:'🇯🇵'},{id:'de',n:'German',f:'🇩🇪'},{id:'it',n:'Italian',f:'🇮🇹'},{id:'zh',n:'Mandarin',f:'🇨🇳'}];
+  const langs = [{id:'es',n:'Spanish',f:'🇪🇸'},{id:'fr',n:'French',f:'🇫🇷'},{id:'ja',n:'Japanese',f:'🇯🇵'},{id:'de',n:'German',f:'🇩🇪'},{id:'it',n:'Italian',f:'🇮🇹'},{id:'zh',n:'Mandarin',f:'🇨🇳'}];
   const goals = [{id:'travel',n:'Travel & culture',ic:'pin'},{id:'work',n:'Work & business',ic:'briefcase'},{id:'exam',n:'Pass an exam',ic:'trophy'},{id:'family',n:'Family & friends',ic:'users'},{id:'fun',n:'Just for fun',ic:'spark'}];
   const levels = [{id:'a1',n:'Just starting',d:'A1'},{id:'a2',n:'Some basics',d:'A2'},{id:'b1',n:'Conversational',d:'B1'},{id:'b2',n:'Intermediate',d:'B2'},{id:'c1',n:'Advanced',d:'C1'}];
   const total = 5;
   const titles = ['Pick a language','What\'s your goal?','Where are you now?','Daily commitment','Daily reminder'];
   const ledes = ['You can add more languages later — start with the one you\'re most excited about.','We tailor lessons, vocab and exam prep based on what brings you here.','Be honest — we\'ll calibrate from your first session and adjust as you grow.','Pick a pace that fits your week. Consistency beats intensity, every time.','We\'ll nudge you once a day. You can change this any time in settings.'];
 
-  const next = () => step < total - 1 ? setStep(step + 1) : (window.__nav && window.__nav('dashboard'));
+  const finish = async () => {
+    if (window.FL && window.FL.addLanguage) {
+      var L = langs.find(function (x) { return x.id === data.language; }) || langs[0];
+      try {
+        await Promise.resolve(window.FL.addLanguage({ code: L.id, english: L.n, native: L.n, level: (data.level || 'a1').toUpperCase() }));
+      } catch (e) {}
+    }
+    if (window.__langCode === undefined || !window.__langCode) { try { window.__langCode = (langs.find(function (x){return x.id===data.language;})||{}).id; } catch (e) {} }
+    window.__nav && window.__nav('dashboard');
+  };
+  const next = () => { if (step < total - 1) setStep(step + 1); else finish(); };
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', background:T.bg, overflow:'hidden' }}>
