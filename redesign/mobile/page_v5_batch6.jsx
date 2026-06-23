@@ -223,6 +223,9 @@ function MMilestonesReelPageV5() {
 
 // AI SPEAKING — full-screen voice session
 function MAISpeakingPageV5() {
+  const _gen = (typeof useGenContent === 'function') ? useGenContent('speaking') : 'err';
+  const _spk = (_gen && _gen !== 'err') ? _gen : null;
+  const _spkPrompt = (_spk && _spk.prompt) ? _spk.prompt : 'Describe a memorable trip you took — where you went, who with, and one specific moment that stayed with you.';
   const nav = (id) => window.__nav && window.__nav(id);
   const [recording, setRecording] = useStV5B6(false);
   const [secs, setSecs] = useStV5B6(0);
@@ -247,7 +250,7 @@ function MAISpeakingPageV5() {
       <div style={{ position:'relative', padding:'8px 22px 16px' }}>
         <div style={{ fontSize:10, fontWeight:800, color:T.brand, letterSpacing:'.18em', marginBottom:9, textAlign:'center' }}>YOUR PROMPT</div>
         <div style={{ fontFamily:T.serif, fontSize:24, color:'#fff', lineHeight:1.2, letterSpacing:'-.015em', textAlign:'center', padding:'0 4px' }}>
-          Describe a memorable trip you took — where you went, who with, and one specific moment that stayed with you.
+          {_spkPrompt}
         </div>
         <div style={{ fontSize:11.5, color:'rgba(255,255,255,.5)', textAlign:'center', marginTop:9 }}>2 minutes · in Spanish · be detailed</div>
       </div>

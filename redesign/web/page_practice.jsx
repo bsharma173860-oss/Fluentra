@@ -27,6 +27,14 @@ function ModuleHeroCard({ title, subtitle, sessions, color, bg, ic, nav }) {
 }
 
 function PracticePage() {
+  const _recentRows = (function () {
+    var R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; }).slice().reverse();
+    var MOD = { reading:{ ic:'book', c:T.reading, label:'Reading' }, listening:{ ic:'head', c:T.listening, label:'Listening' }, writing:{ ic:'pen', c:T.writing, label:'Writing' }, speaking:{ ic:'mic', c:T.speaking, label:'Speaking' } };
+    var lc = (typeof window !== 'undefined' && window.__langCode) || 'en';
+    var lang = (typeof langByCode === 'function' && langByCode(lc) && langByCode(lc).name) || 'English';
+    var rel = function (ts) { if (!ts) return ''; var d = (Date.now() - new Date(ts).getTime()) / 86400000; return d < 1 ? 'Today' : d < 2 ? 'Yesterday' : Math.floor(d) + ' days ago'; };
+    return R.slice(0, 8).map(function (r) { var m = MOD[r.module] || MOD.reading; return { ic:m.ic, c:m.c, title: m.label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), lang: lang, langCode: lc, date: rel(r.updated_at), score: (r.score / 100 * 9).toFixed(1) + '/9' }; });
+  })();
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
@@ -66,15 +74,9 @@ function PracticePage() {
             <span style={{ textAlign:'right' }}>Score</span>
             <span/>
           </div>
-          {[
-            { ic:'mic',  c:T.speaking,  title:'IELTS Speaking Part 2',          lang:'English',  date:'Today, 9:00 AM',   score:'7.5/9' },
-            { ic:'pen',  c:T.writing,   title:'Task 1 — Graph description',     lang:'English',  date:'Yesterday',        score:'6.5/9' },
-            { ic:'head', c:T.listening, title:'Section 3 — Academic',           lang:'English',  date:'2 days ago',       score:'32/40' },
-            { ic:'book', c:T.reading,   title:'Passage 2 — Science',            lang:'English',  date:'3 days ago',       score:'11/13' },
-            { ic:'mic',  c:T.speaking,  title:'DELE Oral — Café conversation',  lang:'Spanish',  date:'Apr 8',            score:'6.5/10' },
-            { ic:'head', c:T.listening, title:'Train station announcements',    lang:'Japanese', date:'Apr 6',            score:'B' },
-            { ic:'pen',  c:T.writing,   title:'DELF — Essai argumentatif',      lang:'French',   date:'Apr 4',            score:'14/25' },
-          ].map((row, i, all) => (
+          {_recentRows.length === 0 ? (
+            <div style={{ padding:'28px 18px', fontSize:13, color:T.ink3 }}>No practice yet — finish a module and your recent sessions will appear here.</div>
+          ) : _recentRows.map((row, i, all) => (
             <div key={i} style={{ display:'grid', gridTemplateColumns:'40px 1fr 120px 120px 90px 60px', padding:'14px 18px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', alignItems:'center', cursor:'pointer', transition:'background .12s' }}
               onMouseEnter={e => e.currentTarget.style.background = T.bg2}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -83,7 +85,7 @@ function PracticePage() {
               </div>
               <div style={{ fontSize:13, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.title}</div>
               <div style={{ fontSize:12, color:T.ink3, display:'flex', alignItems:'center', gap:6 }}>
-                <Flag code={row.lang === 'English' ? 'en' : row.lang === 'Spanish' ? 'es' : row.lang === 'Japanese' ? 'ja' : 'fr'} w={16} h={11} radius={2}/>
+                <Flag code={row.langCode || 'en'} w={16} h={11} radius={2}/>
                 {row.lang}
               </div>
               <div style={{ fontSize:12, color:T.ink3 }}>{row.date}</div>

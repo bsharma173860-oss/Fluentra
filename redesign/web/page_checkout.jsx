@@ -138,7 +138,7 @@ function CheckoutPage() {
   const [exp, setExp]       = useState('');
   const [cvc, setCvc]       = useState('');
   const [name, setName]     = useState('');
-  const [email, setEmail]   = useState('marc@studio.com');
+  const [email, setEmail]   = useState((typeof window !== 'undefined' && window.__user && window.__user.email) || '');
   const [country, setCountry] = useState('Spain');
   const [zip, setZip]       = useState('28013');
   const [coupon, setCoupon] = useState('');
@@ -154,11 +154,13 @@ function CheckoutPage() {
   const total = subtotal - discount + tax;
 
   const handlePay = () => {
-    setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
-      setDone(true);
-    }, 1600);
+    var planKey = item.id || ((typeof window !== 'undefined' && typeof window.__checkoutItem === 'string') ? window.__checkoutItem : 'pro_monthly');
+    if (typeof window !== 'undefined' && window.FL && window.FL.startCheckout) {
+      setProcessing(true);
+      Promise.resolve(window.FL.startCheckout(planKey)).catch(function () { setProcessing(false); });
+    } else {
+      nav('pricing');
+    }
   };
 
   // ── Success screen ────

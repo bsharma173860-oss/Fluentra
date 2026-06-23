@@ -189,7 +189,7 @@ function MAddLanguageV5() {
               );
             })}
           </div>
-          <button onClick={()=>{ if (level) nav('lang'); }} disabled={!level} style={{ width:'100%', marginTop:18, padding:'14px', borderRadius:13, background: level ? T.brandGrad : T.bg3, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow: level ? `0 6px 16px ${T.brand}40` : 'none' }}>Add {picked.l} to my plan</button>
+          <button onClick={()=>{ if (level) { if (window.FL && window.FL.addLanguage && picked) { try { Promise.resolve(window.FL.addLanguage({ code: picked.code, english: picked.l, native: picked.native || picked.l, level: level })).catch(function(){}); } catch(e){} } nav('lang'); } }} disabled={!level} style={{ width:'100%', marginTop:18, padding:'14px', borderRadius:13, background: level ? T.brandGrad : T.bg3, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow: level ? `0 6px 16px ${T.brand}40` : 'none' }}>Add {picked.l} to my plan</button>
         </>}
       </MobileBody>
     </>

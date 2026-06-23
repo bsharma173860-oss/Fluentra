@@ -446,15 +446,18 @@ function ExamUnlockModal() {
 function StreakCalendarPage() {
   // Generate 12 weeks of activity
   // 4 dense weeks instead of 12 — easier to read at a glance
-  const days = Array.from({length: 4 * 7}).map((_,i) => ({
+  const _langs = (typeof userLanguages === 'function') ? userLanguages() : [];
+  const streak = _langs.length ? Math.max.apply(null, _langs.map(function (l) { return l.streak || 0; })) : 0;
+  const days = Array.from({length: 4 * 7}).map((_, i) => ({
     d: i,
-    intensity: i < 25 ? Math.floor(Math.random() * 4) + (Math.random() > .15 ? 1 : 0) : 0,
+    // index (4*7-1) is today; the most recent `streak` days are active
+    intensity: ((4 * 7 - 1) - i) < streak ? 3 : 0,
   }));
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto', padding:'32px 40px 60px' }}>
-        <PageHeader eyebrow="Streak" title="7 days strong" subtitle="9-day streak unlocks the real exam. You're 2 days away."
+        <PageHeader eyebrow="Streak" title={streak > 0 ? `${streak} ${streak === 1 ? 'day' : 'days'} strong` : 'Start your streak'} subtitle={streak >= 9 ? 'Your streak has unlocked the real exam — keep it going.' : `Reach a 9-day streak to unlock the real exam — ${Math.max(0, 9 - streak)} to go.`}
           right={<div style={{ display:'flex', gap:18 }}>
             <div><div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Current</div><div style={{ fontFamily:T.serif, fontSize:28, color:T.brand, lineHeight:1 }}>7 🔥</div></div>
             <div><div style={{ fontSize:10, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Longest</div><div style={{ fontFamily:T.serif, fontSize:28, color:T.ink, lineHeight:1 }}>14</div></div>
@@ -491,7 +494,7 @@ function StreakCalendarPage() {
           <div style={{ height:8, background:'rgba(255,255,255,.2)', borderRadius:99, overflow:'hidden', marginBottom:10 }}>
             <div style={{ height:'100%', width:'78%', background:'#fff', borderRadius:99 }}/>
           </div>
-          <div style={{ fontSize:12.5, color:'rgba(255,255,255,.85)' }}>Keep your streak alive — practice today (any module) to push to 8.</div>
+          <div style={{ fontSize:12.5, color:'rgba(255,255,255,.85)' }}>Keep your streak alive — practice today (any module) to push to {streak + 1}.</div>
         </div>
 
         {/* Module-specific score lines */}
