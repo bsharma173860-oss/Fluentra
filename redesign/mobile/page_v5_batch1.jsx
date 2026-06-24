@@ -24,55 +24,6 @@ const V5b1Lbl = (text) => (
 // ══════════════════════════════════════════════════════════════════
 // OTP (email verification)
 // ══════════════════════════════════════════════════════════════════
-function MOTPPageV5() {
-  const [code, setCode] = useStV5B1(['','','','','','']);
-  const [secs, setSecs] = useStV5B1(28);
-  const [verified, setVerified] = useStV5B1(false);
-  const refs = useRfV5B1([]);
-  const nav = (id) => window.__nav && window.__nav(id);
-  useEfV5B1(()=>{ if (secs > 0) { const t = setTimeout(()=>setSecs(secs-1), 1000); return ()=>clearTimeout(t); } }, [secs]);
-  const set = (i, v) => { if (!/^\d?$/.test(v)) return; const n=[...code]; n[i]=v; setCode(n); if (v && i<5) refs.current[i+1] && refs.current[i+1].focus(); };
-  const filled = code.every(d => d);
-  if (verified) return (
-    <>
-      <MobileHeader back onBack={()=>nav('auth_signup')} title="Verify"/>
-      <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center', padding:'40px 12px 0' }}>
-          <div style={{ width:72, height:72, borderRadius:36, background:T.brandGrad, color:'#fff', display:'inline-flex', alignItems:'center', justifyContent:'center', marginBottom:18, boxShadow:`0 12px 28px ${T.brand}40` }}>{Icon.check ? Icon.check({ width:30, height:30, strokeWidth:3 }) : '✓'}</div>
-          <div style={{ fontSize:10.5, fontWeight:800, letterSpacing:'.16em', color:T.ink4, marginBottom:10, textTransform:'uppercase' }}>Email verified</div>
-          <div style={{ fontFamily:T.serif, fontSize:30, lineHeight:1.05, letterSpacing:'-.02em', color:T.ink, marginBottom:10 }}>You're in.</div>
-          <div style={{ fontSize:13, color:T.ink3, lineHeight:1.55, marginBottom:14 }}>Setting up your account…</div>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.brand, letterSpacing:'.02em' }}>Speak it. Score it. Own it.</div>
-        </div>
-      </MobileBody>
-    </>
-  );
-  return (
-    <>
-      <MobileHeader back onBack={()=>nav('auth_signup')} title="Verify"/>
-      <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b1Pre eyebrow="STEP 2 OF 3 · CHECK YOUR INBOX" title="Enter the code" lede="We sent a 6-digit code to your email — it expires in 10 minutes."/>
-        <div style={{ background:T.ink, borderRadius:18, padding:'24px 18px', marginBottom:16, position:'relative', overflow:'hidden' }}>
-          <V5b1Dot/>
-          <div style={{ position:'relative', display:'flex', gap:8, justifyContent:'center' }}>
-            {code.map((d, i) => (
-              <input key={i} ref={el=>refs.current[i]=el} value={d} onChange={e=>set(i, e.target.value)} maxLength={1} inputMode="numeric" style={{ width:42, height:54, borderRadius:11, background:'rgba(255,255,255,.08)', border:`1.5px solid ${d ? T.brand : 'rgba(255,255,255,.18)'}`, color:'#fff', fontFamily:T.serif, fontSize:26, textAlign:'center', outline:'none' }}/>
-            ))}
-          </div>
-        </div>
-        <button onClick={()=>{ if (filled) { setVerified(true); setTimeout(()=>nav('auth_onboarding'), 1700); } }} disabled={!filled} style={{ width:'100%', padding:'14px', borderRadius:13, background: filled ? T.brandGrad : T.bg3, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow: filled ? `0 8px 22px ${T.brand}40` : 'none', marginBottom:14 }}>Verify & continue</button>
-        <div style={{ textAlign:'center', fontSize:12, color:T.ink4 }}>Didn't get it? {secs > 0 ? <span>Resend in <b style={{ color:T.ink2 }}>{secs}s</b></span> : <button onClick={()=>setSecs(28)} style={{ color:T.brand, fontWeight:700 }}>Resend code</button>}</div>
-        <div style={{ marginTop:24, padding:'12px 14px', background:T.brandLight, border:`1px dashed ${T.brand}55`, borderRadius:11 }}>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink, lineHeight:1.5 }}>"Wrong email? <span style={{ color:T.brand, fontStyle:'normal' }}>Go back and edit it</span> — we won't send another code until you do."</div>
-        </div>
-      </MobileBody>
-    </>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════
-// FORGOT PASSWORD
-// ══════════════════════════════════════════════════════════════════
 function MForgotPwPageV5() {
   const [step, setStep] = useStV5B1(0);
   const [email, setEmail] = useStV5B1('');
