@@ -1,4 +1,5 @@
 // Fluentra production build.
+import { execSync } from 'child_process';
 // Reads index.html, transpiles every `text/babel` script (the 69 .jsx
 // sources + the inline App/routing block) ahead of time with esbuild,
 // concatenates them in load order into one minified bundle, and emits a
@@ -82,4 +83,7 @@ async function main() {
   log('wrote dist/ ✓');
 }
 
-main().catch((e) => { console.error('[build] FAILED:', e.message); process.exit(1); });
+main().catch((e) => { console.error('[build] FAILED:', e.message); process.exit(1); }).then(() => {
+  // Connectedness audit on every build — informational, never blocks the build.
+  try { execSync('node audit.mjs', { cwd: ROOT, stdio: 'inherit' }); } catch (e) { /* exits 1 on HIGH; don't fail build */ }
+});
