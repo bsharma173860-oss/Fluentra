@@ -73,19 +73,3 @@ function NotificationsPage() {
     </div>
   );
 }
-
-function MNotificationsPage() {
-  const feed = _activityFeed();
-  return (
-    <MobileBody>
-      <div style={{ padding:'14px 0' }}>
-        <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, padding:'4px 16px 12px' }}>Activity</div>
-        {feed.length === 0 ? (
-          <div style={{ fontSize:13, color:T.ink3, padding:'16px' }}>No activity yet. Finish a session and it'll show up here.</div>
-        ) : feed.map(function (n) { return <NotifRow key={n.id} n={n}/>; })}
-      </div>
-    </MobileBody>
-  );
-}
-
-Object.assign(window, { NotificationsPage, MNotificationsPage });

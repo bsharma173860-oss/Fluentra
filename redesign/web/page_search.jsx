@@ -83,28 +83,3 @@ function SearchPage() {
     </div>
   );
 }
-
-function MSearchPage() {
-  const [query, setQuery] = useStateSr('');
-  const all = _searchDestinations();
-  const q = query.trim().toLowerCase();
-  const results = q ? all.filter(function (d) { return d.label.toLowerCase().indexOf(q) !== -1; }) : all;
-  return (
-    <MobileBody>
-      <div style={{ padding:'16px' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', background:T.card, border:'1.5px solid '+T.brand, borderRadius:11, marginBottom:14 }}>
-          <div style={{ color:T.brand }}>{Icon.search()}</div>
-          <input autoFocus value={query} onChange={function(e){ setQuery(e.target.value); }} placeholder="Search…" style={{ flex:1, border:'none', background:'transparent', fontSize:14, color:T.ink, outline:'none', fontFamily:T.sans }}/>
-        </div>
-        {results.map(function (d, i) { return (
-          <button key={i} onClick={function(){ _searchGo(d); }} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 4px', borderBottom:'1px solid '+T.hairline, background:'transparent', textAlign:'left', cursor:'pointer', width:'100%' }}>
-            <div style={{ width:32, height:32, borderRadius:8, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[d.ic] ? Icon[d.ic]({ width:13, height:13 }) : Icon.search({ width:13, height:13 })}</div>
-            <div style={{ flex:1, minWidth:0, fontSize:13, fontWeight:600, color:T.ink }}>{d.label}</div>
-          </button>
-        ); })}
-      </div>
-    </MobileBody>
-  );
-}
-
-Object.assign(window, { SearchPage, MSearchPage });
