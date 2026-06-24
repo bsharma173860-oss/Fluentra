@@ -282,17 +282,6 @@ function PreferencesTab() {
         </div>
       </Card>
 
-      <SectionHd title="Appearance"/>
-      <Card padding={20}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
-          {[{l:'Light',bg:'#F6F4EF'},{l:'Dark',bg:'#1A1A1A'},{l:'System',bg:'linear-gradient(90deg,#F6F4EF 50%,#1A1A1A 50%)'}].map((m,i) => (
-            <button key={m.l} style={{ padding:14, borderRadius:11, border:`1.5px solid ${i===0?T.brand:T.border}`, background:T.card, cursor:'pointer', textAlign:'center' }}>
-              <div style={{ height:60, borderRadius:8, background:m.bg, marginBottom:10, border:`1px solid ${T.hairline}` }}/>
-              <div style={{ fontSize:12, fontWeight:i===0?700:500, color:i===0?T.brand:T.ink2 }}>{m.l}</div>
-            </button>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }

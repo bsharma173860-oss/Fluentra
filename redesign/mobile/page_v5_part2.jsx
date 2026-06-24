@@ -455,7 +455,7 @@ function MStatesPageV5() {
       { ic:'users',  c:'#5A9C7A',   bg:'#E2EEDF',     title:'No friends yet', body:'Invite a study buddy and you\'ll see their activity in your feed — accountability for free.', cta:'Invite a friend' },
     ],
     error: [
-      { ic:'wifi',   c:'#D26890', bg:'#F9E6EE',  title:'You\'re offline', body:'Some features need a connection. Cached lessons still work — try those while we wait for the bars to come back.', cta:'Retry' },
+      { ic:'wifi',   c:'#D26890', bg:'#F9E6EE',  title:'You\'re offline', body:'New lessons need a connection. Pages you\'ve already opened still work — try those while we wait for the bars to come back.', cta:'Retry' },
       { ic:'shield', c:'#E08F4D', bg:'#FEF3E5',  title:'Something went wrong', body:'We couldn\'t load this page. Tap retry — if it keeps happening, support@fluentra.com knows what to do.', cta:'Retry' },
     ],
     loading: [
@@ -632,7 +632,7 @@ function MMarketingPageV5() {
         <div style={{ position:'relative' }}>
           <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.22em', color:'rgba(255,255,255,.55)', marginBottom:18 }}>FLUENTRA · LANGUAGE, REIMAGINED</div>
           <div style={{ fontFamily:T.serif, fontSize:46, lineHeight:.98, letterSpacing:'-.03em', marginBottom:18 }}>The fastest<br/>path to<br/><em style={{ color:T.brand, fontStyle:'italic' }}>fluent.</em></div>
-          <div style={{ fontSize:14.5, color:'rgba(255,255,255,.7)', lineHeight:1.55, marginBottom:28, maxWidth:280 }}>AI tutor, exam prep and real conversation — across 80+ languages. Built for adults who don't have time for cartoon owls.</div>
+          <div style={{ fontSize:14.5, color:'rgba(255,255,255,.7)', lineHeight:1.55, marginBottom:28, maxWidth:280 }}>AI tutor, exam prep and real conversation — across 10+ languages. Built for adults who don't have time for cartoon owls.</div>
           <button onClick={()=>nav('onboarding')} style={{ width:'100%', padding:'15px', borderRadius:14, background:'#fff', color:T.ink, fontSize:13.5, fontWeight:700, marginBottom:10, border:'none' }}>Start 7 days free →</button>
           <div style={{ textAlign:'center', fontSize:11.5, fontFamily:T.serif, fontStyle:'italic', color:'rgba(255,255,255,.6)', letterSpacing:'.02em' }}>Speak it. Score it. Own it.</div>
         </div>
@@ -731,7 +731,7 @@ function MMarketingPageV5() {
             <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginBottom:18 }}>Billed annually. $24/mo on monthly. 7-day free trial.</div>
             <div style={{ height:1, background:'rgba(255,255,255,.18)', marginBottom:16 }}/>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:22 }}>
-              {['All 80+ languages','Unlimited AI tutor','Unlimited practice exams','Speaking with mic + writing feedback'].map(p => (
+              {['All 10+ languages','Unlimited AI tutor','Unlimited practice exams','Speaking with mic + writing feedback'].map(p => (
                 <div key={p} style={{ display:'flex', gap:10, alignItems:'center', fontSize:12.5 }}>
                   <span style={{ width:14, height:14, borderRadius:7, background:'rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:800 }}>✓</span>
                   {p}

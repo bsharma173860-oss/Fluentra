@@ -241,7 +241,7 @@ function VocabPage() {
                   return <div style={{ padding:'40px 16px', textAlign:'center', fontSize:12.5, color:T.ink4 }}>No words match this filter.</div>;
                 }
                 return list.map((w, i) => (
-                <div key={i} style={{ display:'grid', gridTemplateColumns:'1.4fr 1.6fr 80px 90px 28px', gap:10, padding:'12px 16px', fontSize:13, alignItems:'center', borderRadius:10, cursor:'pointer', transition:'background .12s' }}
+                <div key={i} title="Tap to hear pronunciation" onClick={() => { try { (typeof flSpeak==='function') && flSpeak(w.word, (typeof window!=='undefined' && window.__langCode) || 'en'); } catch(e){} }} style={{ display:'grid', gridTemplateColumns:'1.4fr 1.6fr 80px 90px 28px', gap:10, padding:'12px 16px', fontSize:13, alignItems:'center', borderRadius:10, cursor:'pointer', transition:'background .12s' }}
                   onMouseEnter={e => e.currentTarget.style.background = T.bg2}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <div>

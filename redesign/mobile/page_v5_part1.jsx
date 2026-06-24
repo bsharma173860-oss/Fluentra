@@ -57,7 +57,7 @@ function MSettingsPageV5() {
       { id:'billing',      label:'Billing & receipts',ic:'card',   meta:'Invoices & card', c:'#2A6FA0' },
     ]},
     { title:'APP', items: [
-      { id:'preferences',  label:'Preferences',       ic:'sliders', meta:'Theme & reminders', c:T.ink2 },
+      { id:'preferences',  label:'Preferences',       ic:'sliders', meta:'Reminders & goals', c:T.ink2 },
       { id:'notifications',label:'Notifications',     ic:'bell',    meta:'Manage alerts', c:'#E08F4D' },
       { id:'data',         label:'Data & privacy',    ic:'shield',  meta:'Export, delete', c:'#5A9C7A' },
     ]},
