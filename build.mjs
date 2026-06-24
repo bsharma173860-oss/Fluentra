@@ -76,6 +76,9 @@ async function main() {
   fs.writeFileSync(path.join(DIST, 'index.html'), outHtml);
   // Standalone health page — copied as-is so it works even if the app bundle breaks.
   if (fs.existsSync(p('diag.html'))) fs.copyFileSync(p('diag.html'), path.join(DIST, 'diag.html'));
+  // PWA: manifest + service worker at the site root so the app is installable.
+  if (fs.existsSync(p('manifest.json'))) fs.copyFileSync(p('manifest.json'), path.join(DIST, 'manifest.json'));
+  if (fs.existsSync(p('sw.js'))) fs.copyFileSync(p('sw.js'), path.join(DIST, 'sw.js'));
   log('wrote dist/ ✓');
 }
 
