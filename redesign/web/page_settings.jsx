@@ -46,7 +46,7 @@ function SettingsPage() {
                 </button>
               ))}
               <div style={{ height:1, background:T.border, margin:'12px 6px' }}/>
-              <button style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:9, fontSize:13, fontWeight:500, color:T.brand, textAlign:'left', cursor:'pointer' }}>
+              <button onClick={() => window.__signOut && window.__signOut()} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:9, fontSize:13, fontWeight:500, color:T.brand, textAlign:'left', cursor:'pointer' }}>
                 {Icon.x({ width:14, height:14 })}
                 Sign out
               </button>

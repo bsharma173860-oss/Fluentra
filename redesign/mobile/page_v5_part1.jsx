@@ -121,7 +121,7 @@ function MSettingsPageV5() {
           </div>
         ))}
 
-        <button onClick={()=>nav('auth_login')} style={{ width:'100%', padding:'13px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, color:T.brand, fontSize:13, fontWeight:700, boxShadow:MT.shadowSm, marginBottom:12 }}>Sign out</button>
+        <button onClick={()=>{ if (window.__signOut) window.__signOut(); else nav('auth_login'); }} style={{ width:'100%', padding:'13px', borderRadius:12, background:T.card, border:`1px solid ${T.hairline}`, color:T.brand, fontSize:13, fontWeight:700, boxShadow:MT.shadowSm, marginBottom:12 }}>Sign out</button>
         <div style={{ textAlign:'center', fontSize:10.5, color:T.ink5 }}>Fluentra v2.4.0 · Build 1240</div>
       </MobileBody>
     </>
