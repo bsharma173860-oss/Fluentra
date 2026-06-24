@@ -2,5 +2,8 @@
   "framework": null,
   "buildCommand": "node build.mjs",
   "outputDirectory": "dist",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/diag", "destination": "/diag.html" }
+  ]
 }

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Fluentra · Health Check</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --card2:#1f232c; --line:#2a2f3a;
+    --ink:#f3f5f8; --ink2:#aeb6c2; --ink3:#7b8595;
+    --green:#3ECf8E; --greenbg:#11271e; --red:#F2555A; --redbg:#2a1416;
+    --amber:#F5B544; --amberbg:#2a2110; --brand:#6C5CE7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:18px 14px 60px;max-width:560px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--ink3);font-size:12.5px;margin-bottom:18px}
+  .banner{border-radius:16px;padding:18px 16px;margin-bottom:16px;font-weight:700;
+    display:flex;align-items:center;gap:12px;font-size:15px}
+  .banner .big{font-size:26px;line-height:1}
+  .banner.ok{background:var(--greenbg);border:1px solid #1c4736;color:var(--green)}
+  .banner.bad{background:var(--redbg);border:1px solid #5a2227;color:var(--red)}
+  .banner.wait{background:var(--card2);border:1px solid var(--line);color:var(--ink2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 14px;margin-bottom:10px}
+  .row{display:flex;align-items:flex-start;gap:11px}
+  .dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:1px;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+  .dot.ok{background:var(--greenbg);color:var(--green)}
+  .dot.bad{background:var(--redbg);color:var(--red)}
+  .dot.amber{background:var(--amberbg);color:var(--amber)}
+  .dot.wait{background:var(--card2);color:var(--ink3)}
+  .ctitle{font-weight:700;font-size:14.5px;margin:0}
+  .cdesc{color:var(--ink2);font-size:12.8px;margin:3px 0 0}
+  .fix{margin:9px 0 0;padding:9px 11px;background:var(--card2);border-radius:9px;
+    border-left:3px solid var(--amber);font-size:12.4px;color:var(--ink2)}
+  .fix b{color:var(--ink)}
+  .meta{display:flex;justify-content:space-between;align-items:center;margin-top:18px;
+    color:var(--ink3);font-size:12px}
+  button{background:var(--brand);color:#fff;border:0;border-radius:10px;
+    padding:10px 16px;font-weight:700;font-size:13.5px;cursor:pointer}
+  button:active{transform:scale(.97)}
+  .legend{display:flex;gap:14px;margin:6px 0 16px;font-size:11.5px;color:var(--ink3);flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .lg{width:10px;height:10px;border-radius:50%}
+  code{background:var(--card2);padding:1px 6px;border-radius:5px;font-size:11.5px;color:var(--ink)}
+</style>
+</head>
+<body>
+  <h1>Fluentra · Health Check</h1>
+  <div class="sub">Yeh page batata hai app ke saare hisse theek chal rahe hain ya nahi. Kabhi bhi kholo — koi code nahi, sirf 🟢 / 🔴.</div>
+
+  <div class="legend">
+    <span><i class="lg" style="background:var(--green)"></i> Theek</span>
+    <span><i class="lg" style="background:var(--amber)"></i> Dhyaan do</span>
+    <span><i class="lg" style="background:var(--red)"></i> Toota</span>
+  </div>
+
+  <div id="banner" class="banner wait"><span class="big">⏳</span><span>Checking…</span></div>
+  <div id="cards"></div>
+
+  <div class="meta">
+    <span id="ts">—</span>
+    <button onclick="run()">↻ Dobara check</button>
+  </div>
+
+<script>
+function card(state, title, desc, fix){
+  var icon = state==='ok'?'✓':state==='bad'?'✕':state==='amber'?'!':'…';
+  return '<div class="card"><div class="row">'+
+    '<div class="dot '+state+'">'+icon+'</div>'+
+    '<div style="flex:1"><p class="ctitle">'+title+'</p>'+
+    '<p class="cdesc">'+desc+'</p>'+
+    (fix?'<div class="fix">'+fix+'</div>':'')+
+    '</div></div></div>';
+}
+
+async function run(){
+  document.getElementById('banner').className='banner wait';
+  document.getElementById('banner').innerHTML='<span class="big">⏳</span><span>Checking…</span>';
+  document.getElementById('cards').innerHTML='';
+  var cards=[], worst='ok';
+  function mark(s){ if(s==='bad') worst='bad'; else if(s==='amber'&&worst!=='bad') worst='amber'; }
+
+  // ---- 1. App reachable (client-side) ----
+  cards.push(card('ok','App online','Yeh health page load ho gaya — server zinda hai.',''));
+
+  // ---- 2. Backend diagnostics (/api/diag) ----
+  var d=null, diagErr=null;
+  try{
+    var r=await fetch('/api/diag',{cache:'no-store'});
+    d=await r.json();
+  }catch(e){ diagErr=String(e); }
+
+  if(diagErr || !d){
+    mark('bad');
+    cards.push(card('bad','Backend check fail',
+      'Server ke diagnostics tak nahi pahunch paaye. API down ho sakta hai ya deploy adhura hai.',
+      'Vercel pe latest deploy <b>Ready</b> hai ya nahi check karo. Phir dobara check dabao.'));
+  } else {
+    var env=d.env||{};
+
+    // AI content (Anthropic)
+    if(d.anthropic && d.anthropic.ok){
+      cards.push(card('ok','AI content (Anthropic)','Lessons, vocab, modules ke liye real AI content ban raha hai.',''));
+    } else if(d.anthropic && d.anthropic.skipped){
+      mark('bad');
+      cards.push(card('bad','AI content band',
+        'Anthropic key set nahi hai — isliye modules <b>sample content</b> pe gir rahe hain (real AI nahi).',
+        'Vercel → Project → Settings → Environment Variables mein <code>ANTHROPIC_API_KEY</code> add karo, phir redeploy.'));
+    } else {
+      mark('bad');
+      var det=(d.anthropic&&(d.anthropic.detail||('HTTP '+d.anthropic.status)))||'unknown';
+      cards.push(card('bad','AI content error',
+        'Anthropic call fail ho rahi hai — modules sample pe gir rahe hain. Reason: '+det,
+        'Key galat/expire ho sakti hai ya credit khatam. <code>ANTHROPIC_API_KEY</code> verify karo.'));
+    }
+
+    // Database (Supabase)
+    if(env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY_or_alias){
+      if(d.supabase_content_table && d.supabase_content_table.ok===false){
+        mark('amber');
+        cards.push(card('amber','Database connected (1 table missing)',
+          'Supabase juda hai, par content cache table reachable nahi — app phir bhi chalega (live generate karega).',
+          'Optional: Supabase mein content table banao taaki generated content cache ho.'));
+      } else {
+        cards.push(card('ok','Database (Supabase)','Database juda hai aur reachable hai.',''));
+      }
+    } else {
+      mark('bad');
+      var miss=[]; if(!env.SUPABASE_URL)miss.push('SUPABASE_URL'); if(!env.SUPABASE_SERVICE_KEY_or_alias)miss.push('SUPABASE key');
+      cards.push(card('bad','Database config missing',
+        'Server pe Supabase ka '+miss.join(' aur ')+' set nahi — content save/cache fail ho sakta hai.',
+        'Vercel env vars mein '+miss.join(', ')+' add karo, phir redeploy.'));
+    }
+
+    // Payments (Stripe)
+    if(env.STRIPE_SECRET_KEY){
+      cards.push(card('ok','Payments (Stripe)','Stripe key maujood hai — checkout chal sakta hai.',''));
+    } else {
+      mark('amber');
+      cards.push(card('amber','Payments not configured',
+        'Stripe key set nahi — paid upgrade kaam nahi karega (free app chalega).',
+        'Jab paid plan launch karna ho: Vercel env mein <code>STRIPE_SECRET_KEY</code> add karo.'));
+    }
+
+    // Overall verdict line from server
+    if(d.verdict){
+      cards.push(card(d.anthropic&&d.anthropic.ok?'ok':'amber','Summary', d.verdict, ''));
+    }
+  }
+
+  document.getElementById('cards').innerHTML=cards.join('');
+  var b=document.getElementById('banner');
+  if(worst==='ok'){ b.className='banner ok'; b.innerHTML='<span class="big">🟢</span><span>Sab theek chal raha hai</span>'; }
+  else if(worst==='amber'){ b.className='banner wait'; b.innerHTML='<span class="big">🟡</span><span>Chal raha hai — par kuch dhyaan maangta hai</span>'; }
+  else { b.className='banner bad'; b.innerHTML='<span class="big">🔴</span><span>Kuch toota hai — neeche dekho</span>'; }
+
+  document.getElementById('ts').textContent='Last checked: '+new Date().toLocaleString();
+}
+run();
+</script>
+</body>
+</html>

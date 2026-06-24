@@ -74,6 +74,8 @@ async function main() {
   fs.copyFileSync(p('redesign', 'backend.js'), path.join(DIST, 'redesign', 'backend.js'));
   fs.writeFileSync(path.join(DIST, 'assets', 'app.bundle.js'), bundle);
   fs.writeFileSync(path.join(DIST, 'index.html'), outHtml);
+  // Standalone health page — copied as-is so it works even if the app bundle breaks.
+  if (fs.existsSync(p('diag.html'))) fs.copyFileSync(p('diag.html'), path.join(DIST, 'diag.html'));
   log('wrote dist/ ✓');
 }
 

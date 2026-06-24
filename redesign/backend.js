@@ -568,7 +568,7 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b123-single-onboarding';
+    window.__FL_BUILD = 'b124-diag-health-page';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
