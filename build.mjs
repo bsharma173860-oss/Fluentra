@@ -84,6 +84,8 @@ async function main() {
 }
 
 main().catch((e) => { console.error('[build] FAILED:', e.message); process.exit(1); }).then(() => {
-  // Connectedness audit on every build — informational, never blocks the build.
-  try { execSync('node audit.mjs', { cwd: ROOT, stdio: 'inherit' }); } catch (e) { /* exits 1 on HIGH; don't fail build */ }
+  // Connectedness audit on every build. HIGH-severity structural breaks
+  // (broken nav, missing page/backend method) FAIL the build so nothing
+  // broken can deploy. MED/INFO are warnings and never block.
+  execSync('node audit.mjs', { cwd: ROOT, stdio: 'inherit' });
 });

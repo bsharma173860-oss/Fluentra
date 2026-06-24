@@ -708,7 +708,7 @@ function MMarketingPageV5() {
 
       {/* Languages — restrained chip cluster */}
       <div style={{ padding:'40px 22px', textAlign:'center' }}>
-        <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:'.2em', color:T.ink4, marginBottom:14 }}>80+ LANGUAGES</div>
+        <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:'.2em', color:T.ink4, marginBottom:14 }}>10+ LANGUAGES</div>
         <div style={{ fontFamily:T.serif, fontSize:26, color:T.ink, lineHeight:1.1, letterSpacing:'-.02em', marginBottom:22 }}>Pick one. Or two. Or all of them.</div>
         <div style={{ display:'flex', flexWrap:'wrap', gap:6, justifyContent:'center' }}>
           {['Spanish','French','Japanese','German','Mandarin','Korean','Italian','Portuguese','Arabic','Russian','Hindi','Turkish'].map(l=>(

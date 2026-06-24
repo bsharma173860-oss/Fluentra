@@ -131,6 +131,23 @@ for (const [tbl, map] of [['WEB', web], ['MOBILE', mob]])
     if (body && !CONNECT.test(body)) INFO.push(`DISCONNECTED?  ${tbl} ${route} → <${comp}> has no backend/nav signal (may render a connected child)`);
   }
 
+// ── INVARIANT 7: marketing claims must match reality (over-promise guard) ──
+// Catches the "80+ languages vs 10+ languages" class automatically.
+const addLang = files.find(f => f.name === 'page_add_language.jsx');
+const realFull = addLang ? (addLang.src.match(/tier:'full'/g) || []).length : 0;
+const langClaims = new Set();
+for (const f of files) {
+  if (STATIC_FILES.has(f.name)) continue;
+  for (const m of f.src.matchAll(/(\d+)\s*\+?\s*languages/gi)) { const n = parseInt(m[1],10); if (n >= 5) langClaims.add(n); }  // <5 = UI layout refs, not claims
+}
+if (realFull > 0) {
+  for (const n of langClaims)
+    if (n > realFull * 2)
+      MED.push(`OVER-PROMISE  app claims "${n}+ languages" but only ${realFull} have a full curriculum/exam — verify wording`);
+  if (langClaims.size > 1)
+    MED.push(`INCONSISTENT CLAIM  language count stated as different numbers (${[...langClaims].sort((a,b)=>a-b).join(', ')}) — pick one honest number`);
+}
+
 // ── REPORT ──
 const stamp = (backend.match(/__FL_BUILD\s*=\s*['"]([^'"]+)/) || [])[1] || '?';
 console.log(`\n  Fluentra connectedness audit  ·  build ${stamp}  ·  ${files.length} files, ${routes.size} routes, ${defined.size} components\n`);

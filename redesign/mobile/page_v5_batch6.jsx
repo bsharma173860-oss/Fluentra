@@ -4,16 +4,6 @@
 const useStV5B6 = React.useState;
 const useEfV5B6 = React.useEffect;
 
-const V5b6Pre = ({ eyebrow, title, lede, c }) => (
-  <div style={{ padding:'4px 6px 14px' }}>
-    {eyebrow && <div style={{ fontSize:10.5, fontWeight:700, color:c||T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>{eyebrow}</div>}
-    <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.02, letterSpacing:'-.02em' }}>{title}</div>
-    {lede && <div style={{ fontSize:13, color:T.ink3, marginTop:8, lineHeight:1.55 }}>{lede}</div>}
-  </div>
-);
-const V5b6Lbl = (text) => (
-  <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>{text}</div>
-);
 const V5b6Dot = () => (
   <div style={{ position:'absolute', inset:0, display:'grid', gridTemplateColumns:'repeat(14,1fr)', gap:9, opacity:.05, pointerEvents:'none' }}>
     {Array.from({length:84}).map((_,i)=><div key={i} style={{ width:3, height:3, borderRadius:1.5, background:'#fff' }}/>)}

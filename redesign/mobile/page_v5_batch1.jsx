@@ -17,13 +17,6 @@ const V5b1Dot = () => (
     {Array.from({length:84}).map((_,i)=><div key={i} style={{ width:3, height:3, borderRadius:1.5, background:'#fff' }}/>)}
   </div>
 );
-const V5b1Lbl = (text) => (
-  <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>{text}</div>
-);
-
-// ══════════════════════════════════════════════════════════════════
-// OTP (email verification)
-// ══════════════════════════════════════════════════════════════════
 function MForgotPwPageV5() {
   const [step, setStep] = useStV5B1(0);
   const [email, setEmail] = useStV5B1('');
