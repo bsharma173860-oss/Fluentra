@@ -25,6 +25,8 @@ if (!Icon.settings) Icon.settings = ({width=14,height=14,color='currentColor'}={
 // ═══ desktop ═══════════════════════════════════════════════
 function SettingsPage() {
   const [tab, setTab] = useStateS('account');
+  const [goalMin, setGoalMin] = useStateS((function(){ try { return parseInt(localStorage.getItem('fl-daily-goal'),10) || 20; } catch(e){ return 20; } })());
+  const pickGoal = (m) => { setGoalMin(m); try { localStorage.setItem('fl-daily-goal', String(m)); } catch(e){} };
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>
@@ -272,9 +274,9 @@ function PreferencesTab() {
       <Card padding={24} style={{ marginBottom:24 }}>
         <div style={{ display:'flex', gap:10 }}>
           {[10,20,30,45,60].map(m => (
-            <button key={m} style={{ flex:1, padding:'14px 0', borderRadius:11, border:`1.5px solid ${m===20?T.brand:T.border}`, background:m===20?T.brandLight:T.card, cursor:'pointer' }}>
-              <div style={{ fontFamily:T.serif, fontSize:24, color:m===20?T.brand:T.ink, lineHeight:1 }}>{m}</div>
-              <div style={{ fontSize:10, color:m===20?T.brand:T.ink4, fontWeight:600, marginTop:4 }}>min/day</div>
+            <button key={m} onClick={() => pickGoal(m)} style={{ flex:1, padding:'14px 0', borderRadius:11, border:`1.5px solid ${m===goalMin?T.brand:T.border}`, background:m===goalMin?T.brandLight:T.card, cursor:'pointer' }}>
+              <div style={{ fontFamily:T.serif, fontSize:24, color:m===goalMin?T.brand:T.ink, lineHeight:1 }}>{m}</div>
+              <div style={{ fontSize:10, color:m===goalMin?T.brand:T.ink4, fontWeight:600, marginTop:4 }}>min/day</div>
             </button>
           ))}
         </div>

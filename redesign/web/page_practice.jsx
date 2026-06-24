@@ -77,7 +77,7 @@ function PracticePage() {
           {_recentRows.length === 0 ? (
             <div style={{ padding:'28px 18px', fontSize:13, color:T.ink3 }}>No practice yet — finish a module and your recent sessions will appear here.</div>
           ) : _recentRows.map((row, i, all) => (
-            <div key={i} style={{ display:'grid', gridTemplateColumns:'40px 1fr 120px 120px 90px 60px', padding:'14px 18px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', alignItems:'center', cursor:'pointer', transition:'background .12s' }}
+            <div key={i} data-nav="progress" style={{ display:'grid', gridTemplateColumns:'40px 1fr 120px 120px 90px 60px', padding:'14px 18px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', alignItems:'center', cursor:'pointer', transition:'background .12s' }}
               onMouseEnter={e => e.currentTarget.style.background = T.bg2}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               <div style={{ width:28, height:28, borderRadius:8, background:row.c.bg, color:row.c.c, display:'flex', alignItems:'center', justifyContent:'center' }}>
