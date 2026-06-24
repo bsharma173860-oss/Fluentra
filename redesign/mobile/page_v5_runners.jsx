@@ -1,6 +1,7 @@
 // Mobile · Exam Runner + Results (adapts for full / monthly / mock / practice)
 
 function MExamRunnerV5({ mode = 'monthly' }) {
+  const mic = useMicRecorder();
   const code = window.__langCode || 'en';
   const lang = (typeof LANGUAGES !== 'undefined') ? (LANGUAGES.find(l => l.code === code) || LANGUAGES[0]) : { code:'en', english:'English' };
   const ex = (typeof examFor === 'function') ? examFor(lang.code) : { name:'IELTS', short:'IELTS', modules:[], duration:'2h 45m' };
@@ -103,7 +104,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
             <textarea placeholder="Start writing…" style={{ width:'100%', minHeight:120, padding:'11px 12px', borderRadius:11, background:T.bg2, border:`1px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:T.serif, lineHeight:1.5, resize:'vertical', outline:'none' }}/>
           )}
           {m.color === 'speaking' && (
-            <button style={{ width:'100%', padding:'14px', borderRadius:11, background:c.bg, color:c.c, fontSize:12.5, fontWeight:700, border:`1px solid ${c.c}33`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'} Tap to record</button>
+            <button onClick={mic.toggle} style={{ width:'100%', padding:'14px', borderRadius:11, background:c.bg, color:c.c, fontSize:12.5, fontWeight:700, border:`1px solid ${c.c}33`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'} {mic.recording ? ('Recording ' + mic.time + ' · tap to stop') : mic.done ? ('Recorded ' + mic.time + ' · tap to redo') : 'Tap to record'}</button>
           )}
           {(m.color === 'reading' || m.color === 'listening') && (
             <div style={{ display:'flex', flexDirection:'column', gap:7 }}>

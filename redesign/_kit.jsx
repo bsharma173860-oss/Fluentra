@@ -615,6 +615,45 @@ function Bar({ pct, color=T.brand, track=T.trackWarm, height=4 }) {
 function langTheme(code) { return T[code] || { bg:T.bg2, accent:T.ink, accentLight:T.bg2 }; }
 
 // Browser-native text-to-speech (no backend). flSpeak('hola','es') -> speaks it.
+// Real microphone recording for "Tap to record" buttons (MediaRecorder).
+// Returns { recording, time, done, toggle } — the button toggles record/stop
+// and shows a live timer; the captured audio blob is kept on the ref.
+function useMicRecorder() {
+  const [recording, setRecording] = React.useState(false);
+  const [seconds, setSeconds] = React.useState(0);
+  const [done, setDone] = React.useState(false);
+  const ref = React.useRef({ rec: null, chunks: [], iv: null, blob: null });
+  const stop = React.useCallback(function () {
+    const st = ref.current;
+    try { if (st.rec && st.rec.state !== 'inactive') st.rec.stop(); } catch (e) {}
+    if (st.iv) { clearInterval(st.iv); st.iv = null; }
+    setRecording(false);
+  }, []);
+  const toggle = React.useCallback(function () {
+    const st = ref.current;
+    if (st.rec && st.rec.state === 'recording') { stop(); setDone(true); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+      alert('Recording is not supported on this browser.'); return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      const mr = new MediaRecorder(stream);
+      st.rec = mr; st.chunks = [];
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) st.chunks.push(e.data); };
+      mr.onstop = function () {
+        try { st.blob = new Blob(st.chunks, { type: 'audio/webm' }); } catch (e) {}
+        stream.getTracks().forEach(function (t) { t.stop(); });
+      };
+      mr.start();
+      setSeconds(0); setDone(false); setRecording(true);
+      st.iv = setInterval(function () { setSeconds(function (s) { return s + 1; }); }, 1000);
+    }).catch(function () { alert('Microphone permission is needed to record your answer.'); });
+  }, [stop]);
+  React.useEffect(function () { return function () { stop(); }; }, [stop]);
+  const m = Math.floor(seconds / 60), s = seconds % 60;
+  const time = m + ':' + (s < 10 ? '0' + s : s);
+  return { recording: recording, seconds: seconds, time: time, done: done, toggle: toggle };
+}
+
 function flSpeak(text, code) {
   if (typeof window === 'undefined' || !window.speechSynthesis || !text) return false;
   var map = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', ja:'ja-JP', zh:'zh-CN', ko:'ko-KR', ru:'ru-RU', ar:'ar-SA', hi:'hi-IN', nl:'nl-NL', pl:'pl-PL', tr:'tr-TR', sv:'sv-SE' };

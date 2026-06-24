@@ -131,6 +131,7 @@ function getExamMode() {
 // FULL EXAM RUNNER — in-progress exam with section nav
 // ═══════════════════════════════════════════════════════════
 function FullExamRunner() {
+  const mic = useMicRecorder();
   const code = window.__langCode || 'en';
   const lang = LANGUAGES.find(l => l.code === code) || LANGUAGES[0];
   const ex = examFor(lang.code);
@@ -301,8 +302,8 @@ function FullExamRunner() {
               </div>
             </div>
             <div style={{ marginTop:14, display:'flex', alignItems:'center', gap:10 }}>
-              <button style={{ width:48, height:48, borderRadius:24, background:cur.color, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer', boxShadow:`0 6px 18px ${cur.color}55` }}>{Icon.mic({ width:18, height:18 })}</button>
-              <div style={{ fontSize:12.5, color:T.ink3 }}>Tap to record · 0:00 / 2:00</div>
+              <button onClick={mic.toggle} style={{ width:48, height:48, borderRadius:24, background: mic.recording ? '#C0392B' : cur.color, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer', boxShadow:`0 6px 18px ${cur.color}55` }}>{Icon.mic({ width:18, height:18 })}</button>
+              <div style={{ fontSize:12.5, color:T.ink3 }}>{mic.recording ? ('Recording… ' + mic.time + ' · tap to stop') : mic.done ? ('Recorded ' + mic.time + ' · tap to redo') : 'Tap to record'}</div>
             </div>
           </>}
         </div>
