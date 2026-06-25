@@ -960,6 +960,7 @@ function WritingSession() {
     try {
       const lang = window.__langCode || (window.__userLanguages && window.__userLanguages[0] && window.__userLanguages[0].code) || 'en';
       res = await window.FL.gradeWriting(task, text, lang);
+      if (res && res.locked) { setGrading(false); if (window.__upgrade) window.__upgrade('writing'); return; }
       if (res && !res.error) setFeedback(res);
     } catch(e) { /* non-blocking */ }
     setGrading(false);

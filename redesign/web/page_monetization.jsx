@@ -258,7 +258,7 @@ function ExamPreviewPage() {
             </div>
             {(() => {
               const tier = (window.__userTier || 'free');
-              const isPaid = tier === 'pro' || tier === 'max';
+              const isPaid = (window.__can ? window.__can('examsIncluded') : tier === 'max');  // exam free = Max only
               const cost = ex.cost || '$5';
               return (
                 <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
@@ -380,7 +380,7 @@ function ExamPreviewPage() {
           </div>
           {(() => {
             const tier = (window.__userTier || 'free'); // 'free' | 'pro' | 'max'
-            const isPaid = tier === 'pro' || tier === 'max';
+            const isPaid = (window.__can ? window.__can('examsIncluded') : tier === 'max');  // exam free = Max only
             const cost = ex.cost || '$5';
             return (
               <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6 }}>
@@ -399,10 +399,10 @@ function ExamPreviewPage() {
                   {isPaid ? (
                     <>
                       <span style={{ width:6, height:6, borderRadius:3, background:'#1A8F4E' }}/>
-                      Included with your {tier === 'max' ? 'Max' : 'Pro'} plan
+                      Included with your Max plan
                     </>
                   ) : (
-                    <>One-time charge · <button onClick={() => nav('pricing')} style={{ color:t.brand, fontWeight:700, textDecoration:'underline', cursor:'pointer' }}>Go Pro for unlimited</button></>
+                    <>One-time charge · <button onClick={() => nav('pricing')} style={{ color:t.brand, fontWeight:700, textDecoration:'underline', cursor:'pointer' }}>Go Max for free exams</button></>
                   )}
                 </div>
               </div>

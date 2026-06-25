@@ -534,6 +534,13 @@ function App() {
   useEffect(() => {
     window.__nav = (id, opts = {}) => {
       if (!id) return;
+      // Tier gate: block navigation into plan-locked features (covers every
+      // entry point at once). Speaking is mic-based — Pro/Max only.
+      const GATED = { speaking: 'speaking' };
+      if (GATED[id] && window.__can && !window.__can(GATED[id])) {
+        if (window.__upgrade) window.__upgrade(id);
+        return;
+      }
       setHistory(h => [...h, page]);
       if (opts.langCode) { window.__langCode = opts.langCode; setLangCode(opts.langCode); }
       if (window.__langCode && id === 'lang') setLangCode(window.__langCode);

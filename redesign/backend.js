@@ -409,6 +409,10 @@
 
       // ── AI Writing Grader ─────────────────────────────────────
       gradeWriting: function (task, text, langCode) {
+        // Tier gate: AI writing feedback is Pro/Max only.
+        if (window.__can && !window.__can('writingFeedback')) {
+          return Promise.resolve({ locked: true });
+        }
         return fetch('/api/grade-writing', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -591,7 +595,7 @@
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
 
-    window.__FL_BUILD = 'b134-gating-foundation';
+    window.__FL_BUILD = 'b135-gates-speak-write-exam';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
