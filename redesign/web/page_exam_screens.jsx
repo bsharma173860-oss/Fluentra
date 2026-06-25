@@ -502,8 +502,7 @@ function ExamRunnerResults({ results, lang }) {
       var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
       if (token) {
-        fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
-          body: JSON.stringify({ lang: lang, score: overall, detail: { module:'mock_exam', sections: results, unit: '/9' } }) }).catch(function(){});
+        window.__saveResult({ lang: lang, score: overall, detail: { module:'mock_exam', sections: results, unit: '/9' } });
         try { if (window.FL && window.FL.social) window.FL.social.logActivity('mock', lang, { score: overall }); } catch (e) {}
       }
     } catch (e) {}

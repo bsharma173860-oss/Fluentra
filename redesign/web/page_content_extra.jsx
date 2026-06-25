@@ -34,8 +34,7 @@ function LessonDetailPage() {
     try {
       var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
-      if (token) fetch('/api/save-result', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
-        body: JSON.stringify({ lang: lang, score: pct, detail:{ module:'lesson', topic: topic.title, unit:'%' } }) }).catch(function(){});
+      window.__saveResult({ lang: lang, score: pct, detail:{ module:'lesson', topic: topic.title, unit:'%' } });
     } catch (e) {}
   }
 

@@ -61,7 +61,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
     window.__lastExam = { sections: secsArr, overall: overall, gradedCount: graded.length, total: modules.length, lang: code };
     try {
       if (window.__authHeaders && overall != null) {
-        fetch('/api/save-result', { method:'POST', headers: Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders()), body: JSON.stringify({ lang: code, score: overall, detail: { module:'mock_exam', sections: secsArr, unit:'/100' } }) }).catch(()=>{});
+        window.__saveResult({ lang: code, score: overall, detail: { module:'mock_exam', sections: secsArr, unit:'/100' } });
       }
     } catch (e) {}
     nav(mode === 'monthly' ? 'monthly_results' : mode === 'mock' ? 'mock_results' : mode === 'practice' ? 'practice_results' : 'exam_results');

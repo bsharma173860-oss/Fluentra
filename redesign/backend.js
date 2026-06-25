@@ -613,6 +613,27 @@
     // Start a specific checkout (one-time item or plan). Sets the checkout item
     // so the checkout page shows the RIGHT thing (e.g. $5 exam, not the monthly plan).
     window.payFor = function (item) { window.__checkoutItem = item || 'exam_official'; if (window.__nav) window.__nav('checkout'); };
+    // ONE place that persists results to /api/save-result, so a failed save can
+    // never be silently swallowed again: it checks the HTTP status, logs, and
+    // surfaces failures through the fl-error channel. Returns {ok, ...} (never throws).
+    window.__saveResult = function (body) {
+      var headers = Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {});
+      if (!headers.Authorization) { try { console.warn('[FL] save-result skipped — not signed in'); } catch (e) {} return Promise.resolve({ ok: false, reason: 'no-auth' }); }
+      return fetch('/api/save-result', { method: 'POST', headers: headers, body: JSON.stringify(body || {}) })
+        .then(function (r) {
+          if (r.ok) return r.json().then(function (j) { return { ok: true, data: j }; }).catch(function () { return { ok: true }; });
+          return r.text().then(function (t) {
+            try { console.error('[FL] save-result failed', r.status, (t || '').slice(0, 200)); } catch (e) {}
+            if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved (' + r.status + ').');
+            return { ok: false, status: r.status, detail: (t || '').slice(0, 200) };
+          });
+        })
+        .catch(function (e) {
+          try { console.error('[FL] save-result network error', e); } catch (x) {}
+          if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved — check your connection.');
+          return { ok: false, error: String((e && e.message) || e) };
+        });
+    };
     // Auth header for direct fetch() calls to /api (so usage metering can identify the user)
     window.__authHeaders = function () {
       try {
@@ -622,7 +643,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b147-exam-real-grading';
+    window.__FL_BUILD = 'b148-saveresult-fix';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
