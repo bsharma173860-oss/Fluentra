@@ -3,13 +3,7 @@ const { useState: useStateAT, useRef: useRefAT, useEffect: useEffectAT } = React
 
 // History conversations (sidebar)
 const TUTOR_HISTORY = [
-  { id:'h1', title:'IELTS Writing Task 2 — coherence',  lang:'English',  when:'Today',     active:true },
-  { id:'h2', title:'Past conditional vs subjunctive',   lang:'English',  when:'Yesterday' },
-  { id:'h3', title:'When to use the imperfect tense',   lang:'Spanish',  when:'2 days ago' },
-  { id:'h4', title:'Polite forms in keigo',             lang:'Japanese', when:'3 days ago' },
-  { id:'h5', title:'Phrasal verbs — get / take / put',  lang:'English',  when:'Last week' },
-  { id:'h6', title:'Difference between por and para',   lang:'Spanish',  when:'Last week' },
-  { id:'h7', title:'False friends with French',         lang:'French',   when:'2 weeks ago' },
+  { id:'h1', title:'New conversation', lang:'\u2014', when:'Now', active:true },
 ];
 
 const TUTOR_QUICK = [
@@ -22,9 +16,7 @@ const TUTOR_QUICK = [
 ];
 
 const TUTOR_INITIAL = [
-  { role:'ai',   text:"Hi Maria — welcome back! Last time we worked on **IELTS Writing Task 2 coherence**. Want to pick up where we left off, or start something new?" , when:'2 min ago' },
-  { role:'user', text:"Let's keep going on Task 2. Can you give me a sample question and watch me write a body paragraph?" , when:'2 min ago' },
-  { role:'ai',   text:"Perfect. Here's a Band 7+ style prompt:\n\n> *Some people believe that university education should focus on academic subjects only. Others think practical skills like budgeting or cooking should also be taught. Discuss both views and give your opinion.*\n\nBefore you write, jot down **two reasons for each side**, plus your own position. Then start with a topic sentence — I'll read your paragraph and mark coherence issues line-by-line.", when:'just now', actions:['Show example outline', 'Make it harder', 'Switch to Task 1'] },
+  { role:'ai', text:"Hi! I'm your AI language tutor. Ask me anything \u2014 grammar, vocabulary, conversation practice, writing feedback, or exam prep. What would you like to work on?", when:'just now', actions:['Practice conversation','Explain a grammar point','Help with my writing','Exam prep'] },
 ];
 
 // ── Message bubble
@@ -34,7 +26,7 @@ function Bubble({ role, text, when, actions, onAction, onFeedback }) {
   return (
     <div style={{ display:'flex', gap:12, marginBottom:18, flexDirection: isAI ? 'row' : 'row-reverse' }}>
       <div style={{ width:32, height:32, borderRadius:10, background: isAI ? T.brandGrad || T.brand : T.ink, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, flexShrink:0 }}>
-        {isAI ? '✦' : 'M'}
+        {isAI ? '✦' : (((window.__user && (window.__user.name || window.__user.full_name)) || 'You').charAt(0).toUpperCase())}
       </div>
       <div style={{ flex:1, minWidth:0, maxWidth:680 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, justifyContent: isAI ? 'flex-start' : 'flex-end' }}>
@@ -74,13 +66,7 @@ function Bubble({ role, text, when, actions, onAction, onFeedback }) {
 
 // Topic threads — each history item starts a distinct conversation when clicked.
 const TUTOR_THREADS = {
-  h1: { topic:'IELTS Writing Task 2 — coherence', context:'IELTS · Writing Task 2', msgs: TUTOR_INITIAL },
-  h2: { topic:'Past conditional vs subjunctive', context:'English · Grammar', msgs:[{ role:'ai', text:'Earlier we compared **third conditional** with **mixed conditional**. Want a refresher quiz or jump into examples?', when:'yesterday', actions:['Quiz me','Show 5 examples','Move on'] }] },
-  h3: { topic:'When to use the imperfect tense', context:'Spanish · Grammar', msgs:[{ role:'ai', text:'We were mapping **imperfecto** vs **pretérito**. Resume with the time-marker drill?', when:'2 days ago', actions:['Resume drill','Re-explain','New topic'] }] },
-  h4: { topic:'Polite forms in keigo', context:'Japanese · Culture', msgs:[{ role:'ai', text:'You were stuck on 謙譲語. Want me to redo it as a flow-chart by social distance?', when:'3 days ago', actions:['Flow-chart it','Skip to examples','Cheat sheet'] }] },
-  h5: { topic:'Phrasal verbs — get / take / put', context:'English · Vocabulary', msgs:[{ role:'ai', text:'Last time you mastered “get across”. Continue with the “take” family?', when:'last week', actions:['Yes, take family','Just give me a list','Quiz first'] }] },
-  h6: { topic:'Difference between por and para', context:'Spanish · Grammar', msgs:[{ role:'ai', text:'You scored 7/10 on the **por vs para** quiz. Want a new set or to review your wrong answers?', when:'last week', actions:['Review wrong ones','New set','Show me rules'] }] },
-  h7: { topic:'False friends with French', context:'French · Vocabulary', msgs:[{ role:'ai', text:'Last seen: 12 false friends covered. Want to add 10 more, or test what you remember?', when:'2 weeks ago', actions:['Add 10 more','Test me','Just review'] }] },
+  h1: { topic:'New conversation', context:'Ask me anything', msgs: TUTOR_INITIAL },
 };
 
 // ── Desktop tutor page
