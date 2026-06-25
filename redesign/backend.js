@@ -595,7 +595,7 @@
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
 
-    window.__FL_BUILD = 'b136-fix-blank-dangling-exports';
+    window.__FL_BUILD = 'b137-pricing-copy-usage';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

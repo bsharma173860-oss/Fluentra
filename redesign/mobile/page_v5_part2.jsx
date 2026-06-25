@@ -731,7 +731,7 @@ function MMarketingPageV5() {
             <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginBottom:18 }}>Billed annually. $24/mo on monthly. 7-day free trial.</div>
             <div style={{ height:1, background:'rgba(255,255,255,.18)', marginBottom:16 }}/>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:22 }}>
-              {['All 10+ languages','Unlimited AI tutor','Mock tests included','Speaking with mic + writing feedback'].map(p => (
+              {['All 10+ languages','AI tutor for daily practice','Mock tests included','Speaking with mic + writing feedback'].map(p => (
                 <div key={p} style={{ display:'flex', gap:10, alignItems:'center', fontSize:12.5 }}>
                   <span style={{ width:14, height:14, borderRadius:7, background:'rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:800 }}>✓</span>
                   {p}
