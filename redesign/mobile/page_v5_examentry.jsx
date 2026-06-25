@@ -84,7 +84,7 @@ function MExamEntryPageV5() {
           <button onClick={()=>setConfirmed(c => !c)} style={{ marginTop:14, width:'100%', padding:'10px', borderRadius:10, border:`1.5px solid ${confirmed ? T.listening.c : T.border}`, background:confirmed ? T.listening.bg : T.card, fontSize:11.5, fontWeight:700, color:confirmed ? T.listening.c : T.ink2 }}>{confirmed ? '✓  All confirmed' : 'I confirm all of the above'}</button>
         </MCard>
 
-        <button onClick={()=> confirmed && nav('monthly_runner')} disabled={!confirmed} style={{ width:'100%', padding:'14px', borderRadius:13, background: confirmed ? T.brandGrad : T.bg3, color: confirmed ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow: confirmed ? `0 6px 16px ${T.brand}40` : 'none', opacity: confirmed ? 1 : .65 }}>{confirmed ? `Enter exam · ${ex.cost}` : 'Confirm to continue'}</button>
+        <button onClick={()=> { if (!confirmed) return; window.__examMode='monthly'; if (window.__can && window.__can('examsIncluded')) { nav('monthly_runner'); } else if (window.payFor) { window.payFor('exam_official'); } else { nav('monthly_runner'); } }} disabled={!confirmed} style={{ width:'100%', padding:'14px', borderRadius:13, background: confirmed ? T.brandGrad : T.bg3, color: confirmed ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow: confirmed ? `0 6px 16px ${T.brand}40` : 'none', opacity: confirmed ? 1 : .65 }}>{!confirmed ? 'Confirm to continue' : (window.__can && window.__can('examsIncluded')) ? 'Enter exam →' : `Pay ${ex.cost} & enter`}</button>
         <div style={{ textAlign:'center', fontSize:10.5, color:T.ink4, marginTop:9, padding:'0 14px' }}>Secure payment · Refunds unavailable after start</div>
       </MobileBody>
     </>
