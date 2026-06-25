@@ -325,7 +325,7 @@ function LangDetailPage() {
                 <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.1, marginBottom:8 }}>Full mock — all four sections</div>
                 <div style={{ fontSize:13, color:'rgba(255,255,255,.7)', lineHeight:1.5 }}>Reading, listening, speaking, and writing back to back, scored like the real thing.{best!=null ? ' Your best so far: ' + best + '%.' : ''}</div>
               </div>
-              <button onClick={()=>{ window.__langCode = lang.code; window.__nav && window.__nav('exam_runner'); }} style={{ padding:'14px 22px', background:'#fff', color:T.ink, borderRadius:12, fontSize:14, fontWeight:700, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>Take a mock →</button>
+              <button onClick={()=>{ window.__langCode = lang.code; window.__examMode='mock'; window.__nav && window.__nav('exam_runner'); }} style={{ padding:'14px 22px', background:'#fff', color:T.ink, borderRadius:12, fontSize:14, fontWeight:700, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>Take a mock →</button>
             </div>
 
             {/* Official exam — $5 scored attempt (free on Max) */}

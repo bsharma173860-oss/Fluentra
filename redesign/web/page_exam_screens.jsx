@@ -453,6 +453,8 @@ const EXAM_SECTIONS = ['reading', 'listening', 'speaking', 'writing'];
 
 function ExamRunner() {
   const code = window.__langCode || 'en';
+  const _mode = window.__examMode || 'mock';
+  const _modeLabel = _mode === 'monthly' ? 'Official exam' : _mode === 'practice' ? 'Practice' : 'Mock exam';
   const [idx, setIdx] = React.useState(0);
   const [results, setResults] = React.useState([]);
   const [done, setDone] = React.useState(false);
@@ -479,8 +481,8 @@ function ExamRunner() {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <div style={{ padding:'9px 18px', background:T.ink, color:'#fff', display:'flex', alignItems:'center', gap:12, fontSize:12.5, flexShrink:0 }}>
-        <span style={{ fontWeight:700 }}>Mock exam</span>
-        <span style={{ opacity:.6 }}>Section {idx + 1} of {EXAM_SECTIONS.length} · {EXAM_SECTION_LABEL[mod]}</span>
+        <span style={{ fontWeight:700 }}>{_modeLabel}</span>
+        <span style={{ opacity:.6 }}>Section {idx + 1} of {EXAM_SECTIONS.length} · {EXAM_SECTION_LABEL[mod]}{_mode === 'monthly' ? ' · scored' : ''}</span>
         <div style={{ flex:1 }}/>
         <button onClick={() => window.__nav && window.__nav('exams')} style={{ fontSize:11.5, color:'rgba(255,255,255,.6)', background:'transparent', border:'none', cursor:'pointer' }}>Exit</button>
       </div>
@@ -499,7 +501,7 @@ function ExamRunnerResults({ results, lang }) {
       var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
       var token = raw ? (JSON.parse(raw).access_token || null) : null;
       if (token) {
-        window.__saveResult({ lang: lang, score: overall, detail: { module:'mock_exam', sections: results, unit: '/9' } });
+        window.__saveResult({ lang: lang, score: overall, detail: { module:'mock_exam', mode: (window.__examMode || 'mock'), official: (window.__examMode === 'monthly'), sections: results, unit: '/9' } });
         try { if (window.FL && window.FL.social) window.FL.social.logActivity('mock', lang, { score: overall }); } catch (e) {}
       }
     } catch (e) {}
