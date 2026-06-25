@@ -79,7 +79,7 @@ function MockTestPage() {
                 <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.1, marginBottom:6 }}>Full mock — all modules</div>
                 <div style={{ fontSize:13, color:'rgba(255,255,255,.7)', lineHeight:1.5 }}>{ex.modules.length} modules in sequence · {ex.duration} · Get a band/score estimate at the end.</div>
                 <div style={{ display:'flex', gap:10, marginTop:16 }}>
-                  <Btn label="Start full mock" nav="mock_runner" accent={t.accent} size="md" iconRight={Icon.arrow({ width:12, height:12 })}/>
+                  <Btn label="Start full mock" onClick={() => { if (window.__can && !window.__can('mockTests')) { window.__upgrade && window.__upgrade('mock'); } else { window.__nav && window.__nav('mock_runner'); } }} accent={t.accent} size="md" iconRight={Icon.arrow({ width:12, height:12 })}/>
                   <button onClick={() => setShowSched(true)} style={{ padding:'9px 16px', borderRadius:10, background: scheduled ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.1)', color:'#fff', fontSize:12.5, fontWeight:600, border:`1px solid ${scheduled?'rgba(255,255,255,.5)':'rgba(255,255,255,.2)'}`, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
                     {Icon.cal({ width:12, height:12 })}
                     {scheduled ? `Scheduled · ${scheduled.day} ${scheduled.time}` : 'Schedule for later'}
@@ -97,7 +97,7 @@ function MockTestPage() {
               <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>Quick warm-up</div>
               <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.15, marginBottom:6 }}>10-question drill</div>
               <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, marginBottom:14 }}>Random questions across all modules. ~12 minutes. Great as a daily warm-up.</div>
-              <Btn label="Start warm-up" nav="mock_runner" variant="outline" accent={t.accent} fullWidth iconRight={Icon.arrow({ width:11, height:11 })}/>
+              <Btn label="Start warm-up" onClick={() => { if (window.__can && !window.__can('mockTests')) { window.__upgrade && window.__upgrade('mock'); } else { window.__nav && window.__nav('mock_runner'); } }} variant="outline" accent={t.accent} fullWidth iconRight={Icon.arrow({ width:11, height:11 })}/>
               <div style={{ marginTop:12, padding:'10px 12px', background:T.bg2, borderRadius:9, fontSize:11.5, color:T.ink3, lineHeight:1.5 }}>
                 <b style={{ color:T.ink }}>{lang.english} Pro:</b> get adaptive drills that focus on your weakest skills.
               </div>

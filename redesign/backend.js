@@ -298,6 +298,14 @@
       // ── Today's content ──────────────────────────────────────
       // ── Add a language (persist to user_languages, then refresh) ──
       addLanguage: function (lang) {
+        // Tier gate: Free = 1 language. Adding a NEW language past the cap is
+        // rejected here (server-truth), not just hidden in the UI.
+        var have = window.__userLanguages || [];
+        var already = have.some(function (l) { return l && l.code === lang.code; });
+        var cap = (window.__maxLang && window.__maxLang()) || 1;
+        if (!already && have.length >= cap) {
+          return Promise.reject(new Error('LANG_LIMIT'));
+        }
         return client.auth.getUser().then(function (res) {
           var user = res.data && res.data.user;
           if (!user) return Promise.reject(new Error('Not signed in'));
@@ -569,7 +577,21 @@
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
-    window.__FL_BUILD = 'b130-audit-tool';
+    // ── Tier entitlements: single source of truth for ALL gating ──
+    // Cost-based caps (Pro ~$8 AI ceiling, Max = 5x) are enforced via usage
+    // metering (added separately); these booleans gate features by plan.
+    var ENT = {
+      free: { maxLanguages: 1,   mockTests: false, speaking: false, writingFeedback: false, examsIncluded: false, tutorPerDay: 10 },
+      pro:  { maxLanguages: 999, mockTests: true,  speaking: true,  writingFeedback: true,  examsIncluded: false, tutorPerDay: 999 },
+      max:  { maxLanguages: 999, mockTests: true,  speaking: true,  writingFeedback: true,  examsIncluded: true,  tutorPerDay: 999 },
+    };
+    window.__plan    = function () { return (window.__user && window.__user.plan) || 'free'; };
+    window.__ent     = function () { return ENT[window.__plan()] || ENT.free; };
+    window.__can     = function (f) { return !!window.__ent()[f]; };
+    window.__maxLang = function () { return window.__ent().maxLanguages; };
+    window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
+
+    window.__FL_BUILD = 'b134-gating-foundation';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

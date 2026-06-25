@@ -368,7 +368,12 @@ function AddLanguagePage() {
                   setAdding(false); setAdded(true);
                 }).catch(function (e) {
                   setAdding(false);
-                  setAddErr((e && e.message) || 'Could not add the language — make sure you are signed in and the database schema has been run.');
+                  if (e && e.message === 'LANG_LIMIT') {
+                    setAddErr('Free includes 1 language. Upgrade to Pro for all 10+ languages.');
+                    setTimeout(function () { if (window.__upgrade) window.__upgrade('languages'); }, 1400);
+                  } else {
+                    setAddErr((e && e.message) || 'Could not add the language — make sure you are signed in and the database schema has been run.');
+                  }
                 });
               } else {
                 setAddErr('Backend not loaded — refresh the page. (window.FL is missing)');
