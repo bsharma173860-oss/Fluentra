@@ -4,6 +4,13 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/diag", "destination": "/diag.html" }
+    {
+      "source": "/diag",
+      "destination": "/diag.html"
+    },
+    {
+      "source": "/usage",
+      "destination": "/usage.html"
+    }
   ]
 }

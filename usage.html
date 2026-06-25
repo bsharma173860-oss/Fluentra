@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Fluentra · Usage</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --card2:#1f232c; --line:#2a2f3a;
+    --ink:#f3f5f8; --ink2:#aeb6c2; --ink3:#7b8595;
+    --green:#3ECf8E; --red:#F2555A; --amber:#F5B544; --brand:#6C5CE7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:18px 14px 60px;max-width:640px;margin:0 auto}
+  h1{font-size:20px;font-weight:800;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--ink3);font-size:12.5px;margin-bottom:18px}
+  .lock{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .lock label{font-size:12.5px;color:var(--ink2);display:block;margin-bottom:7px}
+  .lock input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card2);color:var(--ink);font-size:14px;outline:none}
+  .btn{margin-top:10px;width:100%;padding:11px;border:none;border-radius:10px;background:var(--brand);
+    color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .stat .n{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .stat .l{font-size:11.5px;color:var(--ink3);margin-top:5px;text-transform:uppercase;letter-spacing:.08em}
+  .stat.cost .n{color:var(--green)}
+  .plans{display:flex;gap:8px;margin-bottom:16px}
+  .pill{flex:1;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px;text-align:center}
+  .pill .pn{font-size:18px;font-weight:800}
+  .pill .pl{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+  .uhdr{font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin:4px 2px 8px;font-weight:700}
+  .u{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:8px}
+  .u .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .u .nm{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .u .tag{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:6px}
+  .tag.free{background:#23272f;color:var(--ink2)} .tag.pro{background:#1d2f4a;color:#6fa8ff} .tag.max{background:#2a1f4a;color:#b89cff}
+  .bar{height:7px;border-radius:5px;background:var(--card2);margin:9px 0 5px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:5px;background:var(--green)}
+  .bar i.hot{background:var(--amber)} .bar i.full{background:var(--red)}
+  .u .meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink3)}
+  .msg{padding:14px;border-radius:12px;background:var(--card2);color:var(--ink2);font-size:13px;margin-bottom:12px}
+  .msg.bad{background:#2a1416;color:var(--red);border:1px solid #5a2227}
+  .meta-row{display:flex;justify-content:space-between;align-items:center;margin-top:16px;color:var(--ink3);font-size:12px}
+  .meta-row button{background:none;border:none;color:var(--brand);font-size:12.5px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+  <h1>Fluentra · Usage</h1>
+  <div class="sub">Owner-only. Sab users ki AI usage + cost is mahine. 1 credit ≈ $0.01.</div>
+
+  <div class="lock" id="lock">
+    <label>Admin key</label>
+    <input id="key" type="password" placeholder="Enter admin key" autocomplete="off"/>
+    <button class="btn" id="go">Unlock</button>
+  </div>
+
+  <div id="out"></div>
+
+  <div class="meta-row" id="metarow" style="display:none">
+    <span id="period"></span>
+    <button id="refresh">↻ Refresh</button>
+  </div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = 'fl-admin-key';
+  var saved = '';
+  try { saved = localStorage.getItem(KEY) || ''; } catch (e) {}
+  if (saved) $('key').value = saved;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;' }[c]; }); }
+  function money(n) { return '$' + (Number(n) || 0).toFixed(2); }
+
+  function render(d) {
+    var planPill = function (n, label) { return '<div class="pill"><div class="pn">' + n + '</div><div class="pl">' + label + '</div></div>'; };
+    var users = (d.users || []).map(function (u) {
+      var cls = u.pct >= 100 ? 'full' : (u.pct >= 80 ? 'hot' : '');
+      return '<div class="u"><div class="top"><div class="nm">' + esc(u.name) + '</div>' +
+        '<span class="tag ' + esc(u.plan) + '">' + esc(u.plan) + '</span></div>' +
+        '<div class="bar"><i class="' + cls + '" style="width:' + u.pct + '%"></i></div>' +
+        '<div class="meta"><span>' + u.credits + ' / ' + u.cap + ' credits</span><span>' + money(u.cost) + '</span></div></div>';
+    }).join('');
+    $('out').innerHTML =
+      '<div class="stats">' +
+        '<div class="stat cost"><div class="n">' + money(d.totalCost) + '</div><div class="l">AI cost this month</div></div>' +
+        '<div class="stat"><div class="n">' + (d.totalCredits || 0) + '</div><div class="l">credits used</div></div>' +
+        '<div class="stat"><div class="n">' + (d.activeUsers || 0) + '</div><div class="l">active users</div></div>' +
+        '<div class="stat"><div class="n">' + (d.totalUsers || 0) + '</div><div class="l">total users</div></div>' +
+      '</div>' +
+      '<div class="plans">' + planPill((d.byPlan && d.byPlan.free) || 0, 'Free') +
+        planPill((d.byPlan && d.byPlan.pro) || 0, 'Pro') +
+        planPill((d.byPlan && d.byPlan.max) || 0, 'Max') + '</div>' +
+      '<div class="uhdr">Top users by usage</div>' +
+      (users || '<div class="msg">Abhi kisi ne usage nahi ki is period mein.</div>');
+    $('period').textContent = 'Period: ' + (d.month || '');
+    $('metarow').style.display = 'flex';
+  }
+
+  function load() {
+    var key = $('key').value.trim();
+    if (!key) return;
+    try { localStorage.setItem(KEY, key); } catch (e) {}
+    $('out').innerHTML = '<div class="msg">Loading…</div>';
+    fetch('/api/usage-admin', { headers: { 'x-admin-key': key } })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          $('out').innerHTML = '<div class="msg bad">' + esc((res.j && res.j.error) || 'Failed') + '</div>';
+          return;
+        }
+        $('lock').style.display = 'none';
+        render(res.j);
+      })
+      .catch(function (e) { $('out').innerHTML = '<div class="msg bad">Network error: ' + esc(e && e.message) + '</div>'; });
+  }
+
+  $('go').addEventListener('click', load);
+  $('key').addEventListener('keydown', function (e) { if (e.key === 'Enter') load(); });
+  $('refresh').addEventListener('click', load);
+  if (saved) load();
+})();
+</script>
+</body>
+</html>
