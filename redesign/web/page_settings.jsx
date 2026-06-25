@@ -333,6 +333,8 @@ function NotificationsTab() {
 }
 
 function DataPrivacyTab() {
+  const [delStep, setDelStep] = useStateS(0);
+  const [delBusy, setDelBusy] = useStateS(false);
   return (
     <div>
       <SectionHd title="Data & privacy"/>
@@ -362,12 +364,19 @@ function DataPrivacyTab() {
 
       <SectionHd title="Danger zone"/>
       <Card padding={24} style={{ borderColor:'#FECACA', background:'#FEF7F7' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap' }}>
           <div>
             <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:3 }}>Delete account permanently</div>
-            <div style={{ fontSize:12, color:'#991B1B' }}>This will erase your progress, exam history, and certificates. Cannot be undone.</div>
+            <div style={{ fontSize:12, color:'#991B1B' }}>{delStep === 0 ? 'This will erase your progress, exam history, and certificates. Cannot be undone.' : 'Are you absolutely sure? This permanently deletes your account and all data right now.'}</div>
           </div>
-          <Btn label="Delete account" accent="#DC2626" size="sm" variant="outline"/>
+          {delStep === 0 ? (
+            <Btn label="Delete account" accent="#DC2626" size="sm" variant="outline" onClick={() => setDelStep(1)}/>
+          ) : (
+            <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+              <Btn label="Cancel" size="sm" variant="outline" accent={T.ink2} onClick={() => { if (!delBusy) setDelStep(0); }}/>
+              <Btn label={delBusy ? 'Deleting…' : 'Yes, delete everything'} accent="#DC2626" size="sm" onClick={() => { if (delBusy) return; setDelBusy(true); (window.__deleteAccount ? window.__deleteAccount() : Promise.resolve({ ok:false })).then(function (r) { if (!r || !r.ok) { setDelBusy(false); setDelStep(0); } }); }}/>
+            </div>
+          )}
         </div>
       </Card>
     </div>

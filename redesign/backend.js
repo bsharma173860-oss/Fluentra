@@ -442,6 +442,14 @@
             });
         }).catch(function () { return fallback; });
       },
+      // Permanently delete the signed-in account (server verifies identity from the token).
+      deleteAccount: function () {
+        var headers = Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {});
+        if (!headers.Authorization) return Promise.resolve({ ok: false, error: 'not signed in' });
+        return fetch('/api/delete-account', { method: 'POST', headers: headers })
+          .then(function (r) { return r.text().then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { j = {}; } return { ok: r.ok, status: r.status, data: j }; }); })
+          .catch(function (e) { return { ok: false, error: String((e && e.message) || e) }; });
+      },
 
       // ── Rate limit ───────────────────────────────────────────
       checkRate: function (feature) {
@@ -641,6 +649,21 @@
           return { ok: false, error: String((e && e.message) || e) };
         });
     };
+    // Full delete-account action: call the API, then sign out and return to landing.
+    window.__deleteAccount = function () {
+      var p = (window.FL && window.FL.deleteAccount) ? window.FL.deleteAccount() : Promise.resolve({ ok: false, error: 'unavailable' });
+      return p.then(function (res) {
+        if (res && res.ok) {
+          try { if (window.FL && window.FL.signOut) window.FL.signOut(); } catch (e) {}
+          try { localStorage.removeItem('sb-kbjqmhviuryakfzhhoaz-auth-token'); } catch (e) {}
+          window.__user = null;
+          if (window.__nav) window.__nav('landing');
+          return { ok: true };
+        }
+        if (window.__flReportError) window.__flReportError('account', (res && res.data && res.data.error) || res.error || 'Could not delete your account. Please try again.');
+        return res || { ok: false };
+      });
+    };
     // Auth header for direct fetch() calls to /api (so usage metering can identify the user)
     window.__authHeaders = function () {
       try {
@@ -650,7 +673,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b149-usage-userid-filter';
+    window.__FL_BUILD = 'b151-delete-account';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
