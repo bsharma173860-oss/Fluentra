@@ -32,8 +32,7 @@ function LessonDetailPage() {
 
   function saveResult(pct) {
     try {
-      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
-      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      var token = window.__authToken ? window.__authToken() : null;
       window.__saveResult({ lang: lang, score: pct, detail:{ module:'lesson', topic: topic.title, unit:'%' } });
     } catch (e) {}
   }

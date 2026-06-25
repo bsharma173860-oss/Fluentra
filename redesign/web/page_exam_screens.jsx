@@ -248,8 +248,7 @@ function ExamRunnerResults({ results, lang }) {
   const overall = results.length ? Math.round(results.reduce((a, r) => a + (Number(r.score) || 0), 0) / results.length) : 0;
   React.useEffect(function () {
     try {
-      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
-      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      var token = window.__authToken ? window.__authToken() : null;
       if (token) {
         window.__saveResult({ lang: lang, score: overall, detail: { module:'mock_exam', mode: (window.__examMode || 'mock'), official: (window.__examMode === 'monthly'), sections: results, unit: '/9' } });
         try { if (window.FL && window.FL.social) window.FL.social.logActivity('mock', lang, { score: overall }); } catch (e) {}

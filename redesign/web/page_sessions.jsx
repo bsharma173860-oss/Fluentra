@@ -387,8 +387,7 @@ function ReadingSession() {
     window.__lastReadingResult = { module: 'reading', lang: lang, scorePct: pct, correct: correct, total: qs.length };
     window.__lastResult = { module:'reading', lang:lang, kind:'count', correct:correct, total:qs.length, pct:pct };
     try {
-      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
-      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      var token = window.__authToken ? window.__authToken() : null;
       if (token) {
         window.__saveResult({ lang: lang, content_id: contentId, score: pct, detail: { module: 'reading', correct: correct, total: qs.length, answered: answered, unit: '%' } });
       }
@@ -559,8 +558,7 @@ function ListeningSession() {
     window.__lastReadingResult = { module: 'listening', lang: lang, scorePct: pct, correct: correct, total: qs.length };
     window.__lastResult = { module:'listening', lang:lang, kind:'count', correct:correct, total:qs.length, pct:pct };
     try {
-      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
-      var token = raw ? (JSON.parse(raw).access_token || null) : null;
+      var token = window.__authToken ? window.__authToken() : null;
       if (token) {
         window.__saveResult({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length, unit: '%' } });
       }
@@ -724,7 +722,7 @@ function SpeakingSession() {
   const [evalResult, setEvalResult] = useState(null);
   const [evalErr, setEvalErr] = useState('');
 
-  function _tok(){ try { var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token'); return raw ? (JSON.parse(raw).access_token || null) : null; } catch(e){ return null; } }
+  function _tok(){ return window.__authToken ? window.__authToken() : null; }
   function _stopTracks(){ if (streamRef.current){ streamRef.current.getTracks().forEach(function(t){ t.stop(); }); streamRef.current=null; } }
 
   async function startRecording(){
@@ -968,8 +966,7 @@ function WritingSession() {
     if (_ev && !_ev.error && _ev.overall_band != null) {
       window.__lastResult = { module:'writing', lang: window.__langCode||'en', kind:'band', band: Number(_ev.overall_band||0), criteria: _ev.criteria||{}, corrections: _ev.corrections||[] };
       try {
-        var _raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
-        var _tok = _raw ? (JSON.parse(_raw).access_token || null) : null;
+        var _tok = window.__authToken ? window.__authToken() : null;
         window.__saveResult({ lang: window.__langCode||'en', score: Math.round(Number(_ev.overall_band||0)/9*100), detail:{ module:'writing', task: task, band: Number(_ev.overall_band||0), unit: '/9' } });
       } catch(e){}
     }

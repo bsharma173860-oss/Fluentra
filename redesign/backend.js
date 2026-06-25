@@ -7,6 +7,7 @@
   'use strict';
 
   var SUPABASE_URL      = 'https://kbjqmhviuryakfzhhoaz.supabase.co';
+  var SUPABASE_AUTH_KEY = 'sb-' + SUPABASE_URL.replace(/^https?:\/\//, '').split('.')[0] + '-auth-token';  // derived from URL — single source
   var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtianFtaHZpdXJ5YWtmemhob2F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTQzNjgsImV4cCI6MjA4OTc3MDM2OH0.Be6sLoc1XRDosJ3XejpD48FarJpb06ZtQCFSuzaz5zY';
   var API_URL           = '/api';
 
@@ -23,7 +24,7 @@
 
   function getToken() {
     try {
-      var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
+      var raw = localStorage.getItem(SUPABASE_AUTH_KEY);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       return (parsed && parsed.access_token) ? parsed.access_token : null;
@@ -65,7 +66,7 @@
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storageKey: 'sb-kbjqmhviuryakfzhhoaz-auth-token',
+        storageKey: SUPABASE_AUTH_KEY,
       },
     });
 
@@ -655,7 +656,7 @@
       return p.then(function (res) {
         if (res && res.ok) {
           try { if (window.FL && window.FL.signOut) window.FL.signOut(); } catch (e) {}
-          try { localStorage.removeItem('sb-kbjqmhviuryakfzhhoaz-auth-token'); } catch (e) {}
+          try { localStorage.removeItem(SUPABASE_AUTH_KEY); } catch (e) {}
           window.__user = null;
           if (window.__nav) window.__nav('landing');
           return { ok: true };
@@ -666,14 +667,13 @@
     };
     // Auth header for direct fetch() calls to /api (so usage metering can identify the user)
     window.__authHeaders = function () {
-      try {
-        var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
-        var t = raw ? (JSON.parse(raw).access_token || null) : null;
-        return t ? { Authorization: 'Bearer ' + t } : {};
-      } catch (e) { return {}; }
+      var t = getToken();
+      return t ? { Authorization: 'Bearer ' + t } : {};
     };
+    window.__authToken = getToken;          // central token getter for all call sites
+    window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b167-redeploy';
+    window.__FL_BUILD = 'b168-auth-centralize';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

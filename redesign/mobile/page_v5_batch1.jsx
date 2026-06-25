@@ -89,7 +89,7 @@ function MLessonDetailV5() {
     return function () { cancelled = true; };
   }, [reload]);
 
-  function saveResult(pct) { try { var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token'); var token = raw ? (JSON.parse(raw).access_token || null) : null; window.__saveResult({ lang:lang, score:pct, detail:{ module:'lesson', topic:topic.title, unit:'%' } }); } catch (e) {} }
+  function saveResult(pct) { try { window.__saveResult({ lang:lang, score:pct, detail:{ module:'lesson', topic:topic.title, unit:'%' } }); } catch (e) {} }
 
   const total = words.length;
   const w = words[idx] || null;
