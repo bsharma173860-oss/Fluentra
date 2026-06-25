@@ -147,11 +147,24 @@ function LessonDetailPage() {
 }
 
 function ArticleReaderPage() {
+  const [fontBig, setFontBig] = React.useState(false);
+  const artRef = React.useRef(null);
+  const _fs = fontBig ? 1.18 : 1;
+  const _listen = function () {
+    try {
+      if (!window.speechSynthesis) return;
+      var el = artRef.current; var txt = el ? (el.textContent || '') : '';
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(txt.slice(0, 4000));
+      u.lang = 'es-ES';
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  };
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
       <div style={{ flex:1, overflow:'auto' }}>
-        <div style={{ maxWidth:780, margin:'0 auto', padding:'40px 40px 80px' }}>
+        <div ref={artRef} style={{ maxWidth:780, margin:'0 auto', padding:'40px 40px 80px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11.5, color:T.ink4, marginBottom:18 }}>
             <span data-nav="library" style={{ cursor:'pointer' }}>Library</span>
             <span>›</span>
@@ -168,14 +181,14 @@ function ArticleReaderPage() {
               <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Elena Marín</div>
               <div style={{ fontSize:11, color:T.ink4 }}>Mar 18, 2025 · El País Semanal</div>
             </div>
-            <button style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, background:T.card, display:'flex', alignItems:'center', gap:6 }}>{Icon.play({ width:11, height:11 })}Listen</button>
-            <button style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, background:T.card }}>Aa</button>
+            <button style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, background:T.card, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }} onClick={_listen}>{Icon.play({ width:11, height:11 })}Listen</button>
+            <button onClick={() => setFontBig(function (b) { return !b; })} style={{ padding:'7px 12px', fontSize: fontBig ? 13 : 11, fontWeight:700, color: fontBig ? T.brand : T.ink2, border:`1px solid ${fontBig ? T.brand : T.border}`, borderRadius:8, background:T.card, cursor:'pointer' }}>Aa</button>
           </div>
 
-          <div style={{ fontFamily:T.serif, fontSize:19, lineHeight:1.7, color:T.ink, marginBottom:20 }}>
+          <div style={{ fontFamily:T.serif, fontSize:19*_fs, lineHeight:1.7, color:T.ink, marginBottom:20 }}>
             En lo alto del valle de Hecho, donde los <span style={{ background:'#FFF1A8', padding:'1px 3px', borderRadius:3, cursor:'pointer' }}>caminos de herradura</span> se confunden con los pastos, un puñado de familias ha decidido <span style={{ background:'#FFF1A8', padding:'1px 3px', borderRadius:3, cursor:'pointer' }}>devolver la vida</span> a un pueblo que llevaba cuarenta años en silencio.
           </div>
-          <div style={{ fontSize:16, lineHeight:1.7, color:T.ink, marginBottom:20 }}>
+          <div style={{ fontSize:16*_fs, lineHeight:1.7, color:T.ink, marginBottom:20 }}>
             "Cuando llegamos en 2019, no había <span style={{ background:'#FFF1A8', padding:'1px 3px', borderRadius:3, cursor:'pointer' }}>tejados enteros</span>", recuerda Marta Iguácel, una de las primeras en mudarse. "Las casas estaban abiertas al cielo, las ventanas habían cedido. Tuvimos que aprender a poner piedra sobre piedra como lo hacían nuestros abuelos."
           </div>
 
@@ -191,7 +204,7 @@ function ArticleReaderPage() {
             <div style={{ fontSize:13, color:T.ink2, lineHeight:1.5, paddingTop:10, borderTop:`1px solid ${T.hairline}` }}>Literally "to give back life." Common in articles about restoration, recovery, or revival of places, traditions, or relationships.</div>
           </div>
 
-          <div style={{ fontSize:16, lineHeight:1.7, color:T.ink, marginBottom:20 }}>
+          <div style={{ fontSize:16*_fs, lineHeight:1.7, color:T.ink, marginBottom:20 }}>
             Hoy, cinco años después, el pueblo cuenta con once habitantes permanentes, un horno comunal y una pequeña escuela donde dos niños reciben clases de un maestro que viene del valle dos veces por semana.
           </div>
 

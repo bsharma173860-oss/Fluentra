@@ -24,7 +24,13 @@ function VocabPage() {
     { title:'False friends EN↔ES', lang:'es', count:24, due:0,  mastered:24, accent:T.es,  tag:'B1 · advanced' },
   ];
 
-  const deck = decks[activeDeck];
+  const _decks = decks.slice().sort(function (a, b) {
+    if (sortDir === 'alpha') return a.title.localeCompare(b.title);
+    if (sortDir === 'strength') return (b.mastered / b.count) - (a.mastered / a.count);
+    if (sortDir === 'due') return b.due - a.due;
+    return 0;
+  });
+  const deck = _decks[activeDeck];
 
   const _vLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
   const [words, setWords] = useState([]);
@@ -144,12 +150,12 @@ function VocabPage() {
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Your decks</div>
-              <button style={{ fontSize:11.5, fontWeight:600, color:T.ink3, display:'flex', alignItems:'center', gap:4 }}>
-                {Icon.filter({ width:11, height:11 })} Sort
+              <button onClick={() => { setSortDir(sortDir === 'alpha' ? 'strength' : sortDir === 'strength' ? 'due' : 'alpha'); setActiveDeck(0); }} style={{ fontSize:11.5, fontWeight:600, color:T.ink3, display:'flex', alignItems:'center', gap:4, cursor:'pointer' }}>
+                {Icon.filter({ width:11, height:11 })} {sortDir === 'alpha' ? 'A–Z' : sortDir === 'strength' ? 'Strength' : 'Due first'}
               </button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              {decks.map((d, i) => {
+              {_decks.map((d, i) => {
                 const active = i === activeDeck;
                 const pct = Math.round((d.mastered / d.count) * 100);
                 return (

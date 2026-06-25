@@ -673,7 +673,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b152-remove-dead-affordances';
+    window.__FL_BUILD = 'b153-wire-functional-buttons';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

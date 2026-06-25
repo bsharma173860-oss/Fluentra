@@ -27,14 +27,16 @@ function ModuleHeroCard({ title, subtitle, sessions, color, bg, ic, nav }) {
 }
 
 function PracticePage() {
+  const [pfilter, setPfilter] = React.useState('All');
   const _recentRows = (function () {
     var R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; }).slice().reverse();
     var MOD = { reading:{ ic:'book', c:T.reading, label:'Reading' }, listening:{ ic:'head', c:T.listening, label:'Listening' }, writing:{ ic:'pen', c:T.writing, label:'Writing' }, speaking:{ ic:'mic', c:T.speaking, label:'Speaking' } };
     var lc = (typeof window !== 'undefined' && window.__langCode) || 'en';
     var lang = (typeof langByCode === 'function' && langByCode(lc) && langByCode(lc).name) || 'English';
     var rel = function (ts) { if (!ts) return ''; var d = (Date.now() - new Date(ts).getTime()) / 86400000; return d < 1 ? 'Today' : d < 2 ? 'Yesterday' : Math.floor(d) + ' days ago'; };
-    return R.slice(0, 8).map(function (r) { var m = MOD[r.module] || MOD.reading; return { ic:m.ic, c:m.c, title: m.label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), lang: lang, langCode: lc, date: rel(r.updated_at), score: (r.score / 100 * 9).toFixed(1) + '/9' }; });
+    return R.slice(0, 8).map(function (r) { var m = MOD[r.module] || MOD.reading; return { ic:m.ic, c:m.c, module: r.module, title: m.label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), lang: lang, langCode: lc, date: rel(r.updated_at), score: (r.score / 100 * 9).toFixed(1) + '/9' }; });
   })();
+  const _shownRows = pfilter === 'All' ? _recentRows : _recentRows.filter(function (r) { return (r.module || '').toLowerCase() === pfilter.toLowerCase(); });
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar/>
@@ -59,9 +61,10 @@ function PracticePage() {
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18 }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginRight:8 }}>Module sessions</div>
           <div style={{ flex:1 }}/>
-          {['All', 'Speaking', 'Writing', 'Listening', 'Reading'].map((f, i) => (
-            <button key={f} style={{ padding:'6px 12px', fontSize:12, fontWeight: i === 0 ? 700 : 500, color: i === 0 ? T.ink : T.ink3, background: i === 0 ? T.card : 'transparent', border:`1px solid ${i === 0 ? T.border : 'transparent'}`, borderRadius:8 }}>{f}</button>
-          ))}
+          {['All', 'Speaking', 'Writing', 'Listening', 'Reading'].map((f) => {
+            const on = pfilter === f;
+            return <button key={f} onClick={() => setPfilter(f)} style={{ padding:'6px 12px', fontSize:12, fontWeight: on ? 700 : 500, color: on ? T.ink : T.ink3, background: on ? T.card : 'transparent', border:`1px solid ${on ? T.border : 'transparent'}`, borderRadius:8, cursor:'pointer' }}>{f}</button>;
+          })}
         </div>
 
         {/* Linear-style table */}
@@ -74,9 +77,9 @@ function PracticePage() {
             <span style={{ textAlign:'right' }}>Score</span>
             <span/>
           </div>
-          {_recentRows.length === 0 ? (
+          {_shownRows.length === 0 ? (
             <div style={{ padding:'28px 18px', fontSize:13, color:T.ink3 }}>No practice yet — finish a module and your recent sessions will appear here.</div>
-          ) : _recentRows.map((row, i, all) => (
+          ) : _shownRows.map((row, i, all) => (
             <div key={i} data-nav="progress" style={{ display:'grid', gridTemplateColumns:'40px 1fr 120px 120px 90px 60px', padding:'14px 18px', borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none', alignItems:'center', cursor:'pointer', transition:'background .12s' }}
               onMouseEnter={e => e.currentTarget.style.background = T.bg2}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>

@@ -628,7 +628,15 @@ function ShareModal({ badge: b, onClose }) {
               { k:'wa',      label:'WhatsApp',    ic:'message', c:'#25D366' },
               { k:'mail',    label:'Email',       ic:'send', c:T.ink3 },
             ].map(s => (
-              <button key={s.k} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'12px 8px', background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10, cursor:'pointer' }}>
+              <button key={s.k} onClick={() => {
+                const text = `I just earned "${b.title || b.name}" on Fluentra!`;
+                const link = 'https://' + url;
+                if (s.k === 'twitter') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(link), '_blank');
+                else if (s.k === 'wa') window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + link), '_blank');
+                else if (s.k === 'mail') window.location.href = 'mailto:?subject=' + encodeURIComponent('My Fluentra achievement') + '&body=' + encodeURIComponent(text + '\n\n' + link);
+                else if (navigator.share) navigator.share({ text: text, url: link }).catch(function () {});
+                else window.open(link, '_blank');
+              }} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'12px 8px', background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10, cursor:'pointer' }}>
                 <div style={{ width:36, height:36, borderRadius:18, background:`${s.c}18`, color:s.c, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[s.ic]({ width:15, height:15 })}</div>
                 <div style={{ fontSize:10.5, color:T.ink2, fontWeight:600 }}>{s.label}</div>
               </button>
