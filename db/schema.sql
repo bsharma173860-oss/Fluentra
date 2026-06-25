@@ -20,7 +20,7 @@ create index if not exists content_lang_type_diff_idx on content (lang, type, di
 -- ── Per-user library + results (private)
 create table if not exists user_content (
   id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null,
+  user_id     uuid not null references auth.users(id) on delete cascade,
   content_id  uuid references content(id) on delete cascade,   -- nullable: exam/speaking/writing/lesson results have no fixed content row
   lang        text not null,
   status      text not null default 'saved',       -- 'saved'|'in_progress'|'completed'

@@ -46,6 +46,7 @@ module.exports = async function handler(req, res) {
       speak = true,
     } = req.body || {};
     if (!audioBase64) return res.status(400).json({ error: 'audioBase64 required' });
+    if (audioBase64.length > 6000000) return res.status(413).json({ error: 'audio too long', detail: 'Recording is too long to evaluate — keep it under about 45 seconds.' });
 
     // ── 1) Whisper transcription ─────────────────────────────────────────────
     const audioBuf = Buffer.from(audioBase64, 'base64');
