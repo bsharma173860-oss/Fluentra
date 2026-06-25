@@ -21,10 +21,10 @@ function MExamRunnerV5({ mode = 'monthly' }) {
   const fmt = (s) => s >= 3600 ? `${Math.floor(s/3600)}h ${String(Math.floor((s%3600)/60)).padStart(2,'0')}m` : `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   const _low = secs <= 300, _crit = secs <= 60, _up = secs <= 0;
   const _tc = (_up || _crit) ? '#F2555A' : _low ? '#F5B544' : '#5BD17A';
-  const [picked, setPicked] = React.useState(null);
+  const [answers, setAnswers] = React.useState({});   // questionIndex -> picked option index
   const [wtext, setWtext]   = React.useState('');
   const _secRef = React.useRef([]);
-  React.useEffect(()=>{ setPicked(null); setWtext(''); }, [step]);
+  React.useEffect(()=>{ setAnswers({}); setWtext(''); }, [step]);
   const m = modules[step] || modules[0];
   const c = colorMap[m.color] || T.listening;
   const done = Object.keys(completed).length;
@@ -34,21 +34,27 @@ function MExamRunnerV5({ mode = 'monthly' }) {
   const _c = (_gen && _gen !== 'err') ? _gen : null;
   const _firstQ = _c && _c.questions && _c.questions[0];
   const _opts = (_firstQ && _firstQ.options) ? _firstQ.options : ['Option A — concise statement', 'Option B — slightly different', 'Option C — common distractor', 'Option D — clearly wrong'];
+  const _qs = (_c && _c.questions && _c.questions.length) ? _c.questions
+    : [{ stem: (_firstQ && _firstQ.stem) || (_c && _c.title) || 'Question', options: _opts, answer: (_firstQ ? _firstQ.answer : null) }];
   const _promptText = _c ? (
     (m.color === 'reading' || m.color === 'listening') ? (_firstQ ? _firstQ.stem : (_c.title || '')) :
     (m.color === 'writing') ? (_c.task2Topic || _c.task1Prompt || '') :
     (m.color === 'speaking') ? (_c.prompt || '') : ''
   ) : null;
 
-  const _answered = (m.color === 'reading' || m.color === 'listening') ? picked != null
+  const _answered = (m.color === 'reading' || m.color === 'listening') ? _qs.every(function (q, i) { return answers[i] != null; })
     : m.color === 'writing'  ? wtext.trim().length >= 20
     : m.color === 'speaking' ? !!mic.done
     : true;
   const goSubmit = () => {
     if (!_answered) return;
     let score = null;   // null = captured but not auto-gradable here (writing/speaking -> AI grading, Phase 2)
-    if ((m.color === 'reading' || m.color === 'listening') && _firstQ && typeof _firstQ.answer === 'number') {
-      score = (picked === _firstQ.answer) ? 100 : 0;
+    if (m.color === 'reading' || m.color === 'listening') {
+      var gradable = _qs.filter(function (q) { return typeof q.answer === 'number'; });
+      if (gradable.length) {
+        var correct = _qs.filter(function (q, i) { return typeof q.answer === 'number' && answers[i] === q.answer; }).length;
+        score = Math.round((correct / gradable.length) * 100);
+      }
     }
     _secRef.current = _secRef.current.concat([{ module: m.color, score: score }]);
     setCompleted(prev => ({ ...prev, [step]: true }));
@@ -114,18 +120,18 @@ function MExamRunnerV5({ mode = 'monthly' }) {
 
         {/* Module body · live generated content when available */}
         <MCard style={{ padding:18, marginBottom:14, minHeight:220 }}>
-          <div style={{ fontSize:9.5, fontWeight:800, color:c.c, letterSpacing:'.14em', marginBottom:9 }}>{m.label.toUpperCase()} · {_gen === null ? 'LOADING…' : (_c ? (_firstQ ? 'QUESTION 1' : 'TASK 1') : 'TASK 1 OF ' + m.q)}</div>
+          <div style={{ fontSize:9.5, fontWeight:800, color:c.c, letterSpacing:'.14em', marginBottom:9 }}>{m.label.toUpperCase()} · {_gen === null ? 'LOADING…' : ((m.color==='reading'||m.color==='listening') ? (_qs.length + (_qs.length===1?' QUESTION':' QUESTIONS')) : 'TASK 1')}</div>
           {(m.color === 'reading' || m.color === 'listening') && _c && _c.passage && (
             <div style={{ maxHeight:150, overflowY:'auto', fontSize:12.5, color:T.ink2, lineHeight:1.6, marginBottom:12, paddingRight:4, WebkitOverflowScrolling:'touch' }}>{_c.passage}</div>
           )}
+          {(m.color === 'writing' || m.color === 'speaking') && (
           <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.4, marginBottom:14 }}>
-            {_promptText ? _promptText : (<>
-              {m.color === 'reading'   && 'Read the passage about urban planning, then answer the comprehension questions.'}
-              {m.color === 'listening' && 'Listen to the audio clip — a conversation between two students — and answer multiple choice questions.'}
-              {m.color === 'writing'   && 'Write a 250-word essay describing a memorable journey, including specific sensory details.'}
-              {m.color === 'speaking'  && 'Speak for 2 minutes about a hobby you\'ve picked up recently. Be detailed and natural.'}
-            </>)}
+            {_promptText ? _promptText : (
+              m.color === 'writing'
+                ? 'Write a 250-word essay describing a memorable journey, including specific sensory details.'
+                : 'Speak for 2 minutes about a hobby you\'ve picked up recently. Be detailed and natural.')}
           </div>
+          )}
           {m.color === 'listening' && _c && _c.passage && (
             <button onClick={()=>window.flSpeak && window.flSpeak(_c.passage, code)} style={{ marginBottom:12, padding:'9px 14px', borderRadius:10, background:c.bg, color:c.c, fontSize:12, fontWeight:700, border:`1px solid ${c.c}33`, display:'inline-flex', alignItems:'center', gap:6 }}>{Icon.play ? Icon.play({width:12,height:12}) : '▶'} Play audio</button>
           )}
@@ -139,11 +145,18 @@ function MExamRunnerV5({ mode = 'monthly' }) {
             <button onClick={mic.toggle} style={{ width:'100%', padding:'14px', borderRadius:11, background:c.bg, color:c.c, fontSize:12.5, fontWeight:700, border:`1px solid ${c.c}33`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'} {mic.recording ? ('Recording ' + mic.time + ' · tap to stop') : mic.done ? ('Recorded ' + mic.time + ' · tap to redo') : 'Tap to record'}</button>
           )}
           {(m.color === 'reading' || m.color === 'listening') && (
-            <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-              {_opts.map((o, i) => {
-                const _sel = picked === i;
-                return <button key={i} onClick={()=>setPicked(i)} style={{ padding:'10px 12px', borderRadius:10, background:_sel ? c.bg : T.bg2, border:`1px solid ${_sel ? c.c : T.hairline}`, fontSize:12, color:_sel ? c.c : T.ink, fontWeight:_sel ? 700 : 400, textAlign:'left', display:'flex', alignItems:'center', gap:9 }}><span style={{ width:16, height:16, borderRadius:8, flexShrink:0, border:`1.5px solid ${_sel ? c.c : T.border}`, background:_sel ? c.c : 'transparent' }}/>{o}</button>;
-              })}
+            <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+              {_qs.map((q, qi) => (
+                <div key={qi}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.ink, lineHeight:1.45, marginBottom:9 }}>{qi + 1}. {q.stem || q.q || ('Question ' + (qi + 1))}</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                    {(q.options || _opts).map((o, oi) => {
+                      const _sel = answers[qi] === oi;
+                      return <button key={oi} onClick={()=>setAnswers(function (a) { var n = Object.assign({}, a); n[qi] = oi; return n; })} style={{ padding:'10px 12px', borderRadius:10, background:_sel ? c.bg : T.bg2, border:`1px solid ${_sel ? c.c : T.hairline}`, fontSize:12, color:_sel ? c.c : T.ink, fontWeight:_sel ? 700 : 400, textAlign:'left', display:'flex', alignItems:'center', gap:9 }}><span style={{ width:16, height:16, borderRadius:8, flexShrink:0, border:`1.5px solid ${_sel ? c.c : T.border}`, background:_sel ? c.c : 'transparent' }}/>{o}</button>;
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </MCard>
