@@ -619,7 +619,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b142-redeploy';
+    window.__FL_BUILD = 'b143-admin-secret';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

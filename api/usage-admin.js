@@ -15,10 +15,10 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const ADMIN = process.env.ADMIN_KEY;
+  const ADMIN = process.env.ADMIN_KEY || process.env.ADMIN_SECRET;
   const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
   const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
-  if (!ADMIN) return res.status(500).json({ error: 'ADMIN_KEY not set on the server' });
+  if (!ADMIN) return res.status(500).json({ error: 'ADMIN_KEY/ADMIN_SECRET not set on the server' });
   if (!SB_URL || !SB_KEY) return res.status(500).json({ error: 'SUPABASE_URL / SUPABASE_SERVICE_KEY missing' });
 
   const key = req.headers['x-admin-key'] || '';
