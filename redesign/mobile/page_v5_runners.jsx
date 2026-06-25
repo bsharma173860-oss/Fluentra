@@ -14,10 +14,13 @@ function MExamRunnerV5({ mode = 'monthly' }) {
   ];
   const [step, setStep] = React.useState(0);
   const [completed, setCompleted] = React.useState({});
-  const [secs, setSecs] = React.useState(0);
+  const _durSecs = (function (d) { d = String(d || ''); var h = (d.match(/(\d+)\s*h/) || [])[1] || 0, mn = (d.match(/(\d+)\s*m/) || [])[1] || 0; return (Number(h) * 3600 + Number(mn) * 60) || 9900; })(ex.duration);
+  const [secs, setSecs] = React.useState(_durSecs);   // time REMAINING — counts down
   const nav = (id) => window.__nav && window.__nav(id);
-  React.useEffect(()=>{ const t = setInterval(()=>setSecs(s=>s+1), 1000); return ()=>clearInterval(t); }, []);
-  const fmt = (s) => `${Math.floor(s/3600)}h ${String(Math.floor((s%3600)/60)).padStart(2,'0')}m`;
+  React.useEffect(()=>{ const t = setInterval(()=>setSecs(s=>Math.max(0, s-1)), 1000); return ()=>clearInterval(t); }, []);
+  const fmt = (s) => s >= 3600 ? `${Math.floor(s/3600)}h ${String(Math.floor((s%3600)/60)).padStart(2,'0')}m` : `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  const _low = secs <= 300, _crit = secs <= 60, _up = secs <= 0;
+  const _tc = (_up || _crit) ? '#F2555A' : _low ? '#F5B544' : '#5BD17A';
   const m = modules[step] || modules[0];
   const c = colorMap[m.color] || T.listening;
   const done = Object.keys(completed).length;
@@ -46,9 +49,9 @@ function MExamRunnerV5({ mode = 'monthly' }) {
         <div style={{ background:T.ink, borderRadius:16, padding:'16px 16px', color:'#fff', marginBottom:12, position:'relative', overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:11 }}>
             <span style={{ fontSize:9.5, fontWeight:800, color:T.brand, letterSpacing:'.16em' }}>{headerTag}</span>
-            <div style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 10px', borderRadius:99, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.12)' }}>
-              <div style={{ width:6, height:6, borderRadius:3, background:'#5BD17A', boxShadow:'0 0 6px #5BD17A' }}/>
-              <span style={{ fontSize:10, fontWeight:700 }}>{fmt(secs)}</span>
+            <div style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 10px', borderRadius:99, background:(_up||_crit)?'rgba(242,85,90,.18)':'rgba(255,255,255,.08)', border:`1px solid ${(_up||_crit)?'rgba(242,85,90,.4)':'rgba(255,255,255,.12)'}` }}>
+              <div style={{ width:6, height:6, borderRadius:3, background:_tc, boxShadow:`0 0 6px ${_tc}` }}/>
+              <span style={{ fontSize:10, fontWeight:700, color:_tc }}>{_up ? "Time's up" : fmt(secs) + ' left'}</span>
             </div>
           </div>
           <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.1, letterSpacing:'-.02em' }}>{m.label} · {ex.short}</div>
