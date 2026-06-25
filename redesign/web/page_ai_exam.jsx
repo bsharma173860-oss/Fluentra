@@ -432,7 +432,7 @@ function ExamUnlockModal() {
         <div style={{ fontFamily:T.serif, fontSize:42, color:T.ink, lineHeight:1.05, letterSpacing:'-.01em', marginBottom:14 }}>You can take the<br/>real exam.</div>
         <div style={{ fontSize:15, color:T.ink3, lineHeight:1.55, marginBottom:28 }}>9 days of consistent practice. Your AI examiner thinks you're ready — book a real IELTS slot at a test center, or take an unlimited free mock first.</div>
         <div style={{ display:'flex', gap:8, marginBottom:18 }}>
-          <Btn label="Book real exam" nav="exam_book" iconRight={Icon.arrow({ width:13, height:13 })} accent={T.brand} size="lg" style={{ flex:1 }}/>
+          <Btn label="Start official exam" nav="exam_entry" iconRight={Icon.arrow({ width:13, height:13 })} accent={T.brand} size="lg" style={{ flex:1 }}/>
           <Btn label="Try free mock" nav="mock_test" variant="outline" accent={T.ink} size="lg" style={{ flex:1 }}/>
         </div>
         <button data-nav="dashboard" style={{ fontSize:12.5, color:T.ink4, padding:8, background:'transparent', cursor:'pointer' }}>Maybe later</button>

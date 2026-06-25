@@ -160,7 +160,7 @@ function MNotificationsPageV5() {
         {filtered.length > 0 && V5_label('RECENT')}
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
           {filtered.map(n => (
-            <button key={n.id} onClick={()=>{ if (n.type==='social') nav('public_profile'); else if (n.type==='system') nav('exam_book'); }} style={{ display:'flex', alignItems:'flex-start', gap:11, padding:'12px 13px', borderRadius:13, background:T.card, border:`1px solid ${n.unread ? n.accent + '33' : T.hairline}`, boxShadow:MT.shadowSm, textAlign:'left', position:'relative' }}>
+            <button key={n.id} onClick={()=>{ if (n.type==='social') nav('public_profile'); else if (n.type==='system') nav('exam_entry'); }} style={{ display:'flex', alignItems:'flex-start', gap:11, padding:'12px 13px', borderRadius:13, background:T.card, border:`1px solid ${n.unread ? n.accent + '33' : T.hairline}`, boxShadow:MT.shadowSm, textAlign:'left', position:'relative' }}>
               {n.unread && <div style={{ position:'absolute', top:13, right:13, width:7, height:7, borderRadius:4, background:n.accent }}/>}
               <div style={{ width:36, height:36, borderRadius:10, background:`${n.accent}1a`, color:n.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[n.ic] ? Icon[n.ic]({width:14,height:14}) : Icon.bell({width:14,height:14})}</div>
               <div style={{ flex:1, minWidth:0, paddingRight: n.unread ? 12 : 0 }}>

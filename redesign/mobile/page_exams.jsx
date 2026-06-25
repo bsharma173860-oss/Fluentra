@@ -53,7 +53,7 @@ function MExams() {
           <MobileSectionHead title="All exams"/>
           <MCard style={{ padding:0 }}>
             {exams.map((e, i, all) => (
-              <button key={e.name} onClick={()=>nav('exam_book')} style={{
+              <button key={e.name} onClick={()=>nav('exam_entry')} style={{
                 width:'100%', textAlign:'left',
                 background:'transparent', border:'none',
                 borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none',

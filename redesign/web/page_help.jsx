@@ -55,14 +55,14 @@ function HelpPage() {
             <div style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search()}</div>
             <div style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', display:'flex', gap:6, alignItems:'center' }}>
               <span style={{ fontSize:11, color:T.ink5, fontFamily:T.sans }}>or</span>
-              <button style={{ padding:'7px 12px', fontSize:12, fontWeight:700, color:T.brand, background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:8, display:'flex', alignItems:'center', gap:5 }}>{Icon.spark({ width:11, height:11 })} Ask the tutor</button>
+              <button onClick={() => window.__nav && window.__nav('tutor')} style={{ padding:'7px 12px', fontSize:12, fontWeight:700, color:T.brand, background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:8, display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>{Icon.spark({ width:11, height:11 })} Ask the tutor</button>
             </div>
           </div>
           {/* Quick suggested */}
           <div style={{ marginTop:18, display:'flex', flexWrap:'wrap', justifyContent:'center', gap:6 }}>
             <span style={{ fontSize:11, color:T.ink4 }}>Try:</span>
             {['streak freeze','cancel subscription','switch language','export data','exam mode score'].map(q => (
-              <button key={q} style={{ fontSize:11.5, padding:'4px 10px', background:T.card, border:`1px solid ${T.border}`, borderRadius:99, color:T.ink2, fontWeight:500 }}>{q}</button>
+              <button key={q} onClick={() => window.__nav && window.__nav('tutor')} style={{ fontSize:11.5, padding:'4px 10px', background:T.card, border:`1px solid ${T.border}`, borderRadius:99, color:T.ink2, fontWeight:500, cursor:'pointer' }}>{q}</button>
             ))}
           </div>
         </div>
@@ -76,11 +76,11 @@ function HelpPage() {
                 <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>Most asked this week</div>
                 <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1.1 }}>What others are reading</div>
               </div>
-              <button style={{ fontSize:12, color:T.brand, fontWeight:700, display:'flex', alignItems:'center', gap:5 }}>All popular {Icon.arrow({ width:11, height:11 })}</button>
+              <button onClick={() => window.__nav && window.__nav('tutor')} style={{ fontSize:12, color:T.brand, fontWeight:700, display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>All popular {Icon.arrow({ width:11, height:11 })}</button>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12 }}>
               {popular.map((p, i) => (
-                <button key={i} style={{ padding:'18px 18px 16px', background:T.card, border:`1px solid ${T.border}`, borderRadius:14, textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:10, minHeight:140 }}>
+                <button key={i} onClick={() => window.__nav && window.__nav('tutor')} style={{ padding:'18px 18px 16px', background:T.card, border:`1px solid ${T.border}`, borderRadius:14, textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:10, minHeight:140 }}>
                   <Chip label={p.cat} accent={T.ink3} bg={T.bg2} style={{ alignSelf:'flex-start' }}/>
                   <div style={{ fontSize:14, fontWeight:700, color:T.ink, lineHeight:1.3, flex:1, textWrap:'pretty' }}>{p.t}</div>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', fontSize:11, color:T.ink4 }}>

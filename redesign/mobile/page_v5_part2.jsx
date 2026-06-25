@@ -479,7 +479,7 @@ function MStatesPageV5() {
               <div style={{ width:64, height:64, borderRadius:32, background:s.bg, color:s.c, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>{Icon[s.ic] ? Icon[s.ic]({width:24,height:24}) : '?'}</div>
               <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.1, letterSpacing:'-.02em', marginBottom:7 }}>{s.title}</div>
               <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.55, marginBottom: s.cta ? 14 : 0, maxWidth:280, margin:'0 auto 14px' }}>{s.body}</div>
-              {s.cta && <button style={{ padding:'10px 16px', borderRadius:11, background:T.brandGrad, color:'#fff', fontSize:12, fontWeight:700, boxShadow:`0 4px 12px ${T.brand}40` }}>{s.cta}</button>}
+              {s.cta && <button onClick={() => window.__nav && window.__nav('dashboard')} style={{ padding:'10px 16px', borderRadius:11, background:T.brandGrad, color:'#fff', fontSize:12, fontWeight:700, boxShadow:`0 4px 12px ${T.brand}40`, cursor:'pointer' }}>{s.cta}</button>}
               {!s.cta && <div style={{ display:'inline-flex', gap:5, marginTop:10 }}>{[0,1,2].map(k => <div key={k} style={{ width:7, height:7, borderRadius:4, background:T.brand, opacity: .4 + k*.2, animation:`pulse 1.4s ease-in-out ${k*.2}s infinite` }}/>)}</div>}
             </MCard>
           ))}

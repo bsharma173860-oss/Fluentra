@@ -673,7 +673,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b153-wire-functional-buttons';
+    window.__FL_BUILD = 'b154-help-exam-devcleanup';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

@@ -124,7 +124,7 @@ function MExamHistoryPageV5() {
           })}
         </MCard></>}
 
-        <button onClick={()=>nav('exam_book')} style={{ width:'100%', marginTop:14, padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12.5, fontWeight:700 }}>Book another exam</button>
+        <button onClick={()=>nav('exam_entry')} style={{ width:'100%', marginTop:14, padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12.5, fontWeight:700 }}>Book another exam</button>
       </MobileBody>
     </>
   );

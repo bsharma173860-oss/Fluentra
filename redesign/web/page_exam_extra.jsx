@@ -105,7 +105,7 @@ function ExamBookPage() {
                 <div style={{ fontSize:12, color:T.ink3 }}>Total</div>
                 <div style={{ fontFamily:T.serif, fontSize:28, color:T.ink }}>$249.00</div>
               </div>
-              <Btn label="Book and pay" accent={T.brand} fullWidth iconRight={Icon.arrow()} onClick={() => window.payFor && window.payFor('exam_book')}/>
+              <Btn label="Book and pay" accent={T.brand} fullWidth iconRight={Icon.arrow()} onClick={() => window.payFor && window.payFor('exam_official')}/>
               <div style={{ marginTop:12, fontSize:11, color:T.ink4, textAlign:'center', lineHeight:1.5 }}>Free reschedule up to 48h before. Cancellations refundable up to 7 days before.</div>
             </Card>
           </div>
