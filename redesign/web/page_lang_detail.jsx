@@ -328,6 +328,16 @@ function LangDetailPage() {
               <button onClick={()=>{ window.__langCode = lang.code; window.__nav && window.__nav('exam_runner'); }} style={{ padding:'14px 22px', background:'#fff', color:T.ink, borderRadius:12, fontSize:14, fontWeight:700, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>Take a mock →</button>
             </div>
 
+            {/* Official exam — $5 scored attempt (free on Max) */}
+            <div style={{ background:T.brandLight, borderRadius:18, padding:'24px 30px', display:'grid', gridTemplateColumns:'1fr auto', gap:20, alignItems:'center', border:`1px solid ${t.accent}33` }}>
+              <div>
+                <div style={{ fontSize:10.5, color:t.accent, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>Official {lang.english} exam</div>
+                <div style={{ fontFamily:T.serif, fontSize:24, lineHeight:1.1, marginBottom:8, color:T.ink }}>Sit the scored exam{(typeof window!=='undefined' && window.__can && window.__can('examsIncluded')) ? '' : ' — $5'}</div>
+                <div style={{ fontSize:13, color:T.ink3, lineHeight:1.5 }}>A single official attempt — all four sections — that counts toward the leaderboard. Included free on Max.</div>
+              </div>
+              <button onClick={()=>{ window.__langCode = lang.code; window.__examMode='monthly'; if (typeof window!=='undefined' && window.__can && window.__can('examsIncluded')) { window.__nav && window.__nav('monthly_runner'); } else if (window.payFor) { window.payFor('exam_official'); } }} style={{ padding:'14px 22px', background:t.accent, color:'#fff', borderRadius:12, fontSize:14, fontWeight:700, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>{(typeof window!=='undefined' && window.__can && window.__can('examsIncluded')) ? 'Take official →' : 'Take official · $5'}</button>
+            </div>
+
             {/* Real exam history for this language */}
             <Card padding={0}>
               <div style={{ padding:'16px 22px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
