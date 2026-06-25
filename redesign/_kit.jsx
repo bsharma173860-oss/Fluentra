@@ -651,7 +651,8 @@ function useMicRecorder() {
   React.useEffect(function () { return function () { stop(); }; }, [stop]);
   const m = Math.floor(seconds / 60), s = seconds % 60;
   const time = m + ':' + (s < 10 ? '0' + s : s);
-  return { recording: recording, seconds: seconds, time: time, done: done, toggle: toggle };
+  const getBase64 = function () { return new Promise(function (resolve) { var b = ref.current.blob; if (!b) return resolve(null); var fr = new FileReader(); fr.onloadend = function () { var d = String(fr.result || ''); resolve(d.indexOf(',') >= 0 ? d.split(',')[1] : null); }; fr.onerror = function () { resolve(null); }; fr.readAsDataURL(b); }); };
+  return { recording: recording, seconds: seconds, time: time, done: done, toggle: toggle, getBase64: getBase64 };
 }
 
 function flSpeak(text, code) {

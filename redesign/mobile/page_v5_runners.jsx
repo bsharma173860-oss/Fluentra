@@ -64,6 +64,17 @@ function MExamRunnerV5({ mode = 'monthly' }) {
       return;
     }
     let score = null;   // speaking -> AI grading is the next step
+    // Speaking -> AI grade: send the recording to /api/speaking-eval.
+    if (m.color === 'speaking') {
+      setGrading(true);
+      mic.getBase64().then(function (b64) {
+        if (!b64) { setGrading(false); _record('speaking', null); return; }
+        return fetch('/api/speaking-eval', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType: 'audio/webm', prompt: _promptText || '', lang: code, exam: ex.name || ex.short || 'IELTS' }) })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { var band = (j && j.evaluation && typeof j.evaluation.overall_band === 'number') ? j.evaluation.overall_band : null; setGrading(false); _record('speaking', band != null ? Math.round(band / 9 * 100) : null); });
+      }).catch(function () { setGrading(false); _record('speaking', null); });
+      return;
+    }
     if (m.color === 'reading' || m.color === 'listening') {
       var gradable = _qs.filter(function (q) { return typeof q.answer === 'number'; });
       if (gradable.length) {
@@ -175,7 +186,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
         </MCard>
 
         {!allDone ? (
-          <button onClick={goSubmit} disabled={!_answered || grading} style={{ width:'100%', padding:'14px', borderRadius:13, background:(_answered && !grading) ? T.brandGrad : T.bg3, color:(_answered && !grading) ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow:(_answered && !grading) ? `0 6px 16px ${T.brand}40` : 'none', opacity:(_answered && !grading) ? 1 : .7 }}>{grading ? 'Grading your writing…' : _answered ? 'Submit · next module' : (m.color==='speaking' ? 'Record your answer to continue' : m.color==='writing' ? 'Write your answer to continue' : 'Choose an answer to continue')}</button>
+          <button onClick={goSubmit} disabled={!_answered || grading} style={{ width:'100%', padding:'14px', borderRadius:13, background:(_answered && !grading) ? T.brandGrad : T.bg3, color:(_answered && !grading) ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow:(_answered && !grading) ? `0 6px 16px ${T.brand}40` : 'none', opacity:(_answered && !grading) ? 1 : .7 }}>{grading ? (m.color==='speaking' ? 'Grading your speaking…' : 'Grading your writing…') : _answered ? 'Submit · next module' : (m.color==='speaking' ? 'Record your answer to continue' : m.color==='writing' ? 'Write your answer to continue' : 'Choose an answer to continue')}</button>
         ) : (
           <button onClick={finishExam} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Finish · see scores</button>
         )}
