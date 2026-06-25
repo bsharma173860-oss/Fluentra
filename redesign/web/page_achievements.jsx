@@ -35,9 +35,9 @@ function AchievementsPage() {
   };
   const realize = (b) => {
     const m = REAL[b.id];
-    if (!m) return { ...b, earned:false, pct:0, label:'Not tracked yet', date:null };
+    if (!m) return { ...b, earned:false, pct:0, label:'Not tracked yet', date:null, earnedBy:null };
     const cur = m[0], thr = m[1], earned = cur >= thr;
-    return { ...b, earned, pct: Math.min(100, Math.round((cur / thr) * 100)), label: earned ? null : (cur + '/' + thr), date: earned ? b.date : null };
+    return { ...b, earned, pct: Math.min(100, Math.round((cur / thr) * 100)), label: earned ? null : (cur + '/' + thr), date: null, earnedBy: null };
   };
   const realCollections = collections.map(c => ({ ...c, badges: c.badges.map(realize) }));
   const allReal = realCollections.reduce((a, c) => a.concat(c.badges), []);
@@ -62,15 +62,13 @@ function AchievementsPage() {
   }));
 
   // ── Featured (hero + supporting) ─────────────────────────
-  const heroBadge = {
-    id:'cafe_master', title:'Café Master', sub:'Aced the Restaurant module — Spanish A2',
-    rarity:'epic', ic:'trophy', date:'Mar 14, 2025', earnedBy:'4.2% of learners',
-    accent:T.es.accent, bg:T.es.bg, edition:'#24 of 86', detail:'Awarded for completing the entire Restaurant module with an average score of 95% or higher across speaking, listening, and reading.',
-  };
-  const supporting = [
-    { id:'streak_30',   title:'Month of fire',    sub:'30-day streak — burning bright', date:'Mar 02', rarity:'rare', ic:'flame',   accent:T.brand,      bg:T.brandLight },
-    { id:'lia_chat_50', title:'Tutor confidant', sub:'50 conversations with the tutor',date:'Feb 27', rarity:'rare', ic:'message', accent:T.speaking.c, bg:T.speaking.bg },
-  ];
+  // Featured = the user's real earned badges, highest rarity first (no fabricated showcase).
+  const _rarRank = { common:0, rare:1, epic:2, legendary:3 };
+  const _rarAcc  = { common:T.ink3, rare:T.speaking.c, epic:T.brand, legendary:T.writing.c };
+  const _earnedReal = allReal.filter(x => x.earned).slice().sort((a, b) => (_rarRank[b.rarity] || 0) - (_rarRank[a.rarity] || 0));
+  const _mkFeatured = (b) => b ? { id:b.id, title:b.name || b.title, sub:b.desc || b.sub, rarity:b.rarity, ic:b.ic, accent:(_rarAcc[b.rarity] || T.brand), bg:T.bg2, earned:true, detail:b.desc || b.sub } : null;
+  const heroBadge = _mkFeatured(_earnedReal[0]);
+  const supporting = _earnedReal.slice(1, 3).map(_mkFeatured);
 
   // ── Collections ──────────────────────────────────────────
   const collections = [
@@ -178,7 +176,7 @@ function AchievementsPage() {
 
         {/* HERO — museum case + plaque ─────────────────────── */}
         <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:14, marginBottom:14 }}>
-          <HeroCase badge={heroBadge} onShare={() => setShareOf(heroBadge)} onOpen={() => setDetail(heroBadge)}/>
+          {heroBadge ? <HeroCase badge={heroBadge} onShare={() => setShareOf(heroBadge)} onOpen={() => setDetail(heroBadge)}/> : <div style={{ background:T.bg2, border:`1px dashed ${T.border}`, borderRadius:18, padding:40, textAlign:'center', minHeight:280, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8 }}><div style={{ fontFamily:T.serif, fontSize:22, color:T.ink2 }}>No badges yet</div><div style={{ fontSize:13, color:T.ink3 }}>Complete lessons, build a streak, and pass exams to earn your first badge.</div></div>}
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             {/* Stats grid */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -377,7 +375,7 @@ function HeroCase({ badge: b, onShare, onOpen }) {
   return (
     <div style={{ background:`linear-gradient(155deg, ${b.bg} 0%, ${T.bg} 100%)`, border:`1px solid ${T.border}`, borderRadius:18, padding:28, position:'relative', overflow:'hidden', minHeight:280 }}>
       {/* corner edition stamp */}
-      <div style={{ position:'absolute', top:18, right:18, padding:'5px 10px', border:`1px solid ${b.accent}55`, borderRadius:6, fontSize:10, color:b.accent, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', background:T.card }}>EDITION {b.edition}</div>
+      <div style={{ position:'absolute', top:18, right:18, padding:'5px 10px', border:`1px solid ${b.accent}55`, borderRadius:6, fontSize:10, color:b.accent, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', background:T.card }}>{b.edition ? ('EDITION ' + b.edition) : (b.rarity || '').toUpperCase()}</div>
       {/* decorative rings */}
       <div style={{ position:'absolute', top:-40, left:-40, width:180, height:180, borderRadius:90, border:`14px solid ${b.accent}1c` }}/>
       <div style={{ position:'absolute', bottom:-60, right:-30, width:120, height:120, borderRadius:60, background:`${b.accent}10` }}/>
@@ -394,8 +392,8 @@ function HeroCase({ badge: b, onShare, onOpen }) {
           </div>
           {/* serial plate */}
           <div style={{ marginTop:14, padding:'8px 10px', background:T.card, border:`1px solid ${T.border}`, borderRadius:8, fontSize:9.5, color:T.ink4, lineHeight:1.5, fontFamily:'ui-monospace, monospace' }}>
-            <div>SN: FL-25-0314-CAFE</div>
-            <div>VERIFIED</div>
+            <div>SN: {(b.id || 'badge').toUpperCase().replace(/_/g, '-')}</div>
+            <div>{b.earned ? 'VERIFIED' : ''}</div>
           </div>
         </div>
 
@@ -403,7 +401,7 @@ function HeroCase({ badge: b, onShare, onOpen }) {
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
             <Chip label={b.rarity.toUpperCase()} accent={b.accent} bg={`${b.accent}1f`} style={{ fontSize:9.5 }}/>
-            <Chip label={`Top ${b.earnedBy.replace('% of learners','%')}`} accent={T.ink3} bg={T.bg2} style={{ fontSize:9.5 }} icon={Icon.trending({ width:9, height:9 })}/>
+            {b.earnedBy && <Chip label={`Top ${String(b.earnedBy).replace('% of learners','%')}`} accent={T.ink3} bg={T.bg2} style={{ fontSize:9.5 }} icon={Icon.trending({ width:9, height:9 })}/>}
           </div>
           <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.18em', textTransform:'uppercase', marginBottom:4 }}>Latest acquisition</div>
           <div style={{ fontFamily:T.serif, fontSize:42, color:T.ink, lineHeight:1.02, marginBottom:8 }}>{b.title}</div>
@@ -412,16 +410,18 @@ function HeroCase({ badge: b, onShare, onOpen }) {
           {/* meta row */}
           <div style={{ display:'flex', gap:18, marginBottom:18, paddingTop:14, borderTop:`1px solid ${b.accent}20` }}>
             <div>
-              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Acquired</div>
-              <div style={{ fontSize:13, color:T.ink, marginTop:2, fontWeight:600 }}>{b.date}</div>
+              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Status</div>
+              <div style={{ fontSize:13, color:T.ink, marginTop:2, fontWeight:600 }}>{b.date || 'Earned'}</div>
             </div>
+            {b.earnedBy && (
             <div>
               <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Earned by</div>
               <div style={{ fontSize:13, color:T.ink, marginTop:2, fontWeight:600 }}>{b.earnedBy}</div>
             </div>
+            )}
             <div>
-              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Module</div>
-              <div style={{ fontSize:13, color:T.ink, marginTop:2, fontWeight:600 }}>Restaurant · A2</div>
+              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Tier</div>
+              <div style={{ fontSize:13, color:T.ink, marginTop:2, fontWeight:600 }}>{b.rarity || '\u2014'}</div>
             </div>
           </div>
 
@@ -450,7 +450,7 @@ function BadgePoster({ badge: b, onShare, onOpen }) {
         <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.05, marginBottom:4 }}>{b.title}</div>
         <div style={{ fontSize:11.5, color:T.ink3, lineHeight:1.4, marginBottom:8 }}>{b.sub}</div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ fontSize:10.5, color:T.ink4, display:'flex', alignItems:'center', gap:5 }}>{Icon.cal({ width:10, height:10 })} {b.date}</div>
+          <div style={{ fontSize:10.5, color:T.ink4, display:'flex', alignItems:'center', gap:5 }}>{Icon.cal({ width:10, height:10 })} {b.date || 'Earned'}</div>
           <button onClick={e => { e.stopPropagation(); onShare(); }} style={{ display:'flex', alignItems:'center', gap:4, fontSize:10.5, fontWeight:700, color:b.accent, background:'none', border:'none', cursor:'pointer' }}>
             {Icon.send({ width:10, height:10 })} Share
           </button>
@@ -502,7 +502,7 @@ function BadgeRow({ badge: b, onClick, onShare }) {
           <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{b.name}</div>
           <div style={{ fontSize:9.5, fontWeight:700, color:rar, letterSpacing:'.08em', textTransform:'uppercase' }}>{b.rarity}</div>
         </div>
-        <div style={{ fontSize:11, color:T.ink3, marginTop:3 }}>{b.desc} · earned by {b.earnedBy}</div>
+        <div style={{ fontSize:11, color:T.ink3, marginTop:3 }}>{b.desc}{b.earnedBy ? ' · earned by ' + b.earnedBy : ''}</div>
         {!b.earned && (
           <div style={{ marginTop:6, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ flex:1, maxWidth:180 }}><Bar pct={b.pct} color={rar} track={T.trackWarm} height={3}/></div>
@@ -511,7 +511,7 @@ function BadgeRow({ badge: b, onClick, onShare }) {
         )}
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-        {b.earned && <div style={{ fontSize:11, color:T.ink4 }}>{b.date}</div>}
+        {b.earned && b.date && <div style={{ fontSize:11, color:T.ink4 }}>{b.date}</div>}
         {b.earned && (
           <button onClick={e => { e.stopPropagation(); onShare(); }} style={{ padding:6, borderRadius:7, border:`1px solid ${T.border}`, background:T.card, color:T.ink3, cursor:'pointer', display:'flex' }}>
             {Icon.send({ width:11, height:11 })}
@@ -551,8 +551,8 @@ function BadgeDetailModal({ badge: b, onClose, onShare }) {
         <div style={{ padding:'20px 28px 24px' }}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:18 }}>
             <DetailStat label="Status" value={b.earned ? 'Earned' : 'In progress'} accent={b.earned ? T.speaking.c : T.brand}/>
-            <DetailStat label={b.earned ? 'Acquired' : 'Progress'} value={b.earned ? (b.date || 'recently') : (b.label || `${b.pct}%`)}/>
-            <DetailStat label="Rarity" value={`${b.earnedBy || '—'} of learners`}/>
+            <DetailStat label={b.earned ? 'Acquired' : 'Progress'} value={b.earned ? (b.date || 'Earned') : (b.label || `${b.pct}%`)}/>
+            <DetailStat label="Rarity" value={b.rarity || '\u2014'}/>
             <DetailStat label="Reward" value={b.earned ? '+150 XP' : '+150 XP on unlock'}/>
           </div>
           {!b.earned && (
