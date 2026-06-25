@@ -92,6 +92,35 @@ body[data-fl-ready] #fl-splash{
 
 <div id="root"></div>
 
+<script>
+/* Splash failsafe — if the app hasn't signaled ready within 7s the user is
+   likely stuck (partial bundle, boot crash, or bad cached state). Give them a
+   way out instead of an eternal logo. "Reset & reload" clears localStorage,
+   which fixes corrupted-state hangs. */
+(function () {
+  setTimeout(function () {
+    if (!document.body || document.body.hasAttribute('data-fl-ready')) return;
+    var s = document.getElementById('fl-splash');
+    if (!s || s.querySelector('.fl-recover')) return;
+    var box = document.createElement('div');
+    box.className = 'fl-recover';
+    box.style.cssText = 'margin-top:28px;display:flex;flex-direction:column;gap:10px;align-items:center';
+    box.innerHTML = '<div style="font:13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;color:rgba(255,255,255,.85);max-width:250px;text-align:center;margin-bottom:4px">Taking longer than usual to load.</div>';
+    var mk = function (txt, primary, fn) {
+      var b = document.createElement('button');
+      b.textContent = txt;
+      b.style.cssText = 'padding:10px 20px;border-radius:10px;font:600 13px sans-serif;cursor:pointer;' +
+        (primary ? 'border:none;background:#fff;color:#1a1a2e' : 'border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff');
+      b.onclick = fn;
+      return b;
+    };
+    box.appendChild(mk('Reload', true, function () { location.reload(); }));
+    box.appendChild(mk('Reset & reload', false, function () { try { localStorage.clear(); } catch (e) {} location.reload(); }));
+    s.appendChild(box);
+  }, 7000);
+})();
+</script>
+
 <!-- Supabase JS SDK (local bundle — no CDN dependency) -->
 <script src="assets/supabase.min.js"></script>
 <!-- Fluentra backend integration -->
@@ -571,14 +600,14 @@ function App() {
       if (framed) {
         return (
           <MobileFrame>
-            <ErrorBoundary key={page + navTick}>{MOBILE_PAGES[page]()}</ErrorBoundary>
+            <ErrorBoundary key={page + navTick}>{(MOBILE_PAGES[page] || MOBILE_PAGES.dashboard)()}</ErrorBoundary>
           </MobileFrame>
         );
       }
       // Actual phone — render the mobile app full-screen (no fake bezel / notch / status bar)
       return (
         <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden', position:'relative', paddingTop:'env(safe-area-inset-top)', paddingBottom:'env(safe-area-inset-bottom)', boxSizing:'border-box', background:'radial-gradient(520px 380px at 6% -10%, rgba(255,142,98,0.54), transparent 58%), radial-gradient(480px 380px at 104% -2%, rgba(132,142,255,0.46), transparent 56%), radial-gradient(480px 480px at 50% 120%, rgba(108,212,164,0.38), transparent 60%), linear-gradient(150deg,#F6F1EA,#EAE4DB)' }}>
-          <ErrorBoundary key={page + navTick}>{MOBILE_PAGES[page]()}</ErrorBoundary>
+          <ErrorBoundary key={page + navTick}>{(MOBILE_PAGES[page] || MOBILE_PAGES.dashboard)()}</ErrorBoundary>
         </div>
       );
     }
@@ -586,7 +615,7 @@ function App() {
     return (
       <div style={{ width:W, height:H, background:'radial-gradient(1100px 740px at 4% -14%, rgba(255,142,98,0.58), transparent 58%), radial-gradient(1000px 780px at 104% -8%, rgba(132,142,255,0.50), transparent 56%), radial-gradient(950px 950px at 50% 124%, rgba(108,212,164,0.42), transparent 60%), linear-gradient(150deg,#F6F1EA 0%,#EAE4DB 100%)', overflow:'hidden', display:'flex' }}>
         {!fullBleed && <WebSidebar active={page === 'lang' ? 'home' : page} activeLang={page === 'lang' ? langCode : null} onNav={(id) => window.__nav(id)}/>}
-        <div key={page + '-' + langCode + '-' + navTick} style={{ flex:1, display:'flex', minWidth:0 }}><ErrorBoundary>{WEB_PAGES[page]()}</ErrorBoundary></div>
+        <div key={page + '-' + langCode + '-' + navTick} style={{ flex:1, display:'flex', minWidth:0 }}><ErrorBoundary>{(WEB_PAGES[page] || WEB_PAGES.dashboard)()}</ErrorBoundary></div>
       </div>
     );
   };

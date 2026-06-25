@@ -223,7 +223,8 @@
               var name =
                 p.full_name ||
                 (user.user_metadata && user.user_metadata.full_name) ||
-                user.email.split('@')[0];
+                ((user.email || 'there').split('@')[0]);
+              name = String(name || 'there');
 
               var data = {
                 id: user.id,
