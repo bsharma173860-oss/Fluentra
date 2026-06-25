@@ -104,6 +104,7 @@ function TutorPage() {
   const scrollRef = useRefAT(null);
   const fileRef = useRefAT(null);
   const recTimer = useRefAT(null);
+  const mic = (typeof useMicRecorder === 'function') ? useMicRecorder() : null;
 
   function flashToast(msg) { setToast(msg); setTimeout(() => setToast(''), 2400); }
 
@@ -132,46 +133,67 @@ function TutorPage() {
 
   useEffectAT(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [msgs, thinking]);
 
-  // Voice: start/stop a fake recording timer (real mic capture is backend-side).
-  // Toggles, auto-stops at 30s, and on stop drops a "voice note" message.
+  // Voice: real mic capture (useMicRecorder) + on stop, transcribe via Whisper
+  // (speaking-eval) and feed the transcript to the tutor as a real user turn.
   useEffectAT(() => {
     if (recording) {
       recTimer.current = setInterval(() => setRecSecs(s => s + 1), 1000);
-      const auto = setTimeout(() => stopVoice(true), 30000);
+      const auto = setTimeout(() => stopVoice(), 30000);
       return () => { clearInterval(recTimer.current); clearTimeout(auto); };
     }
   }, [recording]);
 
-  function startVoice() { setRecSecs(0); setRecording(true); }
-  function stopVoice(autoSend = false) {
-    clearInterval(recTimer.current);
+  function startVoice() { setRecSecs(0); setRecording(true); try { if (mic && !mic.recording) mic.toggle(); } catch (e) {} }
+  function cancelVoice() { setRecording(false); setRecSecs(0); clearInterval(recTimer.current); try { if (mic && mic.recording) mic.toggle(); } catch (e) {} }
+  async function stopVoice() {
     setRecording(false);
-    const secs = recSecs;
-    if (autoSend || secs >= 1) {
-      const mm = String(Math.floor(secs/60)).padStart(2,'0');
-      const ss = String(secs % 60).padStart(2,'0');
-      setMsgs(m => [...m, { role:'user', text:`🎙 Voice note · ${mm}:${ss}`, when:'just now' }]);
-      setThinking(true);
-      setTimeout(() => { setMsgs(m => [...m, { role:'ai', text:"Got your voice note — I heard a couple of pronunciation slips on the long vowels. Want me to mark them up phoneme-by-phoneme?", when:'just now', actions:['Mark phonemes','Just summarize','Skip'] }]); setThinking(false); }, 1400);
-    }
+    clearInterval(recTimer.current);
     setRecSecs(0);
+    try { if (mic && mic.recording) mic.toggle(); } catch (e) {}
+    if (!mic) return;
+    setThinking(true);
+    let b64 = null;
+    for (let i = 0; i < 25 && !b64; i++) { await new Promise(r => setTimeout(r, 100)); try { b64 = await mic.getBase64(); } catch (e) {} }
+    if (!b64) { setThinking(false); setMsgs(m => [...m, { role:'ai', text:"I couldn't access that recording — check your mic permission and try again.", when:'just now' }]); return; }
+    try {
+      const r = await fetch('/api/speaking-eval', { method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType:'audio/webm', prompt:'Casual spoken message to a language tutor', lang: chatLang }) });
+      const j = await r.json();
+      if (j && j.limit) { setThinking(false); if (window.__upgrade) window.__upgrade('tutor'); return; }
+      const transcript = (j && j.transcript) ? String(j.transcript).trim() : '';
+      setThinking(false);
+      if (transcript) send(transcript);
+      else setMsgs(m => [...m, { role:'ai', text:"I couldn't make out any speech there — try again, a bit closer to the mic?", when:'just now' }]);
+    } catch (e) { setThinking(false); setMsgs(m => [...m, { role:'ai', text:"I had trouble processing that recording — try again?", when:'just now' }]); }
   }
 
   function openAttach() { if (fileRef.current) fileRef.current.click(); }
   function onFile(e) {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
-    const kb = Math.max(1, Math.round(f.size / 1024));
-    setMsgs(m => [...m, { role:'user', text:`Attached: ${f.name} · ${kb} KB`, when:'just now' }]);
-    setThinking(true);
-    setTimeout(() => { setMsgs(m => [...m, { role:'ai', text:`Got it — I'll read **${f.name}** and pull out the main coherence issues. Want a band-style critique or a paragraph-by-paragraph rewrite suggestion?`, when:'just now', actions:['Band critique','Rewrite suggestions','Quick summary'] }]); setThinking(false); }, 1500);
     e.target.value = '';
+    const kb = Math.max(1, Math.round(f.size / 1024));
+    const isText = (f.type && f.type.indexOf('text/') === 0) || /\.(txt|md|markdown|csv|tsv|json|rtf|tex|log|srt|vtt)$/i.test(f.name);
+    if (isText) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const content = String(reader.result || '').slice(0, 12000);
+        send('📎 ' + f.name + ' · ' + kb + ' KB', { apiText: 'I\'ve attached my file "' + f.name + '". Please read it and help me with it:\n\n' + content });
+      };
+      reader.onerror = () => setMsgs(m => [...m, { role:'ai', text:"I couldn't read that file — try pasting the text instead?", when:'just now' }]);
+      reader.readAsText(f);
+    } else {
+      const ext = (f.name.split('.').pop() || '').toUpperCase();
+      setMsgs(m => [...m, { role:'user', text:'📎 ' + f.name + ' · ' + kb + ' KB', when:'just now' }]);
+      setMsgs(m => [...m, { role:'ai', text:"I can read text files (.txt, .md, .csv, code) directly. For " + ext + " files I can't open the binary here \u2014 paste the text and I'll dig right in.", when:'just now' }]);
+    }
   }
 
-  const send = async (text) => {
-    if (!text.trim()) return;
+  const send = async (text, opts) => {
+    opts = opts || {};
+    if (!text || !text.trim()) return;
+    const apiText = opts.apiText || text;   // what the tutor model receives (may differ from the chat bubble)
     const userMsg = { role:'user', text, when:'just now' };
-    const history = [...msgs, userMsg].map(mm => ({ role: mm.role === 'ai' ? 'assistant' : 'user', content: mm.text }));
+    const history = msgs.map(mm => ({ role: mm.role === 'ai' ? 'assistant' : 'user', content: mm.text })).concat([{ role:'user', content: apiText }]);
     setMsgs(m => [...m, userMsg]);
     setInput('');
     setThinking(true);
@@ -345,8 +367,8 @@ function TutorPage() {
                   <div key={i} style={{ flex:1, height:`${25 + Math.abs(Math.sin((Date.now()/120)+i*0.6))*70}%`, background:'#C0392B', borderRadius:1.5, opacity: .65 + (i % 3 ? .2 : 0) }}/>
                 ))}
               </div>
-              <button onClick={() => { setRecording(false); setRecSecs(0); }} style={{ padding:'5px 10px', borderRadius:7, background:'transparent', color:'#7A2A1F', fontSize:11, fontWeight:700, cursor:'pointer', border:'1px solid #C0392B' }}>Cancel</button>
-              <button onClick={() => stopVoice(true)} style={{ padding:'5px 12px', borderRadius:7, background:'#C0392B', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', border:'none' }}>Send</button>
+              <button onClick={cancelVoice} style={{ padding:'5px 10px', borderRadius:7, background:'transparent', color:'#7A2A1F', fontSize:11, fontWeight:700, cursor:'pointer', border:'1px solid #C0392B' }}>Cancel</button>
+              <button onClick={() => stopVoice()} style={{ padding:'5px 12px', borderRadius:7, background:'#C0392B', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', border:'none' }}>Send</button>
             </div>
           )}
           <div style={{ maxWidth:840, margin:'0 auto', background:T.card, border:`1.5px solid ${T.border}`, borderRadius:14, padding:'10px 12px 8px', boxShadow:`0 2px 8px rgba(0,0,0,.04)` }}>
@@ -363,7 +385,7 @@ function TutorPage() {
                 <button onClick={openAttach} title="Attach a file" style={{ width:32, height:32, borderRadius:8, background:'transparent', color:T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 </button>
-                <button onClick={recording ? () => stopVoice(true) : startVoice} title={recording ? 'Stop recording' : 'Record voice'} style={{ width:32, height:32, borderRadius:8, background: recording ? '#C0392B' : 'transparent', color: recording ? '#fff' : T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>
+                <button onClick={recording ? () => stopVoice() : startVoice} title={recording ? 'Stop recording' : 'Record voice'} style={{ width:32, height:32, borderRadius:8, background: recording ? '#C0392B' : 'transparent', color: recording ? '#fff' : T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
                 </button>
                 <button onClick={() => flashToast('Long-form draft mode — paste text in the box below')} title="Long-form" style={{ width:32, height:32, borderRadius:8, background:'transparent', color:T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>
