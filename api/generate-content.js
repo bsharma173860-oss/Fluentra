@@ -112,17 +112,36 @@ module.exports = async function handler(req, res) {
     var p = prompt(type, LANG_NAMES[lang], difficulty, exam, topic);
 
     // Claude generates the content
-    var aResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': ANTHROPIC, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: (type === 'lesson' ? 3500 : 2000), messages: [{ role: 'user', content: p }] }),
-    });
-    if (!aResp.ok) return res.status(502).json({ error: 'generation failed', detail: (await aResp.text()).slice(0, 300) });
-    var aData = await aResp.json();
-    var raw = (aData.content || []).filter(function (b) { return b.type === 'text'; })
-      .map(function (b) { return b.text; }).join('').trim().replace(/^```json\s*|\s*```$/g, '');
-    var payload;
-    try { payload = JSON.parse(raw); } catch (e) { return res.status(502).json({ error: 'bad JSON from model', raw: raw.slice(0, 400) }); }
+    async function callModel() {
+      var aResp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': ANTHROPIC, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: (type === 'lesson' ? 3500 : 2000), messages: [{ role: 'user', content: p }] }),
+      });
+      if (!aResp.ok) return { httpError: (await aResp.text()).slice(0, 300) };
+      var aData = await aResp.json();
+      var raw = (aData.content || []).filter(function (b) { return b.type === 'text'; })
+        .map(function (b) { return b.text; }).join('').trim().replace(/^```json\s*|\s*```$/g, '');
+      return { raw: raw };
+    }
+    function tryParse(raw) {
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch (e) {}
+      var a = raw.indexOf('{'), b = raw.lastIndexOf('}');           // stricter: extract first {...last}
+      if (a !== -1 && b > a) { try { return JSON.parse(raw.slice(a, b + 1)); } catch (e2) {} }
+      return null;
+    }
+    // Up to 2 attempts: retry once on a transient API error or unparseable JSON.
+    var payload = null, lastRaw = '', httpErr = null;
+    for (var attempt = 0; attempt < 2 && !payload; attempt++) {
+      var rr = await callModel();
+      if (rr.httpError) { httpErr = rr.httpError; continue; }
+      lastRaw = rr.raw; payload = tryParse(rr.raw);
+    }
+    if (!payload) {
+      if (httpErr && !lastRaw) return res.status(502).json({ error: 'generation failed', detail: httpErr });
+      return res.status(502).json({ error: 'bad JSON from model', raw: lastRaw.slice(0, 400) });
+    }
 
     // Persist to the pooled content table (best-effort). A DB failure must NOT
     // discard freshly generated content — return it either way.

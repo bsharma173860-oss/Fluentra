@@ -3,6 +3,10 @@
 // All 4 share the same chrome: header, progress, timer, content area
 
 
+// CEFR level -> content difficulty, so practice matches the learner's placement.
+function _levelFor(lang) { try { var L = window.langByCode && window.langByCode(lang); return (L && L.level) || 'A2'; } catch (e) { return 'A2'; } }
+function _diffForLevel(lvl) { var v = String(lvl || '').toUpperCase(); if (v === 'A1' || v === 'A2') return 'easy'; if (v === 'C1' || v === 'C2') return 'hard'; return 'medium'; }
+
 function _modPrefix(){
   const c=window.__langCode||'en';
   // Prefer the language's own exam short code (Goethe, CILS, TOPIK, HSK, …).
@@ -352,13 +356,14 @@ function ReadingSession() {
     var cancelled = false;
     (async function () {
       try {
-        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=reading&full=1&limit=8');
+        var _diff = _diffForLevel(_levelFor(lang));
+        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=reading&full=1&limit=8&difficulty=' + _diff);
         var list = await lr.json();
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
-            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: 'medium' }),
+            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: _diff }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
@@ -505,13 +510,14 @@ function ListeningSession() {
     var cancelled = false;
     (async function () {
       try {
-        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=listening&full=1&limit=8');
+        var _diff = _diffForLevel(_levelFor(lang));
+        var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=listening&full=1&limit=8&difficulty=' + _diff);
         var list = await lr.json();
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
-            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: 'medium' }),
+            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: _diff }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
