@@ -429,11 +429,18 @@
         var iso = new Date().toISOString();
         var period = b.p === 'day' ? 'day:' + iso.slice(0, 10) : 'month:' + iso.slice(0, 7);
         var fallback = { plan: plan, used: 0, limit: b.c, remaining: b.c, period: b.p };
-        return client.from('usage_counters').select('credits').eq('period', period).maybeSingle()
-          .then(function (r) {
-            var used = (r && r.data && r.data.credits) || 0;
-            return { plan: plan, used: used, limit: b.c, remaining: Math.max(0, b.c - used), period: b.p };
-          }).catch(function () { return fallback; });
+        var uidNow = (window.__user && window.__user.id) || null;
+        var getUid = uidNow ? Promise.resolve(uidNow)
+          : client.auth.getUser().then(function (r) { return (r.data && r.data.user) ? r.data.user.id : null; }).catch(function () { return null; });
+        return getUid.then(function (uid) {
+          if (!uid) return fallback;
+          // Filter by user_id explicitly — never depend on RLS alone to scope the row.
+          return client.from('usage_counters').select('credits').eq('user_id', uid).eq('period', period).maybeSingle()
+            .then(function (r) {
+              var used = (r && r.data && r.data.credits) || 0;
+              return { plan: plan, used: used, limit: b.c, remaining: Math.max(0, b.c - used), period: b.p };
+            });
+        }).catch(function () { return fallback; });
       },
 
       // ── Rate limit ───────────────────────────────────────────
@@ -643,7 +650,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b148-saveresult-fix';
+    window.__FL_BUILD = 'b149-usage-userid-filter';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
