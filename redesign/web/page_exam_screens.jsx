@@ -178,9 +178,6 @@ function FullExamRunner() {
           <span style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase' }}>Section time</span>
           <span style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:'monospace' }}>58:14</span>
         </div>
-        <button style={{ width:36, height:36, borderRadius:9, background:'rgba(255,255,255,.1)', color:'rgba(255,255,255,.7)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          {Icon.more()}
-        </button>
       </div>
 
       {/* Section tabs */}

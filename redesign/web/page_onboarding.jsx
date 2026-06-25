@@ -409,7 +409,6 @@ function SPlan({ data, onFinish, onBack }) {
             <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:4 }}>Your first week</div>
             <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink }}>What we'll cover, day by day</div>
           </div>
-          <button style={{ fontSize:12, color:T.brand, fontWeight:700, cursor:'pointer' }}>Customise →</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:8 }}>
           {[

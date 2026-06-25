@@ -438,7 +438,6 @@ function StreakCountdownPage() {
               {v.day === 9 && <div style={{ position:'absolute', top:-1, left:-1, right:-1, height:60, background:`linear-gradient(180deg, ${v.glow}26, transparent)`, borderRadius:'18px 18px 0 0' }}/>}
               <div style={{ position:'relative', display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
                 <div style={{ width:42, height:42, borderRadius:11, background:v.glow+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{v.icon}</div>
-                <button style={{ width:24, height:24, borderRadius:6, color:T.ink5, fontSize:14, cursor:'pointer' }}>×</button>
               </div>
               <div style={{ fontSize:11, fontWeight:700, color:v.glow, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>{v.eyebrow}</div>
               <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.15, marginBottom:10 }}>{v.headline}</div>

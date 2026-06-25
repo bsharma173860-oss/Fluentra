@@ -673,7 +673,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b151-delete-account';
+    window.__FL_BUILD = 'b152-remove-dead-affordances';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

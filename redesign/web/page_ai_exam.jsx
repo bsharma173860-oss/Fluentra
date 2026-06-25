@@ -480,7 +480,7 @@ function StreakCalendarPage() {
                 {Array.from({length:7}).map((_,d) => {
                   const idx = wk*7+d;
                   const it = days[idx]?.intensity || 0;
-                  return <div key={d} title={`${it} sessions`} style={{ width:'100%', height:36, borderRadius:7, background: it===0?T.bg2:`color-mix(in oklch, ${T.brand} ${it*22}%, ${T.bg2})`, border: it>0 ? 'none' : `1px solid ${T.border}`, cursor:'pointer' }}/>;
+                  return <div key={d} title={`${it} sessions`} style={{ width:'100%', height:36, borderRadius:7, background: it===0?T.bg2:`color-mix(in oklch, ${T.brand} ${it*22}%, ${T.bg2})`, border: it>0 ? 'none' : `1px solid ${T.border}` }}/>;
                 })}
               </div>
             ))}
