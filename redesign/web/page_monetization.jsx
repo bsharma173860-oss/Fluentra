@@ -592,7 +592,7 @@ function PostExamUpsellPage() {
                 <div style={{ fontSize:12, color:T.ink3, lineHeight:1.4 }}>Billed yearly · 7-day free trial</div>
               </div>
               <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                <button onClick={() => nav('checkout')} style={{ padding:'15px 26px', background:`linear-gradient(135deg, ${t.brand} 0%, ${t.brand2 || t.brand} 100%)`, color:'#fff', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', border:'none', boxShadow:`0 8px 22px ${t.brand}55`, display:'flex', alignItems:'center', gap:8 }}>Start free trial<span>→</span></button>
+                <button onClick={() => window.payFor ? window.payFor('pro_monthly') : nav('checkout')} style={{ padding:'15px 26px', background:`linear-gradient(135deg, ${t.brand} 0%, ${t.brand2 || t.brand} 100%)`, color:'#fff', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', border:'none', boxShadow:`0 8px 22px ${t.brand}55`, display:'flex', alignItems:'center', gap:8 }}>Start free trial<span>→</span></button>
                 <button onClick={() => nav('pricing')} style={{ padding:'15px 22px', background:'transparent', color:T.ink2, borderRadius:12, fontSize:14, fontWeight:600, cursor:'pointer', border:`1px solid ${T.border}` }}>Compare plans</button>
               </div>
             </div>

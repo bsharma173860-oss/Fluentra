@@ -47,7 +47,7 @@ function MExamUnlockPageV5() {
           ))}
         </div>
 
-        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Unlock for £5</button>
+        <button onClick={()=>{ window.__checkoutItem='exam_official'; nav('checkout'); }} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Unlock for £5</button>
         <button onClick={()=>nav('exams')} style={{ width:'100%', padding:'12px', marginTop:9, fontSize:12, fontWeight:700, color:T.ink3, background:'transparent', border:'none' }}>Take a free mock instead</button>
       </MobileBody>
     </>
@@ -201,7 +201,7 @@ function MExamPreviewPageV5() {
           <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:12, color:T.ink, lineHeight:1.5 }}>"Reach a 9-day streak and the real exam unlocks — practice a little every day."</div>
         </div>
 
-        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Unlock exam · £5</button>
+        <button onClick={()=>{ window.__checkoutItem='exam_official'; nav('checkout'); }} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Unlock exam · £5</button>
       </MobileBody>
     </>
   );

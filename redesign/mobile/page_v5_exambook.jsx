@@ -61,7 +61,7 @@ function MExamBookPageV5() {
           })}
         </MCard>
 
-        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Confirm · {ex.cost}</button>
+        <button onClick={()=>{ window.__checkoutItem='exam_official'; nav('checkout'); }} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Confirm · {ex.cost}</button>
         <div style={{ textAlign:'center', fontSize:10.5, color:T.ink4, marginTop:9 }}>May {date} · {slot} · {centers[center].n.split('·')[0].trim()}</div>
       </MobileBody>
     </>

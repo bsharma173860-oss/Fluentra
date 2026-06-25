@@ -610,6 +610,9 @@
     window.__can     = function (f) { return !!window.__ent()[f]; };
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
+    // Start a specific checkout (one-time item or plan). Sets the checkout item
+    // so the checkout page shows the RIGHT thing (e.g. $5 exam, not the monthly plan).
+    window.payFor = function (item) { window.__checkoutItem = item || 'exam_official'; if (window.__nav) window.__nav('checkout'); };
     // Auth header for direct fetch() calls to /api (so usage metering can identify the user)
     window.__authHeaders = function () {
       try {
@@ -619,7 +622,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b144-exam-lang-context';
+    window.__FL_BUILD = 'b145-fix-exam-checkout';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

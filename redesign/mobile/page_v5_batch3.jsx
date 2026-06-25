@@ -307,7 +307,7 @@ function MRateLimitPageV5() {
           ))}
         </MCard>
 
-        <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, marginBottom:9 }}>Upgrade · {billing==='annual'?'$228/yr':'$24/mo'}</button>
+        <button onClick={()=>{ window.__checkoutItem='pro_monthly'; nav('checkout'); }} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40`, marginBottom:9 }}>Upgrade · {billing==='annual'?'$228/yr':'$24/mo'}</button>
         <button onClick={()=>nav('dashboard')} style={{ width:'100%', padding:'12px', fontSize:12, color:T.ink3, fontWeight:600, background:'transparent' }}>Wait for reset</button>
       </MobileBody>
     </>

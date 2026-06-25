@@ -189,7 +189,7 @@ function MExamResultsV5({ mode = 'monthly' }) {
             <div style={{ fontSize:10.5, fontWeight:800, color:'rgba(255,255,255,.75)', letterSpacing:'.16em', marginBottom:7 }}>PRO STUDENTS · 7.0 AVG</div>
             <div style={{ fontFamily:T.serif, fontSize:20, lineHeight:1.1, letterSpacing:'-.02em', marginBottom:9 }}>Close the 0.5 gap.</div>
             <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', lineHeight:1.5, marginBottom:12 }}>Pro unlocks unlimited tutor sessions, weakness-targeted drills and unlimited mocks.</div>
-            <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'11px', borderRadius:11, background:'#fff', color:T.ink, fontSize:12.5, fontWeight:700, border:'none' }}>Try Pro · 7-day free trial</button>
+            <button onClick={()=>{ window.__checkoutItem='pro_monthly'; nav('checkout'); }} style={{ width:'100%', padding:'11px', borderRadius:11, background:'#fff', color:T.ink, fontSize:12.5, fontWeight:700, border:'none' }}>Try Pro · 7-day free trial</button>
           </div>
         )}
 

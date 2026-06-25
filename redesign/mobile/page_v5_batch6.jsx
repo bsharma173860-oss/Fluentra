@@ -150,7 +150,7 @@ function MPostExamUpsellPageV5() {
             ))}
           </div>
 
-          <button onClick={()=>nav('checkout')} style={{ width:'100%', padding:'17px', borderRadius:14, background:T.ink, color:'#fff', fontSize:14.5, fontWeight:700, border:'none', boxShadow:'0 10px 26px rgba(0,0,0,.24)', cursor:'pointer', letterSpacing:'.01em' }}>Start Pro free for 7 days</button>
+          <button onClick={()=>{ window.__checkoutItem='pro_monthly'; nav('checkout'); }} style={{ width:'100%', padding:'17px', borderRadius:14, background:T.ink, color:'#fff', fontSize:14.5, fontWeight:700, border:'none', boxShadow:'0 10px 26px rgba(0,0,0,.24)', cursor:'pointer', letterSpacing:'.01em' }}>Start Pro free for 7 days</button>
           <div style={{ textAlign:'center', fontSize:10.5, color:T.ink5, marginTop:11 }}>Then $19/mo · Cancel anytime</div>
 
           <button onClick={()=>nav('dashboard')} style={{ width:'100%', padding:'14px', fontSize:12, fontWeight:600, color:T.ink4, background:'transparent', border:'none', marginTop:14, cursor:'pointer' }}>Continue free →</button>
