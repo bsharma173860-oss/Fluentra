@@ -94,6 +94,12 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' });
   }
 
+  // Usage cap: 3 credits (fail-open if not configured)
+  try {
+    var allow = await require('./_usage').meter(req, 3);
+    if (!allow.ok) return res.status(402).json({ error: 'limit', limit: true, plan: allow.plan, remaining: allow.remaining, cap: allow.limit });
+  } catch (e) {}
+
   try {
     var body = req.body || {};
     var lang = body.lang, type = body.type;

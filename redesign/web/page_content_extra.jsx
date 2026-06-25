@@ -16,7 +16,7 @@ function LessonDetailPage() {
   React.useEffect(function () {
     var cancelled = false; setLoading(true); setErr(false);
     setIdx(0); setPicked(null); setCorrectN(0); setDone(false);
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' },
+    fetch('/api/generate-content', { method:'POST', headers:Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
       body: JSON.stringify({ lang: lang, type:'vocab', difficulty:'medium', topic: topic.title }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {

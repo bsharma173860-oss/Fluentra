@@ -177,7 +177,7 @@ function AISpeakingSession() {
       });
       const resp = await fetch('/api/speaking-eval', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
         body: JSON.stringify({ audioBase64: audioBase64, mimeType: 'audio/webm', exam: examName, part: topic, question: aiPrompt, targetLevel: 'B2', speak: true }),
       });
       const data = await resp.json();

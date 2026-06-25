@@ -357,7 +357,7 @@ function ReadingSession() {
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
         if (!item) {
           var gr = await fetch('/api/generate-content', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
             body: JSON.stringify({ lang: lang, type: 'reading', difficulty: 'medium' }),
           });
           var gen = await gr.json();
@@ -515,7 +515,7 @@ function ListeningSession() {
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
         if (!item) {
           var gr = await fetch('/api/generate-content', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
             body: JSON.stringify({ lang: lang, type: 'listening', difficulty: 'medium' }),
           });
           var gen = await gr.json();
@@ -960,7 +960,7 @@ function WritingSession() {
     try {
       const lang = window.__langCode || (window.__userLanguages && window.__userLanguages[0] && window.__userLanguages[0].code) || 'en';
       res = await window.FL.gradeWriting(task, text, lang);
-      if (res && res.locked) { setGrading(false); if (window.__upgrade) window.__upgrade('writing'); return; }
+      if (res && (res.locked || res.limit)) { setGrading(false); if (window.__upgrade) window.__upgrade(res.limit ? 'usage' : 'writing'); return; }
       if (res && !res.error) setFeedback(res);
     } catch(e) { /* non-blocking */ }
     setGrading(false);

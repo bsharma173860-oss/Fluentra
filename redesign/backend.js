@@ -415,9 +415,25 @@
         }
         return fetch('/api/grade-writing', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
           body: JSON.stringify({ task: task, text: text, lang: langCode || 'en' }),
         }).then(function (r) { return r.json(); });
+      },
+
+      // Read the signed-in user's current usage (for "X left" UI). RLS lets a
+      // user read only their own counter row.
+      usage: function () {
+        var plan = (window.__user && window.__user.plan) || 'free';
+        var B = { free: { p: 'day', c: 10 }, pro: { p: 'month', c: 800 }, max: { p: 'month', c: 4000 } };
+        var b = B[plan] || B.free;
+        var iso = new Date().toISOString();
+        var period = b.p === 'day' ? 'day:' + iso.slice(0, 10) : 'month:' + iso.slice(0, 7);
+        var fallback = { plan: plan, used: 0, limit: b.c, remaining: b.c, period: b.p };
+        return client.from('usage_counters').select('credits').eq('period', period).maybeSingle()
+          .then(function (r) {
+            var used = (r && r.data && r.data.credits) || 0;
+            return { plan: plan, used: used, limit: b.c, remaining: Math.max(0, b.c - used), period: b.p };
+          }).catch(function () { return fallback; });
       },
 
       // ── Rate limit ───────────────────────────────────────────
@@ -603,7 +619,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b138-usage-metering-tutor';
+    window.__FL_BUILD = 'b139-metering-all-endpoints';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
