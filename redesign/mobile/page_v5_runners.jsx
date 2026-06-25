@@ -46,9 +46,24 @@ function MExamRunnerV5({ mode = 'monthly' }) {
     : m.color === 'writing'  ? wtext.trim().length >= 20
     : m.color === 'speaking' ? !!mic.done
     : true;
+  const [grading, setGrading] = React.useState(false);
+  const _record = (module, score) => {
+    _secRef.current = _secRef.current.concat([{ module: module, score: score }]);
+    setCompleted(prev => ({ ...prev, [step]: true }));
+    if (step < modules.length - 1) setStep(step + 1);
+  };
   const goSubmit = () => {
-    if (!_answered) return;
-    let score = null;   // null = captured but not auto-gradable here (writing/speaking -> AI grading, Phase 2)
+    if (!_answered || grading) return;
+    // Writing -> real AI grade (server only meters, no tier gate; exam-takers paid).
+    if (m.color === 'writing') {
+      setGrading(true);
+      fetch('/api/grade-writing', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ text: wtext, task: 'task2', lang: code, exam: ex.name || ex.short || 'IELTS' }) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { var band = (j && typeof j.overall_band === 'number') ? j.overall_band : null; setGrading(false); _record('writing', band != null ? Math.round(band / 9 * 100) : null); })
+        .catch(function () { setGrading(false); _record('writing', null); });
+      return;
+    }
+    let score = null;   // speaking -> AI grading is the next step
     if (m.color === 'reading' || m.color === 'listening') {
       var gradable = _qs.filter(function (q) { return typeof q.answer === 'number'; });
       if (gradable.length) {
@@ -56,9 +71,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
         score = Math.round((correct / gradable.length) * 100);
       }
     }
-    _secRef.current = _secRef.current.concat([{ module: m.color, score: score }]);
-    setCompleted(prev => ({ ...prev, [step]: true }));
-    if (step < modules.length - 1) setStep(step + 1);
+    _record(m.color, score);
   };
   const finishExam = () => {
     const secsArr = _secRef.current;
@@ -162,7 +175,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
         </MCard>
 
         {!allDone ? (
-          <button onClick={goSubmit} disabled={!_answered} style={{ width:'100%', padding:'14px', borderRadius:13, background:_answered ? T.brandGrad : T.bg3, color:_answered ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow:_answered ? `0 6px 16px ${T.brand}40` : 'none', opacity:_answered ? 1 : .7 }}>{_answered ? 'Submit · next module' : (m.color==='speaking' ? 'Record your answer to continue' : m.color==='writing' ? 'Write your answer to continue' : 'Choose an answer to continue')}</button>
+          <button onClick={goSubmit} disabled={!_answered || grading} style={{ width:'100%', padding:'14px', borderRadius:13, background:(_answered && !grading) ? T.brandGrad : T.bg3, color:(_answered && !grading) ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow:(_answered && !grading) ? `0 6px 16px ${T.brand}40` : 'none', opacity:(_answered && !grading) ? 1 : .7 }}>{grading ? 'Grading your writing…' : _answered ? 'Submit · next module' : (m.color==='speaking' ? 'Record your answer to continue' : m.color==='writing' ? 'Write your answer to continue' : 'Choose an answer to continue')}</button>
         ) : (
           <button onClick={finishExam} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Finish · see scores</button>
         )}
@@ -222,7 +235,7 @@ function MExamResultsV5({ mode = 'monthly' }) {
 
         <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>AI FEEDBACK</div>
         <MCard style={{ padding:14, marginBottom:14 }}>
-          <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:11 }}>{_ex ? (_gradedAll ? 'Reading and Listening were auto-scored from your answers. Writing and Speaking are reviewed by AI \u2014 your full feedback report follows shortly.' : 'Reading and Listening were scored from your answers above. Writing and Speaking grading is being added \u2014 those bands show once AI review is wired in.') : 'Take the exam to get a scored result here.'}</div>
+          <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:11 }}>{_ex ? (_gradedAll ? 'Reading, Listening and Writing were scored from your work; Speaking is reviewed by AI \u2014 your full feedback follows shortly.' : 'Reading, Listening and Writing are scored for real. Speaking grading is being added \u2014 its band shows once AI review is wired in.') : 'Take the exam to get a scored result here.'}</div>
           {_ex && <div style={{ fontSize:11, color:T.ink4 }}>{_ex.gradedCount} of {_ex.total} sections auto-scored.</div>}
         </MCard>
 
