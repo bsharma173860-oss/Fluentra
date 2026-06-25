@@ -673,7 +673,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b161-cleanup-deadcode';
+    window.__FL_BUILD = 'b162-remove-exambookpage';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
