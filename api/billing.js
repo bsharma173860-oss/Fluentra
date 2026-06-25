@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+  const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
   const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
   if (!SB_URL || !SB_KEY) return res.status(500).json({ error: 'Missing SUPABASE_URL / SUPABASE_SERVICE_KEY' });
   if (!STRIPE_KEY) return res.status(500).json({ error: 'Missing STRIPE_SECRET_KEY' });

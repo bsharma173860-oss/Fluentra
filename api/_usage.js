@@ -27,7 +27,7 @@ function periodKey(kind) {
 //  metered:false -> not enforced (not configured / no token / error) -> allow
 async function meter(req, cost) {
   const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+  const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
   if (!SB_URL || !SB_KEY) return { ok: true, metered: false };
 
   try {

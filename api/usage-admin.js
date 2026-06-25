@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
 
   const ADMIN = process.env.ADMIN_KEY || process.env.ADMIN_SECRET;
   const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+  const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
   if (!ADMIN) return res.status(500).json({ error: 'ADMIN_KEY/ADMIN_SECRET not set on the server' });
   if (!SB_URL || !SB_KEY) return res.status(500).json({ error: 'SUPABASE_URL / SUPABASE_SERVICE_KEY missing' });
 
@@ -38,7 +38,15 @@ module.exports = async function handler(req, res) {
     const pmap = {};
     profs.forEach(function (p) { pmap[p.id] = p; });
 
-    const users = usage.map(function (u) {
+    // A user can have BOTH a day row (while free) and a month row (after upgrading)
+    // in the same calendar period. Count only the row that matches their CURRENT
+    // plan's period (free -> day, paid -> month) so usage isn't double-counted.
+    const usageRel = usage.filter(function (u) {
+      const pl = (pmap[u.user_id] || {}).plan || 'free';
+      const per = String(u.period || '');
+      return pl === 'free' ? per.indexOf('day:') === 0 : per.indexOf('month:') === 0;
+    });
+    const users = usageRel.map(function (u) {
       const p = pmap[u.user_id] || {};
       const plan = p.plan || 'free';
       const credits = Number(u.credits) || 0;
