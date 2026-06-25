@@ -18,6 +18,14 @@ module.exports = async function handler(req, res) {
   var ANTHROPIC = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC) return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' });
 
+  // Usage cap: 1 credit per tutor message (fail-open if not configured)
+  try {
+    var meter = require('./_usage').meter;
+    var allow = await meter(req, 1);
+    if (!allow.ok) return res.status(402).json({ error: 'limit', limit: true, plan: allow.plan, remaining: allow.remaining, cap: allow.limit });
+  } catch (e) { /* fail-open */ }
+
+
   try {
     var body = req.body || {};
     var raw = Array.isArray(body.messages) ? body.messages : [];

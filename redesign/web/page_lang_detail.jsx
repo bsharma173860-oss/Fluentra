@@ -415,13 +415,14 @@ function TutorTab({ lang }) {
     setInput('');
     setThinking(true);
     fetch('/api/tutor', {
-      method:'POST', headers:{ 'Content-Type':'application/json' },
+      method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
       body: JSON.stringify({
         messages: history.map(function (m) { return { role: m.role === 'ai' ? 'assistant' : m.role, content: m.text }; }),
         lang: lang.english,
         context: 'The learner is in the ' + lang.english + ' language hub. Reply in ' + lang.english + ' where natural, with English glosses for new words.'
       }),
     }).then(function (r) { return r.json(); }).then(function (data) {
+      if (data && data.limit) { setThinking(false); if (window.__upgrade) window.__upgrade('tutor'); return; }
       if (data && data.error) throw new Error(data.error);
       setMsgs(function (m) { return m.concat({ role:'ai', text: (data && data.reply) || '…' }); });
       setThinking(false);

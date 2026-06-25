@@ -547,8 +547,9 @@ function MTutorPageV5() {
     var history = msgs.concat([userMsg]).map(function (m) { return { role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }; });
     setMsgs(function (m) { return m.concat([userMsg]); }); setInput('');
     try {
-      var resp = await fetch('/api/tutor', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ messages: history, lang: (window.__langCode || 'en') }) });
+      var resp = await fetch('/api/tutor', { method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ messages: history, lang: (window.__langCode || 'en') }) });
       var data = await resp.json();
+      if (data && data.limit) { if (window.__upgrade) window.__upgrade('tutor'); return; }
       if (!resp.ok || data.error) throw new Error(data.error || 'tutor error');
       setMsgs(function (m) { return m.concat([{ role:'ai', text: data.reply || '\u2026', t:'now' }]); });
     } catch (e) { setMsgs(function (m) { return m.concat([{ role:'ai', text:'Sorry \u2014 I had trouble responding. Please try again.', t:'now' }]); }); }

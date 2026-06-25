@@ -594,8 +594,16 @@
     window.__can     = function (f) { return !!window.__ent()[f]; };
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
+    // Auth header for direct fetch() calls to /api (so usage metering can identify the user)
+    window.__authHeaders = function () {
+      try {
+        var raw = localStorage.getItem('sb-kbjqmhviuryakfzhhoaz-auth-token');
+        var t = raw ? (JSON.parse(raw).access_token || null) : null;
+        return t ? { Authorization: 'Bearer ' + t } : {};
+      } catch (e) { return {}; }
+    };
 
-    window.__FL_BUILD = 'b137-pricing-copy-usage';
+    window.__FL_BUILD = 'b138-usage-metering-tutor';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

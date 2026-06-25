@@ -177,10 +177,11 @@ function TutorPage() {
     setThinking(true);
     try {
       const resp = await fetch('/api/tutor', {
-        method:'POST', headers:{ 'Content-Type':'application/json' },
+        method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
         body: JSON.stringify({ messages: history, lang: chatLang, context: context }),
       });
       const data = await resp.json();
+      if (data && data.limit) { setThinking(false); if (window.__upgrade) window.__upgrade('tutor'); return; }
       if (!resp.ok || data.error) throw new Error(data.error || 'tutor error');
       setMsgs(m => [...m, { role:'ai', text: data.reply || '…', when:'just now' }]);
     } catch (e) {

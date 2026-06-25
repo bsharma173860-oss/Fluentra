@@ -48,9 +48,10 @@ function TutorCallPage() {
   function askTutor(history) {
     setPhase('thinking');
     return fetch('/api/tutor', {
-      method:'POST', headers:{ 'Content-Type':'application/json' },
+      method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
       body: JSON.stringify({ messages: history, lang: code, context: 'Spoken voice call. Keep replies short and conversational (1-3 sentences), since they are read aloud. Gently correct major mistakes. Reply in ' + (langObj.english || code) + '.' }),
     }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.limit) { setPhase('idle'); if (window.__upgrade) window.__upgrade('tutor'); return; }
       var reply = (d && d.reply) || '';
       if (!reply) { setPhase('idle'); return; }
       var next = history.concat([{ role:'assistant', content: reply }]);
