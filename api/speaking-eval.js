@@ -29,9 +29,9 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Missing OPENAI_API_KEY or ANTHROPIC_API_KEY env var' });
   }
 
-  // Usage cap: 3 credits (fail-open if not configured)
+  // Usage cap: 5 credits — Whisper + Claude + TTS makes speaking the priciest action
   try {
-    var allow = await require('./_usage').meter(req, 3);
+    var allow = await require('./_usage').meter(req, 5);
     if (!allow.ok) return res.status(402).json({ error: 'limit', limit: true, plan: allow.plan, remaining: allow.remaining, cap: allow.limit });
   } catch (e) {}
 

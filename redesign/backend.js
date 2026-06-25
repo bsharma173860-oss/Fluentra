@@ -619,7 +619,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b139-metering-all-endpoints';
+    window.__FL_BUILD = 'b140-speaking-5-credits';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
