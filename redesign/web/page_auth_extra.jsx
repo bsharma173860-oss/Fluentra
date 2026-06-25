@@ -104,4 +104,4 @@ function ResetPasswordPage() {
   );
 }
 
-Object.assign(window, { OTPPage, ForgotPwPage, ResetPasswordPage });
+Object.assign(window, { ForgotPwPage, ResetPasswordPage });

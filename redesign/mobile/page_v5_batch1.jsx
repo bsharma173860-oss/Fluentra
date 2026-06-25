@@ -252,5 +252,5 @@ function MPhrasebookPageV5() {
 }
 
 Object.assign(window, {
-  MOTPPageV5, MForgotPwPageV5, MLessonDetailV5, MArticleReaderPageV5, MPhrasebookPageV5,
+  MForgotPwPageV5, MLessonDetailV5, MArticleReaderPageV5, MPhrasebookPageV5,
 });

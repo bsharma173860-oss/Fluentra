@@ -595,7 +595,7 @@
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
 
-    window.__FL_BUILD = 'b135-gates-speak-write-exam';
+    window.__FL_BUILD = 'b136-fix-blank-dangling-exports';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

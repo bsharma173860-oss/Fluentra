@@ -98,4 +98,4 @@ function MVocabStudy({ deck, words, onExit }) {
   );
 }
 
-Object.assign(window, { MVocabPage });
+Object.assign(window, { MVocabStudy });

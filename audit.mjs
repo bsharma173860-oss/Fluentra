@@ -194,6 +194,28 @@ for (const f of files) {
   }
 }
 
+// ── INVARIANT 9: window exports must reference DEFINED names ──────────────
+// Object.assign(window, { Foo }) where Foo is undefined throws a ReferenceError
+// at bundle-eval time, which halts the whole bundle -> const MOBILE_PAGES/etc.
+// never initialize -> blank app. This is the bug class that caused the blank
+// screen (MOTPPageV5/MVocabPage/OTPPage). HIGH + build-blocking.
+const allSrc = files.map(f => f.src).join('\n');
+const declared = new Set();
+for (const m of allSrc.matchAll(/\b(?:function|const|let|var|class)\s+([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
+for (const m of allSrc.matchAll(/\bconst\s*\{([^}]+)\}/g))
+  m[1].split(',').forEach(s => { const n = s.split(':').pop().trim().split('=')[0].trim(); if (n) declared.add(n); });
+const JS_GLOBALS = new Set(['Object','window','React','ReactDOM','Math','JSON','Array','String','Number','Boolean','Date','Promise','Map','Set','console','document','navigator']);
+for (const f of files) {
+  for (const blk of f.src.matchAll(/Object\.assign\(window,\s*\{([\s\S]*?)\}\s*\)/g)) {
+    const names = blk[1].split(',').map(x => x.trim()).filter(Boolean)
+      .map(x => x.includes(':') ? x.split(':')[1].trim() : x)
+      .filter(x => /^[A-Za-z_$][\w$]*$/.test(x));
+    for (const n of names)
+      if (!declared.has(n) && !JS_GLOBALS.has(n))
+        HIGH.push(`DANGLING EXPORT  ${f.name}:${lineOf(f.src, blk.index)}  window export '${n}' is not defined → crashes the whole bundle (blank app)`);
+  }
+}
+
 // ── REPORT ──
 const stamp = (backend.match(/__FL_BUILD\s*=\s*['"]([^'"]+)/) || [])[1] || '?';
 console.log(`\n  Fluentra connectedness audit  ·  build ${stamp}  ·  ${files.length} files, ${routes.size} routes, ${defined.size} components\n`);
