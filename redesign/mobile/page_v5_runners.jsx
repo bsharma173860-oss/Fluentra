@@ -21,6 +21,10 @@ function MExamRunnerV5({ mode = 'monthly' }) {
   const fmt = (s) => s >= 3600 ? `${Math.floor(s/3600)}h ${String(Math.floor((s%3600)/60)).padStart(2,'0')}m` : `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   const _low = secs <= 300, _crit = secs <= 60, _up = secs <= 0;
   const _tc = (_up || _crit) ? '#F2555A' : _low ? '#F5B544' : '#5BD17A';
+  const [picked, setPicked] = React.useState(null);
+  const [wtext, setWtext]   = React.useState('');
+  const _secRef = React.useRef([]);
+  React.useEffect(()=>{ setPicked(null); setWtext(''); }, [step]);
   const m = modules[step] || modules[0];
   const c = colorMap[m.color] || T.listening;
   const done = Object.keys(completed).length;
@@ -36,9 +40,31 @@ function MExamRunnerV5({ mode = 'monthly' }) {
     (m.color === 'speaking') ? (_c.prompt || '') : ''
   ) : null;
 
+  const _answered = (m.color === 'reading' || m.color === 'listening') ? picked != null
+    : m.color === 'writing'  ? wtext.trim().length >= 20
+    : m.color === 'speaking' ? !!mic.done
+    : true;
   const goSubmit = () => {
+    if (!_answered) return;
+    let score = null;   // null = captured but not auto-gradable here (writing/speaking -> AI grading, Phase 2)
+    if ((m.color === 'reading' || m.color === 'listening') && _firstQ && typeof _firstQ.answer === 'number') {
+      score = (picked === _firstQ.answer) ? 100 : 0;
+    }
+    _secRef.current = _secRef.current.concat([{ module: m.color, score: score }]);
     setCompleted(prev => ({ ...prev, [step]: true }));
     if (step < modules.length - 1) setStep(step + 1);
+  };
+  const finishExam = () => {
+    const secsArr = _secRef.current;
+    const graded = secsArr.filter(x => typeof x.score === 'number');
+    const overall = graded.length ? Math.round(graded.reduce((a, x) => a + x.score, 0) / graded.length) : null;
+    window.__lastExam = { sections: secsArr, overall: overall, gradedCount: graded.length, total: modules.length, lang: code };
+    try {
+      if (window.__authHeaders && overall != null) {
+        fetch('/api/save-result', { method:'POST', headers: Object.assign({ 'Content-Type':'application/json' }, window.__authHeaders()), body: JSON.stringify({ lang: code, score: overall, detail: { module:'mock_exam', sections: secsArr, unit:'/100' } }) }).catch(()=>{});
+      }
+    } catch (e) {}
+    nav(mode === 'monthly' ? 'monthly_results' : mode === 'mock' ? 'mock_results' : mode === 'practice' ? 'practice_results' : 'exam_results');
   };
 
   return (
@@ -104,24 +130,28 @@ function MExamRunnerV5({ mode = 'monthly' }) {
             <button onClick={()=>window.flSpeak && window.flSpeak(_c.passage, code)} style={{ marginBottom:12, padding:'9px 14px', borderRadius:10, background:c.bg, color:c.c, fontSize:12, fontWeight:700, border:`1px solid ${c.c}33`, display:'inline-flex', alignItems:'center', gap:6 }}>{Icon.play ? Icon.play({width:12,height:12}) : '▶'} Play audio</button>
           )}
           {m.color === 'writing' && (
-            <textarea placeholder="Start writing…" style={{ width:'100%', minHeight:120, padding:'11px 12px', borderRadius:11, background:T.bg2, border:`1px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:T.serif, lineHeight:1.5, resize:'vertical', outline:'none' }}/>
+            <>
+              <textarea value={wtext} onChange={e=>setWtext(e.target.value)} placeholder="Start writing…" style={{ width:'100%', minHeight:120, padding:'11px 12px', borderRadius:11, background:T.bg2, border:`1px solid ${wtext.trim().length>=20 ? c.c : T.border}`, fontSize:13, color:T.ink, fontFamily:T.serif, lineHeight:1.5, resize:'vertical', outline:'none' }}/>
+              <div style={{ fontSize:10.5, color: wtext.trim().length>=20 ? c.c : T.ink4, marginTop:6, textAlign:'right' }}>{wtext.trim() ? wtext.trim().split(/\s+/).length : 0} words{wtext.trim().length<20 && ' \u00b7 write a bit more to submit'}</div>
+            </>
           )}
           {m.color === 'speaking' && (
             <button onClick={mic.toggle} style={{ width:'100%', padding:'14px', borderRadius:11, background:c.bg, color:c.c, fontSize:12.5, fontWeight:700, border:`1px solid ${c.c}33`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'} {mic.recording ? ('Recording ' + mic.time + ' · tap to stop') : mic.done ? ('Recorded ' + mic.time + ' · tap to redo') : 'Tap to record'}</button>
           )}
           {(m.color === 'reading' || m.color === 'listening') && (
             <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-              {_opts.map((o, i) => (
-                <button key={i} style={{ padding:'10px 12px', borderRadius:10, background:T.bg2, border:`1px solid ${T.hairline}`, fontSize:12, color:T.ink, textAlign:'left' }}>{o}</button>
-              ))}
+              {_opts.map((o, i) => {
+                const _sel = picked === i;
+                return <button key={i} onClick={()=>setPicked(i)} style={{ padding:'10px 12px', borderRadius:10, background:_sel ? c.bg : T.bg2, border:`1px solid ${_sel ? c.c : T.hairline}`, fontSize:12, color:_sel ? c.c : T.ink, fontWeight:_sel ? 700 : 400, textAlign:'left', display:'flex', alignItems:'center', gap:9 }}><span style={{ width:16, height:16, borderRadius:8, flexShrink:0, border:`1.5px solid ${_sel ? c.c : T.border}`, background:_sel ? c.c : 'transparent' }}/>{o}</button>;
+              })}
             </div>
           )}
         </MCard>
 
         {!allDone ? (
-          <button onClick={goSubmit} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Submit · next module</button>
+          <button onClick={goSubmit} disabled={!_answered} style={{ width:'100%', padding:'14px', borderRadius:13, background:_answered ? T.brandGrad : T.bg3, color:_answered ? '#fff' : T.ink5, fontSize:13.5, fontWeight:700, boxShadow:_answered ? `0 6px 16px ${T.brand}40` : 'none', opacity:_answered ? 1 : .7 }}>{_answered ? 'Submit · next module' : (m.color==='speaking' ? 'Record your answer to continue' : m.color==='writing' ? 'Write your answer to continue' : 'Choose an answer to continue')}</button>
         ) : (
-          <button onClick={()=>nav(mode === 'monthly' ? 'monthly_results' : mode === 'mock' ? 'mock_results' : mode === 'practice' ? 'practice_results' : 'exam_results')} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Finish · see scores</button>
+          <button onClick={finishExam} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Finish · see scores</button>
         )}
       </MobileBody>
     </>
@@ -133,18 +163,18 @@ function MExamResultsV5({ mode = 'monthly' }) {
   const code = window.__langCode || 'en';
   const lang = (typeof LANGUAGES !== 'undefined') ? (LANGUAGES.find(l => l.code === code) || LANGUAGES[0]) : { code:'en', english:'English' };
   const ex = (typeof examFor === 'function') ? examFor(lang.code) : { name:'IELTS', short:'IELTS' };
-  const _R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; });
-  const _lastOf = function (mod) { for (var i = _R.length - 1; i >= 0; i--) { if (_R[i].module === mod) return _R[i]; } return null; };
-  const _bandOf = function (mod, fb) { var r = _lastOf(mod); return r ? +(r.score / 100 * 9).toFixed(1) : fb; };
-  const _recent = _R.slice(-4);
-  const _overallNum = _recent.length ? (_recent.reduce(function (a, r) { return a + r.score; }, 0) / _recent.length) / 100 * 9 : null;
-  const overall = mode === 'practice' ? 'B2.1' : (_overallNum != null ? _overallNum.toFixed(1) : '6.5');
+  const _ex = (typeof window !== 'undefined' && window.__lastExam) ? window.__lastExam : null;
+  const _scoreOf = function (mod) { if (!_ex || !_ex.sections) return null; for (var i = 0; i < _ex.sections.length; i++) { if (_ex.sections[i].module === mod && typeof _ex.sections[i].score === 'number') return _ex.sections[i].score; } return null; };
+  const _bandOf = function (mod) { var sc = _scoreOf(mod); return sc == null ? null : +(sc / 100 * 9).toFixed(1); };
+  const _overallNum = (_ex && _ex.overall != null) ? (_ex.overall / 100 * 9) : null;
+  const overall = _overallNum != null ? _overallNum.toFixed(1) : '\u2014';
+  const _gradedAll = _ex && _ex.gradedCount === _ex.total;
   const tag = mode === 'monthly' ? 'OFFICIAL · BAND SCORE' : mode === 'mock' ? 'MOCK · AI-GRADED' : mode === 'practice' ? 'PRACTICE · CEFR' : 'YOUR RESULT';
   const breakdown = [
-    { l:'Listening', v:_bandOf('listening', 7.0), max:9, c:'#5A9C7A' },
-    { l:'Reading',   v:_bandOf('reading', 6.5),   max:9, c:T.brand },
-    { l:'Writing',   v:_bandOf('writing', 6.0),   max:9, c:'#E0A23A' },
-    { l:'Speaking',  v:_bandOf('speaking', 6.5),  max:9, c:'#7C5BD6' },
+    { l:'Listening', v:_bandOf('listening'), max:9, c:'#5A9C7A' },
+    { l:'Reading',   v:_bandOf('reading'),   max:9, c:T.brand },
+    { l:'Writing',   v:_bandOf('writing'),   max:9, c:'#E0A23A' },
+    { l:'Speaking',  v:_bandOf('speaking'),  max:9, c:'#7C5BD6' },
   ];
   const upsell = mode === 'monthly' || mode === 'mock';
   return (
@@ -168,10 +198,10 @@ function MExamResultsV5({ mode = 'monthly' }) {
             <div key={i} style={{ marginTop: i ? 11 : 0 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5 }}>
                 <span style={{ fontSize:12, fontWeight:600, color:T.ink }}>{s.l}</span>
-                <span style={{ fontFamily:T.serif, fontSize:14, color:s.c, letterSpacing:'-.02em' }}>{s.v}</span>
+                <span style={{ fontFamily:T.serif, fontSize:14, color:s.v==null ? T.ink5 : s.c, letterSpacing:'-.02em' }}>{s.v==null ? '\u2014' : s.v}</span>
               </div>
               <div style={{ height:6, borderRadius:3, background:T.bg2, overflow:'hidden' }}>
-                <div style={{ width:`${(s.v/s.max)*100}%`, height:'100%', background:s.c, borderRadius:3 }}/>
+                <div style={{ width:`${s.v==null ? 0 : (s.v/s.max)*100}%`, height:'100%', background:s.c, borderRadius:3 }}/>
               </div>
             </div>
           ))}
@@ -179,12 +209,8 @@ function MExamResultsV5({ mode = 'monthly' }) {
 
         <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>AI FEEDBACK</div>
         <MCard style={{ padding:14, marginBottom:14 }}>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:11 }}>"Strong fluency in speaking. Reading speed cost you 0.5 — practice scanning longer passages. Writing essays would benefit from more varied connectors."</div>
-          <div style={{ display:'flex', gap:5 }}>
-            <span style={{ fontSize:10, fontWeight:700, color:'#5A9C7A', padding:'3px 8px', borderRadius:99, background:'#5A9C7A1a' }}>+ Fluency</span>
-            <span style={{ fontSize:10, fontWeight:700, color:T.brand, padding:'3px 8px', borderRadius:99, background:T.brandLight }}>− Speed</span>
-            <span style={{ fontSize:10, fontWeight:700, color:'#E0A23A', padding:'3px 8px', borderRadius:99, background:'#E0A23A1a' }}>± Range</span>
-          </div>
+          <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:11 }}>{_ex ? (_gradedAll ? 'Reading and Listening were auto-scored from your answers. Writing and Speaking are reviewed by AI \u2014 your full feedback report follows shortly.' : 'Reading and Listening were scored from your answers above. Writing and Speaking grading is being added \u2014 those bands show once AI review is wired in.') : 'Take the exam to get a scored result here.'}</div>
+          {_ex && <div style={{ fontSize:11, color:T.ink4 }}>{_ex.gradedCount} of {_ex.total} sections auto-scored.</div>}
         </MCard>
 
         {upsell && (
