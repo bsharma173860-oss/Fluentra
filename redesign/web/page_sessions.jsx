@@ -746,7 +746,7 @@ function SpeakingSession() {
     try {
       var stream = await navigator.mediaDevices.getUserMedia({ audio:true });
       streamRef.current = stream;
-      var mr = new MediaRecorder(stream);
+      var mr = new MediaRecorder(stream, _recorderOpts());
       chunksRef.current = [];
       mr.ondataavailable = function(e){ if (e.data && e.data.size) chunksRef.current.push(e.data); };
       mr.onstop = function(){ handleEvaluate(new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' })); };
@@ -760,6 +760,7 @@ function SpeakingSession() {
     _stopTracks();
     try {
       var b64 = await new Promise(function(resolve,reject){ var fr=new FileReader(); fr.onload=function(){ resolve(String(fr.result).split(',')[1]); }; fr.onerror=reject; fr.readAsDataURL(blob); });
+      if (b64 && b64.length > 5000000) { setEvalErr('That recording is too long to evaluate \u2014 please keep it under ~40 seconds and try again.'); setPhase('prep'); return; }
       var lang = window.__langCode || 'en';
       var ex = (typeof examFor === 'function') ? examFor(lang) : { short:'IELTS' };
       var token = _tok();

@@ -618,6 +618,18 @@ function langTheme(code) { return T[code] || { bg:T.bg2, accent:T.ink, accentLig
 // Real microphone recording for "Tap to record" buttons (MediaRecorder).
 // Returns { recording, time, done, toggle } — the button toggles record/stop
 // and shows a live timer; the captured audio blob is kept on the ref.
+// Keep recordings small (speech only) so the base64 body stays well under the 4.5MB
+// request limit even at 45s: Opus @ 32kbps is ~4KB/s -> ~180KB for 45s.
+function _recorderOpts() {
+  try {
+    var t = 'audio/webm;codecs=opus';
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) {
+      return { mimeType: t, audioBitsPerSecond: 32000 };
+    }
+  } catch (e) {}
+  return {};
+}
+
 function useMicRecorder() {
   const [recording, setRecording] = React.useState(false);
   const [seconds, setSeconds] = React.useState(0);
@@ -636,7 +648,7 @@ function useMicRecorder() {
       alert('Recording is not supported on this browser.'); return;
     }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-      const mr = new MediaRecorder(stream);
+      const mr = new MediaRecorder(stream, _recorderOpts());
       st.rec = mr; st.chunks = [];
       mr.ondataavailable = function (e) { if (e.data && e.data.size) st.chunks.push(e.data); };
       mr.onstop = function () {

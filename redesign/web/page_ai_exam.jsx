@@ -150,7 +150,7 @@ function AISpeakingSession() {
     setErr('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      const mr = new MediaRecorder(stream, _recorderOpts());
       chunksRef.current = [];
       mr.ondataavailable = function (e) { if (e.data && e.data.size) chunksRef.current.push(e.data); };
       mr.onstop = function () { stream.getTracks().forEach(function (t) { t.stop(); }); evaluateAnswer(); };
