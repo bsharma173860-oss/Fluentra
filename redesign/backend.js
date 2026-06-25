@@ -34,25 +34,37 @@
       (document.body || document.documentElement).appendChild(box);
       return box;
     }
+    var active = {};   // key -> toast record (dedup)
+    var MAX = 3;       // cap concurrent toasts
     window.addEventListener('fl-error', function (e) {
       var d = (e && e.detail) || {};
       var scope = d.scope || 'app';
       var msg = d.message || 'Something went wrong.';
       try { console.error('[FL error]', scope, msg); } catch (x) {}
+      var key = scope + '|' + msg;
+      var b = ensureBox();
+      // Dedup: same message already on screen -> bump its count and reset its timer.
+      if (active[key]) { active[key].count++; active[key].render(); active[key].arm(); return; }
+      // Cap: at the limit, dismiss the oldest before adding a new one.
+      var keys = Object.keys(active);
+      if (keys.length >= MAX) { active[keys[0]].kill(); }
       var el = document.createElement('div');
       el.style.cssText = 'pointer-events:auto;cursor:pointer;max-width:340px;background:#2A1518;color:#FFE9EC;border:1px solid #7A2230;border-radius:12px;padding:9px 13px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13px;line-height:1.4;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;';
       var tag = document.createElement('div');
       tag.style.cssText = 'font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-bottom:1px;';
-      tag.textContent = '\u26A0 ' + (LABEL[scope] || scope);
       var bodyEl = document.createElement('div');
-      bodyEl.textContent = String(msg).slice(0, 200);
       el.appendChild(tag); el.appendChild(bodyEl);
-      var b = ensureBox(); b.appendChild(el);
+      b.appendChild(el);
+      var rec = {
+        count: 1, timer: null,
+        render: function () { tag.textContent = '\u26A0 ' + (LABEL[scope] || scope) + (rec.count > 1 ? ('  \u00D7' + rec.count) : ''); bodyEl.textContent = String(msg).slice(0, 200); },
+        arm: function () { if (rec.timer) clearTimeout(rec.timer); rec.timer = setTimeout(rec.kill, 6500); },
+        kill: function () { if (!active[key]) return; delete active[key]; if (rec.timer) clearTimeout(rec.timer); el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220); }
+      };
+      active[key] = rec; rec.render();
       requestAnimationFrame(function () { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-      var killed = false;
-      function kill() { if (killed) return; killed = true; el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220); }
-      el.addEventListener('click', kill);
-      setTimeout(kill, 6500);
+      el.addEventListener('click', rec.kill);
+      rec.arm();
     });
     window.__flTestError = function (m) { window.__flReportError('save', m || 'Test error — the toast is working.'); };
   })();
@@ -710,7 +722,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b169-error-toast';
+    window.__FL_BUILD = 'b170-mic-cleanup-toast-cap';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

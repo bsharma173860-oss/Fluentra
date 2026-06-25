@@ -725,6 +725,15 @@ function SpeakingSession() {
   function _tok(){ return window.__authToken ? window.__authToken() : null; }
   function _stopTracks(){ if (streamRef.current){ streamRef.current.getTracks().forEach(function(t){ t.stop(); }); streamRef.current=null; } }
 
+  // Free the mic on unmount/abandon: if the user navigates away mid-recording, stop the
+  // recorder and release the stream so the browser's mic indicator turns off.
+  React.useEffect(function () {
+    return function () {
+      try { if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); } catch (e) {}
+      _stopTracks();
+    };
+  }, []);
+
   async function startRecording(){
     setEvalErr(''); setEvalResult(null);
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined'){ setEvalErr('Recording is not supported in this browser.'); return; }
