@@ -23,6 +23,12 @@ function MEchoCard() {
   const [duration, setDuration] = useStateMEcho(0);
   const timerRef = useRefMEcho(null);
   const recStartRef = useRefMEcho(null);
+  const streamRef = useRefMEcho(null);
+  const recRef = useRefMEcho(null);
+  const chunksRef = useRefMEcho([]);
+  const [err, setErr] = useStateMEcho('');
+  function _stopTracks() { if (streamRef.current) { streamRef.current.getTracks().forEach(function (tr) { tr.stop(); }); streamRef.current = null; } }
+  useEffectMEcho(function () { return function () { try { if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); } catch (e) {} _stopTracks(); }; }, []);
 
   useEffectMEcho(() => {
     if (state === 'recording') {
@@ -35,17 +41,42 @@ function MEchoCard() {
     }
   }, [state]);
 
-  function startRecording() { setDuration(0); setState('recording'); }
+  async function startRecording() {
+    setErr(''); setDuration(0);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') { setErr('Recording is not supported in this browser.'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream, (typeof _recorderOpts === 'function' ? _recorderOpts() : {}));
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = () => { evaluate(new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' })); };
+      recRef.current = mr; mr.start(); setState('recording');
+    } catch (e) { setErr('Microphone was blocked. Allow mic access and try again.'); setState('idle'); }
+  }
   function stopRecording() {
     clearInterval(timerRef.current);
     setState('scoring');
-    setTimeout(() => {
+    try { if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); else evaluate(null); } catch (e) { evaluate(null); }
+  }
+  async function evaluate(blob) {
+    _stopTracks();
+    try {
+      if (!blob) { setErr("Didn't catch any audio — try again."); setState('idle'); return; }
+      const b64 = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(String(fr.result).split(',')[1]); fr.onerror = reject; fr.readAsDataURL(blob); });
+      if (!b64) { setErr("Didn't catch any audio — try again."); setState('idle'); return; }
+      if (b64.length > 5000000) { setErr('That was a bit long — keep it to one sentence.'); setState('idle'); return; }
+      const r = await fetch('/api/speaking-eval', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType: blob.type || 'audio/webm', prompt: prompt.sentence, lang: code, speak: false }) });
+      const j = await r.json();
+      if (j && j.limit) { setState('idle'); if (window.__upgrade) window.__upgrade('speaking'); return; }
+      const band = (j && j.evaluation && typeof j.evaluation.overall_band === 'number') ? j.evaluation.overall_band : null;
+      const sc = band != null ? Math.max(1, Math.min(100, Math.round(band / 9 * 100))) : null;
+      if (sc == null) { setErr("Couldn't score that one — give it another go."); setState('idle'); return; }
       const newStreak = (typeof bumpEchoStreak === 'function') ? bumpEchoStreak(code) : 0;
-      const result = { score: 88 + Math.floor(Math.random() * 10), date: new Date().toISOString(), streak: newStreak };
-      setScore(result.score);
-      setState('done');
-      try { localStorage.setItem(storeKey, JSON.stringify(result)); } catch {}
-    }, 1800);
+      const result = { score: sc, date: new Date().toISOString(), streak: newStreak };
+      setScore(sc); setState('done');
+      try { localStorage.setItem(storeKey, JSON.stringify(result)); } catch (e) {}
+    } catch (e) { setErr('Scoring failed — check your connection and try again.'); setState('idle'); }
   }
   function skipToday() { setState('skipped'); }
   function tryAgain() { try { localStorage.removeItem(storeKey); } catch {} setState('idle'); setScore(0); setDuration(0); }
@@ -73,6 +104,7 @@ function MEchoCard() {
             "{prompt.sentence}"
           </div>
           <div style={{ fontSize:10.5, color:T.ink4, lineHeight:1.45, marginBottom:14 }}>{prompt.why}</div>
+          {err && <div style={{ fontSize:10.5, color:'#C0392B', lineHeight:1.45, marginBottom:10 }}>{err}</div>}
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
             <button onClick={startRecording} style={{ width:72, height:72, borderRadius:'50%', background:t.accent, color:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 8px 20px ${t.accent}55`, border:'none' }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>

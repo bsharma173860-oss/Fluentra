@@ -84,6 +84,12 @@ function EchoCard() {
   const [duration, setDuration] = useStateEcho(0);
   const timerRef = useRefEcho(null);
   const recStartRef = useRefEcho(null);
+  const streamRef = useRefEcho(null);
+  const recRef = useRefEcho(null);
+  const chunksRef = useRefEcho([]);
+  const [err, setErr] = useStateEcho('');
+  function _stopTracks() { if (streamRef.current) { streamRef.current.getTracks().forEach(function (tr) { tr.stop(); }); streamRef.current = null; } }
+  useEffectEcho(function () { return function () { try { if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); } catch (e) {} _stopTracks(); }; }, []);
 
   useEffectEcho(() => {
     if (state === 'recording') {
@@ -96,17 +102,42 @@ function EchoCard() {
     }
   }, [state]);
 
-  function startRecording() { setDuration(0); setState('recording'); }
+  async function startRecording() {
+    setErr(''); setDuration(0);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') { setErr('Recording is not supported in this browser.'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream, (typeof _recorderOpts === 'function' ? _recorderOpts() : {}));
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = () => { evaluate(new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' })); };
+      recRef.current = mr; mr.start(); setState('recording');
+    } catch (e) { setErr('Microphone was blocked. Allow mic access and try again.'); setState('idle'); }
+  }
   function stopRecording() {
     clearInterval(timerRef.current);
     setState('scoring');
-    setTimeout(() => {
+    try { if (recRef.current && recRef.current.state === 'recording') recRef.current.stop(); else evaluate(null); } catch (e) { evaluate(null); }
+  }
+  async function evaluate(blob) {
+    _stopTracks();
+    try {
+      if (!blob) { setErr("Didn't catch any audio — try again."); setState('idle'); return; }
+      const b64 = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(String(fr.result).split(',')[1]); fr.onerror = reject; fr.readAsDataURL(blob); });
+      if (!b64) { setErr("Didn't catch any audio — try again."); setState('idle'); return; }
+      if (b64.length > 5000000) { setErr('That was a bit long — keep it to one sentence.'); setState('idle'); return; }
+      const r = await fetch('/api/speaking-eval', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType: blob.type || 'audio/webm', prompt: prompt.sentence, lang: code, speak: false }) });
+      const j = await r.json();
+      if (j && j.limit) { setState('idle'); if (window.__upgrade) window.__upgrade('speaking'); return; }
+      const band = (j && j.evaluation && typeof j.evaluation.overall_band === 'number') ? j.evaluation.overall_band : null;
+      const sc = band != null ? Math.max(1, Math.min(100, Math.round(band / 9 * 100))) : null;
+      if (sc == null) { setErr("Couldn't score that one — give it another go."); setState('idle'); return; }
       const newStreak = bumpEchoStreak(code);
-      const result = { score: 88 + Math.floor(Math.random() * 10), date: new Date().toISOString(), streak: newStreak };
-      setScore(result.score);
-      setState('done');
-      try { localStorage.setItem(todayKey(code), JSON.stringify(result)); } catch {}
-    }, 1800);
+      const result = { score: sc, date: new Date().toISOString(), streak: newStreak };
+      setScore(sc); setState('done');
+      try { localStorage.setItem(todayKey(code), JSON.stringify(result)); } catch (e) {}
+    } catch (e) { setErr('Scoring failed — check your connection and try again.'); setState('idle'); }
   }
   function skipToday() { setState('skipped'); }
   function tryAgain() {
@@ -139,6 +170,7 @@ function EchoCard() {
                 Try the whole sentence: <span style={{ fontFamily:T.serif, color:T.ink, fontStyle:'italic' }}>"{prompt.sentence}"</span>
               </div>
               <div style={{ fontSize:11.5, color:T.ink4, lineHeight:1.5, marginBottom:10 }}>{prompt.why}</div>
+              {err && <div style={{ fontSize:11.5, color:'#C0392B', lineHeight:1.5, marginBottom:8 }}>{err}</div>}
               <button onClick={skipToday} style={{ fontSize:11, color:T.ink4, background:'transparent', border:'none', cursor:'pointer', textDecoration:'underline', textUnderlineOffset:3, padding:0 }}>
                 Can't speak right now? Save for tonight.
               </button>
