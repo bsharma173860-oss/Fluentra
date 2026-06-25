@@ -148,6 +148,52 @@ if (realFull > 0) {
     MED.push(`INCONSISTENT CLAIM  language count stated as different numbers (${[...langClaims].sort((a,b)=>a-b).join(', ')}) — pick one honest number`);
 }
 
+// ── INVARIANT 8: BEHAVIORAL — a button's action must match its label's intent ──
+// Catches the "wired, but to the WRONG thing" class (e.g. a 'Sign out' button
+// that only navigates and never actually signs out). Static approximation of a
+// click-test: it reads the visible label and the onClick handler and checks the
+// handler mentions the action the label promises.
+function onClickOf(tag) {
+  const i = tag.indexOf('onClick={');
+  if (i < 0) return '';
+  let depth = 0; const start = i + 'onClick='.length;
+  for (let j = start; j < tag.length; j++) {
+    if (tag[j] === '{') depth++;
+    else if (tag[j] === '}') { depth--; if (depth === 0) return tag.slice(start, j + 1); }
+  }
+  return tag.slice(start);
+}
+const INTENTS = [
+  { label: /\b(sign\s*out|log\s*out|logout)\b/i, need: /sign\s*out|signout|__signOut|logout/i, sev: 'HIGH', what: "sign out (must call signOut, not just navigate)" },
+  { label: /\b(delete|remove)\s+(account|profile|my data)\b/i, need: /delete|remove|destroy|FL\.|api/i, sev: 'MED', what: "delete account" },
+];
+function checkIntent(file, line, label, handler) {
+  if (!label) return;
+  for (const it of INTENTS) {
+    if (it.label.test(label) && !it.need.test(handler)) {
+      const msg = `INTENT MISMATCH  ${file}:${line}  button "${label.trim().slice(0,30)}" — handler doesn't ${it.what}`;
+      (it.sev === 'HIGH' ? HIGH : MED).push(msg);
+    }
+  }
+}
+for (const f of files) {
+  if (STATIC_FILES.has(f.name)) continue;
+  // (A) components that take a label="…" prop + onClick (PopRow, SocialBtn, Btn, rows)
+  for (const m of f.src.matchAll(/<[A-Z]\w+[^>]*\blabel="([^"]+)"/g)) {
+    const tag = openTag(f.src, m.index);
+    checkIntent(f.name, lineOf(f.src, m.index), m[1], onClickOf(tag));
+  }
+  // (B) <button>…text…</button>
+  for (const m of f.src.matchAll(/<button\b/g)) {
+    const tag = openTag(f.src, m.index);
+    const tagEnd = m.index + tag.length;
+    const close = f.src.indexOf('</button>', tagEnd);
+    const inner = close > 0 ? f.src.slice(tagEnd, close) : '';
+    const label = inner.replace(/<[^>]+>/g, ' ').replace(/\{[^}]*\}/g, ' ').replace(/\s+/g, ' ').trim();
+    checkIntent(f.name, lineOf(f.src, m.index), label, onClickOf(tag) + ' ' + tag);
+  }
+}
+
 // ── REPORT ──
 const stamp = (backend.match(/__FL_BUILD\s*=\s*['"]([^'"]+)/) || [])[1] || '?';
 console.log(`\n  Fluentra connectedness audit  ·  build ${stamp}  ·  ${files.length} files, ${routes.size} routes, ${defined.size} components\n`);
