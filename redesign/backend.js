@@ -20,6 +20,43 @@
     } catch (e) {}
   };
 
+  // ── Error toast: surface fl-error so save/account/billing failures are never silent ──
+  (function () {
+    if (typeof document === 'undefined' || window.__flToastReady) return;
+    window.__flToastReady = true;
+    var LABEL = { save: 'Progress', bootstrap: 'Account', billing: 'Billing', account: 'Account' };
+    var box = null;
+    function ensureBox() {
+      if (box && box.isConnected) return box;
+      box = document.createElement('div');
+      box.id = 'fl-error-toasts';
+      box.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2147483647;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;';
+      (document.body || document.documentElement).appendChild(box);
+      return box;
+    }
+    window.addEventListener('fl-error', function (e) {
+      var d = (e && e.detail) || {};
+      var scope = d.scope || 'app';
+      var msg = d.message || 'Something went wrong.';
+      try { console.error('[FL error]', scope, msg); } catch (x) {}
+      var el = document.createElement('div');
+      el.style.cssText = 'pointer-events:auto;cursor:pointer;max-width:340px;background:#2A1518;color:#FFE9EC;border:1px solid #7A2230;border-radius:12px;padding:9px 13px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:13px;line-height:1.4;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;';
+      var tag = document.createElement('div');
+      tag.style.cssText = 'font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-bottom:1px;';
+      tag.textContent = '\u26A0 ' + (LABEL[scope] || scope);
+      var bodyEl = document.createElement('div');
+      bodyEl.textContent = String(msg).slice(0, 200);
+      el.appendChild(tag); el.appendChild(bodyEl);
+      var b = ensureBox(); b.appendChild(el);
+      requestAnimationFrame(function () { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+      var killed = false;
+      function kill() { if (killed) return; killed = true; el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220); }
+      el.addEventListener('click', kill);
+      setTimeout(kill, 6500);
+    });
+    window.__flTestError = function (m) { window.__flReportError('save', m || 'Test error — the toast is working.'); };
+  })();
+
   // ── Helpers ────────────────────────────────────────────────────
 
   function getToken() {
@@ -673,7 +710,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b168-auth-centralize';
+    window.__FL_BUILD = 'b169-error-toast';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
