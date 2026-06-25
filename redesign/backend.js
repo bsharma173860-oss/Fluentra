@@ -673,7 +673,7 @@
       } catch (e) { return {}; }
     };
 
-    window.__FL_BUILD = 'b160-exam-mode-label';
+    window.__FL_BUILD = 'b161-cleanup-deadcode';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

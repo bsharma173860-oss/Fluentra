@@ -10,7 +10,6 @@ const CHECKOUT_PRESETS = {
   max_yearly:     { id:'max_yearly',     name:'Fluentra Max · Yearly', sub:'Annual · $49/mo billed yearly',                        amount:588.00, currency:'$', recurring:'year',  returnTo:'dashboard',     success:'Welcome to Max' },
   exam_official:  { id:'exam_official',  name:'Official monthly exam', sub:'Single attempt · counts toward leaderboard', amount:5.00, currency:'$', recurring:null,    returnTo:'monthly_runner',success:'Exam ready' },
   mock_exam:      { id:'mock_exam',      name:'Mock exam credit',      sub:'Practice mode · same scoring rubric',      amount:2.00,   currency:'$', recurring:null,    returnTo:'mock_runner',   success:'Mock test ready' },
-  exam_book:      { id:'exam_book',      name:'IELTS test booking',    sub:'Saturday, June 14 · British Council Madrid',amount:249.00, currency:'$', recurring:null,    returnTo:'exam_history',  success:'Booking confirmed' },
   streak_freeze:  { id:'streak_freeze',  name:'Streak freeze (×3)',    sub:'Save your streak on missed days · pack of 3',amount:1.99,  currency:'$', recurring:null,    returnTo:'dashboard',     success:'Freezes added' },
   tutor_hours:    { id:'tutor_hours',    name:'Live tutor · 5 hours',  sub:'1-on-1 sessions · valid 90 days',          amount:49.00,  currency:'$', recurring:null,    returnTo:'tutor',         success:'Hours added' },
 };

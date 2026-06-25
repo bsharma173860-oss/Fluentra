@@ -5,30 +5,7 @@ const LB_REGIONS = ['Global','Europe','Asia','Americas','Africa','Oceania'];
 const LB_TIME    = ['This week','This month','All time'];
 const LB_MODULE  = ['Overall','Reading','Listening','Speaking','Writing'];
 
-const LB_TOP3 = [
-  { rank:1, name:'Aiko Tanaka',    country:'🇯🇵', score:'8.9', delta:'+0.2', streak:178 },
-  { rank:2, name:'Lukas Bauer',    country:'🇩🇪', score:'8.8', delta:'+0.1', streak:142 },
-  { rank:3, name:'Sofia Rossi',    country:'🇮🇹', score:'8.7', delta:'',     streak:96  },
-];
 
-const LB_ROWS = [
-  { rank:4,   name:'Yuki Nakamura',     country:'🇯🇵', score:'8.6', delta:'+0.3', streak:120, ses:184 },
-  { rank:5,   name:'Priya Sharma',      country:'🇮🇳', score:'8.6', delta:'+0.2', streak:88,  ses:155 },
-  { rank:6,   name:'Marcus Holm',       country:'🇸🇪', score:'8.5', delta:'',     streak:62,  ses:142 },
-  { rank:7,   name:'Léa Dubois',        country:'🇫🇷', score:'8.5', delta:'+0.1', streak:74,  ses:131 },
-  { rank:8,   name:'Carlos Mendes',     country:'🇧🇷', score:'8.4', delta:'-0.1', streak:51,  ses:128 },
-  { rank:9,   name:'Olivia Bennett',    country:'🇬🇧', score:'8.4', delta:'+0.2', streak:99,  ses:122 },
-  { rank:10,  name:'Hiroshi Sato',      country:'🇯🇵', score:'8.4', delta:'',     streak:115, ses:118 },
-  { rank:11,  name:'Anna Kowalski',     country:'🇵🇱', score:'8.3', delta:'+0.1', streak:42,  ses:111 },
-  { rank:12,  name:'Diego Hernández',   country:'🇲🇽', score:'8.3', delta:'-0.2', streak:33,  ses:107 },
-  { rank:13,  name:'Min-Jun Park',      country:'🇰🇷', score:'8.3', delta:'+0.4', streak:108, ses:104 },
-  { rank:489, name:'Priya S.',          country:'🇮🇳', score:'7.6', delta:'+0.2', streak:39,  ses:62  },
-  { rank:490, name:'Ahmed K.',          country:'🇪🇬', score:'7.6', delta:'',     streak:51,  ses:58  },
-  { rank:491, name:'You',                country:'🇪🇸', score:'7.5', delta:'+0.3', streak:42,  ses:142, user:true },
-  { rank:492, name:'María L.',          country:'🇲🇽', score:'7.5', delta:'-0.1', streak:18,  ses:54  },
-  { rank:493, name:'James T.',          country:'🇬🇧', score:'7.4', delta:'+0.1', streak:24,  ses:50  },
-  { rank:494, name:'Fatima Rahman',     country:'🇧🇩', score:'7.4', delta:'',     streak:45,  ses:48  },
-];
 
 function PodiumCard({ entry, place }) {
   const heights = { 1:120, 2:90, 3:70 };
