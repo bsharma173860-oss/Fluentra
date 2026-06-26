@@ -411,6 +411,40 @@
         });
       },
 
+      // ── Learner model (Phase 1) — derived purely from the user's REAL saved
+      // results in window.__results. No fabricated data: skills with no completed
+      // sessions return null stats. Used to adapt content difficulty per skill.
+      learnerProfile: function (lang) {
+        var L = lang || window.__langCode || 'en';
+        var R = (window.__results || []).filter(function (r) { return r && r.lang === L && typeof r.score === 'number'; });
+        var SKILLS = ['reading', 'listening', 'writing', 'speaking'];
+        function statFor(mod) {
+          var rows = R.filter(function (r) { return r.detail && r.detail.module === mod; })
+            .sort(function (a, b) { return new Date(b.updated_at || 0) - new Date(a.updated_at || 0); }); // newest first
+          if (!rows.length) return { count: 0, avg: null, recent: null, trend: 0, suggestedDifficulty: 'medium' };
+          var scores = rows.map(function (r) { return Number(r.score) || 0; });
+          var mean = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length) : null; };
+          var recent = mean(scores.slice(0, Math.min(5, scores.length)));
+          var older = scores.length > 5 ? mean(scores.slice(5)) : recent;
+          var diff = 'medium';
+          if (rows.length >= 2) { diff = recent >= 80 ? 'hard' : (recent < 55 ? 'easy' : 'medium'); }
+          return { count: rows.length, avg: mean(scores), recent: recent, trend: recent - older, suggestedDifficulty: diff };
+        }
+        var skills = {};
+        SKILLS.forEach(function (s) { skills[s] = statFor(s); });
+        var overall = R.length ? Math.round(R.reduce(function (a, r) { return a + (Number(r.score) || 0); }, 0) / R.length) : null;
+        var ranked = SKILLS.filter(function (s) { return skills[s].count >= 2; })
+          .sort(function (a, b) { return skills[a].avg - skills[b].avg; });
+        return {
+          lang: L,
+          sessions: R.length,
+          overall: overall,
+          skills: skills,
+          weakest: ranked.length ? ranked[0] : null,
+          strongest: ranked.length ? ranked[ranked.length - 1] : null,
+        };
+      },
+
       // ── Spaced repetition (SM-2) ─────────────────────────────
       srsSchedule: function (st, quality) {
         var ease = (st && st.ease) || 2.5, interval = (st && st.interval_days) || 0, reps = (st && st.reps) || 0;
@@ -675,6 +709,16 @@
     window.__can     = function (f) { return !!window.__ent()[f]; };
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
+    // Per-skill content difficulty derived from the learner's real recent scores.
+    // Defaults to 'medium' until there's enough data, so new users are unaffected.
+    window.__adaptiveDifficulty = function (lang, skill) {
+      try {
+        var p = window.FL && window.FL.learnerProfile ? window.FL.learnerProfile(lang) : null;
+        var s = p && p.skills && p.skills[skill];
+        if (!s || s.count < 2) return null; // not enough real data -> caller keeps its default
+        return s.suggestedDifficulty || null;
+      } catch (e) { return 'medium'; }
+    };
     // ONE place to switch the active learning language. Sets __langCode AND refreshes
     // the per-language "today" content so a multi-language user never sees another
     // language's content lingering after a switch. All langCode-set call sites use this.
@@ -737,7 +781,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b190-setlang-today-refresh';
+    window.__FL_BUILD = 'b191-learner-model-p1p2';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

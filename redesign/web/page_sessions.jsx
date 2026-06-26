@@ -356,7 +356,7 @@ function ReadingSession() {
     var cancelled = false;
     (async function () {
       try {
-        var _diff = _diffForLevel(_levelFor(lang));
+        var _diff = (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'reading')) || _diffForLevel(_levelFor(lang));
         var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=reading&full=1&limit=8&difficulty=' + _diff);
         var list = await lr.json();
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
@@ -510,7 +510,7 @@ function ListeningSession() {
     var cancelled = false;
     (async function () {
       try {
-        var _diff = _diffForLevel(_levelFor(lang));
+        var _diff = (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'listening')) || _diffForLevel(_levelFor(lang));
         var lr = await fetch('/api/content-list?lang=' + encodeURIComponent(lang) + '&type=listening&full=1&limit=8&difficulty=' + _diff);
         var list = await lr.json();
         var item = (list.items && list.items.length) ? list.items[Math.floor(Math.random() * list.items.length)] : null;
@@ -708,7 +708,7 @@ function SpeakingSession() {
     window.__flSpeakingGen = window.__flSpeakingGen || {};
     if (window.__flSpeakingGen[lang]) { setGen(window.__flSpeakingGen[lang]); return; }
     var alive = true;
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking', difficulty: (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'speaking')) || 'medium', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var p = d && d.content && d.content.payload;
@@ -939,7 +939,7 @@ function WritingSession() {
     window.__flWritingGen = window.__flWritingGen || {};
     if (window.__flWritingGen[lang]) { setGen(window.__flWritingGen[lang]); return; }
     var alive = true;
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing', difficulty: (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'writing')) || 'medium', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var p = d && d.content && d.content.payload;
