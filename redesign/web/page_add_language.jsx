@@ -360,7 +360,7 @@ function AddLanguagePage() {
                 level: ['A0','A1','A2','B1','B2','C1'][level] || 'A1',
                 exam: picked.exam,
               };
-              window.__langCode = picked.code;
+              window.__setLang(picked.code);
               if (window.FL && window.FL.addLanguage) {
                 setAdding(true);
                 window.FL.addLanguage(newLang).then(function () {

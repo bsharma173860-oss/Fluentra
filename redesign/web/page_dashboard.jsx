@@ -18,7 +18,7 @@ function DashLangCard({ lang, freshlyAdded=false }) {
   const pct = Math.min((streak / EXAM_UNLOCK_DAYS) * 100, 100);
 
   return (
-    <div onClick={() => { window.__langCode = lang.code; window.__nav && window.__nav('lang'); }} style={{
+    <div onClick={() => { window.__setLang(lang.code); window.__nav && window.__nav('lang'); }} style={{
       borderRadius:22, overflow:'hidden', cursor:'pointer',
       background:`linear-gradient(160deg, ${t.accent} 0%, ${t.accent}dd 55%, ${t.accentLight} 100%)`,
       boxShadow: freshlyAdded ? `0 0 0 3px ${t.accent}, 0 4px 20px ${t.accent}55` : `0 4px 20px ${t.accent}1f, 0 0 0 1px ${t.accent}22`,

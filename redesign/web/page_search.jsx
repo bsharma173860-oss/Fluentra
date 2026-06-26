@@ -29,7 +29,7 @@ function _searchDestinations() {
   return langItems.concat(topics).concat(dest);
 }
 function _searchGo(d) {
-  if (d.langCode) window.__langCode = d.langCode;
+  if (d.langCode) window.__setLang(d.langCode);
   if (d.lessonTopic) window.__lessonTopic = d.lessonTopic;
   window.__nav && window.__nav(d.nav || (d.lessonTopic ? 'lesson_detail' : 'dashboard'));
 }

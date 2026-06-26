@@ -39,7 +39,7 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
           const a = activeLang === l.code;
           const t = langTheme(l.code);
           return (
-            <button key={l.code} onClick={() => { window.__langCode = l.code; nav('lang'); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:9, fontSize:13, color: a ? T.ink : T.ink2, background: a ? t.accentLight : 'transparent', cursor:'pointer', textAlign:'left', flexShrink:0 }}>
+            <button key={l.code} onClick={() => { window.__setLang(l.code); nav('lang'); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:9, fontSize:13, color: a ? T.ink : T.ink2, background: a ? t.accentLight : 'transparent', cursor:'pointer', textAlign:'left', flexShrink:0 }}>
               <Flag code={l.code} w={20} h={14} radius={3}/>
               <span style={{ flex:1, fontWeight: a ? 700 : 500 }}>{l.english}</span>
               <span style={{ display:'flex', alignItems:'center', gap:3, color:t.accent, fontSize:11, fontWeight:700 }}>

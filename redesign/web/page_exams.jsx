@@ -96,7 +96,7 @@ function ExamsPage() {
           ) : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:16, marginBottom:32 }}>
             {exams.map(e => (
-                <Card key={e.lang} padding={0} onClick={() => { window.__langCode = e.lang; window.__nav && window.__nav('exam_entry'); }} style={{ overflow:'hidden', cursor:'pointer' }}>
+                <Card key={e.lang} padding={0} onClick={() => { window.__setLang(e.lang); window.__nav && window.__nav('exam_entry'); }} style={{ overflow:'hidden', cursor:'pointer' }}>
                 <div style={{ padding:'18px 20px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', gap:12 }}>
                   <div style={{ boxShadow:'inset 0 0 0 1px rgba(0,0,0,.08)', borderRadius:4, overflow:'hidden' }}>
                     <Flag code={e.flag} w={32} h={22} radius={4}/>

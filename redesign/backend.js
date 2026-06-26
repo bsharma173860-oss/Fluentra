@@ -675,6 +675,21 @@
     window.__can     = function (f) { return !!window.__ent()[f]; };
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
+    // ONE place to switch the active learning language. Sets __langCode AND refreshes
+    // the per-language "today" content so a multi-language user never sees another
+    // language's content lingering after a switch. All langCode-set call sites use this.
+    window.__setLang = function (code) {
+      if (!code) return;
+      var changed = window.__langCode !== code;
+      window.__langCode = code;
+      if (!changed) return;
+      window.__todayContent = null; // drop the old language's content immediately
+      if (window.FL && window.FL.fetchTodayContent) {
+        window.FL.fetchTodayContent().then(function () { window.dispatchEvent(new CustomEvent('fl-updated')); }).catch(function () { window.dispatchEvent(new CustomEvent('fl-updated')); });
+      } else {
+        window.dispatchEvent(new CustomEvent('fl-updated'));
+      }
+    };
     // Start a specific checkout (one-time item or plan). Sets the checkout item
     // so the checkout page shows the RIGHT thing (e.g. $5 exam, not the monthly plan).
     window.payFor = function (item) { window.__checkoutItem = item || 'exam_official'; if (window.__nav) window.__nav('checkout'); };
@@ -722,7 +737,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b189-mobile-phrasebook-lang';
+    window.__FL_BUILD = 'b190-setlang-today-refresh';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

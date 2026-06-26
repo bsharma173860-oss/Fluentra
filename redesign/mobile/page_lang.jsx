@@ -87,7 +87,7 @@ function MLangDetail() {
             { id:'library',  label:'Library' },
             { id:'tutor',    label:'Tutor' },
           ].map(tb => (
-            <button key={tb.id} onClick={()=>{ if (tb.id === 'practice') return; window.__langCode = lang.code; nav(tb.id === 'exams' ? 'exam_entry' : tb.id); }} style={{ padding:'12px 14px', fontSize:12.5, fontWeight: tb.active ? 700 : 500, color: tb.active ? T.ink : T.ink3, borderBottom: `2px solid ${tb.active ? t.accent : 'transparent'}`, marginBottom:-1, background:'transparent', whiteSpace:'nowrap', flexShrink:0 }}>
+            <button key={tb.id} onClick={()=>{ if (tb.id === 'practice') return; window.__setLang(lang.code); nav(tb.id === 'exams' ? 'exam_entry' : tb.id); }} style={{ padding:'12px 14px', fontSize:12.5, fontWeight: tb.active ? 700 : 500, color: tb.active ? T.ink : T.ink3, borderBottom: `2px solid ${tb.active ? t.accent : 'transparent'}`, marginBottom:-1, background:'transparent', whiteSpace:'nowrap', flexShrink:0 }}>
               {tb.label}
             </button>
           ))}

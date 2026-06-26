@@ -177,7 +177,7 @@ function MDashLangCard({ lang }) {
   const pct = Math.min((lang.streak / 9) * 100, 100);
   const nav = (id) => window.__nav && window.__nav(id);
   return (
-    <button onClick={() => { window.__langCode = lang.code; nav('lang'); }} style={{
+    <button onClick={() => { window.__setLang(lang.code); nav('lang'); }} style={{
       width:'100%', textAlign:'left',
       borderRadius:18, overflow:'hidden',
       background:`linear-gradient(160deg, ${t.accent} 0%, ${t.accent}dd 55%, ${t.accentLight} 100%)`,
