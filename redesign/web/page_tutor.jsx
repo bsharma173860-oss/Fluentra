@@ -6,14 +6,17 @@ const TUTOR_HISTORY = [
   { id:'h1', title:'New conversation', lang:'\u2014', when:'Now', active:true },
 ];
 
-const TUTOR_QUICK = [
-  { ic:'✦', label:'Explain a grammar rule',     prompt:'Can you explain when to use the present perfect vs simple past?' },
-  { ic:'❤︎', label:'Practice a conversation',   prompt:'Let\'s practice a conversation at a restaurant in Spanish.' },
-  { ic:'✎', label:'Check my writing',            prompt:'I\'ll paste an essay below — please give me IELTS-style feedback.' },
-  { ic:'⌕', label:'Translate something',         prompt:'How do I naturally say "I\'m running late, sorry!" in Japanese?' },
-  { ic:'☆', label:'Build vocabulary',            prompt:'Give me 10 useful B2-level Spanish phrases for talking about feelings.' },
-  { ic:'⚡', label:'Mock exam question',          prompt:'Give me a Speaking Part 2 cue card for IELTS, then critique my answer.' },
-];
+function tutorQuick(L) {
+  L = L || 'this language';
+  return [
+    { ic:'✦', label:'Explain a grammar rule',     prompt:'Can you explain when to use the present perfect vs simple past?' },
+    { ic:'❤︎', label:'Practice a conversation',   prompt:'Let\'s practice a conversation at a restaurant in ' + L + '.' },
+    { ic:'✎', label:'Check my writing',            prompt:'I\'ll paste an essay below — please give me IELTS-style feedback.' },
+    { ic:'⌕', label:'Translate something',         prompt:'How do I naturally say "I\'m running late, sorry!" in ' + L + '?' },
+    { ic:'☆', label:'Build vocabulary',            prompt:'Give me 10 useful B2-level ' + L + ' phrases for talking about feelings.' },
+    { ic:'⚡', label:'Mock exam question',          prompt:'Give me a Speaking Part 2 cue card for IELTS, then critique my answer.' },
+  ];
+}
 
 const TUTOR_INITIAL = [
   { role:'ai', text:"Hi! I'm your AI language tutor. Ask me anything \u2014 grammar, vocabulary, conversation practice, writing feedback, or exam prep. What would you like to work on?", when:'just now', actions:['Practice conversation','Explain a grammar point','Help with my writing','Exam prep'] },
@@ -86,7 +89,7 @@ function TutorPage() {
   const [toast, setToast] = useStateAT('');
   const [savedFlash, setSavedFlash] = useStateAT(false);
   const [feedback, setFeedback] = useStateAT({}); // text → 'up'/'dn'
-  const [chatLang, setChatLang] = useStateAT('English');
+  const [chatLang, setChatLang] = useStateAT((function(){ try { var c = (typeof window !== 'undefined') && window.__langCode; var L = (c && typeof langByCode === 'function') ? langByCode(c).english : null; return L || 'English'; } catch (e) { return 'English'; } })());
   const scrollRef = useRefAT(null);
   const fileRef = useRefAT(null);
   const recTimer = useRefAT(null);
@@ -332,7 +335,7 @@ function TutorPage() {
         {input === '' && (
           <div style={{ padding:'10px 24px 4px', borderTop:`1px solid ${T.hairline}` }}>
             <div style={{ maxWidth:840, margin:'0 auto', display:'flex', gap:7, flexWrap:'wrap' }}>
-              {TUTOR_QUICK.map(q => (
+              {tutorQuick(chatLang).map(q => (
                 <button key={q.label} onClick={() => setInput(q.prompt)} style={{ padding:'7px 12px', borderRadius:99, background:T.bg2, border:`1px solid ${T.border}`, fontSize:11.5, color:T.ink2, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
                   <span style={{ color:T.brand }}>{q.ic}</span> {q.label}
                 </button>
@@ -380,12 +383,12 @@ function TutorPage() {
                 <div style={{ height:24, width:1, background:T.hairline, margin:'4px 4px' }}/>
                 <div style={{ position:'relative' }}>
                   <button onClick={() => setShowLangPicker(s => !s)} style={{ padding:'6px 10px', borderRadius:8, background:T.bg2, fontSize:11.5, color:T.ink2, fontWeight:600, display:'flex', alignItems:'center', gap:5, cursor:'pointer', border:'none' }}>
-                    <span style={{ width:14, height:10, borderRadius:1, background:'linear-gradient(180deg, #00247D 33%, #fff 33% 66%, #CF142B 66%)' }}/>
+                    <span style={{ width:7, height:7, borderRadius:'50%', background:T.ink4 }}/>
                     {chatLang} ▾
                   </button>
                   {showLangPicker && (
                     <div style={{ position:'absolute', bottom:'calc(100% + 6px)', left:0, width:170, background:'#fff', border:`1px solid ${T.border}`, borderRadius:10, boxShadow:'0 12px 28px rgba(0,0,0,.14)', padding:6, zIndex:30 }}>
-                      {['English','Spanish','French','Japanese','German'].map(L => (
+                      {(function(){ try { var ls = (typeof userLanguages === 'function') ? userLanguages().map(function (l) { return l.english; }) : []; ls = ls.filter(function (v, i, a) { return v && a.indexOf(v) === i; }); return ls.length ? ls : ['English']; } catch (e) { return ['English']; } })().map(L => (
                         <button key={L} onClick={() => { setChatLang(L); setShowLangPicker(false); flashToast(`Tutor now responds in ${L}`); }} style={{ width:'100%', padding:'8px 10px', borderRadius:7, background:'transparent', fontSize:12, color:T.ink2, fontWeight: chatLang === L ? 700 : 500, textAlign:'left', border:'none', cursor:'pointer' }}>{L}</button>
                       ))}
                     </div>
