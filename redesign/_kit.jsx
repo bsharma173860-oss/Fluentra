@@ -972,29 +972,36 @@ function LearnerFocusCard(props) {
       </div>
     );
   }
-  var primary = p.weakest || (p.focus && p.focus.skill) || null;
-  var sk = primary ? p.skills[primary] : null;
-  var trend = sk ? (sk.trend > 4 ? 'improving' : (sk.trend < -4 ? 'needs attention' : 'steady')) : '';
+  var plan = null;
+  try { plan = (window.FL && window.FL.studyPlan) ? window.FL.studyPlan(p.lang) : null; } catch (e) {}
+  var steps = (plan && plan.steps) || [];
   return (
     <div style={card}>
       <div style={eyebrow}>Your focus</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-        <div style={{ fontFamily: pal.serif || 'Georgia,serif', fontSize: 30, color: pal.ink || '#222', lineHeight: 1 }}>{p.overall != null ? (p.overall + '%') : '—'}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 13 }}>
+        <div style={{ fontFamily: pal.serif || 'Georgia,serif', fontSize: 30, color: pal.ink || '#222', lineHeight: 1 }}>{p.overall != null ? (p.overall + '%') : '\u2014'}</div>
         <div style={{ fontSize: 12, color: pal.muted || '#888' }}>avg · {p.sessions} session{p.sessions === 1 ? '' : 's'}</div>
       </div>
-      {primary ? (
+      {steps.length ? (
         <div>
-          <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.5, marginBottom: 12 }}>
-            Today, work on <strong style={{ color: pal.ink || '#222' }}>{_SKILL_LABEL[primary]}</strong>
-            {p.focus && p.focus.label ? <span> — weak area: <strong style={{ color: pal.accent || '#A65A00' }}>{p.focus.label}</strong>{p.focus.mastery != null ? <span style={{ color: pal.muted || '#888' }}> ({Math.round(p.focus.mastery * 100)}% mastered)</span> : null}</span> : null}
-            {trend ? <span style={{ color: pal.muted || '#888' }}> · {trend}</span> : null}.
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: pal.muted || '#888', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Today's plan</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {steps.map(function (s, i) {
+              return (
+                <button key={i} onClick={function () { onPractice(s.action); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 11, background: pal.bg2 || 'rgba(0,0,0,0.03)', border: '1px solid ' + (pal.line || '#eee'), textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 11, flexShrink: 0, background: pal.accent || '#A65A00', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{i + 1}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: pal.ink || '#222' }}>{s.title}</div>
+                    <div style={{ fontSize: 10.5, color: pal.muted || '#888', marginTop: 1 }}>{s.why}</div>
+                  </div>
+                  <span style={{ color: pal.muted || '#bbb', fontSize: 14, flexShrink: 0 }}>{'\u2192'}</span>
+                </button>
+              );
+            })}
           </div>
-          <button onClick={function () { onPractice(primary); }} style={{ width: '100%', textAlign: 'center', fontSize: 12.5, color: '#fff', fontWeight: 700, cursor: 'pointer', background: pal.accent || '#A65A00', borderRadius: 10, padding: '11px 0', border: 'none' }}>
-            Practice {_SKILL_LABEL[primary]} →
-          </button>
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.5 }}>Keep practicing across skills — a couple more sessions in each and I'll pinpoint exactly where to focus.</div>
+        <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.5 }}>Keep practicing across skills — a couple more sessions and I'll map your plan.</div>
       )}
     </div>
   );

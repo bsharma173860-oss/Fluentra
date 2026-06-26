@@ -626,6 +626,51 @@
         return { lang: L, components: components, weakest: weakest, strongest: strongest };
       },
 
+      // ── Planner (Phase 6) — turns the model state into an ordered, honest daily
+      // sequence: drill the weakest concept, strengthen the weakest skill, then
+      // cover the least-known skill. Pure over learnerProfile; new users get a
+      // sensible baseline. No fabricated steps. (Exam-date deadlines: future.)
+      studyPlan: function (lang) {
+        var L = lang || window.__langCode || 'en';
+        var p = (window.FL && window.FL.learnerProfile) ? window.FL.learnerProfile(L) : null;
+        var LB = { reading: 'Reading', listening: 'Listening', writing: 'Writing', speaking: 'Speaking' };
+        var SK = ['reading', 'listening', 'writing', 'speaking'];
+        var steps = [], used = {};
+        function add(s) { steps.push(s); if (s.skill) used[s.skill] = 1; }
+        if (p && p.sessions > 0) {
+          // 1) Targeted: a genuinely weak fine concept.
+          if (p.focus && p.focus.kind === 'concept' && p.focus.mastery != null && p.focus.mastery < 0.65) {
+            var cs = (p.weakest === 'reading' || p.weakest === 'listening') ? p.weakest : 'reading';
+            add({ type: 'drill', skill: cs, title: 'Drill ' + p.focus.label, why: 'Weakest concept \u2014 ' + Math.round(p.focus.mastery * 100) + '% mastered', action: cs });
+          }
+          // 2) Strengthen the weakest skill.
+          if (p.weakest && !used[p.weakest]) {
+            var ws = p.skills[p.weakest];
+            add({ type: 'strengthen', skill: p.weakest, title: 'Practice ' + LB[p.weakest], why: 'Your lowest skill' + (ws && ws.ability != null ? ' (~' + ws.ability + '%)' : ''), action: p.weakest });
+          }
+          // 3) Cover the least-practised skill (tiebreak: most uncertain).
+          if (steps.length < 3) {
+            var pick = null;
+            SK.forEach(function (sk) {
+              if (used[sk]) return;
+              if (!pick) { pick = sk; return; }
+              var a = p.skills[pick], b = p.skills[sk];
+              if ((b.count || 0) < (a.count || 0) || ((b.count || 0) === (a.count || 0) && (b.uncertainty || 0) > (a.uncertainty || 0))) pick = sk;
+            });
+            if (pick) {
+              var ps = p.skills[pick], thin = (ps.count || 0) < 2;
+              add({ type: thin ? 'explore' : 'maintain', skill: pick, title: (thin ? 'Try ' : 'Keep up ') + LB[pick], why: thin ? "Not enough data here yet" : 'Keep it sharp', action: pick });
+            }
+          }
+        }
+        // New learner / no signal: a sensible rounded baseline.
+        if (!steps.length) {
+          add({ type: 'baseline', skill: 'reading', title: 'Start with Reading', why: "Let's establish your baseline", action: 'reading' });
+          add({ type: 'baseline', skill: 'listening', title: 'Then a Listening set', why: 'Build a rounded picture', action: 'listening' });
+        }
+        return { lang: L, steps: steps.slice(0, 3), sessions: p ? p.sessions : 0 };
+      },
+
       // ── Spaced repetition (SM-2) ─────────────────────────────
       srsSchedule: function (st, quality) {
         var ease = (st && st.ease) || 2.5, interval = (st && st.interval_days) || 0, reps = (st && st.reps) || 0;
@@ -969,7 +1014,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b197-real-mod-results';
+    window.__FL_BUILD = 'b198-study-planner';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
