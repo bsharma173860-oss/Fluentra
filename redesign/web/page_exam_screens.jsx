@@ -203,19 +203,32 @@ const EXAM_SECTIONS = ['reading', 'listening', 'speaking', 'writing'];
 
 function ExamRunner() {
   const code = window.__langCode || 'en';
+  const _ex = (typeof examFor === 'function') ? examFor(code) : null;
+  // Sections come from the exam's OFFICIAL format (examFor.modules), not a fixed list — each
+  // module maps to a runnable section kind, and modules without a matching session are skipped.
+  // This is why JLPT/TOPIK/HSK correctly have no speaking section, DELE uses its own prueba
+  // names, etc. Falls back to the four-skill set for languages without a dedicated exam config.
+  const _rawMods = (_ex && _ex.modules && _ex.modules.length) ? _ex.modules
+    : [{ label:'Reading', color:'reading' }, { label:'Listening', color:'listening' }, { label:'Writing', color:'writing' }, { label:'Speaking', color:'speaking' }];
+  const _built = _rawMods.map(function (m) { return { kind: (m.kind || m.color), label: m.label }; })
+                         .filter(function (sx) { return EXAM_SECTION_COMP[sx.kind]; });
+  const _sec = _built.length ? _built : [{ kind:'reading', label:'Reading' }];
   const _mode = window.__examMode || 'mock';
   const _modeLabel = _mode === 'monthly' ? 'Official exam' : _mode === 'practice' ? 'Practice' : 'Mock exam';
+  const _examName = (_ex && _ex.name) || 'Mock exam';
   const [idx, setIdx] = React.useState(0);
   const [results, setResults] = React.useState([]);
   const [done, setDone] = React.useState(false);
+  const _secRef = React.useRef(_sec);
 
   React.useEffect(function () {
-    window.__exam = { active: true, lang: code, sections: EXAM_SECTIONS, idx: 0, results: [] };
+    var secs = _secRef.current;
+    window.__exam = { active: true, lang: code, sections: secs.map(function (sx) { return sx.kind; }), idx: 0, results: [] };
     function onSectionDone(e) {
       var d = (e && e.detail) || {};
       setResults(function (prev) {
         var next = prev.concat([{ module: d.module, score: Number(d.score) || 0 }]);
-        if (next.length >= EXAM_SECTIONS.length) { window.__exam.active = false; setDone(true); }
+        if (next.length >= secs.length) { window.__exam.active = false; setDone(true); }
         else { setIdx(next.length); }
         return next;
       });
@@ -224,15 +237,15 @@ function ExamRunner() {
     return function () { window.removeEventListener('fl-exam-section-done', onSectionDone); window.__exam = { active: false }; };
   }, []);
 
-  if (done) return <ExamRunnerResults results={results} lang={code} />;
+  if (done) return <ExamRunnerResults results={results} lang={code} exam={_ex} />;
 
-  const mod = EXAM_SECTIONS[idx] || 'reading';
-  const Comp = window[EXAM_SECTION_COMP[mod]];
+  const sec = _sec[idx] || _sec[0];
+  const Comp = window[EXAM_SECTION_COMP[sec.kind]];
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <div style={{ padding:'9px 18px', background:T.ink, color:'#fff', display:'flex', alignItems:'center', gap:12, fontSize:12.5, flexShrink:0 }}>
-        <span style={{ fontWeight:700 }}>{_modeLabel}</span>
-        <span style={{ opacity:.6 }}>Section {idx + 1} of {EXAM_SECTIONS.length} · {EXAM_SECTION_LABEL[mod]}{_mode === 'monthly' ? ' · scored' : ''}</span>
+        <span style={{ fontWeight:700 }}>{_examName}</span>
+        <span style={{ opacity:.6 }}>{_modeLabel} · Section {idx + 1} of {_sec.length} · {sec.label}{_mode === 'monthly' ? ' · scored' : ''}</span>
         <div style={{ flex:1 }}/>
         <button onClick={() => window.__nav && window.__nav('exams')} style={{ fontSize:11.5, color:'rgba(255,255,255,.6)', background:'transparent', border:'none', cursor:'pointer' }}>Exit</button>
       </div>
@@ -243,14 +256,14 @@ function ExamRunner() {
   );
 }
 
-function ExamRunnerResults({ results, lang }) {
+function ExamRunnerResults({ results, lang, exam }) {
   const MOD = { reading:{ c:T.reading, title:'Reading' }, listening:{ c:T.listening, title:'Listening' }, speaking:{ c:T.speaking, title:'Speaking' }, writing:{ c:T.writing, title:'Writing' } };
   const overall = results.length ? Math.round(results.reduce((a, r) => a + (Number(r.score) || 0), 0) / results.length) : 0;
   React.useEffect(function () {
     try {
       var token = window.__authToken ? window.__authToken() : null;
       if (token) {
-        window.__saveResult({ lang: lang, score: overall, detail: { module:'mock_exam', mode: (window.__examMode || 'mock'), official: (window.__examMode === 'monthly'), sections: results, unit: '/9' } });
+        window.__saveResult({ lang: lang, score: overall, detail: { module:'mock_exam', mode: (window.__examMode || 'mock'), official: (window.__examMode === 'monthly'), sections: results, unit: '%', exam: (exam && exam.name) || null } });
         try { if (window.FL && window.FL.social) window.FL.social.logActivity('mock', lang, { score: overall }); } catch (e) {}
       }
     } catch (e) {}
@@ -259,7 +272,7 @@ function ExamRunnerResults({ results, lang }) {
     <div style={{ flex:1, overflow:'auto', background:T.bg }}>
       <div style={{ maxWidth:640, margin:'0 auto', padding:'48px 28px' }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:10 }}>Mock exam complete</div>
+          <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:10 }}>{((exam && exam.name) ? exam.name + ' · ' : '') + 'mock complete'}</div>
           <div style={{ fontFamily:T.serif, fontSize:64, color:T.brand, lineHeight:1 }}>{overall}%</div>
           <div style={{ fontSize:13, color:T.ink3, marginTop:8 }}>Overall across {results.length} {results.length === 1 ? 'section' : 'sections'}</div>
         </div>
