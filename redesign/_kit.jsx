@@ -835,6 +835,10 @@ function _normSession(skill, raw) {
       task2Meta: (raw.time_minutes ? (raw.time_minutes + ' min') : '250 words'),
       task1Prompt: (raw.task1 && raw.task1.prompt) || '',
       task1Chart: (raw.task1 && raw.task1.chart) || null,
+      task1Kind: (raw.task1 && raw.task1.kind) || null,
+      task1Items: (raw.task1 && Array.isArray(raw.task1.items)) ? raw.task1.items : null,
+      task1Passage: (raw.task1 && raw.task1.passage) || '',
+      task1Blanks: (raw.task1 && Array.isArray(raw.task1.blanks)) ? raw.task1.blanks : null,
       task2Intro: '', task2Topic: (raw.task2 && raw.task2.prompt) || (raw.task1 && raw.task1.prompt) || '', task2Outro: '',
       task1Tips: [], task2Tips: [], submit: 'Submit & get feedback', tipsLabel: 'Tips', __real: true,
     };
@@ -873,7 +877,84 @@ function useGenContent(skill) {
   }, [key]);
   return v; // null = loading, 'err' = use static fallback, object = real content
 }
-if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; }
+// ── Structured writing inputs (HSK 排列顺序 word-ordering · TOPIK 쓰기 blanks) ──
+// Both feed their built text up via props.onText, so the existing textarea/submit
+// (AI grading) flow is unchanged. If data is malformed the caller renders a textarea instead.
+function _wNorm(s){ return String(s == null ? '' : s).replace(/[\s\u3000，。、？！,.\?!；;：:]/g, ''); }
+function WordOrderTask(props) {
+  var items = (props.items || []).filter(function (it) { return it && Array.isArray(it.words) && it.words.length; });
+  var color = props.color || '#A65A00';
+  var st = React.useState(0); var idx = st[0], setIdx = st[1];
+  var ps = React.useState(function () { return items.map(function () { return []; }); });
+  var placed = ps[0], setPlaced = ps[1];
+  if (!items.length) return null;
+  var safeIdx = Math.min(idx, items.length - 1);
+  var it = items[safeIdx];
+  var used = placed[safeIdx] || [];
+  function emit(next) {
+    if (!props.onText) return;
+    var sentences = items.map(function (item, i) {
+      return (next[i] || []).map(function (w) { return item.words[w]; }).join(props.mobile ? '' : ' ');
+    });
+    props.onText(sentences.filter(Boolean).join('\n'));
+  }
+  function place(wi) { var n = placed.slice(); n[safeIdx] = (n[safeIdx] || []).concat([wi]); setPlaced(n); emit(n); }
+  function unplace(pos) { var n = placed.slice(); var a = (n[safeIdx] || []).slice(); a.splice(pos, 1); n[safeIdx] = a; setPlaced(n); emit(n); }
+  var bank = it.words.map(function (w, i) { return i; }).filter(function (i) { return used.indexOf(i) === -1; });
+  var built = used.map(function (i) { return it.words[i]; }).join(' ');
+  var correct = !!_wNorm(built) && _wNorm(built) === _wNorm(it.answer);
+  var chip = function (filled) { return { padding: props.mobile ? '7px 11px' : '9px 14px', borderRadius: 9, border: '1.5px solid ' + color, background: filled ? color : 'transparent', color: filled ? '#fff' : color, fontSize: props.mobile ? 13 : 14, fontWeight: 600, cursor: 'pointer', lineHeight: 1.2 }; };
+  return (
+    <div>
+      <div style={{ fontSize: props.mobile ? 9.5 : 11, color: '#7A6A55', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+        {'Sentence ' + (safeIdx + 1) + ' of ' + items.length + ' \u2014 tap the words in order'}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 48, padding: 12, borderRadius: 12, border: '1px dashed ' + color, marginBottom: 14, alignItems: 'center' }}>
+        {used.length ? used.map(function (wi, pos) {
+          return <button key={pos} onClick={function () { unplace(pos); }} style={chip(true)}>{it.words[wi]}</button>;
+        }) : <span style={{ fontSize: 12.5, color: '#9A8A75' }}>Tap the words below to build the sentence\u2026</span>}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {bank.map(function (wi) { return <button key={wi} onClick={function () { place(wi); }} style={chip(false)}>{it.words[wi]}</button>; })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: correct ? '#2E7D32' : '#9A8A75' }}>
+          {used.length ? (correct ? '\u2713 correct order' : 'keep arranging\u2026') : ''}
+        </span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {safeIdx > 0 ? <button onClick={function () { setIdx(safeIdx - 1); }} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid ' + color, background: 'transparent', color: color, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Prev</button> : null}
+          {safeIdx < items.length - 1 ? <button onClick={function () { setIdx(safeIdx + 1); }} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: color, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Next</button> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+function BlankFillTask(props) {
+  var blanks = (props.blanks || []).filter(function (b) { return b; });
+  var color = props.color || '#A65A00';
+  var vs = React.useState(function () { return blanks.map(function () { return ''; }); });
+  var vals = vs[0], setVals = vs[1];
+  if (!blanks.length) return null;
+  function set(i, v) {
+    var n = vals.slice(); n[i] = v; setVals(n);
+    if (props.onText) props.onText(blanks.map(function (b, j) { return (b.label || ('(' + (j + 1) + ')')) + ' ' + (n[j] || ''); }).join('\n'));
+  }
+  return (
+    <div>
+      {props.passage ? <div style={{ fontSize: props.mobile ? 13.5 : 14, color: '#3A3328', lineHeight: 1.7, fontFamily: 'Georgia,serif', whiteSpace: 'pre-line', marginBottom: 16, padding: 14, borderRadius: 12, background: 'rgba(166,90,0,0.06)' }}>{props.passage}</div> : null}
+      {blanks.map(function (b, i) {
+        return (
+          <div key={i} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: props.mobile ? 11 : 12, fontWeight: 700, color: '#7A6A55', marginBottom: 6 }}>{(b.label || ('Blank ' + (i + 1))) + (b.hint ? (' \u2014 ' + b.hint) : '')}</div>
+            <input value={vals[i]} onChange={function (e) { set(i, e.target.value); }} placeholder="Write the missing part\u2026"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + color, outline: 'none', fontSize: props.mobile ? 13.5 : 14, fontFamily: 'Georgia,serif', background: '#fff', boxSizing: 'border-box' }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; window.WordOrderTask = WordOrderTask; window.BlankFillTask = BlankFillTask; }
 
 function MGenLoading(props) {
   var color = (props && props.color) || T.brand;

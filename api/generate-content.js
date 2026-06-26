@@ -101,6 +101,20 @@ function prompt(type, langName, difficulty, exam, topic) {
         `The chart has 4-7 categories and 1-3 series of realistic whole numbers. ` +
         `All prompts and chart labels in ${langName}; the Task 1 prompt asks the learner to summarise the visual.`;
     }
+    if (examU.indexOf('HSK') !== -1) {
+      return `Create a ${difficulty} HSK 书写 (writing) test in ${langName}.${examLine} ` +
+        `Task 1 is 排列顺序 sentence-ordering: provide exactly 4 items. Each item has a "words" array of 4-6 scrambled Chinese words/phrases and the single grammatically correct "answer" sentence built from exactly those words (each word used once). ` +
+        `Task 2 is a short 书写 composition prompt that gives the learner one keyword to use. ` +
+        `Return ONLY minified JSON: {\"title\":string,\"task1\":{\"kind\":\"order\",\"items\":[{\"words\":[string],\"answer\":string}]},\"task2\":{\"prompt\":string},\"min_words\":number,\"time_minutes\":number}. ` +
+        `Every element of an item's "words" array must appear in its "answer" exactly once; all content in Chinese. Do NOT include any chart.`;
+    }
+    if (examU.indexOf('TOPIK') !== -1) {
+      return `Create a ${difficulty} TOPIK 쓰기 (writing) test in ${langName}.${examLine} ` +
+        `Task 1 is 쓰기 51-52 short guided writing: a short "passage" in Korean that literally contains two blanks written as (㉠) and (㉡), plus a "blanks" array of exactly two objects, each with a "label" ("㉠" then "㉡") and a short "hint" (in Korean) describing what belongs in that blank. ` +
+        `Task 2 is a 200-300 character argumentative essay prompt (쓰기 54 style). ` +
+        `Return ONLY minified JSON: {\"title\":string,\"task1\":{\"kind\":\"blanks\",\"passage\":string,\"blanks\":[{\"label\":string,\"hint\":string}]},\"task2\":{\"prompt\":string},\"min_words\":number,\"time_minutes\":number}. ` +
+        `All content in Korean; the passage must literally contain (㉠) and (㉡). Do NOT include any chart.`;
+    }
     var wt = WRITING_TASKS(examU);
     return `Create a ${difficulty} two-part writing test in ${langName} in the official format of the ${exam} exam.${examLine} ` +
       `Task 1: ${wt.t1} Task 2: ${wt.t2} ` +

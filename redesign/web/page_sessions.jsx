@@ -1012,6 +1012,11 @@ function WritingSession() {
             {task==='task1' ? _w.task1Meta : _w.task2Meta}
           </div>
           {task === 'task1' ? (
+            (gen && gen.task1Kind === 'order' && Array.isArray(gen.task1Items) && gen.task1Items.length) ? (
+              <WordOrderTask items={gen.task1Items} color={T.writing.c} onText={(t)=>{ setText(t); setWordCount(t.trim()?t.trim().split(/\s+/).length:0); }}/>
+            ) : (gen && gen.task1Kind === 'blanks' && Array.isArray(gen.task1Blanks) && gen.task1Blanks.length) ? (
+              <BlankFillTask passage={gen.task1Passage} blanks={gen.task1Blanks} color={T.writing.c} onText={(t)=>{ setText(t); setWordCount(t.trim()?t.trim().split(/\s+/).length:0); }}/>
+            ) : (
             <>
               <div style={{ fontSize:14, color:T.ink, lineHeight:1.65, fontFamily:"Georgia,serif", whiteSpace:'pre-line' }}>
                 {_task1Prompt}
@@ -1024,6 +1029,7 @@ function WritingSession() {
               </div>
               )}
             </>
+            )
           ) : (
             <div style={{ fontSize:14, color:T.ink, lineHeight:1.65, fontFamily:"Georgia,serif" }}>
               {(gen && gen.task2Topic)

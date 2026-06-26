@@ -351,6 +351,11 @@ function MWritingSession() {
             <div style={{ background:MT.card, border:`1px solid ${MT.hairline}`, borderRadius:14, padding:14, boxShadow:MT.shadowSm }}>
               <div style={{ fontSize:9.5, color:MT.ink4, fontWeight:800, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>{task === 'task1' ? _w.task1Meta : _w.task2Meta}</div>
               {task === 'task1' ? (
+                (_w && _w.task1Kind === 'order' && Array.isArray(_w.task1Items) && _w.task1Items.length) ? (
+                  <WordOrderTask items={_w.task1Items} color={T.writing.c} mobile={true} onText={(t)=>setText(t)}/>
+                ) : (_w && _w.task1Kind === 'blanks' && Array.isArray(_w.task1Blanks) && _w.task1Blanks.length) ? (
+                  <BlankFillTask passage={_w.task1Passage} blanks={_w.task1Blanks} color={T.writing.c} mobile={true} onText={(t)=>setText(t)}/>
+                ) : (
                 <>
                   <div style={{ fontSize:13.5, color:MT.ink, lineHeight:1.5, fontFamily:'Georgia,serif', marginBottom:12, whiteSpace:'pre-line' }}>{_w.task1Prompt}</div>
                   {_mIsIelts && (
@@ -367,6 +372,7 @@ function MWritingSession() {
                   </div>
                   )}
                 </>
+                )
               ) : (
                 <div style={{ fontSize:13.5, color:MT.ink, lineHeight:1.5, fontFamily:'Georgia,serif' }}>
                   <strong>{_w.task2Intro}</strong><br/><br/>
