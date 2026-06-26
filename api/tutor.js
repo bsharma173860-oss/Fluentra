@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
     var aResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': ANTHROPIC, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, system: system, messages: msgs }),
+      body: JSON.stringify({ model: (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'), max_tokens: 800, system: system, messages: msgs }),
     });
     if (!aResp.ok) return res.status(502).json({ error: 'tutor request failed', detail: (await aResp.text()).slice(0, 300) });
     var aData = await aResp.json();

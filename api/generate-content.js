@@ -116,7 +116,7 @@ module.exports = async function handler(req, res) {
       var aResp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': ANTHROPIC, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: (type === 'lesson' ? 3500 : 2000), messages: [{ role: 'user', content: p }] }),
+        body: JSON.stringify({ model: (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'), max_tokens: (type === 'lesson' ? 3500 : 2000), messages: [{ role: 'user', content: p }] }),
       });
       if (!aResp.ok) return { httpError: (await aResp.text()).slice(0, 300) };
       var aData = await aResp.json();
@@ -139,6 +139,7 @@ module.exports = async function handler(req, res) {
       lastRaw = rr.raw; payload = tryParse(rr.raw);
     }
     if (!payload) {
+      if (httpErr) console.error('[generate-content] anthropic call failed:', httpErr);
       if (httpErr && !lastRaw) return res.status(502).json({ error: 'generation failed', detail: httpErr });
       return res.status(502).json({ error: 'bad JSON from model', raw: lastRaw.slice(0, 400) });
     }

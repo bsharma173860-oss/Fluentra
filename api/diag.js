@@ -30,7 +30,7 @@ module.exports = async function (req, res) {
       var a = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': ANTHROPIC, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 16, messages: [{ role: 'user', content: 'Reply with the single word OK.' }] }),
+        body: JSON.stringify({ model: (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'), max_tokens: 16, messages: [{ role: 'user', content: 'Reply with the single word OK.' }] }),
       });
       out.anthropic = { status: a.status, ok: a.ok };
       if (!a.ok) {
