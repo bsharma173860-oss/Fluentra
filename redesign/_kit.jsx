@@ -856,7 +856,7 @@ function useGenContent(skill) {
     if (typeof window === 'undefined') return;
     if (window.__sessionGen[key]) { setV(window.__sessionGen[key]); return; }
     var cancelled = false;
-    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: ((typeof window !== 'undefined' && window.__adaptiveDifficulty && window.__adaptiveDifficulty(c, skill)) || 'medium'), exam: (typeof examFor === 'function' ? (examFor(c).short || null) : null) }) })
+    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: ((typeof window !== 'undefined' && window.__adaptiveDifficulty && window.__adaptiveDifficulty(c, skill)) || 'medium'), exam: (typeof examFor === 'function' ? (examFor(c).short || null) : null), focus: ((typeof window !== 'undefined' && window.__focusArea) ? window.__focusArea(c) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (cancelled) return;

@@ -421,20 +421,37 @@
         function statFor(mod) {
           var rows = R.filter(function (r) { return r.detail && r.detail.module === mod; })
             .sort(function (a, b) { return new Date(b.updated_at || 0) - new Date(a.updated_at || 0); }); // newest first
-          if (!rows.length) return { count: 0, avg: null, recent: null, trend: 0, suggestedDifficulty: 'medium' };
+          if (!rows.length) return { count: 0, avg: null, recent: null, trend: 0, suggestedDifficulty: 'medium', weakCriterion: null };
           var scores = rows.map(function (r) { return Number(r.score) || 0; });
           var mean = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length) : null; };
           var recent = mean(scores.slice(0, Math.min(5, scores.length)));
           var older = scores.length > 5 ? mean(scores.slice(5)) : recent;
           var diff = 'medium';
           if (rows.length >= 2) { diff = recent >= 80 ? 'hard' : (recent < 55 ? 'easy' : 'medium'); }
-          return { count: rows.length, avg: mean(scores), recent: recent, trend: recent - older, suggestedDifficulty: diff };
+          // Granular weakness: lowest-average grading criterion across recent graded rows.
+          var CRIT_LABEL = { task_response: 'task response', coherence_cohesion: 'coherence & cohesion', lexical_resource: 'vocabulary range', grammatical_range_accuracy: 'grammar', fluency_coherence: 'fluency' };
+          var critRows = rows.filter(function (r) { return r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; }).slice(0, 5);
+          var weakCriterion = null;
+          if (critRows.length) {
+            var sums = {}, cnts = {};
+            critRows.forEach(function (r) { var c = r.detail.criteria; for (var k in c) { if (typeof c[k] === 'number') { sums[k] = (sums[k] || 0) + c[k]; cnts[k] = (cnts[k] || 0) + 1; } } });
+            var lowK = null, lowV = Infinity;
+            for (var kk in sums) { var av = sums[kk] / cnts[kk]; if (av < lowV) { lowV = av; lowK = kk; } }
+            if (lowK) weakCriterion = { key: lowK, band: Math.round(lowV * 10) / 10, label: CRIT_LABEL[lowK] || lowK.replace(/_/g, ' ') };
+          }
+          return { count: rows.length, avg: mean(scores), recent: recent, trend: recent - older, suggestedDifficulty: diff, weakCriterion: weakCriterion };
         }
         var skills = {};
         SKILLS.forEach(function (s) { skills[s] = statFor(s); });
         var overall = R.length ? Math.round(R.reduce(function (a, r) { return a + (Number(r.score) || 0); }, 0) / R.length) : null;
         var ranked = SKILLS.filter(function (s) { return skills[s].count >= 2; })
           .sort(function (a, b) { return skills[a].avg - skills[b].avg; });
+        // Single most-actionable focus: the lowest grading criterion across writing + speaking.
+        var focus = null;
+        ['writing', 'speaking'].forEach(function (sk) {
+          var wc = skills[sk] && skills[sk].weakCriterion;
+          if (wc && (!focus || wc.band < focus.band)) focus = { skill: sk, key: wc.key, band: wc.band, label: wc.label };
+        });
         return {
           lang: L,
           sessions: R.length,
@@ -442,6 +459,7 @@
           skills: skills,
           weakest: ranked.length ? ranked[0] : null,
           strongest: ranked.length ? ranked[ranked.length - 1] : null,
+          focus: focus,
         };
       },
 
@@ -709,6 +727,13 @@
     window.__can     = function (f) { return !!window.__ent()[f]; };
     window.__maxLang = function () { return window.__ent().maxLanguages; };
     window.__upgrade = function (reason) { window.__upgradeReason = reason || ''; if (window.__nav) window.__nav('pricing'); };
+    // The learner's single weakest grading dimension (e.g. 'grammar'), or null.
+    window.__focusArea = function (lang) {
+      try {
+        var p = window.FL && window.FL.learnerProfile ? window.FL.learnerProfile(lang) : null;
+        return (p && p.focus && p.focus.label) || null;
+      } catch (e) { return null; }
+    };
     // Per-skill content difficulty derived from the learner's real recent scores.
     // Defaults to 'medium' until there's enough data, so new users are unaffected.
     window.__adaptiveDifficulty = function (lang, skill) {
@@ -781,7 +806,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b191-learner-model-p1p2';
+    window.__FL_BUILD = 'b192-learner-p3-focus';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

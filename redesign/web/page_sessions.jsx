@@ -363,7 +363,7 @@ function ReadingSession() {
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
-            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: _diff, exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }),
+            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: _diff, exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null), focus: (window.__focusArea ? window.__focusArea(lang) : null) }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
@@ -517,7 +517,7 @@ function ListeningSession() {
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
-            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: _diff, exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }),
+            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: _diff, exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null), focus: (window.__focusArea ? window.__focusArea(lang) : null) }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
@@ -708,7 +708,7 @@ function SpeakingSession() {
     window.__flSpeakingGen = window.__flSpeakingGen || {};
     if (window.__flSpeakingGen[lang]) { setGen(window.__flSpeakingGen[lang]); return; }
     var alive = true;
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking', difficulty: (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'speaking')) || 'medium', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking', difficulty: (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'speaking')) || 'medium', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null), focus: (window.__focusArea ? window.__focusArea(lang) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var p = d && d.content && d.content.payload;
@@ -781,7 +781,7 @@ function SpeakingSession() {
     if (savedRef.current) return; savedRef.current = true;
     var band = Number(ev.overall_band || 0);
     var token = _tok(); if (!token) return;
-    window.__saveResult({ lang: window.__langCode||'en', score: Math.round(band/9*100), detail:{ module:'speaking', part: partIdx, band: band, unit: '/9' }, status:'completed' });
+    window.__saveResult({ lang: window.__langCode||'en', score: Math.round(band/9*100), detail:{ module:'speaking', part: partIdx, band: band, unit: '/9', criteria: (ev && ev.criteria) || null }, status:'completed' });
   }
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -939,7 +939,7 @@ function WritingSession() {
     window.__flWritingGen = window.__flWritingGen || {};
     if (window.__flWritingGen[lang]) { setGen(window.__flWritingGen[lang]); return; }
     var alive = true;
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing', difficulty: (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'writing')) || 'medium', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing', difficulty: (window.__adaptiveDifficulty && window.__adaptiveDifficulty(lang, 'writing')) || 'medium', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null), focus: (window.__focusArea ? window.__focusArea(lang) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var p = d && d.content && d.content.payload;
@@ -983,7 +983,7 @@ function WritingSession() {
       window.__lastResult = { module:'writing', lang: window.__langCode||'en', kind:'band', band: Number(_ev.overall_band||0), criteria: _ev.criteria||{}, corrections: _ev.corrections||[] };
       try {
         var _tok = window.__authToken ? window.__authToken() : null;
-        window.__saveResult({ lang: window.__langCode||'en', score: Math.round(Number(_ev.overall_band||0)/9*100), detail:{ module:'writing', task: task, band: Number(_ev.overall_band||0), unit: '/9' } });
+        window.__saveResult({ lang: window.__langCode||'en', score: Math.round(Number(_ev.overall_band||0)/9*100), detail:{ module:'writing', task: task, band: Number(_ev.overall_band||0), unit: '/9', criteria: _ev.criteria || null } });
       } catch(e){}
     }
     if (thenNav) window.__nav && window.__nav('mod_results');
