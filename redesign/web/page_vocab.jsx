@@ -15,7 +15,9 @@ function VocabPage() {
   const [searchQ, setSearchQ] = useState('');
   const [shareToast, setShareToast] = useState(false);
 
-  const decks = [
+  const _vLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const _vLangName = (typeof langByCode === 'function' ? (langByCode(_vLang).english || 'this language') : 'this language');
+  const _allDecks = [
     { title:'Café & restaurants', lang:'es', count:42, due:8,  mastered:21, accent:T.es,  tag:'A2 · everyday' },
     { title:'Travel & directions', lang:'es', count:38, due:5,  mastered:30, accent:T.es,  tag:'A2 · everyday' },
     { title:'Body & health',       lang:'fr', count:54, due:12, mastered:18, accent:T.fr,  tag:'B1 · core' },
@@ -23,6 +25,9 @@ function VocabPage() {
     { title:'JLPT N4 Verbs',       lang:'ja', count:120,due:22, mastered:64, accent:T.ja,  tag:'N4 · core' },
     { title:'False friends EN↔ES', lang:'es', count:24, due:0,  mastered:24, accent:T.es,  tag:'B1 · advanced' },
   ];
+  // Only show decks for the language the user is currently studying — never other languages.
+  let decks = _allDecks.filter(function (d) { return d.lang === _vLang; });
+  if (!decks.length) decks = [{ title: _vLangName + ' vocabulary', lang:_vLang, count:0, due:0, mastered:0, accent:(T[_vLang] || T.es), tag:'Your words' }];
 
   const _decks = decks.slice().sort(function (a, b) {
     if (sortDir === 'alpha') return a.title.localeCompare(b.title);
@@ -30,9 +35,7 @@ function VocabPage() {
     if (sortDir === 'due') return b.due - a.due;
     return 0;
   });
-  const deck = _decks[activeDeck];
-
-  const _vLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const deck = _decks[activeDeck] || _decks[0];
   const [words, setWords] = useState([]);
   const [srsCache, setSrsCache] = useState({});
   const [genning, setGenning] = useState(false);
