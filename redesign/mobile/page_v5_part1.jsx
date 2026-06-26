@@ -395,14 +395,14 @@ function MVocabPageV5() {
   const dueWords = words.filter(function (w) { return _isDue(w.term); });
   const masteredWords = words.filter(function (w) { return _reps(w.term) >= 3; });
   const studyWords = studyMastered ? masteredWords : (dueWords.length ? dueWords : words);
-  const cards = studyWords.map(function (w) { return { term:w.term, front:w.term, back:w.en, meta:(w.reading ? w.reading + ' · ' : '') + _vcode.toUpperCase(), ex:w.example }; });
+  const _langName = (typeof langByCode === 'function' && langByCode(_vcode) && langByCode(_vcode).english) || _vcode.toUpperCase();
+  const cards = studyWords.map(function (w) { return { term:w.term, front:w.term, back:w.en, meta:(w.reading ? w.reading + ' · ' : '') + _langName, ex:w.example }; });
   const _newN = words.filter(function (w) { return !srs[_vcode + '::' + w.term]; }).length;
   const _revN = words.filter(function (w) { return srs[_vcode + '::' + w.term] && _isDue(w.term); }).length;
   const _learnN = Math.max(0, dueWords.length - _revN);
   const _masteryPct = words.length ? Math.round(masteredWords.length / words.length * 100) : 0;
-  const _langName = (typeof langByCode === 'function' && langByCode(_vcode) && langByCode(_vcode).english) || _vcode.toUpperCase();
-  const decks = words.length ? [{ name:_langName + ' vocabulary', count:words.length, due:dueWords.length, lang:_vcode.toUpperCase(), mastery:_masteryPct, c:T.brand }] : [];
-  const _allCards = words.map(function (w) { var has = srs[_vcode + '::' + w.term]; return { f:w.term, b:w.en, m:_vcode.toUpperCase() + (w.reading ? ' · ' + w.reading : ''), d: has ? (_isDue(w.term) ? 'Due' : 'Learning') : 'New' }; });
+  const decks = words.length ? [{ name:_langName + ' vocabulary', count:words.length, due:dueWords.length, lang:_vcode, mastery:_masteryPct, c:T.brand }] : [];
+  const _allCards = words.map(function (w) { var has = srs[_vcode + '::' + w.term]; return { f:w.term, b:w.en, m:_langName + (w.reading ? ' · ' + w.reading : ''), d: has ? (_isDue(w.term) ? 'Due' : 'Learning') : 'New' }; });
   function _grade(label) {
     var card = cards[cardIdx] || cards[0]; if (!card) return;
     var q = label === 'Again' ? 1 : label === 'Hard' ? 3 : label === 'Easy' ? 5 : 4;
@@ -485,7 +485,7 @@ function MVocabPageV5() {
               <button key={d.name} onClick={()=>setStudying(true)} style={{ width:'100%', textAlign:'left', display:'flex', alignItems:'center', gap:11, padding:'12px 14px', background:T.card, border:`1px solid ${T.hairline}`, borderRadius:13, boxShadow:MT.shadowSm }}>
                 <div style={{ width:38, height:48, borderRadius:6, background:`linear-gradient(160deg, ${d.c}, ${d.c}cc)`, position:'relative', flexShrink:0, boxShadow:MT.shadowSm }}>
                   <div style={{ position:'absolute', inset:'2px 2px 32%', borderRadius:'4px 4px 0 0', background:'rgba(255,255,255,.18)' }}/>
-                  <div style={{ position:'absolute', bottom:4, left:0, right:0, fontSize:9, fontWeight:800, color:'#fff', letterSpacing:'.05em', textAlign:'center' }}>{d.lang}</div>
+                  <div style={{ position:'absolute', bottom:4, left:0, right:0, display:'flex', justifyContent:'center' }}><Flag code={d.lang} w={20} h={13} radius={2}/></div>
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:3 }}>{d.name}</div>
