@@ -2,19 +2,34 @@
 
 function MPhrasebookPractice() {
   const nav = window.__nav || (() => {});
-  const cats = (typeof window !== 'undefined' && window.PHRASEBOOK_CATS) ? window.PHRASEBOOK_CATS : [];
-  const catId = (typeof window !== 'undefined' && window.__phraseCat) || 'all';
-  const cat = cats.find(c => c.id === catId);
-  const phrases = cat ? cat.phrases : cats.flatMap(c => c.phrases || []);
+  const S = (window.FL && window.FL.social) ? window.FL.social : null;
+  const lang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const [phrases, setPhrases] = useState(null);
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [mode, setMode] = useState('listen');
-  const total = phrases.length;
-  const phrase = phrases[idx];
+  React.useEffect(function () {
+    if (!S) { setPhrases([]); return; }
+    S.listPhrases(lang).then(function (r) { setPhrases(r || []); }).catch(function () { setPhrases([]); });
+  }, [lang]);
+
+  const all = phrases || [];
+  const total = all.length;
+  const phrase = all[idx];
   const progress = total ? ((idx + 1) / total) * 100 : 0;
 
   const next = () => { setRevealed(false); if (idx < total - 1) setIdx(idx + 1); else nav('phrasebook'); };
   const prev = () => { setRevealed(false); if (idx > 0) setIdx(idx - 1); };
+
+  if (phrases === null) return (
+    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:T.ink3, background:T.bg }}>Loading…</div>
+  );
+  if (total === 0) return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:14, padding:32, background:T.bg }}>
+      <div style={{ fontSize:14, color:T.ink3, textAlign:'center' }}>No saved phrases to practice yet.</div>
+      <button onClick={() => nav('phrasebook')} style={{ padding:'11px 18px', borderRadius:11, background:T.brand, color:'#fff', fontSize:13, fontWeight:700, border:'none', cursor:'pointer' }}>Back to phrasebook</button>
+    </div>
+  );
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:T.bg }}>
@@ -22,7 +37,7 @@ function MPhrasebookPractice() {
           <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background:T.card, borderBottom:`1px solid ${T.hairline}` }}>
             <button onClick={() => nav('phrasebook')} style={{ width:32, height:32, borderRadius:8, background:T.bg2, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, cursor:'pointer' }}>×</button>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>{cat ? cat.name : 'All phrases'}</div>
+              <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase' }}>Saved phrases</div>
               <div style={{ height:5, background:T.bg2, borderRadius:99, overflow:'hidden', marginTop:3 }}>
                 <div style={{ width:`${progress}%`, height:'100%', background:T.brand, borderRadius:99, transition:'width .3s' }}/>
               </div>
@@ -45,12 +60,12 @@ function MPhrasebookPractice() {
           {/* Card */}
           <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'12px 16px' }}>
             <div style={{ width:'100%', background:T.card, border:`1px solid ${T.border}`, borderRadius:18, padding:'30px 22px', textAlign:'center', boxShadow:'0 6px 18px rgba(0,0,0,.04)' }}>
-              <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.3, color:T.ink, marginBottom:16, fontStyle:'italic' }}>"{phrase?.es || ''}"</div>
-              <button onClick={()=>window.flSpeak && window.flSpeak(phrase && phrase.es, 'es')} style={{ width:60, height:60, borderRadius:'50%', background: mode==='speak'?T.speaking.c:T.brand, color:'#fff', display:'inline-flex', alignItems:'center', justifyContent:'center', boxShadow: mode==='speak' ? `0 8px 18px ${T.speaking.c}55` : `0 8px 18px ${T.brand}55`, cursor:'pointer', marginBottom:18, border:'none' }}>{mode==='speak' ? Icon.mic({ width:20, height:20 }) : Icon.play({ width:20, height:20 })}</button>
+              <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.3, color:T.ink, marginBottom:16, fontStyle:'italic' }}>"{phrase?.front || ''}"</div>
+              <button onClick={()=>{ if (window.flSpeak && phrase) window.flSpeak(phrase.front, lang); }} style={{ width:60, height:60, borderRadius:'50%', background: mode==='speak'?T.speaking.c:T.brand, color:'#fff', display:'inline-flex', alignItems:'center', justifyContent:'center', boxShadow: mode==='speak' ? `0 8px 18px ${T.speaking.c}55` : `0 8px 18px ${T.brand}55`, cursor:'pointer', marginBottom:18, border:'none' }}>{mode==='speak' ? Icon.mic({ width:20, height:20 }) : Icon.play({ width:20, height:20 })}</button>
               {revealed ? (
                 <div style={{ borderTop:`1px solid ${T.hairline}`, paddingTop:14 }}>
                   <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:5 }}>Translation</div>
-                  <div style={{ fontSize:15, color:T.ink2, lineHeight:1.45 }}>{phrase?.en || ''}</div>
+                  <div style={{ fontSize:15, color:T.ink2, lineHeight:1.45 }}>{phrase?.back || '—'}</div>
                 </div>
               ) : (
                 <button onClick={() => setRevealed(true)} style={{ fontSize:12, fontWeight:700, color:T.brand, padding:'7px 12px', borderRadius:7, background:T.bg2, cursor:'pointer' }}>Reveal translation</button>

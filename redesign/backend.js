@@ -722,7 +722,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b188-structured-writing';
+    window.__FL_BUILD = 'b189-mobile-phrasebook-lang';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
