@@ -500,11 +500,8 @@
         var L = lang || window.__langCode || 'en';
         var P_L0 = 0.30, P_T = 0.14, P_S = 0.10, P_G = 0.20, PASS = 6.0; // BKT params + competency band
         var CRIT_LABEL = { task_response: 'task response', coherence_cohesion: 'coherence & cohesion', lexical_resource: 'vocabulary range', grammatical_range_accuracy: 'grammar', fluency_coherence: 'fluency' };
-        // Which skill(s) each knowledge component lives under — lets the learner's
-        // own skill ability act as a per-component prior (hierarchical pooling).
         var KC_SKILL = { task_response: ['writing'], coherence_cohesion: ['writing'], fluency_coherence: ['speaking'], lexical_resource: ['writing', 'speaking'], grammatical_range_accuracy: ['writing', 'speaking'] };
         var all = (window.__results || []).filter(function (r) { return r && r.lang === L && typeof r.score === 'number'; });
-        // Per-skill Kalman ability, cached, used to shrink each component's prior.
         var _sc = {};
         function skillAbil(skill) {
           if (skill in _sc) return _sc[skill];
@@ -513,10 +510,8 @@
             .map(function (r) { return Number(r.score) || 0; });
           return (_sc[skill] = arr.length ? _kalmanAbility(arr) : null);
         }
-        // Empirical-Bayes prior: blend the global BKT prior toward the learner's
-        // skill ability, weighted by how confident that skill estimate is. Sparse/
-        // unseen components start near the learner's demonstrated skill, not a flat
-        // 0.30 — so a few noisy observations can't swing them wildly.
+        // Empirical-Bayes shrinkage of a [0..1] ability + its sd toward the global prior.
+        function _blend(A, U) { var w = Math.max(0, Math.min(0.6, 1 - U / 25)); return w * A + (1 - w) * P_L0; }
         function kcPrior(key) {
           var sks = KC_SKILL[key] || [];
           var As = [], Us = [];
@@ -524,29 +519,46 @@
           if (!As.length) return P_L0;
           var A = As.reduce(function (x, y) { return x + y; }, 0) / As.length;
           var U = Us.reduce(function (x, y) { return x + y; }, 0) / Us.length;
-          var w = Math.max(0, Math.min(0.6, 1 - U / 25)); // confident skill (low sd) -> lean on it, capped at 0.6
-          return w * A + (1 - w) * P_L0;
+          return _blend(A, U);
         }
-        var rows = all.filter(function (r) { return r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; })
-          .sort(function (a, b) { return new Date(a.updated_at || 0) - new Date(b.updated_at || 0); }); // oldest -> newest
+        function skillPrior(skill) { var a = skillAbil(skill); return a ? _blend(a.ability / 100, a.uncertainty) : P_L0; }
+        // One BKT opportunity: update P(known) given a correct/incorrect outcome.
+        function bktStep(st, correct) {
+          var post = correct
+            ? (st.p * (1 - P_S)) / (st.p * (1 - P_S) + (1 - st.p) * P_G)
+            : (st.p * P_S) / (st.p * P_S + (1 - st.p) * (1 - P_G));
+          st.p = post + (1 - post) * P_T; st.n += 1;
+        }
         var comp = {};
-        rows.forEach(function (r) {
-          var c = r.detail.criteria;
-          for (var k in c) {
-            if (typeof c[k] !== 'number') continue;
-            if (!comp[k]) { var pr = kcPrior(k); comp[k] = { p: pr, n: 0, prior: Math.round(pr * 100) / 100 }; }
-            var st = comp[k];
-            var correct = c[k] >= PASS;
-            var post = correct
-              ? (st.p * (1 - P_S)) / (st.p * (1 - P_S) + (1 - st.p) * P_G)
-              : (st.p * P_S) / (st.p * P_S + (1 - st.p) * (1 - P_G));
-            st.p = post + (1 - post) * P_T; // learning transition after the opportunity
-            st.n += 1;
-          }
-        });
+        // Coarse layer: the 5 grading criteria (from writing/speaking bands).
+        all.filter(function (r) { return r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; })
+          .sort(function (a, b) { return new Date(a.updated_at || 0) - new Date(b.updated_at || 0); })
+          .forEach(function (r) {
+            var c = r.detail.criteria;
+            for (var k in c) {
+              if (typeof c[k] !== 'number') continue;
+              if (!comp[k]) { var pr = kcPrior(k); comp[k] = { p: pr, n: 0, prior: Math.round(pr * 100) / 100, label: CRIT_LABEL[k] || k.replace(/_/g, ' '), kind: 'criterion' }; }
+              bktStep(comp[k], c[k] >= PASS);
+            }
+          });
+        // Fine layer: per-question concept tags captured in reading/listening items.
+        // Prior shrinks toward that skill's ability (hierarchical pooling) so a
+        // brand-new concept starts from demonstrated skill, not a flat 0.30.
+        all.filter(function (r) { return r.detail && Array.isArray(r.detail.items) && r.detail.items.length; })
+          .sort(function (a, b) { return new Date(a.updated_at || 0) - new Date(b.updated_at || 0); })
+          .forEach(function (r) {
+            var skill = (r.detail.module === 'listening') ? 'listening' : 'reading';
+            r.detail.items.forEach(function (it) {
+              if (!it || !it.c) return;
+              var key = 'concept:' + it.c;
+              if (!comp[key]) { var pr = skillPrior(skill); comp[key] = { p: pr, n: 0, prior: Math.round(pr * 100) / 100, label: it.c, kind: 'concept', skill: skill }; }
+              bktStep(comp[key], !!it.ok);
+            });
+          });
         var components = {}, weakest = null;
         for (var key in comp) {
-          var m = { key: key, label: CRIT_LABEL[key] || key.replace(/_/g, ' '), mastery: Math.round(comp[key].p * 100) / 100, n: comp[key].n, prior: comp[key].prior };
+          var e = comp[key];
+          var m = { key: key, label: e.label, mastery: Math.round(e.p * 100) / 100, n: e.n, prior: e.prior, kind: e.kind, skill: e.skill || null };
           components[key] = m;
           if (m.n >= 2 && (!weakest || m.mastery < weakest.mastery)) weakest = m;
         }
@@ -896,7 +908,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b194-hierarchical-bkt-prior';
+    window.__FL_BUILD = 'b195-concept-capture';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

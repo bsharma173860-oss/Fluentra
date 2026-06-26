@@ -394,7 +394,7 @@ function ReadingSession() {
     try {
       var token = window.__authToken ? window.__authToken() : null;
       if (token) {
-        window.__saveResult({ lang: lang, content_id: contentId, score: pct, detail: { module: 'reading', correct: correct, total: qs.length, answered: answered, unit: '%' } });
+        window.__saveResult({ lang: lang, content_id: contentId, score: pct, detail: { module: 'reading', correct: correct, total: qs.length, answered: answered, unit: '%', items: qs.map(function(q,i){ return { c: String((q && q.concept) || '').trim().slice(0,40).toLowerCase(), ok: answered[i] === q.answer }; }).filter(function(x){ return x.c; }) } });
       }
     } catch (e) {}
   }
@@ -566,7 +566,7 @@ function ListeningSession() {
     try {
       var token = window.__authToken ? window.__authToken() : null;
       if (token) {
-        window.__saveResult({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length, unit: '%' } });
+        window.__saveResult({ lang: lang, content_id: contentId, score: pct, detail: { module:'listening', correct: correct, total: qs.length, unit: '%', items: qs.map(function(q,i){ return { c: String((q && q.concept) || '').trim().slice(0,40).toLowerCase(), ok: answered[i] === q.answer }; }).filter(function(x){ return x.c; }) } });
       }
     } catch (e) {}
     if (window.__exam && window.__exam.active) {

@@ -84,9 +84,10 @@ function prompt(type, langName, difficulty, exam, topic, focus) {
   if (type === 'reading') {
     return `Create a ${difficulty} reading-comprehension item in ${langName}.${examLine} ` +
       `Return ONLY minified JSON: {"title":string,"passage":string,"questions":[{"q":string,` +
-      `"options":[string,string,string,string],"answer":number}]}. ` +
+      `"options":[string,string,string,string],"answer":number,"concept":string}]}. ` +
       `Passage length: easy ~120 words, medium ~250, hard ~450. 4–6 questions. ` +
-      `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option.`;
+      `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option. ` +
+      `"concept" is a SHORT canonical English tag for the single grammar or vocabulary point each question tests (e.g. "past tense", "relative clauses", "modal verbs", "topic particle"); reuse identical wording for the same concept so mastery can be tracked over time.`;
   }
   if (type === 'writing') {
     var examU = exam ? String(exam).toUpperCase() : '';
@@ -126,9 +127,10 @@ function prompt(type, langName, difficulty, exam, topic, focus) {
     return `Create a ${difficulty} listening-comprehension item in ${langName}.${examLine} ` +
       `Write a natural spoken-style passage — a short monologue or a two-person dialogue that reads well aloud — then comprehension questions. ` +
       `Return ONLY minified JSON: {"title":string,"passage":string,"questions":[{"q":string,` +
-      `"options":[string,string,string,string],"answer":number}]}. ` +
+      `"options":[string,string,string,string],"answer":number,"concept":string}]}. ` +
       `Passage ~120-220 words in a conversational register; 4-6 questions. ` +
-      `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option.`;
+      `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option. ` +
+      `"concept" is a SHORT canonical English tag for the single grammar or vocabulary point each question tests (e.g. "past tense", "relative clauses", "modal verbs", "topic particle"); reuse identical wording for the same concept so mastery can be tracked over time.`;
   }
   if (type === 'lesson') {
     var topicLine = topic ? ' The lesson topic is: "' + topic + '".' : '';
