@@ -119,6 +119,21 @@
       },
     });
 
+    // ── Shared real-math helper: recursive Bayesian (Kalman) estimate of latent
+    // ability from noisy session scores. Used by both the skill profile and, as a
+    // per-learner prior, by the BKT mastery model (hierarchical partial pooling).
+    function _kalmanAbility(scoresNewestFirst) {
+      var seq = (scoresNewestFirst || []).slice().reverse(); // chronological
+      var mu = 50, P = 400, Q = 16, Rm = 324;                // neutral prior, slow drift, noisy measurement
+      for (var i = 0; i < seq.length; i++) {
+        P = P + Q;
+        var Kg = P / (P + Rm);
+        mu = mu + Kg * (seq[i] - mu);
+        P = (1 - Kg) * P;
+      }
+      return { ability: Math.round(mu), uncertainty: Math.round(Math.sqrt(P)), mu: mu, sd: Math.sqrt(P), n: seq.length };
+    }
+
     // ── Public API ─────────────────────────────────────────────
     window.FL = {
       _ready: true,
@@ -426,21 +441,10 @@
           var mean = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length) : null; };
           var recent = mean(scores.slice(0, Math.min(5, scores.length)));
           var older = scores.length > 5 ? mean(scores.slice(5)) : recent;
-          // ── Real math: Bayesian recursive estimation (Kalman filter) of latent
-          // ability from the noisy session scores. Maintains ability ± uncertainty
-          // instead of a flat average — principled recency weighting + honest
-          // confidence + zone-of-proximal-development difficulty targeting.
-          var seq = scores.slice().reverse();      // chronological (oldest -> newest)
-          var mu = 50, P = 400;                     // prior: neutral ability, sd ~20 (very unsure)
-          var Q = 16, Rm = 324;                     // process noise sd ~4 (slow drift), measurement noise sd ~18 (one session is noisy)
-          for (var si = 0; si < seq.length; si++) {
-            P = P + Q;                              // predict: ability can drift/improve
-            var Kg = P / (P + Rm);                  // Kalman gain
-            mu = mu + Kg * (seq[si] - mu);          // update toward the observation
-            P = (1 - Kg) * P;                       // shrink uncertainty
-          }
-          var ability = Math.round(mu);
-          var uncertainty = Math.round(Math.sqrt(P));
+          // ── Real math: recursive Bayesian (Kalman) latent-ability estimate.
+          var _ka = _kalmanAbility(scores);
+          var ability = _ka.ability;
+          var uncertainty = _ka.uncertainty;
           // ZPD difficulty, only deviating from medium once the estimate is confident.
           var diff = 'medium';
           if (uncertainty <= 13 && rows.length >= 2) { diff = ability >= 75 ? 'hard' : (ability <= 52 ? 'easy' : 'medium'); }
@@ -496,15 +500,41 @@
         var L = lang || window.__langCode || 'en';
         var P_L0 = 0.30, P_T = 0.14, P_S = 0.10, P_G = 0.20, PASS = 6.0; // BKT params + competency band
         var CRIT_LABEL = { task_response: 'task response', coherence_cohesion: 'coherence & cohesion', lexical_resource: 'vocabulary range', grammatical_range_accuracy: 'grammar', fluency_coherence: 'fluency' };
-        var rows = (window.__results || [])
-          .filter(function (r) { return r && r.lang === L && r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; })
+        // Which skill(s) each knowledge component lives under — lets the learner's
+        // own skill ability act as a per-component prior (hierarchical pooling).
+        var KC_SKILL = { task_response: ['writing'], coherence_cohesion: ['writing'], fluency_coherence: ['speaking'], lexical_resource: ['writing', 'speaking'], grammatical_range_accuracy: ['writing', 'speaking'] };
+        var all = (window.__results || []).filter(function (r) { return r && r.lang === L && typeof r.score === 'number'; });
+        // Per-skill Kalman ability, cached, used to shrink each component's prior.
+        var _sc = {};
+        function skillAbil(skill) {
+          if (skill in _sc) return _sc[skill];
+          var arr = all.filter(function (r) { return r.detail && r.detail.module === skill; })
+            .sort(function (a, b) { return new Date(b.updated_at || 0) - new Date(a.updated_at || 0); })
+            .map(function (r) { return Number(r.score) || 0; });
+          return (_sc[skill] = arr.length ? _kalmanAbility(arr) : null);
+        }
+        // Empirical-Bayes prior: blend the global BKT prior toward the learner's
+        // skill ability, weighted by how confident that skill estimate is. Sparse/
+        // unseen components start near the learner's demonstrated skill, not a flat
+        // 0.30 — so a few noisy observations can't swing them wildly.
+        function kcPrior(key) {
+          var sks = KC_SKILL[key] || [];
+          var As = [], Us = [];
+          sks.forEach(function (s) { var a = skillAbil(s); if (a) { As.push(a.ability / 100); Us.push(a.uncertainty); } });
+          if (!As.length) return P_L0;
+          var A = As.reduce(function (x, y) { return x + y; }, 0) / As.length;
+          var U = Us.reduce(function (x, y) { return x + y; }, 0) / Us.length;
+          var w = Math.max(0, Math.min(0.6, 1 - U / 25)); // confident skill (low sd) -> lean on it, capped at 0.6
+          return w * A + (1 - w) * P_L0;
+        }
+        var rows = all.filter(function (r) { return r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; })
           .sort(function (a, b) { return new Date(a.updated_at || 0) - new Date(b.updated_at || 0); }); // oldest -> newest
         var comp = {};
         rows.forEach(function (r) {
           var c = r.detail.criteria;
           for (var k in c) {
             if (typeof c[k] !== 'number') continue;
-            if (!comp[k]) comp[k] = { p: P_L0, n: 0 };
+            if (!comp[k]) { var pr = kcPrior(k); comp[k] = { p: pr, n: 0, prior: Math.round(pr * 100) / 100 }; }
             var st = comp[k];
             var correct = c[k] >= PASS;
             var post = correct
@@ -516,7 +546,7 @@
         });
         var components = {}, weakest = null;
         for (var key in comp) {
-          var m = { key: key, label: CRIT_LABEL[key] || key.replace(/_/g, ' '), mastery: Math.round(comp[key].p * 100) / 100, n: comp[key].n };
+          var m = { key: key, label: CRIT_LABEL[key] || key.replace(/_/g, ' '), mastery: Math.round(comp[key].p * 100) / 100, n: comp[key].n, prior: comp[key].prior };
           components[key] = m;
           if (m.n >= 2 && (!weakest || m.mastery < weakest.mastery)) weakest = m;
         }
@@ -866,7 +896,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b194-kalman-ability';
+    window.__FL_BUILD = 'b194-hierarchical-bkt-prior';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
