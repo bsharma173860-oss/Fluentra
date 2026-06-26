@@ -129,7 +129,7 @@ function MAddLanguageV5() {
     { code:'de', f:'🇩🇪', l:'German',      spk:'130M speakers' },
     { code:'it', f:'🇮🇹', l:'Italian',     spk:'85M speakers' },
     { code:'pt', f:'🇵🇹', l:'Portuguese',  spk:'260M speakers' },
-    { code:'jp', f:'🇯🇵', l:'Japanese',    spk:'128M speakers' },
+    { code:'ja', f:'🇯🇵', l:'Japanese',    spk:'128M speakers' },
     { code:'ko', f:'🇰🇷', l:'Korean',      spk:'82M speakers' },
     { code:'zh', f:'🇨🇳', l:'Mandarin',    spk:'1.1B speakers' },
     { code:'ar', f:'🇸🇦', l:'Arabic',      spk:'370M speakers' },

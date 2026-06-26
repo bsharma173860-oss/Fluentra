@@ -509,7 +509,7 @@ function MOnboardingPageV5() {
         await Promise.resolve(window.FL.addLanguage({ code: L.id, english: L.n, native: L.n, level: (data.level || 'a1').toUpperCase() }));
       } catch (e) {}
     }
-    if (window.__langCode === undefined || !window.__langCode) { try { window.__langCode = (langs.find(function (x){return x.id===data.language;})||{}).id; } catch (e) {} }
+    if (window.__langCode === undefined || !window.__langCode) { try { window.__langCode = ((langs.find(function (x){return x.id===data.language;})||{}).id) || data.language || 'en'; } catch (e) { window.__langCode = data.language || 'en'; } }
     window.__nav && window.__nav('dashboard');
   };
   const next = () => { if (step < total - 1) setStep(step + 1); else finish(); };

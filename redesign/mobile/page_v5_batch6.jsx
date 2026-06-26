@@ -216,6 +216,7 @@ function MAISpeakingPageV5() {
   const _gen = (typeof useGenContent === 'function') ? useGenContent('speaking') : 'err';
   const _spk = (_gen && _gen !== 'err') ? _gen : null;
   const _spkPrompt = (_spk && _spk.prompt) ? _spk.prompt : 'Describe a memorable trip you took — where you went, who with, and one specific moment that stayed with you.';
+  const _lName = (function(){ try { var c = (typeof window !== 'undefined') && window.__langCode; return (c && typeof langByCode === 'function') ? (langByCode(c).english || '') : ''; } catch (e) { return ''; } })();
   const nav = (id) => window.__nav && window.__nav(id);
   const [recording, setRecording] = useStV5B6(false);
   const [secs, setSecs] = useStV5B6(0);
@@ -242,7 +243,7 @@ function MAISpeakingPageV5() {
         <div style={{ fontFamily:T.serif, fontSize:24, color:'#fff', lineHeight:1.2, letterSpacing:'-.015em', textAlign:'center', padding:'0 4px' }}>
           {_spkPrompt}
         </div>
-        <div style={{ fontSize:11.5, color:'rgba(255,255,255,.5)', textAlign:'center', marginTop:9 }}>2 minutes · in Spanish · be detailed</div>
+        <div style={{ fontSize:11.5, color:'rgba(255,255,255,.5)', textAlign:'center', marginTop:9 }}>{`2 minutes · ${_lName ? 'in ' + _lName + ' · ' : ''}be detailed`}</div>
       </div>
 
       {/* Mic visual */}
