@@ -590,7 +590,7 @@ function MOnboardingPageV5() {
             <MCard style={{ padding:'18px 16px', textAlign:'center', marginBottom:14 }}>
               <div style={{ fontSize:10.5, color:T.ink4, fontWeight:700, letterSpacing:'.12em', marginBottom:8 }}>REMINDER TIME</div>
               <div style={{ fontFamily:T.serif, fontSize:48, letterSpacing:'-.03em', color:T.ink, lineHeight:1 }}>{data.reminder}</div>
-              <div style={{ fontSize:11.5, color:T.ink4, marginTop:8 }}>Daily, weekdays</div>
+              <div style={{ fontSize:11.5, color:T.ink4, marginTop:8 }}>Saved as your time \u00b7 reminders coming soon</div>
             </MCard>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6 }}>
               {['07:00','08:30','12:30','18:00','19:30','20:30','21:00','22:00'].map(t => (

@@ -123,7 +123,7 @@ function MEchoCard() {
       <div style={{ borderRadius:16, padding:'16px 18px', background:T.bg2, border:`1px solid ${T.border}` }}>
         {Eyebrow}
         <div style={{ fontFamily:T.serif, fontSize:16, color:T.ink, lineHeight:1.2, marginBottom:4 }}>Saved for tonight.</div>
-        <div style={{ fontSize:11, color:T.ink4, marginBottom:10 }}>We'll remind you at 8pm. Your streak is safe.</div>
+        <div style={{ fontSize:11, color:T.ink4, marginBottom:10 }}>Saved for tonight \u2014 come back to keep your streak.</div>
         <button onClick={() => setState('idle')} style={{ padding:'7px 12px', borderRadius:99, fontSize:11, fontWeight:600, color:T.ink2, background:'#fff', border:`1.5px solid ${T.border}`, cursor:'pointer' }}>Do it now</button>
       </div>
     );

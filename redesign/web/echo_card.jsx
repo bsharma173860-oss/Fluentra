@@ -189,7 +189,7 @@ function EchoCard() {
       <div style={{ width:'100%', borderRadius:18, padding:'20px 28px', marginBottom:24, background:T.bg2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', gap:16 }}>
         <div style={{ flex:1 }}>
           <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.2 }}>Saved for tonight.</div>
-          <div style={{ fontSize:12, color:T.ink4, marginTop:3 }}>We'll remind you at 8pm. Your streak is safe.</div>
+          <div style={{ fontSize:12, color:T.ink4, marginTop:3 }}>Saved for tonight \u2014 come back to keep your streak.</div>
         </div>
         <button onClick={() => setState('idle')} style={{ padding:'8px 14px', borderRadius:99, fontSize:12, fontWeight:600, color:T.ink2, background:'#fff', border:`1.5px solid ${T.border}`, cursor:'pointer' }}>Do it now</button>
       </div>

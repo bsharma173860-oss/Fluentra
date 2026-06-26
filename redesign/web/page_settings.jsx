@@ -308,6 +308,7 @@ function NotificationsTab() {
   return (
     <div>
       <SectionHd title="Notifications"/>
+      <div style={{ fontSize:12.5, color:T.ink4, lineHeight:1.5, marginBottom:16 }}>Push notifications are rolling out soon \u2014 your preferences here are saved and will apply once they\u2019re live.</div>
       <Card padding={24} style={{ marginBottom:24 }}>
         <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:8 }}>Streak & habits</div>
         <ToggleRow label="Daily reminder" sub="A nudge at your preferred time" on/>

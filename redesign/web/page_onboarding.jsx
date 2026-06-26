@@ -330,7 +330,7 @@ function SSchedule({ value, onChange, reminderTime, onReminderChange, onNext, on
       {value && (
         <Card padding={20}>
           <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:10 }}>Daily reminder</div>
-          <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.5, marginBottom:14 }}>We'll send one notification a day at this time. Streak savers happen automatically.</div>
+          <div style={{ fontSize:13.5, color:T.ink2, lineHeight:1.5, marginBottom:14 }}>We'll save this as your preferred reminder time. Scheduled reminders are rolling out soon.</div>
           <div style={{ display:'flex', gap:8 }}>
             {['07:00','08:30','12:30','18:00','21:00'].map(t => (
               <button key={t} onClick={() => onReminderChange(t)} style={{ flex:1, padding:'10px 8px', borderRadius:9, border:`1.5px solid ${reminderTime === t ? T.brand : T.border}`, background: reminderTime === t ? T.brandLight || T.bg2 : T.card, fontSize:13, fontWeight: reminderTime === t ? 700 : 500, color: reminderTime === t ? T.brand : T.ink2, cursor:'pointer' }}>{t}</button>
