@@ -466,13 +466,23 @@
         var overall = R.length ? Math.round(R.reduce(function (a, r) { return a + (Number(r.score) || 0); }, 0) / R.length) : null;
         var ranked = SKILLS.filter(function (s) { return skills[s].count >= 2; })
           .sort(function (a, b) { return skills[a].avg - skills[b].avg; });
-        // Single most-actionable focus: prefer the BKT mastery model's weakest
-        // knowledge component; fall back to the lowest average criterion.
+        // Single most-actionable focus, most specific first:
+        // 1) a genuinely-weak fine concept (e.g. 'past tense'), 2) the BKT weakest
+        // criterion, 3) lowest average criterion.
         var focus = null;
         try {
-          var mm = (window.FL && window.FL.masteryModel) ? window.FL.masteryModel(L) : null;
-          if (mm && mm.weakest) focus = { skill: null, key: mm.weakest.key, label: mm.weakest.label, mastery: mm.weakest.mastery, band: null };
+          var cm = (window.FL && window.FL.conceptModel) ? window.FL.conceptModel(L) : null;
+          if (cm && cm.weakest && cm.weakest.n >= 3 && cm.weakest.mastery < 0.65) {
+            var _lbl = cm.weakest.key.charAt(0).toUpperCase() + cm.weakest.key.slice(1);
+            focus = { skill: null, key: cm.weakest.key, label: _lbl, mastery: cm.weakest.mastery, band: null, kind: 'concept' };
+          }
         } catch (e) {}
+        if (!focus) {
+          try {
+            var mm = (window.FL && window.FL.masteryModel) ? window.FL.masteryModel(L) : null;
+            if (mm && mm.weakest) focus = { skill: null, key: mm.weakest.key, label: mm.weakest.label, mastery: mm.weakest.mastery, band: null, kind: 'criterion' };
+          } catch (e) {}
+        }
         if (!focus) {
           ['writing', 'speaking'].forEach(function (sk) {
             var wc = skills[sk] && skills[sk].weakCriterion;
@@ -563,6 +573,57 @@
           if (m.n >= 2 && (!weakest || m.mastery < weakest.mastery)) weakest = m;
         }
         return { lang: L, components: components, weakest: weakest };
+      },
+
+      // ── Fine concept mastery — real BKT over the per-question concept tags
+      // captured in reading/listening sessions (detail.items = [{c,ok}]). This is
+      // the granular layer ("past tense", "relative clauses") beyond the 5 coarse
+      // criteria. Same hierarchical prior: each concept starts near the learner's
+      // comprehension (reading+listening) ability, then refines on its own evidence.
+      conceptModel: function (lang) {
+        var L = lang || window.__langCode || 'en';
+        var P_T = 0.14, P_S = 0.10, P_G = 0.20, P_L0 = 0.30;
+        var all = (window.__results || []).filter(function (r) { return r && r.lang === L && typeof r.score === 'number'; });
+        function compPrior() {
+          var As = [], Us = [];
+          ['reading', 'listening'].forEach(function (sk) {
+            var arr = all.filter(function (r) { return r.detail && r.detail.module === sk; })
+              .sort(function (a, b) { return new Date(b.updated_at || 0) - new Date(a.updated_at || 0); })
+              .map(function (r) { return Number(r.score) || 0; });
+            if (arr.length) { var a = _kalmanAbility(arr); As.push(a.ability / 100); Us.push(a.uncertainty); }
+          });
+          if (!As.length) return P_L0;
+          var A = As.reduce(function (x, y) { return x + y; }, 0) / As.length;
+          var U = Us.reduce(function (x, y) { return x + y; }, 0) / Us.length;
+          var w = Math.max(0, Math.min(0.6, 1 - U / 25));
+          return w * A + (1 - w) * P_L0;
+        }
+        var pr0 = compPrior();
+        var rows = all.filter(function (r) { return r.detail && Array.isArray(r.detail.items); })
+          .sort(function (a, b) { return new Date(a.updated_at || 0) - new Date(b.updated_at || 0); }); // oldest -> newest
+        var comp = {};
+        rows.forEach(function (r) {
+          r.detail.items.forEach(function (it) {
+            var key = (it && it.c) ? String(it.c).trim().toLowerCase() : '';
+            if (!key) return;
+            if (!comp[key]) comp[key] = { p: pr0, n: 0, prior: Math.round(pr0 * 100) / 100 };
+            var st = comp[key];
+            var correct = !!it.ok;
+            var post = correct
+              ? (st.p * (1 - P_S)) / (st.p * (1 - P_S) + (1 - st.p) * P_G)
+              : (st.p * P_S) / (st.p * P_S + (1 - st.p) * (1 - P_G));
+            st.p = post + (1 - post) * P_T; // learning transition
+            st.n += 1;
+          });
+        });
+        var components = {}, weakest = null, strongest = null;
+        for (var key in comp) {
+          var m = { key: key, label: key, mastery: Math.round(comp[key].p * 100) / 100, n: comp[key].n, prior: comp[key].prior };
+          components[key] = m;
+          if (m.n >= 2 && (!weakest || m.mastery < weakest.mastery)) weakest = m;
+          if (m.n >= 2 && (!strongest || m.mastery > strongest.mastery)) strongest = m;
+        }
+        return { lang: L, components: components, weakest: weakest, strongest: strongest };
       },
 
       // ── Spaced repetition (SM-2) ─────────────────────────────
@@ -908,7 +969,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b195-concept-capture';
+    window.__FL_BUILD = 'b195-fine-concept-model';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
