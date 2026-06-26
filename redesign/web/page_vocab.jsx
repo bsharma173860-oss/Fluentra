@@ -17,24 +17,10 @@ function VocabPage() {
 
   const _vLang = (typeof window !== 'undefined' && window.__langCode) || 'en';
   const _vLangName = (typeof langByCode === 'function' ? (langByCode(_vLang).english || 'this language') : 'this language');
-  const _allDecks = [
-    { title:'Café & restaurants', lang:'es', count:42, due:8,  mastered:21, accent:T.es,  tag:'A2 · everyday' },
-    { title:'Travel & directions', lang:'es', count:38, due:5,  mastered:30, accent:T.es,  tag:'A2 · everyday' },
-    { title:'Body & health',       lang:'fr', count:54, due:12, mastered:18, accent:T.fr,  tag:'B1 · core' },
-    { title:'Business & meetings', lang:'en', count:60, due:15, mastered:42, accent:T.en,  tag:'B2 · pro' },
-    { title:'JLPT N4 Verbs',       lang:'ja', count:120,due:22, mastered:64, accent:T.ja,  tag:'N4 · core' },
-    { title:'False friends EN↔ES', lang:'es', count:24, due:0,  mastered:24, accent:T.es,  tag:'B1 · advanced' },
-  ];
-  // Only show decks for the language the user is currently studying — never other languages.
-  let decks = _allDecks.filter(function (d) { return d.lang === _vLang; });
-  if (!decks.length) decks = [{ title: _vLangName + ' vocabulary', lang:_vLang, count:0, due:0, mastered:0, accent:(T[_vLang] || T.es), tag:'Your words' }];
-
-  const _decks = decks.slice().sort(function (a, b) {
-    if (sortDir === 'alpha') return a.title.localeCompare(b.title);
-    if (sortDir === 'strength') return (b.mastered / b.count) - (a.mastered / a.count);
-    if (sortDir === 'due') return b.due - a.due;
-    return 0;
-  });
+  // One real deck for the language the user is currently studying — built from their actual
+  // words (counts come from real SRS data in the render below), never a hard-coded mixed list.
+  const decks = [{ title: _vLangName + ' vocabulary', lang:_vLang, accent:(T[_vLang] || T.es), tag:'Your words' }];
+  const _decks = decks;
   const deck = _decks[activeDeck] || _decks[0];
   const [words, setWords] = useState([]);
   const [srsCache, setSrsCache] = useState({});
@@ -160,7 +146,7 @@ function VocabPage() {
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {_decks.map((d, i) => {
                 const active = i === activeDeck;
-                const pct = Math.round((d.mastered / d.count) * 100);
+                const pct = words.length ? Math.round((masteredCount / words.length) * 100) : 0;
                 return (
                   <button key={i} onClick={() => setActiveDeck(i)} style={{ background: active ? T.card : 'transparent', border:`1px solid ${active ? T.border : 'transparent'}`, borderRadius:14, padding:'14px 16px', textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, transition:'all .15s' }}>
                     <div style={{ width:42, height:42, borderRadius:11, background:d.accent.bg, color:d.accent.accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontWeight:700, fontFamily:T.serif, fontSize:16, position:'relative' }}>
@@ -169,9 +155,9 @@ function VocabPage() {
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
                         <div style={{ fontSize:13.5, fontWeight:700, color:T.ink, lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{d.title}</div>
-                        {d.due > 0 && <div style={{ fontSize:10, fontWeight:700, color:T.brand, background:T.brandLight, padding:'2px 6px', borderRadius:4, flexShrink:0 }}>{d.due} due</div>}
+                        {dueCount > 0 && <div style={{ fontSize:10, fontWeight:700, color:T.brand, background:T.brandLight, padding:'2px 6px', borderRadius:4, flexShrink:0 }}>{dueCount} due</div>}
                       </div>
-                      <div style={{ fontSize:11, color:T.ink4, marginBottom:6 }}>{d.tag} · {d.count} cards · {d.mastered} mastered</div>
+                      <div style={{ fontSize:11, color:T.ink4, marginBottom:6 }}>{d.tag} · {words.length} cards · {masteredCount} mastered</div>
                       <Bar pct={pct} color={d.accent.accent} track={T.trackWarm} height={3}/>
                     </div>
                     {active && <div style={{ color:T.ink3, flexShrink:0 }}>{Icon.chev()}</div>}
@@ -197,9 +183,9 @@ function VocabPage() {
                 <Chip label={deck.tag} accent={deck.accent.accent} bg={`${deck.accent.accent}1f`}/>
               </div>
               <div style={{ fontFamily:T.serif, fontSize:30, color:T.ink, lineHeight:1.1, marginBottom:8 }}>{deck.title}</div>
-              <div style={{ fontSize:13, color:T.ink3, marginBottom:18 }}>{deck.count} cards · {deck.mastered} mastered · {deck.due} due now</div>
+              <div style={{ fontSize:13, color:T.ink3, marginBottom:18 }}>{words.length} cards · {masteredCount} mastered · {dueCount} due now</div>
               <div style={{ display:'flex', gap:8 }}>
-                <Btn label={`Study ${deck.due} due`} icon={Icon.spark()} accent={deck.accent.accent} onClick={() => { setStudyKind('due'); setMode('study'); }}/>
+                <Btn label={`Study ${dueCount} due`} icon={Icon.spark()} accent={deck.accent.accent} onClick={() => { setStudyKind('due'); setMode('study'); }}/>
                 <Btn label="Practice all" variant="outline" accent={T.ink2} onClick={() => { setStudyKind('all'); setMode('study'); }}/>
                 <Btn label="Add cards" variant="soft" accent={T.ink} icon={Icon.plus()} onClick={() => setShowAddCards(true)}/>
                 <button onClick={() => {
