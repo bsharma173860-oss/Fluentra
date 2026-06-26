@@ -36,6 +36,19 @@ function MReadingSession() {
   if (_gen === null) return <MGenLoading skill="reading" color={T.reading.c}/>;
   const total = (_r.questions || []).length || 5;
   const done = Object.keys(answered).length;
+  function _submitReading() {
+    var L = (typeof window !== 'undefined' && window.__langCode) || 'en';
+    var graded = (_r.questions || []).filter(function (q) { return q.options && typeof q.answer === 'number'; });
+    var correct = 0;
+    graded.forEach(function (q) { if (answered[q.n] === q.options[q.answer]) correct++; });
+    var pct = graded.length ? Math.round(correct / graded.length * 100) : 0;
+    window.__lastResult = { module: 'reading', lang: L, kind: 'count', correct: correct, total: graded.length, pct: pct };
+    try {
+      var token = window.__authToken ? window.__authToken() : null;
+      if (token && graded.length) window.__saveResult({ lang: L, score: pct, detail: { module: 'reading', correct: correct, total: graded.length, unit: '%', items: graded.map(function (q) { return { c: String((q && q.concept) || '').trim().slice(0, 40).toLowerCase(), ok: answered[q.n] === q.options[q.answer] }; }).filter(function (x) { return x.c; }) } });
+    } catch (e) {}
+    window.__nav && window.__nav('mod_results');
+  }
   const progress = (done / total) * 100;
 
   return (
@@ -107,7 +120,7 @@ function MReadingSession() {
               Answer questions {Icon.arrow({ width:13, height:13 })}
             </button>
           ) : (
-            <button onClick={()=>window.__nav && window.__nav('mod_results')} style={{ flex:1, padding:'13px', borderRadius:11, background:T.reading.c, color:'#fff', fontSize:14, fontWeight:700, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6, boxShadow:`0 6px 14px ${T.reading.c}55` }}>
+            <button onClick={_submitReading} style={{ flex:1, padding:'13px', borderRadius:11, background:T.reading.c, color:'#fff', fontSize:14, fontWeight:700, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6, boxShadow:`0 6px 14px ${T.reading.c}55` }}>
               {_r.submit || 'Submit'} {Icon.arrow({ width:13, height:13 })}
             </button>
           )}
@@ -129,6 +142,19 @@ function MListeningSession() {
   if (_gen === null) return <MGenLoading skill="listening" color={T.listening.c}/>;
   const total = (_l.questions || []).length || 4;
   const done = Object.keys(answered).length;
+  function _submitListening() {
+    var L = (typeof window !== 'undefined' && window.__langCode) || 'en';
+    var graded = (_l.questions || []).filter(function (q) { return q.options && typeof q.answer === 'number'; });
+    var correct = 0;
+    graded.forEach(function (q) { if (answered[q.n] === q.options[q.answer]) correct++; });
+    var pct = graded.length ? Math.round(correct / graded.length * 100) : 0;
+    window.__lastResult = { module: 'listening', lang: L, kind: 'count', correct: correct, total: graded.length, pct: pct };
+    try {
+      var token = window.__authToken ? window.__authToken() : null;
+      if (token && graded.length) window.__saveResult({ lang: L, score: pct, detail: { module: 'listening', correct: correct, total: graded.length, unit: '%', items: graded.map(function (q) { return { c: String((q && q.concept) || '').trim().slice(0, 40).toLowerCase(), ok: answered[q.n] === q.options[q.answer] }; }).filter(function (x) { return x.c; }) } });
+    } catch (e) {}
+    window.__nav && window.__nav('mod_results');
+  }
   const progress = (done / total) * 100;
 
   return (
@@ -200,7 +226,7 @@ function MListeningSession() {
       </div>
 
       <div style={{ position:'absolute', left:0, right:0, bottom:0, padding:'10px 14px 14px', background:`${MT.card}f0`, backdropFilter:'blur(10px)', borderTop:`1px solid ${MT.divider}` }}>
-        <button onClick={()=>window.__nav && window.__nav('mod_results')} style={{ width:'100%', padding:'13px', borderRadius:11, background:T.listening.c, color:'#fff', fontSize:14, fontWeight:700, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6, boxShadow:`0 6px 14px ${T.listening.c}55` }}>
+        <button onClick={_submitListening} style={{ width:'100%', padding:'13px', borderRadius:11, background:T.listening.c, color:'#fff', fontSize:14, fontWeight:700, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6, boxShadow:`0 6px 14px ${T.listening.c}55` }}>
           {_l.submit || 'Submit'} {Icon.arrow({ width:13, height:13 })}
         </button>
       </div>

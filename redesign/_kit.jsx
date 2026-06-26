@@ -811,7 +811,7 @@ function _normSession(skill, raw) {
       passage: raw.passage,
       passageLabel: skill === 'listening' ? 'Transcript' : 'Passage',
       qLabel: 'Questions 1\u2013' + qs.length,
-      questions: qs.map(function (q, i) { return { n: i + 1, type: 'Multiple Choice', stem: q.q || q.stem || '', options: q.options || null, answer: (typeof q.answer === 'number' ? q.answer : undefined) }; }),
+      questions: qs.map(function (q, i) { return { n: i + 1, type: 'Multiple Choice', stem: q.q || q.stem || '', options: q.options || null, answer: (typeof q.answer === 'number' ? q.answer : undefined), concept: (q.concept || '') }; }),
       placeholder: 'Type your answer\u2026',
       submit: 'Submit & get feedback',
       __real: true,
