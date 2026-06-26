@@ -421,13 +421,29 @@
         function statFor(mod) {
           var rows = R.filter(function (r) { return r.detail && r.detail.module === mod; })
             .sort(function (a, b) { return new Date(b.updated_at || 0) - new Date(a.updated_at || 0); }); // newest first
-          if (!rows.length) return { count: 0, avg: null, recent: null, trend: 0, suggestedDifficulty: 'medium', weakCriterion: null };
+          if (!rows.length) return { count: 0, avg: null, recent: null, trend: 0, suggestedDifficulty: 'medium', weakCriterion: null, ability: null, uncertainty: null };
           var scores = rows.map(function (r) { return Number(r.score) || 0; });
           var mean = function (a) { return a.length ? Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length) : null; };
           var recent = mean(scores.slice(0, Math.min(5, scores.length)));
           var older = scores.length > 5 ? mean(scores.slice(5)) : recent;
+          // ── Real math: Bayesian recursive estimation (Kalman filter) of latent
+          // ability from the noisy session scores. Maintains ability ± uncertainty
+          // instead of a flat average — principled recency weighting + honest
+          // confidence + zone-of-proximal-development difficulty targeting.
+          var seq = scores.slice().reverse();      // chronological (oldest -> newest)
+          var mu = 50, P = 400;                     // prior: neutral ability, sd ~20 (very unsure)
+          var Q = 16, Rm = 324;                     // process noise sd ~4 (slow drift), measurement noise sd ~18 (one session is noisy)
+          for (var si = 0; si < seq.length; si++) {
+            P = P + Q;                              // predict: ability can drift/improve
+            var Kg = P / (P + Rm);                  // Kalman gain
+            mu = mu + Kg * (seq[si] - mu);          // update toward the observation
+            P = (1 - Kg) * P;                       // shrink uncertainty
+          }
+          var ability = Math.round(mu);
+          var uncertainty = Math.round(Math.sqrt(P));
+          // ZPD difficulty, only deviating from medium once the estimate is confident.
           var diff = 'medium';
-          if (rows.length >= 2) { diff = recent >= 80 ? 'hard' : (recent < 55 ? 'easy' : 'medium'); }
+          if (uncertainty <= 13 && rows.length >= 2) { diff = ability >= 75 ? 'hard' : (ability <= 52 ? 'easy' : 'medium'); }
           // Granular weakness: lowest-average grading criterion across recent graded rows.
           var CRIT_LABEL = { task_response: 'task response', coherence_cohesion: 'coherence & cohesion', lexical_resource: 'vocabulary range', grammatical_range_accuracy: 'grammar', fluency_coherence: 'fluency' };
           var critRows = rows.filter(function (r) { return r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; }).slice(0, 5);
@@ -439,7 +455,7 @@
             for (var kk in sums) { var av = sums[kk] / cnts[kk]; if (av < lowV) { lowV = av; lowK = kk; } }
             if (lowK) weakCriterion = { key: lowK, band: Math.round(lowV * 10) / 10, label: CRIT_LABEL[lowK] || lowK.replace(/_/g, ' ') };
           }
-          return { count: rows.length, avg: mean(scores), recent: recent, trend: recent - older, suggestedDifficulty: diff, weakCriterion: weakCriterion };
+          return { count: rows.length, avg: mean(scores), recent: recent, trend: recent - older, suggestedDifficulty: diff, weakCriterion: weakCriterion, ability: ability, uncertainty: uncertainty };
         }
         var skills = {};
         SKILLS.forEach(function (s) { skills[s] = statFor(s); });
@@ -850,7 +866,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b194-bkt-mastery';
+    window.__FL_BUILD = 'b194-kalman-ability';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
