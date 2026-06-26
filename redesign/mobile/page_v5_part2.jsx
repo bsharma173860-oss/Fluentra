@@ -350,46 +350,47 @@ function MHelpPageV5() {
 function MModuleResultsPageV5() {
   const _R = (typeof window !== 'undefined' && window.__results) || [];
   const _isMod = function (m) { return ['reading','writing','listening','speaking'].indexOf(m) >= 0; };
-  const _lastMod = (_R.length && _isMod((_R[_R.length-1]||{}).module)) ? _R[_R.length-1].module : 'reading';
+  const _modOf = function (r) { return (r && r.detail && r.detail.module) || null; };
+  const _lang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const _last = _R.length ? _R[_R.length-1] : null;
+  const _lastMod = (_last && _isMod(_modOf(_last))) ? _modOf(_last) : 'reading';
   const [mod, setMod] = useStateMV5b(_lastMod);
   const M = {
-    reading:   { name:'Reading',   c:T.reading.c,   bg:T.reading.bg,   ic:'book', score:'7.5', sub:'Band', delta:'+0.5' },
-    writing:   { name:'Writing',   c:T.writing.c,   bg:T.writing.bg,   ic:'pen',  score:'6.5', sub:'Band', delta:'+0.5' },
-    listening: { name:'Listening', c:T.listening.c, bg:T.listening.bg, ic:'head', score:'8.0', sub:'Band', delta:'+1.0' },
-    speaking:  { name:'Speaking',  c:T.speaking.c,  bg:T.speaking.bg,  ic:'mic',  score:'7.0', sub:'Band', delta:'+0.5' },
+    reading:   { name:'Reading',   c:T.reading.c,   bg:T.reading.bg,   ic:'book' },
+    writing:   { name:'Writing',   c:T.writing.c,   bg:T.writing.bg,   ic:'pen'  },
+    listening: { name:'Listening', c:T.listening.c, bg:T.listening.bg, ic:'head' },
+    speaking:  { name:'Speaking',  c:T.speaking.c,  bg:T.speaking.bg,  ic:'mic'  },
   }[mod];
-  const _att = _R.filter(function (r) { return r && r.module === mod && typeof r.score === 'number'; });
+  const _att = _R.filter(function (r) { return _modOf(r) === mod && typeof r.score === 'number'; });
   const _lastA = _att.length ? _att[_att.length-1] : null;
   const _prevA = _att.length > 1 ? _att[_att.length-2] : null;
-  const score = _lastA ? (_lastA.score/100*9).toFixed(1) : M.score;
-  const deltaNum = (_lastA && _prevA) ? ((_lastA.score - _prevA.score)/100*9) : null;
-  const breakdown = mod === 'writing' ? [
-    { k:'Task response',     v:6.5 },
-    { k:'Coherence',         v:7.0 },
-    { k:'Lexical resource',  v:6.5 },
-    { k:'Grammar accuracy',  v:6.0 },
-  ] : mod === 'reading' ? [
-    { k:'Detail',     v:8.0 },
-    { k:'Inference',  v:7.0 },
-    { k:'Vocabulary', v:7.5 },
-    { k:'Time mgmt',  v:7.5 },
-  ] : mod === 'listening' ? [
-    { k:'Conversation', v:8.5 },
-    { k:'Lecture',      v:7.5 },
-    { k:'Numbers',      v:8.0 },
-    { k:'Notes',        v:8.0 },
-  ] : [
-    { k:'Fluency',      v:7.0 },
-    { k:'Pronunciation',v:7.5 },
-    { k:'Lexical range',v:6.5 },
-    { k:'Grammar',      v:7.0 },
-  ];
+  const score = _lastA ? (_lastA.score / 100 * 9).toFixed(1) : null;
+  const deltaNum = (_lastA && _prevA) ? ((_lastA.score - _prevA.score) / 100 * 9) : null;
+  const _items = (_lastA && _lastA.detail && _lastA.detail.total) || null;
+  // Real breakdown: writing/speaking from the saved criteria bands; reading/listening
+  // from the fine concept model's running mastery for the concepts in this attempt.
+  const breakdown = (function () {
+    var out = [];
+    if (!_lastA || !_lastA.detail) return out;
+    var det = _lastA.detail;
+    if (det.criteria) {
+      var LB = { task_response: 'Task response', coherence_cohesion: 'Coherence', lexical_resource: 'Lexical resource', grammatical_range_accuracy: 'Grammar', fluency_coherence: 'Fluency' };
+      for (var ck in det.criteria) if (typeof det.criteria[ck] === 'number') out.push({ k: LB[ck] || ck, v: det.criteria[ck] });
+    } else if (Array.isArray(det.items) && window.FL && window.FL.conceptModel) {
+      var cm = window.FL.conceptModel(_lang); var seen = {};
+      det.items.forEach(function (it) { var key = it && it.c; if (key && !seen[key] && cm.components[key]) { seen[key] = 1; out.push({ k: key.charAt(0).toUpperCase() + key.slice(1), v: Math.round(cm.components[key].mastery * 9 * 10) / 10 }); } });
+    }
+    return out;
+  })();
+  // Real data-derived focus note (replaces a hardcoded fake "AI feedback" quote).
+  var _focus = null;
+  try { var _p = window.FL && window.FL.learnerProfile ? window.FL.learnerProfile(_lang) : null; _focus = _p && _p.focus; } catch (e) {}
 
   return (
     <>
       <MobileHeader back title="Session results"/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
-        <V5b_pre eyebrow={`${M.name.toUpperCase()} · 12 MIN · 18 ITEMS`} title="Nicely done." lede="Your AI tutor reviewed every answer — here's what worked, where you grew, and where to focus next."/>
+        <V5b_pre eyebrow={`${M.name.toUpperCase()}${_items ? ' · ' + _items + ' ITEMS' : ''}`} title={_lastA ? 'Nicely done.' : 'Session results'} lede={_lastA ? "Here's how that session went and where to focus next." : 'Complete a session to see your results here.'}/>
 
         {/* Score hero — color-themed */}
         <div style={{ background:`linear-gradient(160deg, ${M.c}, ${M.c}cc)`, borderRadius:18, padding:'22px 18px', color:'#fff', marginBottom:14, position:'relative', overflow:'hidden' }}>
@@ -397,7 +398,7 @@ function MModuleResultsPageV5() {
           <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', gap:14 }}>
             <div>
               <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.7)', marginBottom:7 }}>YOUR BAND</div>
-              <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:.95, letterSpacing:'-.04em' }}>{score}</div>
+              <div style={{ fontFamily:T.serif, fontSize:64, lineHeight:.95, letterSpacing:'-.04em' }}>{score || '\u2014'}</div>
               {deltaNum != null && <div style={{ fontSize:11.5, color:'rgba(255,255,255,.85)', fontWeight:700, marginTop:6 }}>{deltaNum >= 0 ? '↑ +' : '↓ '}{Math.abs(deltaNum).toFixed(1)} vs previous</div>}
             </div>
             <div style={{ width:72, height:72, borderRadius:36, background:'rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[M.ic] ? Icon[M.ic]({width:30,height:30}) : '★'}</div>
@@ -412,6 +413,7 @@ function MModuleResultsPageV5() {
           })}
         </div>
 
+        {breakdown.length > 0 && (<>
         {V5b_label('BREAKDOWN')}
         <MCard style={{ padding:14, marginBottom:14 }}>
           {breakdown.map((b, i) => (
@@ -424,14 +426,15 @@ function MModuleResultsPageV5() {
             </div>
           ))}
         </MCard>
+        </>)}
 
-        {V5b_label('AI FEEDBACK')}
+        {V5b_label('FOCUS NEXT')}
         <MCard style={{ padding:'14px 16px', marginBottom:14 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:9 }}>
             <div style={{ width:24, height:24, borderRadius:12, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.spark({width:11,height:11})}</div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.ink2, letterSpacing:'.05em' }}>Fluentra AI</div>
+            <div style={{ fontSize:11, fontWeight:700, color:T.ink2, letterSpacing:'.05em' }}>Your focus</div>
           </div>
-          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.ink, lineHeight:1.55 }}>"Strong pacing on the inference items — you're now consistently above band 7. Watch for confusion between 'imply' and 'infer' on detail questions; review unit 4."</div>
+          <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.ink, lineHeight:1.55 }}>{_focus ? ('Your weakest area right now is ' + _focus.label + (_focus.mastery != null ? ' (' + Math.round(_focus.mastery * 100) + '% mastered)' : '') + '. Your next sessions will lean into it.') : 'Keep practicing \u2014 a few more sessions and the model will pinpoint exactly what to drill next.'}</div>
         </MCard>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
