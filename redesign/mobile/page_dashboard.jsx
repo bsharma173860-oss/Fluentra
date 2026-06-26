@@ -131,6 +131,15 @@ function MDashboard() {
           </MCard>
         </div>
 
+        {/* Learner focus — real profile + single next-best-action */}
+        <div style={{ padding:'0 18px', marginBottom:14 }}>
+          <LearnerFocusCard
+            profile={(typeof window!=='undefined' && window.FL && window.FL.learnerProfile) ? window.FL.learnerProfile(window.__langCode) : null}
+            pal={{ card:T.card, line:T.border, ink:T.ink, ink2:T.ink2, muted:T.ink4, accent:T.brand, serif:T.serif }}
+            onPractice={(skill)=>nav(skill)}
+          />
+        </div>
+
         {/* TUTOR CTA — dark card */}
         <div style={{ padding:'0 18px', marginBottom:14 }}>
           <button onClick={()=>nav('tutor')} style={{ width:'100%', background:T.ink, color:'#fff', borderRadius:16, padding:16, display:'flex', alignItems:'center', gap:12, textAlign:'left' }}>

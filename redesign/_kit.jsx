@@ -954,7 +954,53 @@ function BlankFillTask(props) {
     </div>
   );
 }
-if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; window.WordOrderTask = WordOrderTask; window.BlankFillTask = BlankFillTask; }
+// ── Learner focus card (Phase 4) — surfaces the real learner profile and the
+// single next-best-action. Honest: empty state with no data, 'keep practicing'
+// until a skill has enough sessions, concrete recommendation once it does.
+var _SKILL_LABEL = { reading: 'Reading', listening: 'Listening', writing: 'Writing', speaking: 'Speaking' };
+function LearnerFocusCard(props) {
+  var p = props.profile || null;
+  var pal = props.pal || {};
+  var onPractice = props.onPractice || function () {};
+  var card = { background: pal.card || '#fff', border: '1px solid ' + (pal.line || '#eee'), borderRadius: 16, padding: 18 };
+  var eyebrow = { fontSize: 11, fontWeight: 700, color: pal.muted || '#888', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 };
+  if (!p || !p.sessions) {
+    return (
+      <div style={card}>
+        <div style={eyebrow}>Your focus</div>
+        <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.55 }}>Complete a few sessions and I'll map your strengths and weak spots — then point you to the highest-leverage practice each day.</div>
+      </div>
+    );
+  }
+  var primary = p.weakest || (p.focus && p.focus.skill) || null;
+  var sk = primary ? p.skills[primary] : null;
+  var trend = sk ? (sk.trend > 4 ? 'improving' : (sk.trend < -4 ? 'needs attention' : 'steady')) : '';
+  var focusSame = p.focus && primary && p.focus.skill === primary;
+  return (
+    <div style={card}>
+      <div style={eyebrow}>Your focus</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+        <div style={{ fontFamily: pal.serif || 'Georgia,serif', fontSize: 30, color: pal.ink || '#222', lineHeight: 1 }}>{p.overall != null ? (p.overall + '%') : '—'}</div>
+        <div style={{ fontSize: 12, color: pal.muted || '#888' }}>avg · {p.sessions} session{p.sessions === 1 ? '' : 's'}</div>
+      </div>
+      {primary ? (
+        <div>
+          <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.5, marginBottom: 12 }}>
+            Today, work on <strong style={{ color: pal.ink || '#222' }}>{_SKILL_LABEL[primary]}</strong>
+            {focusSame && p.focus.label ? <span> — your weakest area is <strong style={{ color: pal.accent || '#A65A00' }}>{p.focus.label}</strong></span> : null}
+            {trend ? <span style={{ color: pal.muted || '#888' }}> · {trend}</span> : null}.
+          </div>
+          <button onClick={function () { onPractice(primary); }} style={{ width: '100%', textAlign: 'center', fontSize: 12.5, color: '#fff', fontWeight: 700, cursor: 'pointer', background: pal.accent || '#A65A00', borderRadius: 10, padding: '11px 0', border: 'none' }}>
+            Practice {_SKILL_LABEL[primary]} →
+          </button>
+        </div>
+      ) : (
+        <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.5 }}>Keep practicing across skills — a couple more sessions in each and I'll pinpoint exactly where to focus.</div>
+      )}
+    </div>
+  );
+}
+if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; window.WordOrderTask = WordOrderTask; window.BlankFillTask = BlankFillTask; window.LearnerFocusCard = LearnerFocusCard; }
 
 function MGenLoading(props) {
   var color = (props && props.color) || T.brand;

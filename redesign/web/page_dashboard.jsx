@@ -337,6 +337,13 @@ function DashboardPage() {
               <button data-nav="progress" style={{ width:'100%', textAlign:'center', fontSize:12, color:T.brand, fontWeight:700, cursor:'pointer', background:T.brandLight, borderRadius:9, padding:'9px 0' }}>View full progress →</button>
             </Card>
 
+            {/* Learner focus — real profile + single next-best-action */}
+            <LearnerFocusCard
+              profile={(typeof window!=='undefined' && window.FL && window.FL.learnerProfile) ? window.FL.learnerProfile(window.__langCode) : null}
+              pal={{ card:T.card, line:T.border, ink:T.ink, ink2:T.ink2, muted:T.ink4, accent:T.brand, serif:T.serif }}
+              onPractice={(skill)=>{ window.__nav && window.__nav(skill); }}
+            />
+
             {/* Tutor shortcut */}
             <button data-nav="tutor" style={{ background:T.ink, color:'#fff', borderRadius:14, padding:'18px 18px', display:'flex', alignItems:'center', gap:14, textAlign:'left', cursor:'pointer' }}>
               <div style={{ width:38, height:38, borderRadius:11, background:'rgba(255,255,255,.1)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink:0 }}>{Icon.message()}</div>
