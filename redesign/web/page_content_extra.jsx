@@ -146,6 +146,7 @@ function LessonDetailPage() {
 }
 
 function ArticleReaderPage() {
+  const lang = (typeof window !== 'undefined' && window.__langCode) || 'en';
   const [fontBig, setFontBig] = React.useState(false);
   const artRef = React.useRef(null);
   const _fs = fontBig ? 1.18 : 1;
