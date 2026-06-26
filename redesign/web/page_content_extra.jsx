@@ -155,7 +155,8 @@ function ArticleReaderPage() {
       var el = artRef.current; var txt = el ? (el.textContent || '') : '';
       window.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(txt.slice(0, 4000));
-      u.lang = 'es-ES';
+      var VOICE = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', nl:'nl-NL', ru:'ru-RU', pl:'pl-PL', uk:'uk-UA', sv:'sv-SE', no:'nb-NO', da:'da-DK', fi:'fi-FI', el:'el-GR', cs:'cs-CZ', ro:'ro-RO', hu:'hu-HU', tr:'tr-TR', ar:'ar-SA', hi:'hi-IN', zh:'zh-CN', ja:'ja-JP', ko:'ko-KR', id:'id-ID', vi:'vi-VN' };
+      u.lang = VOICE[lang] || 'en-US';
       window.speechSynthesis.speak(u);
     } catch (e) {}
   };
