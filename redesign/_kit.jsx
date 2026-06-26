@@ -775,7 +775,7 @@ function useGenContent(skill) {
     if (typeof window === 'undefined') return;
     if (window.__sessionGen[key]) { setV(window.__sessionGen[key]); return; }
     var cancelled = false;
-    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: 'medium' }) })
+    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: 'medium', exam: (typeof examFor === 'function' ? (examFor(c).short || null) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (cancelled) return;
