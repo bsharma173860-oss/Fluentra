@@ -363,7 +363,7 @@ function ReadingSession() {
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
-            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: _diff }),
+            body: JSON.stringify({ lang: lang, type: 'reading', difficulty: _diff, exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
@@ -517,7 +517,7 @@ function ListeningSession() {
         if (!item) {
           var gr = await fetch('/api/generate-content', {
             method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
-            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: _diff }),
+            body: JSON.stringify({ lang: lang, type: 'listening', difficulty: _diff, exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }),
           });
           var gen = await gr.json();
           if (gen.error) throw new Error(gen.error);
@@ -708,7 +708,7 @@ function SpeakingSession() {
     window.__flSpeakingGen = window.__flSpeakingGen || {};
     if (window.__flSpeakingGen[lang]) { setGen(window.__flSpeakingGen[lang]); return; }
     var alive = true;
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking' }) })
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'speaking', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var p = d && d.content && d.content.payload;
@@ -939,7 +939,7 @@ function WritingSession() {
     window.__flWritingGen = window.__flWritingGen || {};
     if (window.__flWritingGen[lang]) { setGen(window.__flWritingGen[lang]); return; }
     var alive = true;
-    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing' }) })
+    fetch('/api/generate-content', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ lang: lang, type:'writing', exam: (typeof examFor === 'function' ? (examFor(lang).short || null) : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var p = d && d.content && d.content.payload;

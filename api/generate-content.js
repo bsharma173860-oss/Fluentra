@@ -21,8 +21,48 @@ var LANG_NAMES = {
   ko:'Korean', id:'Indonesian', vi:'Vietnamese',
 };
 
+// Per-exam OFFICIAL task-format guidance. Keyed by exam short code x section type.
+// Refines the question STYLE to each real exam while keeping the same JSON shape the
+// session components parse (so it never breaks the renderer). Writing keeps its own
+// shape and is intentionally not specced here yet.
+var EXAM_SPEC = {
+  IELTS: {
+    reading: 'Follow authentic IELTS Academic Reading style: an academic passage with 4-option multiple-choice items covering main idea, specific detail, inference, and vocabulary-in-context. Academic register.',
+    listening: 'Follow IELTS Listening style: a natural everyday or lecture-style monologue/dialogue, with 4-option multiple-choice gist and detail questions.',
+    speaking: 'Model the three IELTS Speaking parts exactly: Part 1 short familiar questions about the candidate; Part 2 a cue-card long turn (one topic to speak on for ~2 minutes); Part 3 abstract follow-up discussion linked to the Part 2 theme.',
+  },
+  DELE: {
+    reading: 'Sigue el estilo de Comprensión de lectura del DELE: un texto auténtico (artículo, anuncio o correo) con preguntas de opción múltiple de 4 opciones.',
+    listening: 'Sigue el estilo de Comprensión auditiva del DELE: un audio conversacional o informativo con preguntas de opción múltiple.',
+    speaking: 'Modela la prueba de Expresión e interacción orales del DELE: tarea 1 monólogo a partir de opciones, tarea 2 descripción de una situación, tarea 3 conversación simulada.',
+  },
+  JLPT: {
+    reading: 'Follow JLPT 言語知識・読解 style: 4-option multiple-choice items mixing 漢字読み (kanji reading), 語彙 (vocabulary in context), 文法 (grammar-form choice and sentence ordering) and 読解 (short-passage comprehension), all at the stated level.',
+    listening: 'Follow JLPT 聴解 style: a natural spoken dialogue or announcement, with 4-option multiple-choice questions about the situation, key information and the speaker intent.',
+  },
+  DELF: {
+    reading: "Suis le style de la Compréhension des écrits du DELF : un court texte authentique avec des questions à choix multiple (4 options).",
+    listening: "Suis le style de la Compréhension de l'oral du DELF : un court document sonore (annonce, dialogue) avec questions à choix multiple.",
+    speaking: 'Modèle la Production orale du DELF : entretien dirigé, monologue suivi, puis exercice en interaction.',
+  },
+  TOPIK: {
+    reading: 'Follow TOPIK 읽기 style: authentic short texts (notices, articles, narratives) with 4-option multiple-choice questions on detail, purpose and ordering.',
+    listening: 'Follow TOPIK 듣기 style: a natural dialogue or announcement with 4-option multiple-choice comprehension questions.',
+  },
+  HSK: {
+    reading: 'Follow HSK 阅读 style at the level: include 选词填空 (choose the correct word for a blank) and 阅读理解 (passage comprehension), as 4-option multiple choice.',
+    listening: 'Follow HSK 听力 style: short dialogues/statements with 4-option multiple-choice questions.',
+  },
+};
+function examSpec(exam, type) {
+  if (!exam) return '';
+  var key = String(exam).toUpperCase();
+  for (var k in EXAM_SPEC) { if (key.indexOf(k) !== -1) { return (EXAM_SPEC[k] && EXAM_SPEC[k][type]) || ''; } }
+  return '';
+}
 function prompt(type, langName, difficulty, exam, topic) {
-  var examLine = exam ? ` Match the style/level of the ${exam} exam.` : '';
+  var spec = examSpec(exam, type);
+  var examLine = spec ? (' ' + spec) : (exam ? ` Match the style/level of the ${exam} exam.` : '');
   if (type === 'reading') {
     return `Create a ${difficulty} reading-comprehension item in ${langName}.${examLine} ` +
       `Return ONLY minified JSON: {"title":string,"passage":string,"questions":[{"q":string,` +
