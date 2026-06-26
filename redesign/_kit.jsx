@@ -975,7 +975,6 @@ function LearnerFocusCard(props) {
   var primary = p.weakest || (p.focus && p.focus.skill) || null;
   var sk = primary ? p.skills[primary] : null;
   var trend = sk ? (sk.trend > 4 ? 'improving' : (sk.trend < -4 ? 'needs attention' : 'steady')) : '';
-  var focusSame = p.focus && primary && p.focus.skill === primary;
   return (
     <div style={card}>
       <div style={eyebrow}>Your focus</div>
@@ -987,7 +986,7 @@ function LearnerFocusCard(props) {
         <div>
           <div style={{ fontSize: 13, color: pal.ink2 || '#555', lineHeight: 1.5, marginBottom: 12 }}>
             Today, work on <strong style={{ color: pal.ink || '#222' }}>{_SKILL_LABEL[primary]}</strong>
-            {focusSame && p.focus.label ? <span> — your weakest area is <strong style={{ color: pal.accent || '#A65A00' }}>{p.focus.label}</strong></span> : null}
+            {p.focus && p.focus.label ? <span> — weak area: <strong style={{ color: pal.accent || '#A65A00' }}>{p.focus.label}</strong>{p.focus.mastery != null ? <span style={{ color: pal.muted || '#888' }}> ({Math.round(p.focus.mastery * 100)}% mastered)</span> : null}</span> : null}
             {trend ? <span style={{ color: pal.muted || '#888' }}> · {trend}</span> : null}.
           </div>
           <button onClick={function () { onPractice(primary); }} style={{ width: '100%', textAlign: 'center', fontSize: 12.5, color: '#fff', fontWeight: 700, cursor: 'pointer', background: pal.accent || '#A65A00', borderRadius: 10, padding: '11px 0', border: 'none' }}>

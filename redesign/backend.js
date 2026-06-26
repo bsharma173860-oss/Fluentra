@@ -446,12 +446,19 @@
         var overall = R.length ? Math.round(R.reduce(function (a, r) { return a + (Number(r.score) || 0); }, 0) / R.length) : null;
         var ranked = SKILLS.filter(function (s) { return skills[s].count >= 2; })
           .sort(function (a, b) { return skills[a].avg - skills[b].avg; });
-        // Single most-actionable focus: the lowest grading criterion across writing + speaking.
+        // Single most-actionable focus: prefer the BKT mastery model's weakest
+        // knowledge component; fall back to the lowest average criterion.
         var focus = null;
-        ['writing', 'speaking'].forEach(function (sk) {
-          var wc = skills[sk] && skills[sk].weakCriterion;
-          if (wc && (!focus || wc.band < focus.band)) focus = { skill: sk, key: wc.key, band: wc.band, label: wc.label };
-        });
+        try {
+          var mm = (window.FL && window.FL.masteryModel) ? window.FL.masteryModel(L) : null;
+          if (mm && mm.weakest) focus = { skill: null, key: mm.weakest.key, label: mm.weakest.label, mastery: mm.weakest.mastery, band: null };
+        } catch (e) {}
+        if (!focus) {
+          ['writing', 'speaking'].forEach(function (sk) {
+            var wc = skills[sk] && skills[sk].weakCriterion;
+            if (wc && (!focus || (focus.band != null && wc.band < focus.band))) focus = { skill: sk, key: wc.key, band: wc.band, label: wc.label, mastery: null };
+          });
+        }
         return {
           lang: L,
           sessions: R.length,
@@ -461,6 +468,43 @@
           strongest: ranked.length ? ranked[ranked.length - 1] : null,
           focus: focus,
         };
+      },
+
+      // ── Mastery model — real Bayesian Knowledge Tracing (BKT). Each grading
+      // criterion is a knowledge component; each graded session that reports it is
+      // one binarised observation (band >= competency threshold = a correct
+      // demonstration). The standard BKT recurrence updates P(mastery) with explicit
+      // slip/guess/learning parameters. Pure math over the user's real results —
+      // no AI, no network — so it runs regardless of API credits.
+      masteryModel: function (lang) {
+        var L = lang || window.__langCode || 'en';
+        var P_L0 = 0.30, P_T = 0.14, P_S = 0.10, P_G = 0.20, PASS = 6.0; // BKT params + competency band
+        var CRIT_LABEL = { task_response: 'task response', coherence_cohesion: 'coherence & cohesion', lexical_resource: 'vocabulary range', grammatical_range_accuracy: 'grammar', fluency_coherence: 'fluency' };
+        var rows = (window.__results || [])
+          .filter(function (r) { return r && r.lang === L && r.detail && r.detail.criteria && typeof r.detail.criteria === 'object'; })
+          .sort(function (a, b) { return new Date(a.updated_at || 0) - new Date(b.updated_at || 0); }); // oldest -> newest
+        var comp = {};
+        rows.forEach(function (r) {
+          var c = r.detail.criteria;
+          for (var k in c) {
+            if (typeof c[k] !== 'number') continue;
+            if (!comp[k]) comp[k] = { p: P_L0, n: 0 };
+            var st = comp[k];
+            var correct = c[k] >= PASS;
+            var post = correct
+              ? (st.p * (1 - P_S)) / (st.p * (1 - P_S) + (1 - st.p) * P_G)
+              : (st.p * P_S) / (st.p * P_S + (1 - st.p) * (1 - P_G));
+            st.p = post + (1 - post) * P_T; // learning transition after the opportunity
+            st.n += 1;
+          }
+        });
+        var components = {}, weakest = null;
+        for (var key in comp) {
+          var m = { key: key, label: CRIT_LABEL[key] || key.replace(/_/g, ' '), mastery: Math.round(comp[key].p * 100) / 100, n: comp[key].n };
+          components[key] = m;
+          if (m.n >= 2 && (!weakest || m.mastery < weakest.mastery)) weakest = m;
+        }
+        return { lang: L, components: components, weakest: weakest };
       },
 
       // ── Spaced repetition (SM-2) ─────────────────────────────
@@ -806,7 +850,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b193-learner-p4-focuscard';
+    window.__FL_BUILD = 'b194-bkt-mastery';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
