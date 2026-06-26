@@ -246,6 +246,75 @@ function ProgressPage() {
             </Card>
           </div>
 
+          {/* ── Learner-model insights: per-skill ability ± confidence + concept mastery ── */}
+          {(function () {
+            var _lang = (typeof window !== 'undefined' && window.__langCode) || 'en';
+            var prof = null, cm = null;
+            try { prof = window.FL && window.FL.learnerProfile ? window.FL.learnerProfile(_lang) : null; } catch (e) {}
+            try { cm = window.FL && window.FL.conceptModel ? window.FL.conceptModel(_lang) : null; } catch (e) {}
+            if (!prof || !prof.sessions) return null;
+            var langName = (typeof langByCode === 'function' ? (langByCode(_lang) || {}).english : '') || '';
+            var skills = prof.skills || {};
+            var concepts = cm ? Object.keys(cm.components).map(function (k) { return cm.components[k]; }).filter(function (m) { return m.n >= 1; }).sort(function (a, b) { return a.mastery - b.mastery; }) : [];
+            return (
+              <Card padding={22} style={{ marginBottom:24 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Skill mastery</div>
+                  <div style={{ fontSize:10.5, color:T.ink4 }}>{langName ? langName + ' · ' : ''}ability ± confidence</div>
+                </div>
+                <div style={{ fontSize:11, color:T.ink4, marginBottom:16 }}>Estimated from your real scores — the lighter band shows how sure the estimate is.</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                  {['reading','listening','writing','speaking'].map(function (k) {
+                    var s = skills[k]; var Mm = MOD[k];
+                    var has = s && s.count >= 2 && s.ability != null;
+                    var lo = has ? Math.max(0, s.ability - s.uncertainty) : 0;
+                    var bandW = has ? Math.min(100 - lo, 2 * s.uncertainty) : 0;
+                    return (
+                      <div key={k} style={{ display:'flex', alignItems:'center', gap:12 }}>
+                        <div style={{ width:32, height:32, borderRadius:9, background:Mm.c.bg, color:Mm.c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{Icon[Mm.ic]({ width:13, height:13 })}</div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:5 }}>
+                            <div style={{ fontSize:12.5, fontWeight:600, color:T.ink }}>{Mm.title}{has && s.trend ? <span style={{ fontSize:10.5, color: s.trend > 4 ? T.listening.c : (s.trend < -4 ? T.speaking.c : T.ink4), fontWeight:600, marginLeft:7 }}>{s.trend > 4 ? '↑ improving' : (s.trend < -4 ? '↓ slipping' : '· steady')}</span> : null}</div>
+                            <div style={{ fontSize:11.5, color:T.ink3, fontWeight:600 }}>{has ? (s.ability + '% ±' + s.uncertainty) : 'need 2+ sessions'}</div>
+                          </div>
+                          {has ? (
+                            <div style={{ position:'relative', height:6, background:T.bg3, borderRadius:99 }}>
+                              <div style={{ position:'absolute', left:lo + '%', width:bandW + '%', top:0, bottom:0, background:Mm.c.c, opacity:.22, borderRadius:99 }}/>
+                              <div style={{ position:'absolute', left:'calc(' + s.ability + '% - 2px)', top:-2, width:4, height:10, background:Mm.c.c, borderRadius:2 }}/>
+                            </div>
+                          ) : <div style={{ height:6, background:T.bg3, borderRadius:99 }}/>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {concepts.length ? (
+                  <div style={{ marginTop:22, paddingTop:20, borderTop:`1px solid ${T.border}` }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:4 }}>Concept mastery</div>
+                    <div style={{ fontSize:11, color:T.ink4, marginBottom:14 }}>Specific grammar & vocabulary points, weakest first.</div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:11 }}>
+                      {concepts.slice(0, 14).map(function (m) {
+                        var pct = Math.round(m.mastery * 100);
+                        var col = pct < 50 ? T.speaking.c : (pct < 70 ? T.writing.c : T.listening.c);
+                        return (
+                          <div key={m.key}>
+                            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:4 }}>
+                              <span style={{ fontSize:12, color:T.ink, fontWeight:600, textTransform:'capitalize' }}>{m.label}</span>
+                              <span style={{ fontSize:11, color:T.ink3 }}>{pct}% <span style={{ color:T.ink4 }}>· {m.n} {m.n === 1 ? 'try' : 'tries'}</span></span>
+                            </div>
+                            <Bar pct={pct} color={col}/>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop:20, paddingTop:18, borderTop:`1px solid ${T.border}`, fontSize:12, color:T.ink4, lineHeight:1.5 }}>Concept-level mastery appears once you complete AI-generated reading or listening sets — each question is tagged with the grammar or vocabulary point it tests.</div>
+                )}
+              </Card>
+            );
+          })()}
+
           <Card padding={22}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
               <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Activity · last 12 weeks</div>

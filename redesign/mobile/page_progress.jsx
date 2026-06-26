@@ -280,6 +280,68 @@ function MProgress() {
           </MCard>
         </div>
 
+        {/* Learner-model insights: per-skill ability ± confidence + concept mastery */}
+        {(function () {
+          var prof = null, cm = null;
+          try { prof = window.FL && window.FL.learnerProfile ? window.FL.learnerProfile(code) : null; } catch (e) {}
+          try { cm = window.FL && window.FL.conceptModel ? window.FL.conceptModel(code) : null; } catch (e) {}
+          if (!prof || !prof.sessions) return null;
+          var concepts = cm ? Object.keys(cm.components).map(function (k) { return cm.components[k]; }).filter(function (m) { return m.n >= 1; }).sort(function (a, b) { return a.mastery - b.mastery; }) : [];
+          return (
+            <div style={{ padding:'0 18px 14px' }}>
+              <MCard style={{ padding:16 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:3 }}>Skill mastery</div>
+                <div style={{ fontSize:10.5, color:T.ink4, marginBottom:14 }}>Estimated ability ± confidence, from your real scores.</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
+                  {['reading','listening','writing','speaking'].map(function (k) {
+                    var s = prof.skills[k]; var mm = _modMeta[k];
+                    var has = s && s.count >= 2 && s.ability != null;
+                    var lo = has ? Math.max(0, s.ability - s.uncertainty) : 0;
+                    var bandW = has ? Math.min(100 - lo, 2 * s.uncertainty) : 0;
+                    return (
+                      <div key={k}>
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:5 }}>
+                          <span style={{ fontSize:12, color:T.ink, fontWeight:600 }}>{mm.title}{has && s.trend ? <span style={{ fontSize:10, color: s.trend > 4 ? T.listening.c : (s.trend < -4 ? T.speaking.c : T.ink4), fontWeight:600, marginLeft:6 }}>{s.trend > 4 ? '↑' : (s.trend < -4 ? '↓' : '·')}</span> : null}</span>
+                          <span style={{ fontSize:11, color:T.ink3, fontWeight:600 }}>{has ? (s.ability + '% ±' + s.uncertainty) : 'need 2+'}</span>
+                        </div>
+                        {has ? (
+                          <div style={{ position:'relative', height:6, background:T.bg3, borderRadius:99 }}>
+                            <div style={{ position:'absolute', left:lo + '%', width:bandW + '%', top:0, bottom:0, background:mm.c.c, opacity:.22, borderRadius:99 }}/>
+                            <div style={{ position:'absolute', left:'calc(' + s.ability + '% - 2px)', top:-2, width:4, height:10, background:mm.c.c, borderRadius:2 }}/>
+                          </div>
+                        ) : <div style={{ height:6, background:T.bg3, borderRadius:99 }}/>}
+                      </div>
+                    );
+                  })}
+                </div>
+                {concepts.length ? (
+                  <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${T.hairline}` }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:3 }}>Concept mastery</div>
+                    <div style={{ fontSize:10.5, color:T.ink4, marginBottom:13 }}>Grammar &amp; vocab points, weakest first.</div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      {concepts.slice(0, 12).map(function (m) {
+                        var pct = Math.round(m.mastery * 100);
+                        var col = pct < 50 ? T.speaking.c : (pct < 70 ? T.writing.c : T.listening.c);
+                        return (
+                          <div key={m.key}>
+                            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:4 }}>
+                              <span style={{ fontSize:11.5, color:T.ink, fontWeight:600, textTransform:'capitalize' }}>{m.label}</span>
+                              <span style={{ fontSize:10.5, color:T.ink3 }}>{pct}% · {m.n}</span>
+                            </div>
+                            <div style={{ height:5, background:T.bg3, borderRadius:99, overflow:'hidden' }}><div style={{ height:'100%', width:pct + '%', background:col, borderRadius:99 }}/></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${T.hairline}`, fontSize:11, color:T.ink4, lineHeight:1.5 }}>Concept mastery appears once you finish AI reading or listening sets — each question is tagged with the point it tests.</div>
+                )}
+              </MCard>
+            </div>
+          );
+        })()}
+
         {/* Activity heatmap */}
         <div style={{ padding:'0 18px 14px' }}>
           <MCard style={{ padding:16 }}>
