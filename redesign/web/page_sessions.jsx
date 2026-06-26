@@ -989,8 +989,11 @@ function WritingSession() {
     if (thenNav) window.__nav && window.__nav('mod_results');
   };
   const _w = _sc('writing');
-  const _chart = (gen && gen.task1 && gen.task1.chart) || { type:'bar', title:_w.chartLabel, unit:'thousands', categories:['2005','2008','2011','2014','2017','2020'], series:[{ name:'Students', values:[120,145,185,210,240,195] }] };
-  const _task1Prompt = (gen && gen.task1 && gen.task1.prompt) || _w.task1Prompt;
+  const _isIelts = (typeof examFor === 'function' ? ((examFor(lang).short || '').toUpperCase().indexOf('IELTS') !== -1) : true);
+  const _aiChart = (gen && gen.task1Chart) || null;
+  const _showChart = _aiChart ? true : (_isIelts && !(gen && gen.__real));
+  const _chart = _aiChart || { type:'bar', title:_w.chartLabel, unit:'thousands', categories:['2005','2008','2011','2014','2017','2020'], series:[{ name:'Students', values:[120,145,185,210,240,195] }] };
+  const _task1Prompt = (gen && gen.task1Prompt) || _w.task1Prompt;
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <SessionHeader title={task==='task1'? _w.task1Title : _w.task2Title} module={`${_modPrefix()} ${_modLabel("Writing")}`} progress={pct} timeLeft={task==='task1'?1180:2380} color={T.writing.c} onExit={() => window.__nav && window.__nav('dashboard')}/>
@@ -1013,16 +1016,18 @@ function WritingSession() {
               <div style={{ fontSize:14, color:T.ink, lineHeight:1.65, fontFamily:"Georgia,serif", whiteSpace:'pre-line' }}>
                 {_task1Prompt}
               </div>
-              {/* Chart — generated per task when available, else a built-in spec */}
+              {/* Chart — IELTS Task 1 only; other exams have text writing tasks */}
+              {_showChart && (
               <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20 }}>
                 <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:14 }}>{_chart.title || _w.chartLabel}</div>
                 <WritingChart spec={_chart}/>
               </div>
+              )}
             </>
           ) : (
             <div style={{ fontSize:14, color:T.ink, lineHeight:1.65, fontFamily:"Georgia,serif" }}>
-              {(gen && gen.task2 && gen.task2.prompt)
-                ? <span style={{ whiteSpace:'pre-line' }}>{gen.task2.prompt}</span>
+              {(gen && gen.task2Topic)
+                ? <span style={{ whiteSpace:'pre-line' }}>{gen.task2Topic}</span>
                 : <><strong>{_w.task2Intro}</strong><br/><br/><em>{_w.task2Topic}</em><br/><br/>{_w.task2Outro}</>}
             </div>
           )}

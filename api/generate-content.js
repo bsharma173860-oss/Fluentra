@@ -60,6 +60,23 @@ function examSpec(exam, type) {
   for (var k in EXAM_SPEC) { if (key.indexOf(k) !== -1) { return (EXAM_SPEC[k] && EXAM_SPEC[k][type]) || ''; } }
   return '';
 }
+// Official two-task writing format per exam (text tasks, no chart).
+function WRITING_TASKS(examU) {
+  if (examU.indexOf('DELE') !== -1 || examU.indexOf('SIELE') !== -1)
+    return { t1: 'write an informal text (email or letter) responding to a real-life situation, as in DELE Tarea 1.', t2: 'write a formal or argumentative text giving and supporting an opinion, as in DELE Tarea 2.' };
+  if (examU.indexOf('DELF') !== -1 || examU.indexOf('DALF') !== -1)
+    return { t1: 'write a short personal or formal piece (message, letter or account) responding to a situation.', t2: 'write an argumentative essay (essai) expressing and justifying a clear point of view.' };
+  if (examU.indexOf('GOETHE') !== -1 || examU.indexOf('TESTDAF') !== -1)
+    return { t1: 'write a semi-formal email or forum post (Schreiben Teil 1) responding to a given situation.', t2: 'write a short opinion text arguing a position on the topic.' };
+  if (examU.indexOf('TOPIK') !== -1)
+    return { t1: 'short guided writing: complete the blanks in a given passage with appropriate sentences (쓰기 51/52 style).', t2: 'write a 200-300 character argumentative essay on the given topic (쓰기 54 style).' };
+  if (examU.indexOf('HSK') !== -1)
+    return { t1: 'arrange the given words/elements into grammatically correct sentences (书写 word-ordering).', t2: 'write a short passage using a given keyword on the topic (书写 short composition).' };
+  if (examU.indexOf('CILS') !== -1 || examU.indexOf('CELI') !== -1)
+    return { t1: 'write a short functional text (message, email or note) for a given situation.', t2: 'write a composition giving and supporting an opinion on the topic.' };
+  // Generic CEFR-style two written tasks.
+  return { t1: 'write a short text (message, email or note) responding to a given everyday situation.', t2: 'write an opinion essay giving and supporting your view on the topic.' };
+}
 function prompt(type, langName, difficulty, exam, topic) {
   var spec = examSpec(exam, type);
   var examLine = spec ? (' ' + spec) : (exam ? ` Match the style/level of the ${exam} exam.` : '');
@@ -71,14 +88,24 @@ function prompt(type, langName, difficulty, exam, topic) {
       `Passage and questions in ${langName}; "answer" is the 0-based index of the correct option.`;
   }
   if (type === 'writing') {
-    return `Create a ${difficulty} two-part writing test in ${langName}.${examLine} ` +
-      `Task 1 asks the learner to describe a data visual; Task 2 is an opinion/discussion essay. ` +
-      `Return ONLY minified JSON: {"title":string,` +
-      `"task1":{"prompt":string,"chart":{"type":"bar"|"line","title":string,"unit":string,` +
-      `"categories":[string],"series":[{"name":string,"values":[number]}]}},` +
-      `"task2":{"prompt":string},"min_words":number,"time_minutes":number}. ` +
-      `The chart has 4-7 categories and 1-3 series of realistic whole numbers. ` +
-      `All prompts and chart labels in ${langName}; the Task 1 prompt asks the learner to summarise the visual.`;
+    var examU = exam ? String(exam).toUpperCase() : '';
+    // Only IELTS (and the generic default) uses a data-visual Task 1 with a chart.
+    var isChartExam = !exam || examU.indexOf('IELTS') !== -1;
+    if (isChartExam) {
+      return `Create a ${difficulty} two-part IELTS-style writing test in ${langName}.${examLine} ` +
+        `Task 1 asks the learner to describe a data visual; Task 2 is an opinion/discussion essay. ` +
+        `Return ONLY minified JSON: {"title":string,` +
+        `"task1":{"prompt":string,"chart":{"type":"bar"|"line","title":string,"unit":string,` +
+        `"categories":[string],"series":[{"name":string,"values":[number]}]}},` +
+        `"task2":{"prompt":string},"min_words":number,"time_minutes":number}. ` +
+        `The chart has 4-7 categories and 1-3 series of realistic whole numbers. ` +
+        `All prompts and chart labels in ${langName}; the Task 1 prompt asks the learner to summarise the visual.`;
+    }
+    var wt = WRITING_TASKS(examU);
+    return `Create a ${difficulty} two-part writing test in ${langName} in the official format of the ${exam} exam.${examLine} ` +
+      `Task 1: ${wt.t1} Task 2: ${wt.t2} ` +
+      `Return ONLY minified JSON: {"title":string,"task1":{"prompt":string},"task2":{"prompt":string},"min_words":number,"time_minutes":number}. ` +
+      `Both task prompts must be written in ${langName}. Do NOT include any chart or data visual — these are text writing tasks.`;
   }
   if (type === 'listening') {
     return `Create a ${difficulty} listening-comprehension item in ${langName}.${examLine} ` +

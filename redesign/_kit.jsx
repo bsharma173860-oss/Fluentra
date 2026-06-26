@@ -758,6 +758,7 @@ function _normSession(skill, raw) {
       task1Meta: (raw.min_words ? ('~' + raw.min_words + ' words') : '150 words'),
       task2Meta: (raw.time_minutes ? (raw.time_minutes + ' min') : '250 words'),
       task1Prompt: (raw.task1 && raw.task1.prompt) || '',
+      task1Chart: (raw.task1 && raw.task1.chart) || null,
       task2Intro: '', task2Topic: (raw.task2 && raw.task2.prompt) || (raw.task1 && raw.task1.prompt) || '', task2Outro: '',
       task1Tips: [], task2Tips: [], submit: 'Submit & get feedback', tipsLabel: 'Tips', __real: true,
     };

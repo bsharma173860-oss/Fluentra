@@ -319,6 +319,7 @@ function MWritingSession() {
   const _w = (_gen && _gen !== 'err') ? _gen : ((typeof _sc === 'function') ? _sc('writing') : { task1Title:'Task 1', task2Title:'Task 2', task1Meta:'150 words', task2Meta:'250 words', task1Prompt:'', task2Intro:'', task2Topic:'', task2Outro:'', task1Tips:[], task2Tips:[], submit:'Submit', tipsLabel:'Tips' });
   if (_gen === null) return <MGenLoading skill="writing" color={T.writing.c}/>;
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const _mIsIelts = (typeof examFor === 'function' ? ((examFor((typeof window!=='undefined' && window.__langCode) || 'en').short || '').toUpperCase().indexOf('IELTS') !== -1) : true);
   const TARGET = task === 'task1' ? 150 : 250;
   const pct = Math.min(100, (wordCount / TARGET) * 100);
 
@@ -352,6 +353,7 @@ function MWritingSession() {
               {task === 'task1' ? (
                 <>
                   <div style={{ fontSize:13.5, color:MT.ink, lineHeight:1.5, fontFamily:'Georgia,serif', marginBottom:12, whiteSpace:'pre-line' }}>{_w.task1Prompt}</div>
+                  {_mIsIelts && (
                   <div style={{ background:MT.bg2, borderRadius:10, padding:12 }}>
                     <div style={{ fontSize:9.5, color:MT.ink4, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:8 }}>{_w.chartLabel || 'Chart'}</div>
                     <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:80 }}>
@@ -363,6 +365,7 @@ function MWritingSession() {
                       ))}
                     </div>
                   </div>
+                  )}
                 </>
               ) : (
                 <div style={{ fontSize:13.5, color:MT.ink, lineHeight:1.5, fontFamily:'Georgia,serif' }}>
