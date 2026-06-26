@@ -246,7 +246,7 @@ function MExamResultsV5({ mode = 'monthly' }) {
 
         <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', padding:'4px 6px', marginBottom:8 }}>AI FEEDBACK</div>
         <MCard style={{ padding:14, marginBottom:14 }}>
-          <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:11 }}>{_ex ? (_gradedAll ? 'Reading, Listening and Writing were scored from your work; Speaking is reviewed by AI \u2014 your full feedback follows shortly.' : 'Reading, Listening and Writing are scored for real. Speaking grading is being added \u2014 its band shows once AI review is wired in.') : 'Take the exam to get a scored result here.'}</div>
+          <div style={{ fontFamily:T.serif, fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:11 }}>{_ex ? (_gradedAll ? 'Every section \u2014 including Speaking \u2014 was scored by AI from your own work.' : 'Scored sections were graded by AI from your work. Any section that could not be scored (for example if AI grading was briefly unavailable) is left out of your total.') : 'Take the exam to get a scored result here.'}</div>
           {_ex && <div style={{ fontSize:11, color:T.ink4 }}>{_ex.gradedCount} of {_ex.total} sections auto-scored.</div>}
         </MCard>
 
