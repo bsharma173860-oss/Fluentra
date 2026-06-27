@@ -77,10 +77,11 @@ function WRITING_TASKS(examU) {
   // Generic CEFR-style two written tasks.
   return { t1: 'write a short text (message, email or note) responding to a given everyday situation.', t2: 'write an opinion essay giving and supporting your view on the topic.' };
 }
-function prompt(type, langName, difficulty, exam, topic, focus) {
+function prompt(type, langName, difficulty, exam, topic, focus, interests) {
   var spec = examSpec(exam, type);
   var examLine = spec ? (' ' + spec) : (exam ? ` Match the style/level of the ${exam} exam.` : '');
   if (focus) { examLine += ` The learner's weakest area is "${focus}" — bias this content to give targeted practice on it where natural.`; }
+  if (interests) { examLine += ` Where it fits naturally, build the scenario, names and vocabulary around the learner's own interests (${interests}) so the content feels personally relevant; rotate among these interests across sessions to keep it fresh, and never force one where it would distort the required format or difficulty.`; }
   if (type === 'reading') {
     return `Create a ${difficulty} reading-comprehension item in ${langName}.${examLine} ` +
       `Return ONLY minified JSON: {"title":string,"passage":string,"questions":[{"q":string,` +
@@ -190,11 +191,14 @@ module.exports = async function handler(req, res) {
     var difficulty = body.difficulty || 'medium';
     var exam = body.exam || null;
     var focus = (typeof body.focus === 'string' && body.focus.trim()) ? body.focus.trim().slice(0, 60) : null;
+    var interests = null;
+    if (Array.isArray(body.interests)) interests = body.interests.filter(function (s) { return typeof s === 'string' && s.trim(); }).slice(0, 8).map(function (s) { return s.trim(); }).join(', ');
+    else if (typeof body.interests === 'string' && body.interests.trim()) interests = body.interests.trim().slice(0, 200);
     var topic = body.topic || null;
     if (!lang || !LANG_NAMES[lang]) return res.status(400).json({ error: 'valid lang required' });
     if (['reading', 'writing', 'vocab', 'speaking', 'listening', 'lesson'].indexOf(type) === -1) return res.status(400).json({ error: 'type must be reading|writing|vocab|speaking|listening|lesson' });
 
-    var p = prompt(type, LANG_NAMES[lang], difficulty, exam, topic, focus);
+    var p = prompt(type, LANG_NAMES[lang], difficulty, exam, topic, focus, interests);
 
     // Claude generates the content
     async function callModel() {

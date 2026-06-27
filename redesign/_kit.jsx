@@ -856,7 +856,7 @@ function useGenContent(skill) {
     if (typeof window === 'undefined') return;
     if (window.__sessionGen[key]) { setV(window.__sessionGen[key]); return; }
     var cancelled = false;
-    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: ((typeof window !== 'undefined' && window.__adaptiveDifficulty && window.__adaptiveDifficulty(c, skill)) || 'medium'), exam: (typeof examFor === 'function' ? (examFor(c).short || null) : null), focus: ((typeof window !== 'undefined' && window.__focusArea) ? window.__focusArea(c) : null) }) })
+    fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: c, type: skill, difficulty: ((typeof window !== 'undefined' && window.__adaptiveDifficulty && window.__adaptiveDifficulty(c, skill)) || 'medium'), exam: (typeof examFor === 'function' ? (examFor(c).short || null) : null), focus: ((typeof window !== 'undefined' && window.__focusArea) ? window.__focusArea(c) : null), interests: ((typeof window !== 'undefined' && window.__interests) ? window.__interests() : null) }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (cancelled) return;
@@ -1006,7 +1006,35 @@ function LearnerFocusCard(props) {
     </div>
   );
 }
-if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; window.WordOrderTask = WordOrderTask; window.BlankFillTask = BlankFillTask; window.LearnerFocusCard = LearnerFocusCard; }
+if (typeof window !== 'undefined') { window.useGenContent = useGenContent; window._normSession = _normSession; window.WordOrderTask = WordOrderTask; window.BlankFillTask = BlankFillTask; window.LearnerFocusCard = LearnerFocusCard; window.InterestsEditor = InterestsEditor; }
+
+// Interests editor — chips + add field. Persists via FL.social.setInterests and
+// feeds the "living curriculum" (generated content built around these interests).
+function InterestsEditor(props) {
+  var pal = props.pal || {};
+  var init = (typeof window !== 'undefined' && window.__user && Array.isArray(window.__user.interests)) ? window.__user.interests : [];
+  var _l = React.useState(init); var list = _l[0], setList = _l[1];
+  var _d = React.useState(''); var draft = _d[0], setDraft = _d[1];
+  function persist(next) { setList(next); try { if (window.FL && window.FL.social && window.FL.social.setInterests) window.FL.social.setInterests(next); } catch (e) {} }
+  function add() { var v = (draft || '').trim(); if (!v || list.length >= 12) { setDraft(''); return; } if (list.map(function (x) { return x.toLowerCase(); }).indexOf(v.toLowerCase()) >= 0) { setDraft(''); return; } persist(list.concat([v])); setDraft(''); }
+  function remove(i) { persist(list.filter(function (_, j) { return j !== i; })); }
+  return (
+    <div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:12 }}>
+        {list.length ? list.map(function (t, i) { return (
+          <span key={t + i} style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:99, background: pal.bg2 || 'rgba(0,0,0,0.05)', border:'1px solid ' + (pal.line || '#eee'), fontSize:13, color: pal.ink || '#222' }}>
+            {t}
+            <button onClick={function () { remove(i); }} aria-label={'Remove ' + t} style={{ border:'none', background:'none', cursor:'pointer', color: pal.muted || '#999', fontSize:15, lineHeight:1, padding:0 }}>{'\u00D7'}</button>
+          </span>
+        ); }) : <span style={{ fontSize:13, color: pal.muted || '#888' }}>No interests yet — add a few below.</span>}
+      </div>
+      <div style={{ display:'flex', gap:8 }}>
+        <input value={draft} onChange={function (e) { setDraft(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="e.g. crypto, K-pop, cooking" maxLength={40} style={{ flex:1, padding:'10px 12px', borderRadius:10, border:'1px solid ' + (pal.line || '#ddd'), fontSize:13, background: pal.bg || '#fff', color: pal.ink || '#222', outline:'none' }}/>
+        <button onClick={add} style={{ padding:'10px 16px', borderRadius:10, border:'none', background: pal.accent || '#A65A00', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>Add</button>
+      </div>
+    </div>
+  );
+}
 
 function MGenLoading(props) {
   var color = (props && props.color) || T.brand;

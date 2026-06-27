@@ -216,6 +216,7 @@
         myProfile: function () { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').select('*').eq('id', id).maybeSingle().then(function (p) { return p.data; }); }); },
         getProfile: function (id) { return client.from('profiles').select('*').eq('id', id).maybeSingle().then(function (r) { return r.data; }); },
         setUsername: function (name) { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').update({ username: name }).eq('id', id); }); },
+        setInterests: function (list) { var arr = (list || []).map(function (s) { return String(s).trim(); }).filter(Boolean).slice(0, 12); return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').update({ interests: arr.join(', ') }).eq('id', id).then(function () { if (window.__user) window.__user.interests = arr; if (window.FL && window.FL.user) window.FL.user.interests = arr; try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {} return arr; }); }); },
         setProfilePublic: function (isPublic) { return this._uid().then(function (id) { if (!id) return null; return client.from('profiles').update({ is_public: !!isPublic }).eq('id', id); }); },
         searchUsers: function (q) { if (!q || q.length < 2) return Promise.resolve([]); var like = '%' + q.replace(/[%,]/g, '') + '%'; return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak').or('username.ilike.' + like + ',full_name.ilike.' + like).limit(20).then(function (r) { return r.data || []; }); },
 
@@ -306,6 +307,7 @@
                 targetExam: p.target_exam || 'IELTS',
                 targetScore: p.target_score || 7.0,
                 avatar: p.avatar_url || null,
+                interests: (p.interests ? String(p.interests).split(',').map(function (s) { return s.trim(); }).filter(Boolean) : []),
               };
 
               window.FL.user = data;
@@ -942,6 +944,11 @@
         return (p && p.focus && p.focus.label) || null;
       } catch (e) { return null; }
     };
+    // The learner's stated interests — fed into generated content so the scenarios
+    // and vocabulary are personally relevant ("living curriculum"). User-level for now.
+    window.__interests = function () {
+      try { return (window.__user && Array.isArray(window.__user.interests)) ? window.__user.interests : []; } catch (e) { return []; }
+    };
     // Per-skill content difficulty derived from the learner's real recent scores.
     // Defaults to 'medium' until there's enough data, so new users are unaffected.
     window.__adaptiveDifficulty = function (lang, skill) {
@@ -1014,7 +1021,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b202-fake-data-sweep';
+    window.__FL_BUILD = 'b203-interests-living-curriculum';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

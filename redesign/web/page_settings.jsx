@@ -239,6 +239,10 @@ function PreferencesTab() {
   const _saveProfile = function (patch) { if (window.FL && window.FL.updateProfile) window.FL.updateProfile(patch).catch(function(){}); };
   return (
     <div>
+      <SectionHd title="Your interests" sub="Topics you care about — your AI lessons build their scenarios and vocabulary around these, so practice stays personally relevant."/>
+      <Card padding={24} style={{ marginBottom:24 }}>
+        <InterestsEditor pal={{ bg:T.card, bg2:T.bg2, line:T.border, ink:T.ink, muted:T.ink3, accent:T.brand }}/>
+      </Card>
       <SectionHd title="Learning preferences"/>
       <Card padding={24} style={{ marginBottom:24 }}>
         <div style={{ marginBottom:18 }}>
