@@ -126,6 +126,16 @@ function LangDetailPage() {
               })()}
             </div>
 
+            {/* The Argument Arena — scoped to this language */}
+            <button onClick={() => { if (window.__setLang) window.__setLang(lang.code); if (window.__nav) window.__nav('argue'); }} style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'none', background:T.ink, borderRadius:16, padding:'20px 24px', marginBottom:32, color:'#fff', position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'space-between', gap:18 }}>
+              <div style={{ position:'absolute', inset:0, opacity:.06, background:'radial-gradient(circle at 96% 10%, #fff 0%, transparent 55%)' }}/>
+              <div style={{ position:'relative', minWidth:0 }}>
+                <div style={{ fontSize:10, fontWeight:700, color:T.brandLight, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:7 }}>New · Argument Arena</div>
+                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.1, marginBottom:5 }}>Debate in {(typeof langByCode === 'function' && langByCode(lang.code) && langByCode(lang.code).name) || lang.name || 'your language'}.</div>
+                <div style={{ fontSize:12.5, color:'rgba(255,255,255,.6)', lineHeight:1.5, maxWidth:420 }}>Argue a side against an AI opponent — with native comebacks and a read on how each point lands.</div>
+              </div>
+              <div style={{ position:'relative', flexShrink:0, padding:'10px 16px', borderRadius:10, background:'#fff', color:T.ink, fontSize:12.5, fontWeight:700 }}>Enter →</div>
+            </button>
             <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }}>
               {/* Up next — lessons */}
               <Card padding={0}>

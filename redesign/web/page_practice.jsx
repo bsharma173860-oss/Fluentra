@@ -49,6 +49,27 @@ function PracticePage() {
           }
         />
 
+        {/* Choose which language to practice */}
+        {(function () {
+          var lcNow = (typeof window !== 'undefined' && window.__langCode) || 'en';
+          var langs = (typeof window !== 'undefined' && window.__userLanguages) ? window.__userLanguages : [];
+          if (langs.length < 1) return null;
+          return (
+            <div style={{ marginBottom:26 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Practicing in</div>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                {langs.map(function (l) {
+                  var on = l.code === lcNow;
+                  var nm = (typeof langByCode === 'function' && langByCode(l.code) && langByCode(l.code).name) || l.code;
+                  return (
+                    <button key={l.code} onClick={function () { if (window.__setLang) window.__setLang(l.code); }} style={{ padding:'9px 16px', borderRadius:99, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? T.brandLight : T.card, fontSize:13, fontWeight: on ? 700 : 500, color: on ? T.brand : T.ink2, cursor:'pointer' }}>{nm}</button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Module heroes */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14, marginBottom:32 }}>
           <ModuleHeroCard nav="speaking"  ic="mic"  title="Speaking"  subtitle="Conversation drills + AI feedback" sessions={142} color={T.speaking.c}/>
