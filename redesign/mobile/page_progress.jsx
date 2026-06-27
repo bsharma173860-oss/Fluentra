@@ -337,6 +337,32 @@ function MProgress() {
                 ) : (
                   <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${T.hairline}`, fontSize:11, color:T.ink4, lineHeight:1.5 }}>Concept mastery appears once you finish AI reading or listening sets — each question is tagged with the point it tests.</div>
                 )}
+                {(function () {
+                  var mm = null; try { mm = window.FL && window.FL.masteryModel ? window.FL.masteryModel(code) : null; } catch (e) {}
+                  var crits = mm ? Object.keys(mm.components).map(function (k) { return mm.components[k]; }).filter(function (m) { return m.n >= 1; }).sort(function (a, b) { return a.mastery - b.mastery; }) : [];
+                  if (!crits.length) return null;
+                  return (
+                    <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${T.hairline}` }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:3 }}>Writing &amp; speaking criteria</div>
+                      <div style={{ fontSize:10.5, color:T.ink4, marginBottom:13 }}>Production dimensions from AI grading, weakest first.</div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                        {crits.map(function (m) {
+                          var pct = Math.round(m.mastery * 100);
+                          var col = pct < 50 ? T.speaking.c : (pct < 70 ? T.writing.c : T.listening.c);
+                          return (
+                            <div key={m.key}>
+                              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:4 }}>
+                                <span style={{ fontSize:11.5, color:T.ink, fontWeight:600, textTransform:'capitalize' }}>{m.label}</span>
+                                <span style={{ fontSize:10.5, color:T.ink3 }}>{pct}% · {m.n}</span>
+                              </div>
+                              <div style={{ height:5, background:T.bg3, borderRadius:99, overflow:'hidden' }}><div style={{ height:'100%', width:pct + '%', background:col, borderRadius:99 }}/></div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </MCard>
             </div>
           );

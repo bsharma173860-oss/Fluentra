@@ -311,6 +311,32 @@ function ProgressPage() {
                 ) : (
                   <div style={{ marginTop:20, paddingTop:18, borderTop:`1px solid ${T.border}`, fontSize:12, color:T.ink4, lineHeight:1.5 }}>Concept-level mastery appears once you complete AI-generated reading or listening sets — each question is tagged with the grammar or vocabulary point it tests.</div>
                 )}
+                {(function () {
+                  var mm = null; try { mm = window.FL && window.FL.masteryModel ? window.FL.masteryModel(_lang) : null; } catch (e) {}
+                  var crits = mm ? Object.keys(mm.components).map(function (k) { return mm.components[k]; }).filter(function (m) { return m.n >= 1; }).sort(function (a, b) { return a.mastery - b.mastery; }) : [];
+                  if (!crits.length) return null;
+                  return (
+                    <div style={{ marginTop:22, paddingTop:20, borderTop:`1px solid ${T.border}` }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:4 }}>Writing &amp; speaking criteria</div>
+                      <div style={{ fontSize:11, color:T.ink4, marginBottom:14 }}>Production-quality dimensions from AI grading, weakest first.</div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:11 }}>
+                        {crits.map(function (m) {
+                          var pct = Math.round(m.mastery * 100);
+                          var col = pct < 50 ? T.speaking.c : (pct < 70 ? T.writing.c : T.listening.c);
+                          return (
+                            <div key={m.key}>
+                              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:4 }}>
+                                <span style={{ fontSize:12, color:T.ink, fontWeight:600, textTransform:'capitalize' }}>{m.label}</span>
+                                <span style={{ fontSize:11, color:T.ink3 }}>{pct}% <span style={{ color:T.ink4 }}>· {m.n} {m.n === 1 ? 'session' : 'sessions'}</span></span>
+                              </div>
+                              <Bar pct={pct} color={col}/>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             );
           })()}
