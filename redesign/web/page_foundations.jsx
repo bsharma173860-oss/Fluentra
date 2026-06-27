@@ -28,6 +28,13 @@ const FOUND_ALPHABETS = {
     {ch:'ら',name:'ra'},{ch:'り',name:'ri'},{ch:'る',name:'ru'},{ch:'れ',name:'re'},{ch:'ろ',name:'ro'},
     {ch:'わ',name:'wa'},{ch:'を',name:'wo'},{ch:'ん',name:'n'},
   ]},
+  ko: { script:'Hangul (한글)', note:'14 consonants and 10 vowels. Korean letters stack into syllable blocks — learn the parts first. Tap to hear each.', letters:[
+    {ch:'ㄱ',name:'g/k'},{ch:'ㄴ',name:'n'},{ch:'ㄷ',name:'d/t'},{ch:'ㄹ',name:'r/l'},{ch:'ㅁ',name:'m'},{ch:'ㅂ',name:'b/p'},{ch:'ㅅ',name:'s'},{ch:'ㅇ',name:'ng/—'},{ch:'ㅈ',name:'j'},{ch:'ㅊ',name:'ch'},{ch:'ㅋ',name:'k'},{ch:'ㅌ',name:'t'},{ch:'ㅍ',name:'p'},{ch:'ㅎ',name:'h'},
+    {ch:'ㅏ',name:'a'},{ch:'ㅑ',name:'ya'},{ch:'ㅓ',name:'eo'},{ch:'ㅕ',name:'yeo'},{ch:'ㅗ',name:'o'},{ch:'ㅛ',name:'yo'},{ch:'ㅜ',name:'u'},{ch:'ㅠ',name:'yu'},{ch:'ㅡ',name:'eu'},{ch:'ㅣ',name:'i'},
+  ]},
+  ru: { script:'the Cyrillic alphabet (кириллица)', note:'33 letters. Some look like Latin letters but sound different — tap each to hear it.', letters:[
+    {ch:'А',name:'a'},{ch:'Б',name:'b'},{ch:'В',name:'v'},{ch:'Г',name:'g'},{ch:'Д',name:'d'},{ch:'Е',name:'ye'},{ch:'Ё',name:'yo'},{ch:'Ж',name:'zh'},{ch:'З',name:'z'},{ch:'И',name:'i'},{ch:'Й',name:'y'},{ch:'К',name:'k'},{ch:'Л',name:'l'},{ch:'М',name:'m'},{ch:'Н',name:'n'},{ch:'О',name:'o'},{ch:'П',name:'p'},{ch:'Р',name:'r'},{ch:'С',name:'s'},{ch:'Т',name:'t'},{ch:'У',name:'u'},{ch:'Ф',name:'f'},{ch:'Х',name:'kh'},{ch:'Ц',name:'ts'},{ch:'Ч',name:'ch'},{ch:'Ш',name:'sh'},{ch:'Щ',name:'shch'},{ch:'Ъ',name:'hard'},{ch:'Ы',name:'y'},{ch:'Ь',name:'soft'},{ch:'Э',name:'e'},{ch:'Ю',name:'yu'},{ch:'Я',name:'ya'},
+  ]},
 };
 const FOUND_LATIN_FALLBACK = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function (c) { return { ch:c, name:c.toLowerCase() }; });
 
@@ -37,6 +44,8 @@ const FOUND_WORDS = {
   es: [{w:'Hola',g:'hello'},{w:'Gracias',g:'thank you'},{w:'Sí',g:'yes'},{w:'No',g:'no'},{w:'Por favor',g:'please'},{w:'Agua',g:'water'},{w:'Comida',g:'food'},{w:'Ayuda',g:'help'},{w:'Perdón',g:'sorry'},{w:'Adiós',g:'goodbye'}],
   fr: [{w:'Bonjour',g:'hello'},{w:'Merci',g:'thank you'},{w:'Oui',g:'yes'},{w:'Non',g:'no'},{w:"S'il vous plaît",g:'please'},{w:'Eau',g:'water'},{w:'Nourriture',g:'food'},{w:'Aide',g:'help'},{w:'Pardon',g:'sorry'},{w:'Au revoir',g:'goodbye'}],
   ja: [{w:'こんにちは',g:'hello',r:'konnichiwa'},{w:'ありがとう',g:'thank you',r:'arigatō'},{w:'はい',g:'yes',r:'hai'},{w:'いいえ',g:'no',r:'iie'},{w:'お願いします',g:'please',r:'onegai shimasu'},{w:'水',g:'water',r:'mizu'},{w:'食べ物',g:'food',r:'tabemono'},{w:'助けて',g:'help',r:'tasukete'},{w:'ごめんなさい',g:'sorry',r:'gomen nasai'},{w:'さようなら',g:'goodbye',r:'sayōnara'}],
+  ko: [{w:'안녕하세요',g:'hello',r:'annyeonghaseyo'},{w:'감사합니다',g:'thank you',r:'gamsahamnida'},{w:'네',g:'yes',r:'ne'},{w:'아니요',g:'no',r:'aniyo'},{w:'제발',g:'please',r:'jebal'},{w:'물',g:'water',r:'mul'},{w:'음식',g:'food',r:'eumsik'},{w:'도와주세요',g:'help',r:'dowajuseyo'},{w:'죄송합니다',g:'sorry',r:'joesonghamnida'},{w:'안녕히 가세요',g:'goodbye',r:'annyeonghi gaseyo'}],
+  ru: [{w:'Здравствуйте',g:'hello',r:'zdravstvuyte'},{w:'Спасибо',g:'thank you',r:'spasibo'},{w:'Да',g:'yes',r:'da'},{w:'Нет',g:'no',r:'net'},{w:'Пожалуйста',g:'please',r:'pozhaluysta'},{w:'Вода',g:'water',r:'voda'},{w:'Еда',g:'food',r:'yeda'},{w:'Помогите',g:'help',r:'pomogite'},{w:'Извините',g:'sorry',r:'izvinite'},{w:'До свидания',g:'goodbye',r:'do svidaniya'}],
 };
 
 function _foundSpeak(text, code) { if (typeof window !== 'undefined' && window.flSpeak) window.flSpeak(text, code); }
@@ -44,7 +53,8 @@ function _foundSpeak(text, code) { if (typeof window !== 'undefined' && window.f
 function FoundationsPage() {
   const R = React;
   const code = (typeof window !== 'undefined' && window.__langCode) || 'en';
-  const langName = (typeof langByCode === 'function' && langByCode(code)) ? (langByCode(code).english || langByCode(code).native || 'your language') : 'your language';
+  const FOUND_LABELS = { en:'English', es:'Spanish', fr:'French', ja:'Japanese', ko:'Korean', ru:'Russian', de:'German', it:'Italian', pt:'Portuguese', zh:'Chinese', ar:'Arabic', hi:'Hindi', nl:'Dutch', pl:'Polish', tr:'Turkish', sv:'Swedish' };
+  const langName = FOUND_LABELS[code] || ((typeof langByCode === 'function' && langByCode(code)) ? (langByCode(code).english || langByCode(code).native || 'your language') : 'your language');
   const alpha = FOUND_ALPHABETS[code] || { script:'the alphabet', note:'Tap a letter to hear it.', letters: FOUND_LATIN_FALLBACK };
   const words = FOUND_WORDS[code] || null;
   const [stage, setStage] = R.useState('alphabet');
