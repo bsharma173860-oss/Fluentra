@@ -5,8 +5,8 @@ function MExamHistoryPageV5() {
   const _R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; });
   const _band = function (pct) { return (pct / 100 * 9).toFixed(1); };
   const attempts = _R.slice().reverse().slice(0, 20).map(function (r, i) {
-    var m = r.module || 'practice';
-    var label = m.charAt(0).toUpperCase() + m.slice(1);
+    var m = (r.detail && r.detail.module) || 'practice';
+    var label = m.replace(/_/g, ' ').replace(/^./, function (ch) { return ch.toUpperCase(); });
     return { d: '#' + (_R.length - i), n: label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), s: _band(r.score), t: 'Module attempt', mode: 'practice' };
   });
   const _scores = _R.map(function (r) { return r.score; });

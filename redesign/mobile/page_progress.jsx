@@ -50,22 +50,9 @@ function MProgressLineChart({ data, color, w=350, h=150 }) {
 function MExamStreamsPanel() {
   const STREAMS = (typeof getExamStreams === 'function') ? getExamStreams() : null;
   const fallback = {
-    monthly: { key:'monthly', label:'Monthly', subtitle:'Official · counts', accent:T.brand, bg:T.brandLight, ic:'trophy', runs:[
-      { date:'Apr 12', score:7.5, unit:'/9', label:'IELTS · Full', delta:+0.5, dur:'2h 45m', verified:true },
-      { date:'Mar 14', score:7.0, unit:'/9', label:'IELTS · Full', delta:+0.5, dur:'2h 40m', verified:true },
-      { date:'Feb 10', score:6.5, unit:'/9', label:'IELTS · Full', delta:null, dur:'2h 50m', verified:true },
-    ]},
-    mock: { key:'mock', label:'Mock', subtitle:'Free · not on record', accent:'#5B7CFF', bg:'#EEF2FF', ic:'play', runs:[
-      { date:'Apr 18', score:7.5, unit:'/9', label:'Full mock', delta:+0.5, dur:'2h 38m' },
-      { date:'Apr 6',  score:7.0, unit:'/9', label:'Full mock', delta:0,    dur:'2h 42m' },
-      { date:'Mar 28', score:7.0, unit:'/9', label:'Full mock', delta:+0.5, dur:'2h 50m' },
-    ]},
-    practice: { key:'practice', label:'Practice', subtitle:'Drills · logged', accent:T.listening.c, bg:T.listening.bg, ic:'bars', runs:[
-      { date:'Today',     score:7.5, unit:'/9', label:'Reading · P2',  delta:+0.5, dur:'18 min' },
-      { date:'Yesterday', score:6.5, unit:'/9', label:'Writing · T2',  delta:-0.5, dur:'42 min' },
-      { date:'2d ago',    score:8.0, unit:'/9', label:'Listening · S3',delta:+1.0, dur:'14 min' },
-      { date:'3d ago',    score:7.0, unit:'/9', label:'Speaking · P2', delta:0,    dur:'12 min' },
-    ]},
+    monthly:  { key:'monthly',  label:'Monthly',  subtitle:'Official · counts',    accent:T.brand,        bg:T.brandLight, ic:'trophy', runs:[] },
+    mock:     { key:'mock',     label:'Mock',     subtitle:'Free · not on record', accent:'#5B7CFF',      bg:'#EEF2FF',    ic:'play',   runs:[] },
+    practice: { key:'practice', label:'Practice', subtitle:'Drills · logged',      accent:T.listening.c,  bg:T.listening.bg, ic:'bars', runs:[] },
   };
   const src = STREAMS || fallback;
   const [tab, setTab] = React.useState('monthly');

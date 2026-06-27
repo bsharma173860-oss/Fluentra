@@ -183,7 +183,7 @@ function LangDetailPage() {
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{lang.exam} mock</div>
-                    <div style={{ fontSize:11, color:T.ink3, marginTop:2 }}>Apr 28 · 2h 45m</div>
+                    <div style={{ fontSize:11, color:T.ink3, marginTop:2 }}>Full mock · all 4 modules</div>
                   </div>
                 </div>
                 <Btn label="Schedule mock" nav="mock_test" variant="outline" accent={t.accent} size="sm" fullWidth style={{ marginTop:12 }}/>
