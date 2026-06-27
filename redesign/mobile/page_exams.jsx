@@ -12,13 +12,24 @@ function MExams() {
       }).catch(function () { setLb([]); });
     } else { setLb([]); }
   }, []);
-  const exams = [
-    { name:'IELTS Academic',   flag:'en', color:T.speaking.c, bg:T.speaking.bg, scale:'Band scale /9' },
-    { name:'TOEFL iBT',        flag:'en', color:'#1558B0',    bg:'#EEF6FF',     scale:'Scored /120' },
-    { name:'DELE B2',          flag:'es', color:T.brand,      bg:T.brandLight,  scale:'CEFR B2 · /100' },
-    { name:'DELF B2',          flag:'fr', color:'#1558B0',    bg:'#EEF6FF',     scale:'CEFR B2 · /100' },
-    { name:'JLPT N4',          flag:'ja', color:'#C84070',    bg:'#FFE0EC',     scale:'Levels N5–N1' },
+  const _langs = (typeof window !== 'undefined' && window.__userLanguages) ? window.__userLanguages : [];
+  const _R = (typeof window !== 'undefined' && window.__results) ? window.__results : [];
+  const _examShort = (function () { try { return (typeof examFor === 'function' && examFor(window.__langCode) && examFor(window.__langCode).short) || 'Practice'; } catch (e) { return 'Practice'; } })();
+  const _pal = [
+    { color:T.speaking.c,  bg:T.speaking.bg },
+    { color:T.brand,       bg:T.brandLight },
+    { color:'#1558B0',     bg:'#EEF6FF' },
+    { color:'#C84070',     bg:'#FFE0EC' },
+    { color:T.listening.c, bg:T.listening.bg },
   ];
+  const exams = _langs.map(function (l, i) {
+    var rows = _R.filter(function (r) { return r.lang === l.code; });
+    var best = rows.length ? Math.max.apply(null, rows.map(function (r) { return Number(r.score) || 0; })) : null;
+    var p = _pal[i % _pal.length];
+    var examName = l.exam || l.exam_type || 'Practice';
+    var eng = l.english || l.english_name || (l.code || '').toUpperCase();
+    return { name: examName + ' · ' + eng, lang: l.code, flag: l.code, color: p.color, bg: p.bg, scale: (best != null ? ('Best ' + best + ' · ' + rows.length + ' attempt' + (rows.length === 1 ? '' : 's')) : 'No attempts yet') };
+  });
 
   return (
     <>
@@ -37,9 +48,9 @@ function MExams() {
             <div style={{ position:'relative' }}>
               <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:14 }}>
                 <div style={{ width:42, height:42, borderRadius:12, background:'rgba(255,255,255,.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.trophy({ width:17, height:17 })}</div>
-                <div style={{ fontSize:9.5, fontWeight:700, color:'rgba(255,255,255,.85)', letterSpacing:'.14em', textTransform:'uppercase' }}>Next up · Apr 28</div>
+                <div style={{ fontSize:9.5, fontWeight:700, color:'rgba(255,255,255,.85)', letterSpacing:'.14em', textTransform:'uppercase' }}>Full mock · private practice</div>
               </div>
-              <div style={{ fontFamily:T.serif, fontSize:22, color:'#fff', lineHeight:1.1, marginBottom:4 }}>IELTS Mock Test.</div>
+              <div style={{ fontFamily:T.serif, fontSize:22, color:'#fff', lineHeight:1.1, marginBottom:4 }}>{_examShort} Mock Test.</div>
               <div style={{ fontSize:11.5, color:'rgba(255,255,255,.85)', marginBottom:14 }}>2h 45m · all 4 modules · private practice</div>
               <div style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'10px 16px', background:'#fff', color:T.brand, borderRadius:10, fontSize:12.5, fontWeight:700 }}>
                 Take mock {Icon.arrow({ width:12, height:12 })}
@@ -53,7 +64,7 @@ function MExams() {
           <MobileSectionHead title="All exams"/>
           <MCard style={{ padding:0 }}>
             {exams.map((e, i, all) => (
-              <button key={e.name} onClick={()=>nav('exam_entry')} style={{
+              <button key={e.name} onClick={()=>{ if (e.lang && window.__setLang) window.__setLang(e.lang); nav('exam_entry'); }} style={{
                 width:'100%', textAlign:'left',
                 background:'transparent', border:'none',
                 borderBottom: i < all.length - 1 ? `1px solid ${T.hairline}` : 'none',
