@@ -476,3 +476,198 @@ function TutorPage() {
 }
 
 // ── Mobile tutor ─────────────────────────────────────────
+// ── The Argument Arena (Feature #3) ──────────────────────────
+// Turn-by-turn debate against an AI opponent. Signature elements: opponent
+// arguments in the target language with tap-to-reveal translation, a "comeback"
+// tray of native rebuttal phrases the learner can deploy, and a per-turn note on
+// how their argument LANDS (tone/persuasiveness) — street fluency, not grammar.
+function ArgumentGamePage() {
+  const R = React;
+  const code = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const langName = (typeof langByCode === 'function' && langByCode(code)) ? (langByCode(code).english || langByCode(code).name || 'your language') : 'your language';
+  const [phase, setPhase] = R.useState('setup');
+  const [topic, setTopic] = R.useState('');
+  const [side, setSide] = R.useState('');
+  const [oppSide, setOppSide] = R.useState('');
+  const [diff, setDiff] = R.useState('medium');
+  const [msgs, setMsgs] = R.useState([]);
+  const [draft, setDraft] = R.useState('');
+  const [busy, setBusy] = R.useState(false);
+  const [openT, setOpenT] = R.useState({});
+  const scrollRef = R.useRef(null);
+  R.useEffect(function () { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [msgs, busy]);
+
+  const TOPICS = [
+    { t:'Social media does more harm than good', a:'It does more harm than good', b:'It does more good than harm' },
+    { t:'Remote work beats working in an office',  a:'Remote work is better',         b:'The office is better' },
+    { t:'AI will create more jobs than it destroys',a:'AI will create more jobs',      b:'AI will destroy more jobs' },
+    { t:'Cities should ban private cars downtown',  a:'Cities should ban them',        b:'Cities should keep them' },
+    { t:'Money can buy happiness',                  a:'Money can buy happiness',       b:'Money cannot buy happiness' },
+    { t:'Homework should be abolished in schools',  a:'Abolish homework',              b:'Keep homework' },
+  ];
+  const DIFFS = [{ k:'easy', l:'Warm-up' }, { k:'medium', l:'Sparring' }, { k:'hard', l:'No mercy' }];
+
+  function pickTopic(tp, mySide, opp) { setTopic(tp); setSide(mySide); setOppSide(opp); setMsgs([]); setOpenT({}); setPhase('debate'); turn([], tp, mySide, true); }
+  function reset() { setPhase('setup'); setMsgs([]); setDraft(''); setOpenT({}); }
+
+  async function turn(history, tp, mySide, opening) {
+    setBusy(true);
+    try {
+      const apiMsgs = opening
+        ? [{ role:'user', content:'Begin the debate — state your opening position.' }]
+        : history.map(function (m) { return { role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }; });
+      const r = await fetch('/api/tutor', {
+        method:'POST',
+        headers: Object.assign({ 'Content-Type':'application/json' }, (typeof window !== 'undefined' && window.__authHeaders) ? window.__authHeaders() : {}),
+        body: JSON.stringify({ mode:'debate', lang: langName, topic: tp, side: mySide, difficulty: diff, messages: apiMsgs }),
+      });
+      const j = r.ok ? await r.json() : null;
+      if (j && j.reply) {
+        setMsgs(function (prev) {
+          var withFb = prev.map(function (m) { return m.pendingFeedback ? Object.assign({}, m, { feedback: j.feedback || null, pendingFeedback:false }) : m; });
+          return withFb.concat([{ role:'ai', content:j.reply, translation:j.translation || '', clapbacks:j.clapbacks || [] }]);
+        });
+      } else {
+        var msg = (r.status === 402) ? '(You\u2019ve hit today\u2019s usage limit \u2014 upgrade to keep debating.)' : '(The opponent paused \u2014 send again to continue.)';
+        setMsgs(function (prev) { return prev.concat([{ role:'ai', content: msg, translation:'', clapbacks:[] }]); });
+      }
+    } catch (e) {
+      setMsgs(function (prev) { return prev.concat([{ role:'ai', content:'(Connection issue \u2014 send again.)', translation:'', clapbacks:[] }]); });
+    }
+    setBusy(false);
+  }
+
+  function send() {
+    var v = draft.trim(); if (!v || busy) return;
+    var next = msgs.concat([{ role:'user', content:v, pendingFeedback:true }]);
+    setMsgs(next); setDraft('');
+    turn(next, topic, side, false);
+  }
+
+  // ── Setup screen ──
+  if (phase === 'setup') {
+    return (
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+        <WebTopbar search=""/>
+        <div style={{ flex:1, overflow:'auto', padding:'32px 36px' }}>
+          <div style={{ maxWidth:760, margin:'0 auto' }}>
+            <div style={{ background:T.ink, borderRadius:20, padding:'34px 36px', color:'#fff', marginBottom:28, position:'relative', overflow:'hidden' }}>
+              <div style={{ position:'absolute', inset:0, opacity:.05, background:'radial-gradient(circle at 92% 0%, #fff 0%, transparent 55%)' }}/>
+              <div style={{ position:'relative' }}>
+                <div style={{ fontSize:11, fontWeight:700, color:T.brandLight, letterSpacing:'.18em', textTransform:'uppercase', marginBottom:12 }}>The Argument Arena</div>
+                <div style={{ fontFamily:T.serif, fontSize:40, lineHeight:1.04, letterSpacing:'-.02em', maxWidth:520 }}>Win the argument. In {langName}.</div>
+                <div style={{ fontSize:14, color:'rgba(255,255,255,.62)', marginTop:14, lineHeight:1.6, maxWidth:460 }}>Pick a side. The opponent takes the other. You\u2019ll get native comebacks to fire back with \u2014 and an honest read on how each point lands.</div>
+              </div>
+            </div>
+
+            <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:14 }}>Choose your intensity</div>
+            <div style={{ display:'flex', gap:10, marginBottom:30 }}>
+              {DIFFS.map(function (d) { var on = diff === d.k; return (
+                <button key={d.k} onClick={function () { setDiff(d.k); }} style={{ flex:1, padding:'14px 0', borderRadius:13, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? T.brandLight : T.card, cursor:'pointer' }}>
+                  <div style={{ fontSize:14, fontWeight:700, color: on ? T.brand : T.ink }}>{d.l}</div>
+                  <div style={{ fontSize:10.5, color: on ? T.brand : T.ink4, marginTop:3, textTransform:'capitalize' }}>{d.k}</div>
+                </button>
+              ); })}
+            </div>
+
+            <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:14 }}>Pick a motion \u2014 then your side</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              {TOPICS.map(function (tp, i) { return (
+                <div key={i} style={{ background:T.card, border:'1px solid ' + T.border, borderRadius:15, padding:'18px 20px' }}>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:10, marginBottom:13 }}>
+                    <span style={{ fontFamily:T.serif, fontSize:14, color:T.brand, fontStyle:'italic' }}>{String(i + 1).padStart(2,'0')}</span>
+                    <div style={{ fontSize:15, fontWeight:600, color:T.ink, lineHeight:1.35 }}>{tp.t}</div>
+                  </div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={function () { pickTopic(tp.t, tp.a, tp.b); }} style={{ flex:1, padding:'10px 14px', borderRadius:10, border:'1.5px solid ' + T.border, background:T.bg2, fontSize:12.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>
+                      <span style={{ color:T.ink4, fontSize:10.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3 }}>Argue</span>{tp.a}
+                    </button>
+                    <button onClick={function () { pickTopic(tp.t, tp.b, tp.a); }} style={{ flex:1, padding:'10px 14px', borderRadius:10, border:'1.5px solid ' + T.border, background:T.bg2, fontSize:12.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>
+                      <span style={{ color:T.ink4, fontSize:10.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3 }}>Argue</span>{tp.b}
+                    </button>
+                  </div>
+                </div>
+              ); })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Debate screen ──
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      <WebTopbar search=""/>
+      <div style={{ padding:'16px 36px 0', borderBottom:'1px solid ' + T.hairline }}>
+        <div style={{ maxWidth:760, margin:'0 auto', paddingBottom:14, display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16 }}>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:5 }}>Motion</div>
+            <div style={{ fontSize:14, fontWeight:600, color:T.ink, lineHeight:1.35 }}>{topic}</div>
+            <div style={{ fontSize:12, color:T.ink3, marginTop:6 }}>You: <strong style={{ color:T.brand }}>{side}</strong> <span style={{ color:T.ink5 }}>\u00b7 opponent: {oppSide}</span></div>
+          </div>
+          <button onClick={reset} style={{ flexShrink:0, padding:'8px 14px', borderRadius:9, border:'1.5px solid ' + T.border, background:T.card, fontSize:12, fontWeight:600, color:T.ink2, cursor:'pointer' }}>New debate</button>
+        </div>
+      </div>
+
+      <div ref={scrollRef} style={{ flex:1, overflow:'auto', padding:'24px 36px' }}>
+        <div style={{ maxWidth:760, margin:'0 auto', display:'flex', flexDirection:'column', gap:18 }}>
+          {msgs.map(function (m, i) {
+            if (m.role === 'user') return (
+              <div key={i} style={{ alignSelf:'flex-end', maxWidth:'78%' }}>
+                <div style={{ background:T.brand, color:'#fff', borderRadius:'16px 16px 4px 16px', padding:'12px 16px', fontSize:14, lineHeight:1.5 }}>{m.content}</div>
+                {m.feedback ? (
+                  <div style={{ marginTop:7, display:'flex', alignItems:'flex-start', gap:7, justifyContent:'flex-end' }}>
+                    <div style={{ fontSize:11.5, color:T.ink3, fontStyle:'italic', textAlign:'right', lineHeight:1.5, maxWidth:'92%' }}>{Icon.spark ? Icon.spark({ width:10, height:10 }) : null} {m.feedback}</div>
+                  </div>
+                ) : null}
+              </div>
+            );
+            var showT = !!openT[i];
+            return (
+              <div key={i} style={{ alignSelf:'flex-start', maxWidth:'82%' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
+                  <div style={{ width:22, height:22, borderRadius:11, background:T.ink, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800 }}>OP</div>
+                  <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.08em', textTransform:'uppercase' }}>Opponent</div>
+                </div>
+                <div style={{ background:T.card, border:'1px solid ' + T.border, borderLeft:'3px solid ' + T.brand, borderRadius:'4px 16px 16px 16px', padding:'13px 16px' }}>
+                  <div style={{ fontSize:14.5, color:T.ink, lineHeight:1.55, fontFamily:T.serif }}>{m.content}</div>
+                  {m.translation ? (
+                    <div style={{ marginTop:9, paddingTop:9, borderTop:'1px dashed ' + T.hairline }}>
+                      {showT ? <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5 }}>{m.translation}</div>
+                             : <button onClick={function () { setOpenT(function (o) { var n = Object.assign({}, o); n[i] = true; return n; }); }} style={{ fontSize:11, fontWeight:600, color:T.brand, background:'none', border:'none', cursor:'pointer', padding:0 }}>Show translation</button>}
+                    </div>
+                  ) : null}
+                </div>
+                {m.clapbacks && m.clapbacks.length ? (
+                  <div style={{ marginTop:10 }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:7 }}>Comebacks \u2014 tap to use</div>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                      {m.clapbacks.map(function (c, ci) { return (
+                        <button key={ci} title={c.gloss} onClick={function () { setDraft(function (d) { return (d ? d + ' ' : '') + c.phrase; }); }} style={{ textAlign:'left', padding:'8px 12px', borderRadius:10, border:'1px solid ' + T.border, background:T.bg2, cursor:'pointer', maxWidth:'100%' }}>
+                          <div style={{ fontSize:13, color:T.ink, fontWeight:600 }}>{c.phrase}</div>
+                          {c.gloss ? <div style={{ fontSize:10.5, color:T.ink4, marginTop:1 }}>{c.gloss}</div> : null}
+                        </button>
+                      ); })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {busy ? <div style={{ alignSelf:'flex-start', fontSize:12.5, color:T.ink4, fontStyle:'italic', padding:'4px 2px' }}>Opponent is thinking\u2026</div> : null}
+        </div>
+      </div>
+
+      <div style={{ borderTop:'1px solid ' + T.hairline, padding:'14px 36px 18px' }}>
+        <div style={{ maxWidth:760, margin:'0 auto', display:'flex', gap:10, alignItems:'flex-end' }}>
+          <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} onKeyDown={function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
+            placeholder={'Make your case in ' + langName + '\u2026  (\u2318/Ctrl + Enter to send)'} rows={2}
+            style={{ flex:1, resize:'none', padding:'12px 14px', borderRadius:12, border:'1.5px solid ' + T.border, fontSize:14, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none', lineHeight:1.5, background:T.card }}/>
+          <button onClick={send} disabled={busy || !draft.trim()} style={{ padding:'12px 22px', borderRadius:12, border:'none', background: (busy || !draft.trim()) ? T.border : T.brand, color:'#fff', fontSize:14, fontWeight:700, cursor:(busy || !draft.trim()) ? 'default' : 'pointer', whiteSpace:'nowrap' }}>Fire back</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+if (typeof window !== 'undefined') { window.ArgumentGamePage = ArgumentGamePage; }

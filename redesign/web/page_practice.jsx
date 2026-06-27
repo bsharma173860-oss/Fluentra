@@ -57,6 +57,17 @@ function PracticePage() {
           <ModuleHeroCard nav="reading"   ic="book" title="Reading"   subtitle="Passages with comprehension Qs"        sessions={76}  color={T.reading.c}/>
         </div>
 
+        {/* The Argument Arena — flagship conversation feature */}
+        <button onClick={() => window.__nav && window.__nav('argue')} style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'none', background:T.ink, borderRadius:18, padding:'22px 26px', marginBottom:32, color:'#fff', position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'space-between', gap:20 }}>
+          <div style={{ position:'absolute', inset:0, opacity:.06, background:'radial-gradient(circle at 96% 10%, #fff 0%, transparent 55%)' }}/>
+          <div style={{ position:'relative', minWidth:0 }}>
+            <div style={{ fontSize:10.5, fontWeight:700, color:T.brandLight, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:8 }}>New · The Argument Arena</div>
+            <div style={{ fontFamily:T.serif, fontSize:24, lineHeight:1.1, marginBottom:6 }}>Debate a real opponent.</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,.6)', lineHeight:1.55, maxWidth:440 }}>Pick a side, fire back with native comebacks, and learn how your argument actually lands — not just whether it's grammatical.</div>
+          </div>
+          <div style={{ position:'relative', flexShrink:0, padding:'11px 18px', borderRadius:11, background:'#fff', color:T.ink, fontSize:13, fontWeight:700 }}>Enter →</div>
+        </button>
+
         {/* Filters */}
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18 }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginRight:8 }}>Module sessions</div>
