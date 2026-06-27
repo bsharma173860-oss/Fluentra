@@ -528,7 +528,9 @@ function ArgumentGamePage() {
           return withFb.concat([{ role:'ai', content:j.reply, translation:j.translation || '', clapbacks:j.clapbacks || [] }]);
         });
       } else {
-        var msg = (r.status === 402) ? '(You\u2019ve hit today\u2019s usage limit \u2014 upgrade to keep debating.)' : '(The opponent paused \u2014 send again to continue.)';
+        var msg = (r.status === 402)
+          ? '(You\u2019ve hit today\u2019s usage limit \u2014 upgrade to keep debating.)'
+          : '(The Arena\u2019s AI is offline right now \u2014 it lights up the moment AI credits are active on your account. The rest of the app still works.)';
         setMsgs(function (prev) { return prev.concat([{ role:'ai', content: msg, translation:'', clapbacks:[] }]); });
       }
     } catch (e) {
