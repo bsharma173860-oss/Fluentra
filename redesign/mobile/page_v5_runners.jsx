@@ -54,10 +54,11 @@ function MExamRunnerV5({ mode = 'monthly' }) {
   };
   const goSubmit = () => {
     if (!_answered || grading) return;
+    var _examName = (ex && (ex.name || ex.short)) || (function () { try { var e = (typeof examFor === 'function') ? examFor(code) : null; return e && (e.name || e.short); } catch (_) { return null; } })() || 'Practice';
     // Writing -> real AI grade (server only meters, no tier gate; exam-takers paid).
     if (m.color === 'writing') {
       setGrading(true);
-      fetch('/api/grade-writing', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ text: wtext, task: 'task2', lang: code, exam: ex.name || ex.short || 'IELTS' }) })
+      fetch('/api/grade-writing', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ text: wtext, task: 'task2', lang: code, exam: _examName }) })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) { var band = (j && typeof j.overall_band === 'number') ? j.overall_band : null; setGrading(false); _record('writing', band != null ? Math.round(band / 9 * 100) : null); })
         .catch(function () { setGrading(false); _record('writing', null); });
@@ -69,7 +70,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
       setGrading(true);
       mic.getBase64().then(function (b64) {
         if (!b64) { setGrading(false); _record('speaking', null); return; }
-        return fetch('/api/speaking-eval', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType: 'audio/webm', prompt: _promptText || '', lang: code, exam: ex.name || ex.short || 'IELTS' }) })
+        return fetch('/api/speaking-eval', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType: 'audio/webm', prompt: _promptText || '', lang: code, exam: _examName }) })
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (j) { var band = (j && j.evaluation && typeof j.evaluation.overall_band === 'number') ? j.evaluation.overall_band : null; setGrading(false); _record('speaking', band != null ? Math.round(band / 9 * 100) : null); });
       }).catch(function () { setGrading(false); _record('speaking', null); });
