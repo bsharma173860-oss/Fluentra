@@ -60,7 +60,7 @@ function PracticePage() {
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                 {langs.map(function (l) {
                   var on = l.code === lcNow;
-                  var nm = (typeof langByCode === 'function' && langByCode(l.code) && langByCode(l.code).name) || l.code;
+                  var nm = (typeof langByCode === 'function' && langByCode(l.code) && (langByCode(l.code).english || langByCode(l.code).native)) || l.code;
                   return (
                     <button key={l.code} onClick={function () { if (window.__setLang) window.__setLang(l.code); }} style={{ padding:'9px 16px', borderRadius:99, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? T.brandLight : T.card, fontSize:13, fontWeight: on ? 700 : 500, color: on ? T.brand : T.ink2, cursor:'pointer' }}>{nm}</button>
                   );
@@ -69,6 +69,16 @@ function PracticePage() {
             </div>
           );
         })()}
+
+        {/* Foundations — the absolute-beginner journey */}
+        <button onClick={() => window.__nav && window.__nav('foundations')} style={{ width:'100%', textAlign:'left', cursor:'pointer', background:T.brandLight, border:'1.5px solid ' + T.brand, borderRadius:16, padding:'18px 22px', marginBottom:18, display:'flex', alignItems:'center', justifyContent:'space-between', gap:18 }}>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:10.5, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Foundations · Start from zero</div>
+            <div style={{ fontFamily:T.serif, fontSize:21, color:T.ink, lineHeight:1.12, marginBottom:4 }}>Learn the alphabet, sounds & first words.</div>
+            <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, maxWidth:460 }}>The beginner path before exams — script, phonics, words, sentences, translation. Tap any letter to hear it.</div>
+          </div>
+          <div style={{ flexShrink:0, padding:'10px 16px', borderRadius:10, background:T.brand, color:'#fff', fontSize:12.5, fontWeight:700 }}>Begin →</div>
+        </button>
 
         {/* Module heroes */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:14, marginBottom:32 }}>

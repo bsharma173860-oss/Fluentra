@@ -131,10 +131,20 @@ function LangDetailPage() {
               <div style={{ position:'absolute', inset:0, opacity:.06, background:'radial-gradient(circle at 96% 10%, #fff 0%, transparent 55%)' }}/>
               <div style={{ position:'relative', minWidth:0 }}>
                 <div style={{ fontSize:10, fontWeight:700, color:T.brandLight, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:7 }}>New · Argument Arena</div>
-                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.1, marginBottom:5 }}>Debate in {(typeof langByCode === 'function' && langByCode(lang.code) && langByCode(lang.code).name) || lang.name || 'your language'}.</div>
+                <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1.1, marginBottom:5 }}>Debate in {(typeof langByCode === 'function' && langByCode(lang.code) && (langByCode(lang.code).english || langByCode(lang.code).native)) || lang.name || 'your language'}.</div>
                 <div style={{ fontSize:12.5, color:'rgba(255,255,255,.6)', lineHeight:1.5, maxWidth:420 }}>Argue a side against an AI opponent — with native comebacks and a read on how each point lands.</div>
               </div>
               <div style={{ position:'relative', flexShrink:0, padding:'10px 16px', borderRadius:10, background:'#fff', color:T.ink, fontSize:12.5, fontWeight:700 }}>Enter →</div>
+            </button>
+
+            {/* Foundations — start-from-zero journey for this language */}
+            <button onClick={() => { if (window.__setLang) window.__setLang(lang.code); if (window.__nav) window.__nav('foundations'); }} style={{ width:'100%', textAlign:'left', cursor:'pointer', background:T.brandLight, border:'1.5px solid ' + T.brand, borderRadius:16, padding:'18px 22px', marginBottom:32, display:'flex', alignItems:'center', justifyContent:'space-between', gap:18 }}>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize:10, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Foundations · Start from zero</div>
+                <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, lineHeight:1.12, marginBottom:4 }}>Alphabet, sounds & first words.</div>
+                <div style={{ fontSize:12, color:T.ink3, lineHeight:1.5, maxWidth:420 }}>The beginner path — script, phonics, words, sentences, translation. Tap any letter to hear it.</div>
+              </div>
+              <div style={{ flexShrink:0, padding:'10px 16px', borderRadius:10, background:T.brand, color:'#fff', fontSize:12.5, fontWeight:700 }}>Begin →</div>
             </button>
             <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }}>
               {/* Up next — lessons */}
