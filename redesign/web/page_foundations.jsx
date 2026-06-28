@@ -87,9 +87,9 @@ function FoundationsPage() {
     { id:'translation', glyph:'\u21C4', label:'Translation', sub:'Both directions',     live:!!words },
   ];
   const HEAD = {
-    alphabet:    { eyebrow:'Alphabet \u00B7 ' + alpha.letters.length + ' letters', h1:'Hear every letter.' },
+    alphabet:    { eyebrow:'Alphabet \u00B7 ' + alpha.letters.length + ' letters', h1:'Hear every letter.', intro:'You\u2019re learning ' + alpha.script + '. ' + alpha.note },
     phonics:     { eyebrow:'Phonics', h1:'Build your first syllables.' },
-    words:       { eyebrow:'First words', h1:'Ten words for day one.' },
+    words:       { eyebrow:'First words', h1:'Ten words for day one.', intro:'Ten words that carry you through your first day in ' + langName + '. Tap any word to hear how it sounds.' },
     sentences:   { eyebrow:'Sentences', h1:'Put the words together.' },
     translation: { eyebrow:'Translation', h1:'Both directions.' },
   };
@@ -137,9 +137,10 @@ function FoundationsPage() {
   function Header() {
     var h = HEAD[stage] || HEAD.alphabet; var ac = ACC[stage] || ACC.alphabet;
     return (
-      <div style={{ marginBottom:22 }}>
+      <div style={{ marginBottom:24 }}>
         <div style={{ fontSize:11, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', color: ac.c, marginBottom:8 }}>{h.eyebrow}</div>
-        <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.1 }}>{h.h1}</div>
+        <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.1, marginBottom: h.intro ? 10 : 0 }}>{h.h1}</div>
+        {h.intro ? <p style={{ fontSize:14.5, color:T.ink3, lineHeight:1.6, maxWidth:560, margin:0 }}>{h.intro}</p> : null}
       </div>
     );
   }
@@ -147,7 +148,6 @@ function FoundationsPage() {
   function Alphabet() {
     return (
       <div style={{ animation:'fl-rise .3s ease both' }}>
-        <p style={{ fontSize:14.5, color:T.ink3, lineHeight:1.6, marginBottom:26, maxWidth:560 }}>You're learning <strong style={{ color:T.ink }}>{alpha.script}</strong>. {alpha.note}</p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))', gap:12 }} dir={alpha.rtl ? 'rtl' : undefined}>
           {alpha.letters.map(function (l, i) {
             var on = playing === i;
@@ -175,8 +175,7 @@ function FoundationsPage() {
   function Words() {
     if (!words) return <AiStage label="First words" />;
     return (
-      <div>
-        <div style={{ fontSize:13, color:T.ink3, lineHeight:1.55, marginBottom:20, maxWidth:560 }}>Ten words that get you through your first day. Tap any word to hear it in {langName}.</div>
+      <div style={{ animation:'fl-rise .3s ease both' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12 }}>
           {words.map(function (it, i) {
             return (

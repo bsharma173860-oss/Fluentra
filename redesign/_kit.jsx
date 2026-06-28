@@ -779,6 +779,30 @@ function useMicRecorder() {
   return { recording: recording, seconds: seconds, time: time, done: done, toggle: toggle, getBase64: getBase64 };
 }
 
+var _flVoices = [];
+function _flLoadVoices() { try { var v = window.speechSynthesis.getVoices() || []; if (v.length) _flVoices = v; } catch (e) {} }
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  _flLoadVoices();
+  try { window.speechSynthesis.addEventListener('voiceschanged', _flLoadVoices); } catch (e) { try { window.speechSynthesis.onvoiceschanged = _flLoadVoices; } catch (e2) {} }
+}
+function _flPickVoice(lang) {
+  var voices = _flVoices.length ? _flVoices : ((typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.getVoices()) || []);
+  if (!voices.length) return null;
+  var ll = lang.toLowerCase(); var pre = ll.slice(0, 2);
+  var best = null, bestS = -1;
+  voices.forEach(function (vo) {
+    if (!vo.lang) return;
+    var vl = vo.lang.toLowerCase(); var s;
+    if (vl === ll) s = 40; else if (vl.slice(0, 2) === pre) s = 20; else return;
+    var n = (vo.name || '').toLowerCase();
+    if (/natural|neural|premium|enhanced|wavenet/.test(n)) s += 16;
+    if (/google/.test(n)) s += 12;
+    if (/siri|samantha|microsoft/.test(n)) s += 7;
+    if (vo.localService === false) s += 3;
+    if (s > bestS) { bestS = s; best = vo; }
+  });
+  return best;
+}
 function flSpeak(text, code) {
   if (typeof window === 'undefined' || !window.speechSynthesis || !text) return false;
   var map = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', ja:'ja-JP', zh:'zh-CN', ko:'ko-KR', ru:'ru-RU', ar:'ar-SA', hi:'hi-IN', nl:'nl-NL', pl:'pl-PL', tr:'tr-TR', sv:'sv-SE' };
@@ -786,12 +810,16 @@ function flSpeak(text, code) {
     window.speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(String(text));
     u.lang = map[code] || (code ? code + '-' + String(code).toUpperCase() : 'en-US');
-    u.rate = 0.92;
-    var voices = window.speechSynthesis.getVoices() || [];
-    var pref = u.lang.toLowerCase().slice(0, 2);
-    var v = voices.filter(function (vo) { return vo.lang && vo.lang.toLowerCase().indexOf(pref) === 0; })[0];
+    u.rate = 0.9; u.pitch = 1;
+    var v = _flPickVoice(u.lang);
     if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
+    if (!_flVoices.length) {
+      // Voices not ready yet (they load async on first use) — retry once after they arrive.
+      _flLoadVoices();
+      setTimeout(function () { try { var v2 = _flPickVoice(u.lang); if (v2) u.voice = v2; window.speechSynthesis.speak(u); } catch (e) {} }, 200);
+    } else {
+      window.speechSynthesis.speak(u);
+    }
     return true;
   } catch (e) { return false; }
 }
