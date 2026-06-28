@@ -56,6 +56,19 @@ function MPractice() {
           </button>
         </div>
 
+        {/* THE ARGUMENT ARENA — dark flagship */}
+        <div style={{ padding:'0 18px 18px' }}>
+          <button onClick={()=>nav('argue')} style={{ width:'100%', textAlign:'left', background:T.ink, border:'none', borderRadius:16, padding:'16px 18px', color:'#fff', position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'space-between', gap:14 }}>
+            <div style={{ position:'absolute', inset:0, opacity:.06, background:'radial-gradient(circle at 95% 10%, #fff 0%, transparent 55%)' }}/>
+            <div style={{ position:'relative', minWidth:0 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:T.brandLight || '#E8C9A0', letterSpacing:'.12em', textTransform:'uppercase', marginBottom:5 }}>New · Argument Arena</div>
+              <div style={{ fontFamily:T.serif, fontSize:18, color:'#fff', lineHeight:1.15, marginBottom:3 }}>Debate a real opponent</div>
+              <div style={{ fontSize:11.5, color:'rgba(255,255,255,.6)', lineHeight:1.45 }}>Pick a side, fire back with native comebacks, see how your point lands.</div>
+            </div>
+            <div style={{ position:'relative', flexShrink:0, width:34, height:34, borderRadius:10, background:'#fff', color:T.ink, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.arrowRight ? Icon.arrowRight({width:15,height:15}) : '→'}</div>
+          </button>
+        </div>
+
         {/* MODULES — 2x2 grid (same vocabulary as lang detail) */}
         <div style={{ padding:'0 18px 8px' }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:12 }}>By module</div>
@@ -239,3 +252,161 @@ function MFoundationsPage() {
   );
 }
 if (typeof window !== 'undefined') { window.MFoundationsPage = MFoundationsPage; }
+
+// ── Mobile Argument Arena (same debate engine as web, phone chrome) ──
+function MArgumentGamePage() {
+  const R = React;
+  const nav = (id) => window.__nav && window.__nav(id);
+  const code = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const langName = (typeof langByCode === 'function' && langByCode(code) && (langByCode(code).english || langByCode(code).native)) || 'your language';
+  const [phase, setPhase] = R.useState('setup');
+  const [topic, setTopic] = R.useState('');
+  const [side, setSide] = R.useState('');
+  const [oppSide, setOppSide] = R.useState('');
+  const [diff, setDiff] = R.useState('medium');
+  const [msgs, setMsgs] = R.useState([]);
+  const [draft, setDraft] = R.useState('');
+  const [busy, setBusy] = R.useState(false);
+  const [openT, setOpenT] = R.useState({});
+
+  const TOPICS = [
+    { t:'Social media does more harm than good', a:'It does more harm than good', b:'It does more good than harm' },
+    { t:'Remote work beats working in an office',  a:'Remote work is better',         b:'The office is better' },
+    { t:'AI will create more jobs than it destroys',a:'AI will create more jobs',      b:'AI will destroy more jobs' },
+    { t:'Cities should ban private cars downtown',  a:'Cities should ban them',        b:'Cities should keep them' },
+    { t:'Money can buy happiness',                  a:'Money can buy happiness',       b:'Money cannot buy happiness' },
+    { t:'Homework should be abolished in schools',  a:'Abolish homework',              b:'Keep homework' },
+  ];
+  const DIFFS = [{ k:'easy', l:'Warm-up' }, { k:'medium', l:'Sparring' }, { k:'hard', l:'No mercy' }];
+
+  function pickTopic(tp, mySide, opp) { setTopic(tp); setSide(mySide); setOppSide(opp); setMsgs([]); setOpenT({}); setPhase('debate'); turn([], tp, mySide, true); }
+  function reset() { setPhase('setup'); setMsgs([]); setDraft(''); setOpenT({}); }
+
+  async function turn(history, tp, mySide, opening) {
+    setBusy(true);
+    try {
+      const apiMsgs = opening ? [{ role:'user', content:'Begin the debate — state your opening position.' }]
+        : history.map(function (m) { return { role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }; });
+      const r = await fetch('/api/tutor', {
+        method:'POST',
+        headers: Object.assign({ 'Content-Type':'application/json' }, (typeof window !== 'undefined' && window.__authHeaders) ? window.__authHeaders() : {}),
+        body: JSON.stringify({ mode:'debate', lang: langName, topic: tp, side: mySide, difficulty: diff, messages: apiMsgs }),
+      });
+      const j = r.ok ? await r.json() : null;
+      if (j && j.reply) {
+        setMsgs(function (prev) {
+          var withFb = prev.map(function (m) { return m.pendingFeedback ? Object.assign({}, m, { feedback: j.feedback || null, pendingFeedback:false }) : m; });
+          return withFb.concat([{ role:'ai', content:j.reply, translation:j.translation || '', clapbacks:j.clapbacks || [] }]);
+        });
+      } else {
+        var msg = (r.status === 402) ? '(You\u2019ve hit today\u2019s usage limit \u2014 upgrade to keep debating.)' : '(The Arena\u2019s AI is offline right now \u2014 it lights up the moment AI credits are active. The rest of the app still works.)';
+        setMsgs(function (prev) { return prev.concat([{ role:'ai', content: msg, translation:'', clapbacks:[] }]); });
+      }
+    } catch (e) {
+      setMsgs(function (prev) { return prev.concat([{ role:'ai', content:'(Connection issue \u2014 send again.)', translation:'', clapbacks:[] }]); });
+    }
+    setBusy(false);
+  }
+
+  function send() {
+    var v = draft.trim(); if (!v || busy) return;
+    var next = msgs.concat([{ role:'user', content:v, pendingFeedback:true }]);
+    setMsgs(next); setDraft('');
+    turn(next, topic, side, false);
+  }
+
+  if (phase === 'setup') {
+    return (
+      <>
+        <MobileHeader title="Argument Arena" eyebrow={'Debate in ' + langName} back onBack={function () { nav('practice'); }}/>
+        <MobileBody padding={[6, 16, 30]}>
+          <div style={{ background:T.ink, borderRadius:16, padding:'20px', color:'#fff', marginBottom:20, position:'relative', overflow:'hidden' }}>
+            <div style={{ position:'absolute', inset:0, opacity:.05, background:'radial-gradient(circle at 92% 0%, #fff 0%, transparent 55%)' }}/>
+            <div style={{ position:'relative' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:T.brandLight || '#E8C9A0', letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>The Argument Arena</div>
+              <div style={{ fontFamily:T.serif, fontSize:26, lineHeight:1.06 }}>Win the argument. In {langName}.</div>
+              <div style={{ fontSize:12.5, color:'rgba(255,255,255,.62)', marginTop:10, lineHeight:1.5 }}>Pick a side. Get native comebacks and an honest read on how each point lands.</div>
+            </div>
+          </div>
+          <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Intensity</div>
+          <div style={{ display:'flex', gap:8, marginBottom:24 }}>
+            {DIFFS.map(function (d) { var on = diff === d.k; return (
+              <button key={d.k} onClick={function () { setDiff(d.k); }} style={{ flex:1, padding:'11px 0', borderRadius:11, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? (T.brandLight || '#FBF3E9') : T.card, cursor:'pointer' }}>
+                <div style={{ fontSize:13, fontWeight:700, color: on ? T.brand : T.ink }}>{d.l}</div>
+              </button>
+            ); })}
+          </div>
+          <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Pick a motion & side</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:11 }}>
+            {TOPICS.map(function (tp, i) { return (
+              <div key={i} style={{ background:T.card, border:'1px solid ' + T.border, borderRadius:14, padding:'15px 16px' }}>
+                <div style={{ fontSize:14, fontWeight:600, color:T.ink, lineHeight:1.3, marginBottom:11 }}>{tp.t}</div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={function () { pickTopic(tp.t, tp.a, tp.b); }} style={{ flex:1, padding:'9px 12px', borderRadius:9, border:'1.5px solid ' + T.border, background:T.bg2, fontSize:11.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>{tp.a}</button>
+                  <button onClick={function () { pickTopic(tp.t, tp.b, tp.a); }} style={{ flex:1, padding:'9px 12px', borderRadius:9, border:'1.5px solid ' + T.border, background:T.bg2, fontSize:11.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>{tp.b}</button>
+                </div>
+              </div>
+            ); })}
+          </div>
+        </MobileBody>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <MobileHeader title="Debate" eyebrow={side} back onBack={reset} right={<button onClick={reset} style={{ padding:'6px 11px', borderRadius:8, border:'1.5px solid ' + T.border, background:T.card, fontSize:11.5, fontWeight:600, color:T.ink2 }}>New</button>}/>
+      <MobileBody padding={[10, 14, 30]}>
+        <div style={{ background:T.bg2, borderRadius:12, padding:'10px 14px', marginBottom:16 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>Motion</div>
+          <div style={{ fontSize:12.5, color:T.ink, lineHeight:1.3 }}>{topic}</div>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
+          {msgs.map(function (m, i) {
+            if (m.role === 'user') return (
+              <div key={i} style={{ alignSelf:'flex-end', maxWidth:'85%' }}>
+                <div style={{ background:T.brand, color:'#fff', borderRadius:'14px 14px 4px 14px', padding:'10px 13px', fontSize:13.5, lineHeight:1.45 }}>{m.content}</div>
+                {m.feedback ? <div style={{ marginTop:5, fontSize:11, color:T.ink3, fontStyle:'italic', textAlign:'right' }}>{m.feedback}</div> : null}
+              </div>
+            );
+            var showT = !!openT[i];
+            return (
+              <div key={i} style={{ alignSelf:'flex-start', maxWidth:'88%' }}>
+                <div style={{ fontSize:10, fontWeight:700, color:T.ink4, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:5 }}>Opponent</div>
+                <div style={{ background:T.card, border:'1px solid ' + T.border, borderLeft:'3px solid ' + T.brand, borderRadius:'4px 14px 14px 14px', padding:'11px 14px' }}>
+                  <div style={{ fontSize:14, color:T.ink, lineHeight:1.5, fontFamily:T.serif }}>{m.content}</div>
+                  {m.translation ? (
+                    <div style={{ marginTop:8, paddingTop:8, borderTop:'1px dashed ' + (T.hairline || '#eee') }}>
+                      {showT ? <div style={{ fontSize:12, color:T.ink3, lineHeight:1.45 }}>{m.translation}</div>
+                             : <button onClick={function () { setOpenT(function (o) { var n = Object.assign({}, o); n[i] = true; return n; }); }} style={{ fontSize:11, fontWeight:600, color:T.brand, background:'none', border:'none', padding:0 }}>Show translation</button>}
+                    </div>
+                  ) : null}
+                </div>
+                {m.clapbacks && m.clapbacks.length ? (
+                  <div style={{ marginTop:8 }}>
+                    <div style={{ fontSize:9.5, fontWeight:700, color:T.ink4, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:6 }}>Comebacks — tap to use</div>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+                      {m.clapbacks.map(function (c, ci) { return (
+                        <button key={ci} onClick={function () { setDraft(function (d) { return (d ? d + ' ' : '') + c.phrase; }); }} style={{ textAlign:'left', padding:'7px 11px', borderRadius:9, border:'1px solid ' + T.border, background:T.bg2 }}>
+                          <div style={{ fontSize:12.5, color:T.ink, fontWeight:600 }}>{c.phrase}</div>
+                          {c.gloss ? <div style={{ fontSize:10, color:T.ink4, marginTop:1 }}>{c.gloss}</div> : null}
+                        </button>
+                      ); })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {busy ? <div style={{ alignSelf:'flex-start', fontSize:12, color:T.ink4, fontStyle:'italic' }}>Opponent is thinking…</div> : null}
+        </div>
+        <div style={{ display:'flex', gap:8, alignItems:'flex-end', marginTop:18 }}>
+          <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder={'Make your case in ' + langName + '…'} rows={2}
+            style={{ flex:1, resize:'none', padding:'11px 13px', borderRadius:11, border:'1.5px solid ' + T.border, fontSize:13.5, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none', lineHeight:1.4, background:T.card }}/>
+          <button onClick={send} disabled={busy || !draft.trim()} style={{ padding:'11px 16px', borderRadius:11, border:'none', background: (busy || !draft.trim()) ? T.border : T.brand, color:'#fff', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>Send</button>
+        </div>
+      </MobileBody>
+    </>
+  );
+}
+if (typeof window !== 'undefined') { window.MArgumentGamePage = MArgumentGamePage; }
