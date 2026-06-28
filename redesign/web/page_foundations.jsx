@@ -65,7 +65,7 @@ function FoundationsPage() {
     { id:'phonics',     n:'02', label:'Phonics',      sub:'Letters into sounds', live:false },
     { id:'words',       n:'03', label:'First words',  sub:'Survival vocabulary', live:!!words },
     { id:'sentences',   n:'04', label:'Sentences',    sub:'Putting it together', live:false },
-    { id:'translation', n:'05', label:'Translation',  sub:'Both directions',     live:false },
+    { id:'translation', n:'05', label:'Translation',  sub:'Both directions',     live:!!words },
   ];
 
   function StageRail() {
@@ -173,10 +173,99 @@ function FoundationsPage() {
           {stage === 'phonics' && <AiStage label="Phonics" />}
           {stage === 'words' && <Words/>}
           {stage === 'sentences' && <AiStage label="Sentences" />}
-          {stage === 'translation' && <AiStage label="Translation" />}
+          {stage === 'translation' && (words ? <FoundationsTranslationDrill words={words} code={code} langName={langName}/> : <AiStage label="Translation" />)}
         </div>
       </div>
     </div>
   );
 }
 if (typeof window !== 'undefined') { window.FoundationsPage = FoundationsPage; }
+
+// ── Translation drill (credits-free) ─────────────────────────
+// A both-directions multiple-choice drill over the curated first words. Pure
+// client + TTS, so it works with no AI. Serves the "translation on every part" goal.
+function _foundShuffle(a) { var r = a.slice(); for (var i = r.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = r[i]; r[i] = r[j]; r[j] = t; } return r; }
+
+function FoundationsTranslationDrill(props) {
+  const R = React;
+  const words = props.words, code = props.code, langName = props.langName;
+  const idxs = function () { return words.map(function (_, i) { return i; }); };
+  const [order, setOrder] = R.useState(function () { return _foundShuffle(idxs()); });
+  const [dir, setDir] = R.useState('toEn');   // toEn: target->English, toTarget: English->target
+  const [qi, setQi] = R.useState(0);
+  const [score, setScore] = R.useState(0);
+  const [picked, setPicked] = R.useState(null);
+  const [done, setDone] = R.useState(false);
+
+  const cur = words[order[qi]] || words[0];
+  const correctAns = (dir === 'toEn') ? cur.g : cur.w;
+  const promptText = (dir === 'toEn') ? cur.w : cur.g;
+
+  const opts = R.useMemo(function () {
+    var w = words[order[qi]] || words[0];
+    var correct = (dir === 'toEn') ? w.g : w.w;
+    var pool = words.filter(function (x) { return ((dir === 'toEn') ? x.g : x.w) !== correct; });
+    pool = _foundShuffle(pool).slice(0, 3).map(function (x) { return (dir === 'toEn') ? x.g : x.w; });
+    return _foundShuffle([correct].concat(pool));
+  }, [qi, dir, order, words]);
+
+  function restart(d) { setOrder(_foundShuffle(idxs())); setDir(d || dir); setQi(0); setScore(0); setPicked(null); setDone(false); }
+
+  function pick(opt) {
+    if (picked) return;
+    var ok = opt === correctAns;
+    setPicked({ opt: opt, ok: ok });
+    if (ok) setScore(function (s) { return s + 1; });
+    setTimeout(function () {
+      if (qi + 1 >= order.length) setDone(true);
+      else { setQi(function (q) { return q + 1; }); setPicked(null); }
+    }, 750);
+  }
+
+  if (done) {
+    var pct = Math.round((score / order.length) * 100);
+    return (
+      <div style={{ textAlign:'center', padding:'40px 24px', maxWidth:460, margin:'0 auto' }}>
+        <div style={{ fontFamily:T.serif, fontSize:48, color:T.brand, lineHeight:1 }}>{score}<span style={{ fontSize:24, color:T.ink4 }}>/{order.length}</span></div>
+        <div style={{ fontSize:14, color:T.ink3, marginTop:10, marginBottom:24 }}>{pct >= 80 ? 'Strong — your first words are sticking.' : pct >= 50 ? 'Getting there — run it again to lock them in.' : 'Early days — replay and listen to each word.'}</div>
+        <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+          <button onClick={function () { restart('toEn'); }} style={{ padding:'11px 18px', borderRadius:11, border:'none', background:T.brand, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>{langName} → English</button>
+          <button onClick={function () { restart('toTarget'); }} style={{ padding:'11px 18px', borderRadius:11, border:'1.5px solid ' + T.brand, background:T.card, color:T.brand, fontSize:13, fontWeight:700, cursor:'pointer' }}>English → {langName}</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, marginBottom:20, flexWrap:'wrap' }}>
+        <div style={{ fontSize:13, color:T.ink3 }}>{dir === 'toEn' ? langName + ' → English' : 'English → ' + langName} · <span style={{ color:T.ink4 }}>Q{qi + 1}/{order.length}</span> · <span style={{ color:T.brand, fontWeight:700 }}>{score} right</span></div>
+        <button onClick={function () { restart(dir === 'toEn' ? 'toTarget' : 'toEn'); }} style={{ padding:'7px 13px', borderRadius:9, border:'1.5px solid ' + T.border, background:T.card, fontSize:12, fontWeight:600, color:T.ink2, cursor:'pointer' }}>Switch direction</button>
+      </div>
+      {/* progress */}
+      <div style={{ height:4, borderRadius:2, background:T.bg2, marginBottom:24, overflow:'hidden' }}><div style={{ width:((qi / order.length) * 100) + '%', height:'100%', background:T.brand, transition:'width .3s' }}/></div>
+      {/* prompt */}
+      <div style={{ textAlign:'center', marginBottom:26 }}>
+        <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:12 }}>{dir === 'toEn' ? 'What does this mean?' : 'How do you say this?'}</div>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.1 }}>{promptText}</span>
+          {dir === 'toEn' ? <button onClick={function () { if (window.flSpeak) window.flSpeak(cur.w, code); }} aria-label="Hear" style={{ border:'none', background:T.brandLight, color:T.brand, width:38, height:38, borderRadius:10, cursor:'pointer', fontSize:16 }}>{Icon.head ? Icon.head({ width:18, height:18 }) : '►'}</button> : null}
+        </div>
+        {dir === 'toEn' && cur.r ? <div style={{ fontSize:12.5, color:T.ink4, marginTop:6 }}>{cur.r}</div> : null}
+      </div>
+      {/* options */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, maxWidth:520, margin:'0 auto' }}>
+        {opts.map(function (o, i) {
+          var state = 'idle';
+          if (picked) { if (o === correctAns) state = 'right'; else if (o === picked.opt) state = 'wrong'; }
+          var bg = state === 'right' ? '#E8F5E9' : state === 'wrong' ? '#FDECEA' : T.card;
+          var bd = state === 'right' ? '#34A853' : state === 'wrong' ? '#D93025' : T.border;
+          var col = state === 'right' ? '#1E7E34' : state === 'wrong' ? '#B3261E' : T.ink;
+          return (
+            <button key={o + i} onClick={function () { pick(o); }} disabled={!!picked} style={{ padding:'15px 16px', borderRadius:13, border:'1.5px solid ' + bd, background:bg, color:col, fontSize:15, fontWeight:600, cursor: picked ? 'default' : 'pointer', textAlign:'center', fontFamily: (dir === 'toTarget') ? T.serif : 'inherit' }}>{o}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
