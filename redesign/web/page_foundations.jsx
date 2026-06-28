@@ -116,7 +116,7 @@ function FoundationsPage() {
             );
           })}
         </div>
-        <div style={{ marginTop:24, padding:16, borderRadius:16, background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.8)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)' }}>
+        <div style={{ marginTop:'auto', padding:16, borderRadius:16, background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.8)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
             <span style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase' }}>Your journey</span>
             <span style={{ fontSize:11, fontWeight:700, color:T.brand }}>{liveCount}/{STAGES.length} live</span>
@@ -209,9 +209,17 @@ function FoundationsPage() {
       <WebTopbar search=""/>
       <style>{"@keyframes fl-wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}@keyframes fl-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}"}</style>
       <div style={{ flex:1, overflow:'auto', padding:'30px 36px 56px', background:'radial-gradient(1100px 520px at 8% -12%, #FBE3D1 0%, rgba(251,227,209,0) 55%), radial-gradient(950px 480px at 96% -8%, #E9E4F4 0%, rgba(233,228,244,0) 52%), ' + (T.bg || '#F9F8F5') }}>
-        <div style={{ maxWidth:1060, margin:'0 auto', display:'flex', gap:30, alignItems:'flex-start' }}>
+        <div style={{ maxWidth:1060, margin:'0 auto 24px', display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:20, flexWrap:'wrap' }}>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:9 }}>Foundations · The beginner journey</div>
+            <div style={{ fontFamily:T.serif, fontSize:40, color:T.ink, lineHeight:1.04 }}>Start {langName} from zero.</div>
+            <div style={{ fontSize:14.5, color:T.ink3, marginTop:11, lineHeight:1.6, maxWidth:580 }}>Before exams and essays — learn how {langName} sounds and reads. Master the script, then build up to words, sentences and translation.</div>
+          </div>
+          <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:7, padding:'9px 15px', borderRadius:99, background:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.95)', boxShadow:'0 4px 14px rgba(0,0,0,0.05)', fontSize:13, fontWeight:700, color:T.brand, whiteSpace:'nowrap' }}>{FLAGS[code] || '\uD83C\uDFF3\uFE0F'} Learning {langName}</span>
+        </div>
+        <div style={{ maxWidth:1060, margin:'0 auto', display:'flex', gap:30, alignItems:'stretch' }}>
           <Rail/>
-          <div style={{ flex:1, minWidth:0, background:'rgba(255,255,255,0.6)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.7)', borderRadius:22, boxShadow:'0 16px 48px rgba(76,46,18,0.08)', padding:'30px 34px 38px' }}>
+          <div style={{ flex:1, minWidth:0, minHeight:440, background:'rgba(255,255,255,0.6)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.7)', borderRadius:22, boxShadow:'0 16px 48px rgba(76,46,18,0.08)', padding:'30px 34px 38px' }}>
             <Header/>
             {stage === 'alphabet' && (code === 'zh' ? <FoundationsPinyin/> : <Alphabet/>)}
             {stage === 'phonics' && (phon ? <FoundationsPhonics code={code} langName={langName}/> : <AiStage label="Phonics" />)}
