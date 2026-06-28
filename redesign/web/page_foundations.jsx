@@ -35,6 +35,13 @@ const FOUND_ALPHABETS = {
   ru: { script:'the Cyrillic alphabet (кириллица)', note:'33 letters. Some look like Latin letters but sound different — tap each to hear it.', letters:[
     {ch:'А',name:'a'},{ch:'Б',name:'b'},{ch:'В',name:'v'},{ch:'Г',name:'g'},{ch:'Д',name:'d'},{ch:'Е',name:'ye'},{ch:'Ё',name:'yo'},{ch:'Ж',name:'zh'},{ch:'З',name:'z'},{ch:'И',name:'i'},{ch:'Й',name:'y'},{ch:'К',name:'k'},{ch:'Л',name:'l'},{ch:'М',name:'m'},{ch:'Н',name:'n'},{ch:'О',name:'o'},{ch:'П',name:'p'},{ch:'Р',name:'r'},{ch:'С',name:'s'},{ch:'Т',name:'t'},{ch:'У',name:'u'},{ch:'Ф',name:'f'},{ch:'Х',name:'kh'},{ch:'Ц',name:'ts'},{ch:'Ч',name:'ch'},{ch:'Ш',name:'sh'},{ch:'Щ',name:'shch'},{ch:'Ъ',name:'hard'},{ch:'Ы',name:'y'},{ch:'Ь',name:'soft'},{ch:'Э',name:'e'},{ch:'Ю',name:'yu'},{ch:'Я',name:'ya'},
   ]},
+  ar: { script:'the Arabic abjad (الأبجدية)', rtl:true, note:'28 letters, written right to left. These are the isolated forms — tap each to hear its sound.', letters:[
+    {ch:'ا',name:'alif (a)'},{ch:'ب',name:'b'},{ch:'ت',name:'t'},{ch:'ث',name:'th'},{ch:'ج',name:'j'},{ch:'ح',name:'ḥ'},{ch:'خ',name:'kh'},{ch:'د',name:'d'},{ch:'ذ',name:'dh'},{ch:'ر',name:'r'},{ch:'ز',name:'z'},{ch:'س',name:'s'},{ch:'ش',name:'sh'},{ch:'ص',name:'ṣ'},{ch:'ض',name:'ḍ'},{ch:'ط',name:'ṭ'},{ch:'ظ',name:'ẓ'},{ch:'ع',name:'ʿayn'},{ch:'غ',name:'gh'},{ch:'ف',name:'f'},{ch:'ق',name:'q'},{ch:'ك',name:'k'},{ch:'ل',name:'l'},{ch:'م',name:'m'},{ch:'ن',name:'n'},{ch:'ه',name:'h'},{ch:'و',name:'w'},{ch:'ي',name:'y'},
+  ]},
+  hi: { script:'Devanagari (देवनागरी)', note:'Vowels (svar) come first, then consonants (vyanjan). Tap each to hear it.', letters:[
+    {ch:'अ',name:'a'},{ch:'आ',name:'ā'},{ch:'इ',name:'i'},{ch:'ई',name:'ī'},{ch:'उ',name:'u'},{ch:'ऊ',name:'ū'},{ch:'ए',name:'e'},{ch:'ऐ',name:'ai'},{ch:'ओ',name:'o'},{ch:'औ',name:'au'},
+    {ch:'क',name:'ka'},{ch:'ख',name:'kha'},{ch:'ग',name:'ga'},{ch:'घ',name:'gha'},{ch:'च',name:'cha'},{ch:'छ',name:'chha'},{ch:'ज',name:'ja'},{ch:'झ',name:'jha'},{ch:'ट',name:'ṭa'},{ch:'ठ',name:'ṭha'},{ch:'ड',name:'ḍa'},{ch:'ढ',name:'ḍha'},{ch:'ण',name:'ṇa'},{ch:'त',name:'ta'},{ch:'थ',name:'tha'},{ch:'द',name:'da'},{ch:'ध',name:'dha'},{ch:'न',name:'na'},{ch:'प',name:'pa'},{ch:'फ',name:'pha'},{ch:'ब',name:'ba'},{ch:'भ',name:'bha'},{ch:'म',name:'ma'},{ch:'य',name:'ya'},{ch:'र',name:'ra'},{ch:'ल',name:'la'},{ch:'व',name:'va'},{ch:'श',name:'sha'},{ch:'ष',name:'ṣha'},{ch:'स',name:'sa'},{ch:'ह',name:'ha'},
+  ]},
 };
 const FOUND_LATIN_FALLBACK = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function (c) { return { ch:c, name:c.toLowerCase() }; });
 
@@ -46,6 +53,8 @@ const FOUND_WORDS = {
   ja: [{w:'こんにちは',g:'hello',r:'konnichiwa'},{w:'ありがとう',g:'thank you',r:'arigatō'},{w:'はい',g:'yes',r:'hai'},{w:'いいえ',g:'no',r:'iie'},{w:'お願いします',g:'please',r:'onegai shimasu'},{w:'水',g:'water',r:'mizu'},{w:'食べ物',g:'food',r:'tabemono'},{w:'助けて',g:'help',r:'tasukete'},{w:'ごめんなさい',g:'sorry',r:'gomen nasai'},{w:'さようなら',g:'goodbye',r:'sayōnara'}],
   ko: [{w:'안녕하세요',g:'hello',r:'annyeonghaseyo'},{w:'감사합니다',g:'thank you',r:'gamsahamnida'},{w:'네',g:'yes',r:'ne'},{w:'아니요',g:'no',r:'aniyo'},{w:'제발',g:'please',r:'jebal'},{w:'물',g:'water',r:'mul'},{w:'음식',g:'food',r:'eumsik'},{w:'도와주세요',g:'help',r:'dowajuseyo'},{w:'죄송합니다',g:'sorry',r:'joesonghamnida'},{w:'안녕히 가세요',g:'goodbye',r:'annyeonghi gaseyo'}],
   ru: [{w:'Здравствуйте',g:'hello',r:'zdravstvuyte'},{w:'Спасибо',g:'thank you',r:'spasibo'},{w:'Да',g:'yes',r:'da'},{w:'Нет',g:'no',r:'net'},{w:'Пожалуйста',g:'please',r:'pozhaluysta'},{w:'Вода',g:'water',r:'voda'},{w:'Еда',g:'food',r:'yeda'},{w:'Помогите',g:'help',r:'pomogite'},{w:'Извините',g:'sorry',r:'izvinite'},{w:'До свидания',g:'goodbye',r:'do svidaniya'}],
+  ar: [{w:'مرحبا',g:'hello',r:'marḥaban'},{w:'شكرا',g:'thank you',r:'shukran'},{w:'نعم',g:'yes',r:'naʿam'},{w:'لا',g:'no',r:'lā'},{w:'من فضلك',g:'please',r:'min faḍlik'},{w:'ماء',g:'water',r:'māʾ'},{w:'طعام',g:'food',r:'ṭaʿām'},{w:'مساعدة',g:'help',r:'musāʿada'},{w:'آسف',g:'sorry',r:'āsif'},{w:'مع السلامة',g:'goodbye',r:'maʿa s-salāma'}],
+  hi: [{w:'नमस्ते',g:'hello',r:'namaste'},{w:'धन्यवाद',g:'thank you',r:'dhanyavād'},{w:'हाँ',g:'yes',r:'hāṃ'},{w:'नहीं',g:'no',r:'nahīṃ'},{w:'कृपया',g:'please',r:'kṛpayā'},{w:'पानी',g:'water',r:'pānī'},{w:'खाना',g:'food',r:'khānā'},{w:'मदद',g:'help',r:'madad'},{w:'माफ़ करें',g:'sorry',r:'māf kareṃ'},{w:'अलविदा',g:'goodbye',r:'alvidā'}],
 };
 
 function _foundSpeak(text, code) { if (typeof window !== 'undefined' && window.flSpeak) window.flSpeak(text, code); }
@@ -136,7 +145,7 @@ function FoundationsPage() {
             return (
               <button key={i} onClick={function () { _foundSpeak(it.w, code); }} style={{ textAlign:'left', padding:'16px 18px', borderRadius:14, border:'1px solid ' + T.border, background:T.card, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
                 <div style={{ minWidth:0 }}>
-                  <div style={{ fontFamily:T.serif, fontSize:19, color:T.ink, lineHeight:1.2 }}>{it.w}</div>
+                  <div dir={code === 'ar' ? 'rtl' : undefined} style={{ fontFamily:T.serif, fontSize:19, color:T.ink, lineHeight:1.2 }}>{it.w}</div>
                   {it.r ? <div style={{ fontSize:11, color:T.ink4, marginTop:1 }}>{it.r}</div> : null}
                   <div style={{ fontSize:11.5, color:T.ink3, marginTop:3, textTransform:'capitalize' }}>{it.g}</div>
                 </div>
@@ -249,7 +258,7 @@ function FoundationsTranslationDrill(props) {
       <div style={{ textAlign:'center', marginBottom:26 }}>
         <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:12 }}>{dir === 'toEn' ? 'What does this mean?' : 'How do you say this?'}</div>
         <div style={{ display:'inline-flex', alignItems:'center', gap:12 }}>
-          <span style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.1 }}>{promptText}</span>
+          <span dir={(dir === 'toEn' && code === 'ar') ? 'rtl' : undefined} style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.1 }}>{promptText}</span>
           {dir === 'toEn' ? <button onClick={function () { if (window.flSpeak) window.flSpeak(cur.w, code); }} aria-label="Hear" style={{ border:'none', background:T.brandLight, color:T.brand, width:38, height:38, borderRadius:10, cursor:'pointer', fontSize:16 }}>{Icon.head ? Icon.head({ width:18, height:18 }) : '►'}</button> : null}
         </div>
         {dir === 'toEn' && cur.r ? <div style={{ fontSize:12.5, color:T.ink4, marginTop:6 }}>{cur.r}</div> : null}
