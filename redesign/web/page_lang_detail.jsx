@@ -138,13 +138,19 @@ function LangDetailPage() {
             </button>
 
             {/* Foundations — start-from-zero journey for this language */}
-            <button onClick={() => { if (window.__setLang) window.__setLang(lang.code); if (window.__nav) window.__nav('foundations'); }} style={{ width:'100%', textAlign:'left', cursor:'pointer', background:T.brandLight, border:'1.5px solid ' + T.brand, borderRadius:16, padding:'18px 22px', marginBottom:32, display:'flex', alignItems:'center', justifyContent:'space-between', gap:18 }}>
-              <div style={{ minWidth:0 }}>
+            <button onClick={() => { if (window.__setLang) window.__setLang(lang.code); if (window.__nav) window.__nav('foundations'); }} style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'1px solid rgba(255,255,255,0.85)', borderRadius:18, padding:'22px 24px', marginBottom:32, position:'relative', overflow:'hidden', display:'flex', alignItems:'center', gap:20, background:'linear-gradient(120deg, #FFF1E9 0%, #FCEFF6 55%, #F1EEFB 100%)', boxShadow:'0 10px 30px rgba(76,46,18,0.08)' }}>
+              <div style={{ flexShrink:0, width:60, height:60, borderRadius:16, background:'linear-gradient(135deg,#C04A06,#E8732F)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:28, boxShadow:'0 6px 16px rgba(192,74,6,0.30)' }}>Aa</div>
+              <div style={{ minWidth:0, flex:1 }}>
                 <div style={{ fontSize:10, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Foundations · Start from zero</div>
-                <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, lineHeight:1.12, marginBottom:4 }}>Alphabet, sounds & first words.</div>
-                <div style={{ fontSize:12, color:T.ink3, lineHeight:1.5, maxWidth:420 }}>The beginner path — script, phonics, words, sentences, translation. Tap any letter to hear it.</div>
+                <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.12, marginBottom:5 }}>Alphabet, sounds & first words.</div>
+                <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, maxWidth:430, marginBottom:12 }}>The complete beginner path — master the script, then build up to words, sentences and translation.</div>
+                <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                  {[['Aa','#C04A06','#FFE5DE'],['\u25C8','#5B4EFF','#EEEDFF'],['\u2726','#1A8F4E','#E2F5E9'],['\u00B6','#A65A00','#FFEAC2'],['\u21C4','#C84070','#FFE0EC']].map(function (g, i) {
+                    return <span key={i} style={{ width:27, height:27, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:13, background:g[2], color:g[1] }}>{g[0]}</span>;
+                  })}
+                </div>
               </div>
-              <div style={{ flexShrink:0, padding:'10px 16px', borderRadius:10, background:T.brand, color:'#fff', fontSize:12.5, fontWeight:700 }}>Begin →</div>
+              <div style={{ flexShrink:0, alignSelf:'center', padding:'11px 18px', borderRadius:11, background:'linear-gradient(135deg,#C04A06,#E8732F)', color:'#fff', fontSize:13, fontWeight:700, boxShadow:'0 6px 16px rgba(192,74,6,0.28)', whiteSpace:'nowrap' }}>Begin →</div>
             </button>
             <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:24 }}>
               {/* Up next — lessons */}

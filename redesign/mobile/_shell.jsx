@@ -70,8 +70,6 @@ function MobileTabBar({ active='home', onNav }) {
   const nav = onNav || ((id) => { if (window.__nav) window.__nav(id); });
   const tabs = [
     { id:'dashboard', tabId:'home',     label:'Home',     ic:'home' },
-    { id:'library',   tabId:'library',  label:'Library',  ic:'book' },
-    { id:'practice',  tabId:'practice', label:'',         ic:'play',  fab:true },
     { id:'progress',  tabId:'progress', label:'Progress', ic:'bars' },
     { id:'exams',     tabId:'exams',    label:'Exams',    ic:'trophy' },
   ];

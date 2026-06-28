@@ -8,8 +8,6 @@ function WebSidebar({ active='home', activeLang=null, onNav }) {
   const [menuOpen, setMenuOpen] = useStateW(false);
   const items = [
     { id:'home',     ic:'home',   label:'Home' },
-    { id:'practice', ic:'play',   label:'Practice' },
-    { id:'library',  ic:'book',   label:'Library' },
     { id:'progress', ic:'bars',   label:'Progress' },
     { id:'exams',    ic:'trophy', label:'Exams' },
   ];
