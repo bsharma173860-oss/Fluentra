@@ -1,7 +1,7 @@
 // Fluentra service worker — network-first so users always get the latest;
 // cached copies are an offline fallback only. /api/ is never cached.
 // Cache is versioned and old versions are purged on activate (no storage bloat).
-const CACHE = 'fluentra-v2';
+const CACHE = 'fluentra-v3';
 const OFFLINE = '/screens/offline.html';
 
 self.addEventListener('install', (e) => {
@@ -27,7 +27,7 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;     // skip cross-origin (Supabase/Anthropic/Stripe)
   if (url.pathname.startsWith('/api/')) return;         // never cache dynamic API
   e.respondWith(
-    fetch(req).then((res) => {
+    fetch(req, req.mode === 'navigate' ? { cache: 'reload' } : undefined).then((res) => {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
       return res;
