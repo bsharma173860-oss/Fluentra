@@ -44,6 +44,18 @@ function MPractice() {
           </button>
         </div>
 
+        {/* FOUNDATIONS — start from zero */}
+        <div style={{ padding:'0 18px 18px' }}>
+          <button onClick={()=>nav('foundations')} style={{ width:'100%', textAlign:'left', background:(T.brandLight || '#FBF3E9'), border:'1.5px solid '+T.brand, borderRadius:16, padding:'16px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:14 }}>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:T.brand, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:5 }}>Foundations · Start from zero</div>
+              <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.15, marginBottom:3 }}>Alphabet, sounds & first words</div>
+              <div style={{ fontSize:11.5, color:T.ink3, lineHeight:1.45 }}>Script, phonics, words & translation. Tap any letter to hear it.</div>
+            </div>
+            <div style={{ flexShrink:0, width:34, height:34, borderRadius:10, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.arrowRight ? Icon.arrowRight({width:15,height:15}) : '→'}</div>
+          </button>
+        </div>
+
         {/* MODULES — 2x2 grid (same vocabulary as lang detail) */}
         <div style={{ padding:'0 18px 8px' }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginBottom:12 }}>By module</div>
@@ -117,3 +129,113 @@ function MPractice() {
 }
 
 Object.assign(window, { MPractice });
+
+// ── Mobile Foundations (reuses the curated data + shared stage components) ──
+function MFoundationsPage() {
+  const R = React;
+  const nav = (id) => window.__nav && window.__nav(id);
+  const code = (typeof window !== 'undefined' && window.__langCode) || 'en';
+  const LABELS = { en:'English', es:'Spanish', fr:'French', ja:'Japanese', ko:'Korean', ru:'Russian', de:'German', it:'Italian', pt:'Portuguese', zh:'Chinese', ar:'Arabic', hi:'Hindi', nl:'Dutch', pl:'Polish', tr:'Turkish', sv:'Swedish' };
+  const langName = LABELS[code] || ((typeof langByCode === 'function' && langByCode(code) && (langByCode(code).english || langByCode(code).native)) || 'your language');
+  const alpha = (typeof FOUND_ALPHABETS !== 'undefined' && FOUND_ALPHABETS[code]) ? FOUND_ALPHABETS[code] : { script:'the alphabet', note:'Tap a letter to hear it.', letters: (typeof FOUND_LATIN_FALLBACK !== 'undefined' ? FOUND_LATIN_FALLBACK : []) };
+  const words = (typeof FOUND_WORDS !== 'undefined') ? (FOUND_WORDS[code] || null) : null;
+  const phon = (typeof buildPhonics === 'function') ? buildPhonics(code) : null;
+  const [stage, setStage] = R.useState('alphabet');
+  const [sel, setSel] = R.useState(0);
+  const speak = (t) => { if (window.flSpeak) window.flSpeak(t, code); };
+
+  const STAGES = [
+    { id:'alphabet', n:'01', label:'Alphabet', live:true },
+    { id:'phonics', n:'02', label:'Phonics', live:!!phon },
+    { id:'words', n:'03', label:'Words', live:!!words },
+    { id:'sentences', n:'04', label:'Sentences', live:false },
+    { id:'translation', n:'05', label:'Translation', live:!!words },
+  ];
+
+  function MAlphabet() {
+    var letter = alpha.letters[sel] || alpha.letters[0];
+    return (
+      <div>
+        <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, marginBottom:16 }}>You're learning <strong style={{ color:T.ink }}>{alpha.script}</strong>. {alpha.note}</div>
+        <div style={{ display:'flex', gap:14, alignItems:'center', background:T.ink, color:'#fff', borderRadius:16, padding:'18px 18px', marginBottom:18 }}>
+          <button onClick={function () { speak(letter.ch); }} style={{ flexShrink:0, width:76, height:76, borderRadius:16, background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.15)', cursor:'pointer' }}>
+            <span dir={alpha.rtl ? 'rtl' : undefined} style={{ fontFamily:T.serif, fontSize:40, color:'#fff' }}>{letter.ch}</span>
+          </button>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:T.brandLight || '#E8C9A0', letterSpacing:'.12em', textTransform:'uppercase', marginBottom:6 }}>Reads as “{letter.name}”</div>
+            <button onClick={function () { speak(letter.ch); }} style={{ padding:'8px 13px', borderRadius:9, background:'#fff', color:T.ink, border:'none', fontSize:12.5, fontWeight:700, cursor:'pointer' }}>Hear the sound</button>
+            {letter.ex ? <div style={{ fontSize:12, color:'rgba(255,255,255,.7)', marginTop:8 }}>e.g. {letter.ex}{letter.gloss ? ' — ' + letter.gloss : ''}</div> : null}
+          </div>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(50px, 1fr))', gap:7 }}>
+          {alpha.letters.map(function (l, i) {
+            var on = i === sel;
+            return (
+              <button key={l.ch + i} onClick={function () { setSel(i); speak(l.ch); }} style={{ aspectRatio:'1', borderRadius:10, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? (T.brandLight || '#FBF3E9') : T.card, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1 }}>
+                <span style={{ fontFamily:T.serif, fontSize:19, color: on ? T.brand : T.ink }}>{l.ch}</span>
+                <span style={{ fontSize:8, color: on ? T.brand : T.ink4 }}>{l.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  function MWords() {
+    if (!words) return <MAiStage label="First words" />;
+    return (
+      <div>
+        <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, marginBottom:16 }}>Ten words for your first day. Tap to hear them in {langName}.</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
+          {words.map(function (it, i) {
+            return (
+              <button key={i} onClick={function () { speak(it.w); }} style={{ textAlign:'left', padding:'14px 16px', borderRadius:13, border:'1px solid ' + T.border, background:T.card, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+                <div style={{ minWidth:0 }}>
+                  <div dir={code === 'ar' ? 'rtl' : undefined} style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1.2 }}>{it.w}</div>
+                  {it.r ? <div style={{ fontSize:11, color:T.ink4, marginTop:1 }}>{it.r}</div> : null}
+                  <div style={{ fontSize:11.5, color:T.ink3, marginTop:2, textTransform:'capitalize' }}>{it.g}</div>
+                </div>
+                <span style={{ flexShrink:0, color:T.brand }}>{Icon.head ? Icon.head({ width:17, height:17 }) : '►'}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  function MAiStage(props) {
+    return (
+      <div style={{ textAlign:'center', padding:'40px 20px' }}>
+        <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink, marginBottom:8 }}>{props.label} is AI-powered</div>
+        <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.55 }}>This stage builds live around your progress and interests. It switches on when AI generation is active for your account.</div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <MobileHeader title="Foundations" eyebrow={'Start ' + langName + ' from zero'} back onBack={function () { nav('practice'); }}/>
+      <MobileBody padding={[6, 16, 30]}>
+        <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:6, marginBottom:18 }}>
+          {STAGES.map(function (s) {
+            var on = stage === s.id;
+            return (
+              <button key={s.id} onClick={function () { setStage(s.id); }} style={{ flex:'0 0 auto', padding:'9px 14px', borderRadius:11, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? (T.brandLight || '#FBF3E9') : T.card, cursor:'pointer', position:'relative' }}>
+                <span style={{ fontSize:12.5, fontWeight:700, color: on ? T.brand : T.ink }}>{s.label}</span>
+                {!s.live ? <span style={{ marginLeft:6, fontSize:8, fontWeight:800, color:T.ink5 || '#aaa' }}>AI</span> : null}
+              </button>
+            );
+          })}
+        </div>
+        {stage === 'alphabet' && (code === 'zh' ? <FoundationsPinyin/> : <MAlphabet/>)}
+        {stage === 'phonics' && (phon ? <FoundationsPhonics code={code} langName={langName}/> : <MAiStage label="Phonics" />)}
+        {stage === 'words' && <MWords/>}
+        {stage === 'sentences' && <MAiStage label="Sentences" />}
+        {stage === 'translation' && (words ? <FoundationsTranslationDrill words={words} code={code} langName={langName}/> : <MAiStage label="Translation" />)}
+      </MobileBody>
+    </>
+  );
+}
+if (typeof window !== 'undefined') { window.MFoundationsPage = MFoundationsPage; }
