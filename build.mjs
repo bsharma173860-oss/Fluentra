@@ -60,10 +60,16 @@ async function main() {
   log(`bundle ${(bundle.length / 1024).toFixed(0)} KB minified`);
 
   // 5. Build the production index.html.
+  // Cache-bust the bundle + backend with the build stamp so every deploy serves
+  // fresh assets (the filenames are stable, so without this the browser/CDN can
+  // keep serving an old app.bundle.js after a deploy).
+  let stamp = String(Date.now());
+  try { const m = fs.readFileSync(p('redesign', 'backend.js'), 'utf8').match(/__FL_BUILD\s*=\s*'([^']+)'/); if (m) stamp = m[1]; } catch (e) {}
   let outHtml = html
     .replace(/<script\s+src="https:\/\/unpkg\.com\/@babel\/standalone[^>]*><\/script>\s*/g, '')
     .replace(srcRe, '')
-    .replace(inlineRe, '<script src="assets/app.bundle.js"></script>');
+    .replace(inlineRe, `<script src="assets/app.bundle.js?v=${stamp}"></script>`);
+  outHtml = outHtml.replace(/(src=")redesign\/backend\.js(\?[^"]*)?(")/g, `$1redesign/backend.js?v=${stamp}$3`);
   // Tidy the blank lines the removals leave behind.
   outHtml = outHtml.replace(/\n{3,}/g, '\n\n');
 
