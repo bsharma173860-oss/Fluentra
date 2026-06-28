@@ -55,6 +55,7 @@ const FOUND_WORDS = {
   ru: [{w:'Здравствуйте',g:'hello',r:'zdravstvuyte'},{w:'Спасибо',g:'thank you',r:'spasibo'},{w:'Да',g:'yes',r:'da'},{w:'Нет',g:'no',r:'net'},{w:'Пожалуйста',g:'please',r:'pozhaluysta'},{w:'Вода',g:'water',r:'voda'},{w:'Еда',g:'food',r:'yeda'},{w:'Помогите',g:'help',r:'pomogite'},{w:'Извините',g:'sorry',r:'izvinite'},{w:'До свидания',g:'goodbye',r:'do svidaniya'}],
   ar: [{w:'مرحبا',g:'hello',r:'marḥaban'},{w:'شكرا',g:'thank you',r:'shukran'},{w:'نعم',g:'yes',r:'naʿam'},{w:'لا',g:'no',r:'lā'},{w:'من فضلك',g:'please',r:'min faḍlik'},{w:'ماء',g:'water',r:'māʾ'},{w:'طعام',g:'food',r:'ṭaʿām'},{w:'مساعدة',g:'help',r:'musāʿada'},{w:'آسف',g:'sorry',r:'āsif'},{w:'مع السلامة',g:'goodbye',r:'maʿa s-salāma'}],
   hi: [{w:'नमस्ते',g:'hello',r:'namaste'},{w:'धन्यवाद',g:'thank you',r:'dhanyavād'},{w:'हाँ',g:'yes',r:'hāṃ'},{w:'नहीं',g:'no',r:'nahīṃ'},{w:'कृपया',g:'please',r:'kṛpayā'},{w:'पानी',g:'water',r:'pānī'},{w:'खाना',g:'food',r:'khānā'},{w:'मदद',g:'help',r:'madad'},{w:'माफ़ करें',g:'sorry',r:'māf kareṃ'},{w:'अलविदा',g:'goodbye',r:'alvidā'}],
+  zh: [{w:'你好',g:'hello',r:'nǐ hǎo'},{w:'谢谢',g:'thank you',r:'xièxie'},{w:'是',g:'yes',r:'shì'},{w:'不',g:'no',r:'bù'},{w:'请',g:'please',r:'qǐng'},{w:'水',g:'water',r:'shuǐ'},{w:'食物',g:'food',r:'shíwù'},{w:'帮助',g:'help',r:'bāngzhù'},{w:'对不起',g:'sorry',r:'duìbuqǐ'},{w:'再见',g:'goodbye',r:'zàijiàn'}],
 };
 
 function _foundSpeak(text, code) { if (typeof window !== 'undefined' && window.flSpeak) window.flSpeak(text, code); }
@@ -179,7 +180,7 @@ function FoundationsPage() {
             <div style={{ fontSize:14, color:T.ink3, marginTop:10, lineHeight:1.6, maxWidth:540 }}>Before exams and essays: learn how the language sounds and reads. Master the script, then build up to words, sentences, and translation.</div>
           </div>
           <StageRail/>
-          {stage === 'alphabet' && <Alphabet/>}
+          {stage === 'alphabet' && (code === 'zh' ? <FoundationsPinyin/> : <Alphabet/>)}
           {stage === 'phonics' && (phon ? <FoundationsPhonics code={code} langName={langName}/> : <AiStage label="Phonics" />)}
           {stage === 'words' && <Words/>}
           {stage === 'sentences' && <AiStage label="Sentences" />}
@@ -358,6 +359,51 @@ function FoundationsPhonics(props) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ── Chinese: Pinyin & tones (credits-free) ───────────────────
+// Chinese has no alphabet — Pinyin is how you learn to pronounce characters,
+// and tone changes meaning. Tones are taught on real characters (妈麻马骂) so
+// TTS is reliable; initials/finals are a visual reference chart.
+const ZH_TONES = [
+  { ch:'\u5988', py:'m\u0101', tone:'1st \u2014 high & level', g:'mother' },
+  { ch:'\u9ebb', py:'m\u00e1', tone:'2nd \u2014 rising', g:'hemp' },
+  { ch:'\u9a6c', py:'m\u01ce', tone:'3rd \u2014 dip, then rise', g:'horse' },
+  { ch:'\u9a82', py:'m\u00e0', tone:'4th \u2014 sharp fall', g:'to scold' },
+];
+const ZH_INITIALS = 'b p m f d t n l g k h j q x zh ch sh r z c s y w'.split(' ');
+const ZH_FINALS = 'a o e i u \u00fc ai ei ao ou an en ang eng ong'.split(' ');
+
+function FoundationsPinyin() {
+  return (
+    <div>
+      <div style={{ fontSize:13, color:T.ink3, lineHeight:1.6, marginBottom:22, maxWidth:580 }}>Chinese isn\u2019t written with an alphabet \u2014 each character is a whole syllable. <strong style={{ color:T.ink }}>Pinyin</strong> spells out how to say it, and the <strong style={{ color:T.ink }}>tone</strong> changes the meaning. Same sound \u201cma\u201d, four tones, four words:</div>
+      {/* Tones — interactive, real characters */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:12, marginBottom:30 }}>
+        {ZH_TONES.map(function (t, i) {
+          return (
+            <button key={i} onClick={function () { if (window.flSpeak) window.flSpeak(t.ch, 'zh'); }} style={{ textAlign:'center', padding:'20px 14px', borderRadius:16, border:'1px solid ' + T.border, background:T.card, cursor:'pointer' }}>
+              <div style={{ fontFamily:T.serif, fontSize:40, color:T.ink, lineHeight:1 }}>{t.ch}</div>
+              <div style={{ fontSize:16, color:T.brand, fontWeight:700, marginTop:8 }}>{t.py}</div>
+              <div style={{ fontSize:11, color:T.ink4, marginTop:6 }}>{t.tone}</div>
+              <div style={{ fontSize:11.5, color:T.ink3, marginTop:2, fontStyle:'italic' }}>\u201c{t.g}\u201d</div>
+            </button>
+          );
+        })}
+      </div>
+      {/* Initials reference */}
+      <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Initials \u2014 the starting sounds</div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginBottom:24 }}>
+        {ZH_INITIALS.map(function (x, i) { return <span key={i} style={{ padding:'7px 12px', borderRadius:9, background:T.bg2, border:'1px solid ' + T.hairline, fontSize:13, color:T.ink2, fontWeight:600 }}>{x}</span>; })}
+      </div>
+      {/* Finals reference */}
+      <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>Finals \u2014 the ending sounds</div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+        {ZH_FINALS.map(function (x, i) { return <span key={i} style={{ padding:'7px 12px', borderRadius:9, background:T.bg2, border:'1px solid ' + T.hairline, fontSize:13, color:T.ink2, fontWeight:600 }}>{x}</span>; })}
+      </div>
+      <div style={{ fontSize:12, color:T.ink4, marginTop:18, lineHeight:1.5 }}>An initial + a final + a tone makes a syllable. Tap a tone card above to hear it; head to First words to hear whole words.</div>
     </div>
   );
 }
