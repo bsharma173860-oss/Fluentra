@@ -551,7 +551,7 @@ function ArgumentGamePage() {
     return (
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
         <WebTopbar search=""/>
-        <div style={{ flex:1, overflow:'auto', padding:'32px 36px' }}>
+        <div style={{ flex:1, overflow:'auto', padding:'32px 36px 48px', background:'radial-gradient(1100px 520px at 8% -12%, #FBE3D1 0%, rgba(251,227,209,0) 55%), radial-gradient(950px 480px at 96% -8%, #E9E4F4 0%, rgba(233,228,244,0) 52%), ' + (T.bg || '#F9F8F5') }}>
           <div style={{ maxWidth:760, margin:'0 auto' }}>
             <div style={{ background:T.ink, borderRadius:20, padding:'34px 36px', color:'#fff', marginBottom:28, position:'relative', overflow:'hidden' }}>
               <div style={{ position:'absolute', inset:0, opacity:.05, background:'radial-gradient(circle at 92% 0%, #fff 0%, transparent 55%)' }}/>
@@ -565,9 +565,9 @@ function ArgumentGamePage() {
             <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:14 }}>Choose your intensity</div>
             <div style={{ display:'flex', gap:10, marginBottom:30 }}>
               {DIFFS.map(function (d) { var on = diff === d.k; return (
-                <button key={d.k} onClick={function () { setDiff(d.k); }} style={{ flex:1, padding:'14px 0', borderRadius:13, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? T.brandLight : T.card, cursor:'pointer' }}>
-                  <div style={{ fontSize:14, fontWeight:700, color: on ? T.brand : T.ink }}>{d.l}</div>
-                  <div style={{ fontSize:10.5, color: on ? T.brand : T.ink4, marginTop:3, textTransform:'capitalize' }}>{d.k}</div>
+                <button key={d.k} onClick={function () { setDiff(d.k); }} style={{ flex:1, padding:'14px 0', borderRadius:13, border: on ? '1px solid transparent' : '1px solid rgba(255,255,255,0.85)', background: on ? 'linear-gradient(135deg,#C04A06,#E8732F)' : 'rgba(255,255,255,0.55)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', boxShadow: on ? '0 6px 18px rgba(192,74,6,0.30)' : '0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer' }}>
+                  <div style={{ fontSize:14, fontWeight:700, color: on ? '#fff' : T.ink }}>{d.l}</div>
+                  <div style={{ fontSize:10.5, color: on ? 'rgba(255,255,255,0.82)' : T.ink4, marginTop:3, textTransform:'capitalize' }}>{d.k}</div>
                 </button>
               ); })}
             </div>
@@ -575,16 +575,16 @@ function ArgumentGamePage() {
             <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:14 }}>Pick a motion \u2014 then your side</div>
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               {TOPICS.map(function (tp, i) { return (
-                <div key={i} style={{ background:T.card, border:'1px solid ' + T.border, borderRadius:15, padding:'18px 20px' }}>
+                <div key={i} style={{ background:'rgba(255,255,255,0.55)', backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.7)', borderRadius:16, padding:'18px 20px', boxShadow:'0 6px 20px rgba(76,46,18,0.06)' }}>
                   <div style={{ display:'flex', alignItems:'baseline', gap:10, marginBottom:13 }}>
                     <span style={{ fontFamily:T.serif, fontSize:14, color:T.brand, fontStyle:'italic' }}>{String(i + 1).padStart(2,'0')}</span>
                     <div style={{ fontSize:15, fontWeight:600, color:T.ink, lineHeight:1.35 }}>{tp.t}</div>
                   </div>
                   <div style={{ display:'flex', gap:8 }}>
-                    <button onClick={function () { pickTopic(tp.t, tp.a, tp.b); }} style={{ flex:1, padding:'10px 14px', borderRadius:10, border:'1.5px solid ' + T.border, background:T.bg2, fontSize:12.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>
+                    <button onClick={function () { pickTopic(tp.t, tp.a, tp.b); }} style={{ flex:1, padding:'10px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.85)', background:'rgba(255,255,255,0.5)', fontSize:12.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>
                       <span style={{ color:T.ink4, fontSize:10.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3 }}>Argue</span>{tp.a}
                     </button>
-                    <button onClick={function () { pickTopic(tp.t, tp.b, tp.a); }} style={{ flex:1, padding:'10px 14px', borderRadius:10, border:'1.5px solid ' + T.border, background:T.bg2, fontSize:12.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>
+                    <button onClick={function () { pickTopic(tp.t, tp.b, tp.a); }} style={{ flex:1, padding:'10px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.85)', background:'rgba(255,255,255,0.5)', fontSize:12.5, fontWeight:600, color:T.ink2, cursor:'pointer', textAlign:'left' }}>
                       <span style={{ color:T.ink4, fontSize:10.5, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', display:'block', marginBottom:3 }}>Argue</span>{tp.b}
                     </button>
                   </div>
@@ -601,18 +601,18 @@ function ArgumentGamePage() {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>
-      <div style={{ padding:'16px 36px 0', borderBottom:'1px solid ' + T.hairline }}>
+      <div style={{ padding:'16px 36px 0', borderBottom:'1px solid rgba(255,255,255,0.6)', background:'rgba(255,255,255,0.5)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)' }}>
         <div style={{ maxWidth:760, margin:'0 auto', paddingBottom:14, display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16 }}>
           <div style={{ minWidth:0 }}>
             <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:5 }}>Motion</div>
             <div style={{ fontSize:14, fontWeight:600, color:T.ink, lineHeight:1.35 }}>{topic}</div>
             <div style={{ fontSize:12, color:T.ink3, marginTop:6 }}>You: <strong style={{ color:T.brand }}>{side}</strong> <span style={{ color:T.ink5 }}>\u00b7 opponent: {oppSide}</span></div>
           </div>
-          <button onClick={reset} style={{ flexShrink:0, padding:'8px 14px', borderRadius:9, border:'1.5px solid ' + T.border, background:T.card, fontSize:12, fontWeight:600, color:T.ink2, cursor:'pointer' }}>New debate</button>
+          <button onClick={reset} style={{ flexShrink:0, padding:'8px 14px', borderRadius:9, border:'1px solid rgba(255,255,255,0.85)', background:'rgba(255,255,255,0.6)', fontSize:12, fontWeight:600, color:T.ink2, cursor:'pointer' }}>New debate</button>
         </div>
       </div>
 
-      <div ref={scrollRef} style={{ flex:1, overflow:'auto', padding:'24px 36px' }}>
+      <div ref={scrollRef} style={{ flex:1, overflow:'auto', padding:'24px 36px', background:'radial-gradient(1100px 520px at 8% 0%, #FBE3D1 0%, rgba(251,227,209,0) 50%), radial-gradient(950px 480px at 96% 4%, #E9E4F4 0%, rgba(233,228,244,0) 48%), ' + (T.bg || '#F9F8F5') }}>
         <div style={{ maxWidth:760, margin:'0 auto', display:'flex', flexDirection:'column', gap:18 }}>
           {msgs.map(function (m, i) {
             if (m.role === 'user') return (
