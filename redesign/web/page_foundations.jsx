@@ -69,64 +69,101 @@ function FoundationsPage() {
   const words = FOUND_WORDS[code] || null;
   const phon = buildPhonics(code);
   const [stage, setStage] = R.useState('alphabet');
-  const [sel, setSel] = R.useState(0);
+  const [playing, setPlaying] = R.useState(-1);
 
+  const FLAGS = { es:'\uD83C\uDDEA\uD83C\uDDF8', fr:'\uD83C\uDDEB\uD83C\uDDF7', en:'\uD83C\uDDEC\uD83C\uDDE7', ja:'\uD83C\uDDEF\uD83C\uDDF5', ko:'\uD83C\uDDF0\uD83C\uDDF7', ru:'\uD83C\uDDF7\uD83C\uDDFA', ar:'\uD83C\uDDF8\uD83C\uDDE6', hi:'\uD83C\uDDEE\uD83C\uDDF3', zh:'\uD83C\uDDE8\uD83C\uDDF3', de:'\uD83C\uDDE9\uD83C\uDDEA', it:'\uD83C\uDDEE\uD83C\uDDF9', pt:'\uD83C\uDDF5\uD83C\uDDF9', nl:'\uD83C\uDDF3\uD83C\uDDF1', pl:'\uD83C\uDDF5\uD83C\uDDF1', tr:'\uD83C\uDDF9\uD83C\uDDF7', sv:'\uD83C\uDDF8\uD83C\uDDEA' };
+  const ACC = {
+    alphabet:    { c:'#C04A06', bg:'#FFE5DE' },
+    phonics:     { c:'#5B4EFF', bg:'#EEEDFF' },
+    words:       { c:'#1A8F4E', bg:'#E2F5E9' },
+    sentences:   { c:'#A65A00', bg:'#FFEAC2' },
+    translation: { c:'#C84070', bg:'#FFE0EC' },
+  };
   const STAGES = [
-    { id:'alphabet',    n:'01', label:'Alphabet',    sub:'Sounds & script',     live:true },
-    { id:'phonics',     n:'02', label:'Phonics',      sub:'Letters into sounds', live:!!phon },
-    { id:'words',       n:'03', label:'First words',  sub:'Survival vocabulary', live:!!words },
-    { id:'sentences',   n:'04', label:'Sentences',    sub:'Putting it together', live:false },
-    { id:'translation', n:'05', label:'Translation',  sub:'Both directions',     live:!!words },
+    { id:'alphabet',    glyph:'Aa', label:'Alphabet',    sub:'Sounds & script',     live:true },
+    { id:'phonics',     glyph:'\u25C8', label:'Phonics',     sub:'Letters into sounds', live:!!phon },
+    { id:'words',       glyph:'\u2726', label:'First words', sub:'Survival vocabulary', live:!!words },
+    { id:'sentences',   glyph:'\u00B6', label:'Sentences',   sub:'Putting it together', live:false },
+    { id:'translation', glyph:'\u21C4', label:'Translation', sub:'Both directions',     live:!!words },
   ];
+  const HEAD = {
+    alphabet:    { eyebrow:'Alphabet \u00B7 ' + alpha.letters.length + ' letters', h1:'Hear every letter.' },
+    phonics:     { eyebrow:'Phonics', h1:'Build your first syllables.' },
+    words:       { eyebrow:'First words', h1:'Ten words for day one.' },
+    sentences:   { eyebrow:'Sentences', h1:'Put the words together.' },
+    translation: { eyebrow:'Translation', h1:'Both directions.' },
+  };
+  var liveCount = STAGES.filter(function (s) { return s.live; }).length;
+  var journeyPct = Math.round((STAGES.findIndex(function (s) { return s.id === stage; }) + 1) / STAGES.length * 100);
 
-  function StageRail() {
+  function Rail() {
     return (
-      <div style={{ display:'flex', gap:9, marginBottom:28, overflowX:'auto', paddingBottom:6 }}>
-        {STAGES.map(function (s) {
-          var on = stage === s.id;
-          return (
-            <button key={s.id} onClick={function () { setStage(s.id); }} style={{ flex:'0 0 auto', display:'flex', alignItems:'center', gap:8, padding:'11px 18px', borderRadius:99, border: on ? '1px solid transparent' : '1px solid rgba(255,255,255,0.85)', background: on ? 'linear-gradient(135deg,#C04A06,#E8732F)' : 'rgba(255,255,255,0.55)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', boxShadow: on ? '0 6px 18px rgba(192,74,6,0.30)' : '0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer' }}>
-              <span style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color: on ? 'rgba(255,255,255,0.8)' : T.ink4 }}>{s.n}</span>
-              <span style={{ fontSize:13.5, fontWeight:700, color: on ? '#fff' : T.ink, whiteSpace:'nowrap' }}>{s.label}</span>
-              {!s.live ? <span style={{ fontSize:8.5, fontWeight:800, letterSpacing:'.06em', color: on ? 'rgba(255,255,255,0.85)' : T.ink5, border:'1px solid ' + (on ? 'rgba(255,255,255,0.45)' : T.border), borderRadius:5, padding:'2px 5px' }}>AI</span> : null}
-            </button>
-          );
-        })}
+      <div style={{ width:248, flexShrink:0, display:'flex', flexDirection:'column' }}>
+        <button onClick={function () { if (window.__nav) window.__nav('lang'); }} style={{ alignSelf:'flex-start', display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.85)', cursor:'pointer', padding:'9px 14px', borderRadius:99, color:T.ink3, fontSize:12.5, fontWeight:600, marginBottom:22 }}>\u2039 Back to {langName}</button>
+        <div style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.14em', textTransform:'uppercase', padding:'0 6px', marginBottom:12 }}>The beginner journey</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+          {STAGES.map(function (s) {
+            var on = stage === s.id; var ac = ACC[s.id] || ACC.alphabet;
+            return (
+              <button key={s.id} onClick={function () { setStage(s.id); }} style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 12px', borderRadius:14, border:'1px solid transparent', background: on ? 'rgba(255,255,255,0.9)' : 'transparent', boxShadow: on ? '0 4px 14px rgba(76,46,18,0.07)' : 'none', cursor:'pointer', textAlign:'left' }}>
+                <span style={{ flexShrink:0, width:34, height:34, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:15, background: on ? ac.bg : 'rgba(255,255,255,0.55)', color: on ? ac.c : T.ink4 }}>{s.glyph}</span>
+                <span style={{ display:'flex', flexDirection:'column', gap:1, minWidth:0, flex:1 }}>
+                  <span style={{ fontSize:13.5, fontWeight:600, color: on ? T.ink : T.ink2 }}>{s.label}</span>
+                  <span style={{ fontSize:11, color:T.ink4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.sub}</span>
+                </span>
+                {!s.live ? <span style={{ flexShrink:0, fontSize:8.5, fontWeight:800, color:T.ink5, border:'1px solid ' + T.border, borderRadius:5, padding:'2px 5px' }}>AI</span> : null}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ marginTop:24, padding:16, borderRadius:16, background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.8)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:T.ink4, letterSpacing:'.1em', textTransform:'uppercase' }}>Your journey</span>
+            <span style={{ fontSize:11, fontWeight:700, color:T.brand }}>{liveCount}/{STAGES.length} live</span>
+          </div>
+          <div style={{ height:6, borderRadius:99, background:T.track || '#F2F2F2', overflow:'hidden', marginBottom:13 }}>
+            <div style={{ height:'100%', borderRadius:99, background:'linear-gradient(135deg,#C04A06,#E8732F)', width: journeyPct + '%', transition:'width .3s ease' }}/>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+            <span style={{ fontSize:20 }}>{FLAGS[code] || '\uD83C\uDFF3\uFE0F'}</span>
+            <span style={{ fontSize:13.5, fontWeight:600, color:T.ink }}>{langName}</span>
+            <span style={{ marginLeft:'auto', fontSize:11, fontWeight:700, color:T.brand, padding:'3px 9px', borderRadius:99, background:T.brandLight }}>A1</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function Header() {
+    var h = HEAD[stage] || HEAD.alphabet; var ac = ACC[stage] || ACC.alphabet;
+    return (
+      <div style={{ marginBottom:22 }}>
+        <div style={{ fontSize:11, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', color: ac.c, marginBottom:8 }}>{h.eyebrow}</div>
+        <div style={{ fontFamily:T.serif, fontSize:34, color:T.ink, lineHeight:1.1 }}>{h.h1}</div>
       </div>
     );
   }
 
   function Alphabet() {
-    var letter = alpha.letters[sel] || alpha.letters[0];
     return (
-      <div>
-        <div style={{ fontSize:13, color:T.ink3, lineHeight:1.55, marginBottom:20, maxWidth:560 }}>You're learning <strong style={{ color:T.ink }}>{alpha.script}</strong>. {alpha.note}</div>
-        {/* Selected letter detail */}
-        <div style={{ display:'flex', gap:20, alignItems:'center', background:T.ink, color:'#fff', borderRadius:18, padding:'24px 28px', marginBottom:24, position:'relative', overflow:'hidden' }}>
-          <div style={{ position:'absolute', inset:0, opacity:.05, background:'radial-gradient(circle at 90% 10%, #fff 0%, transparent 55%)' }}/>
-          <button onClick={function () { _foundSpeak(letter.ch, code); }} style={{ position:'relative', flexShrink:0, width:96, height:96, borderRadius:20, background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.15)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <span style={{ fontFamily:T.serif, fontSize:52, lineHeight:1, color:'#fff' }}>{letter.ch}</span>
-          </button>
-          <div style={{ position:'relative', minWidth:0 }}>
-            <div style={{ fontSize:10.5, fontWeight:700, color:T.brandLight, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Reads as “{letter.name}”</div>
-            <button onClick={function () { _foundSpeak(letter.ch, code); }} style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'9px 15px', borderRadius:10, background:'#fff', color:T.ink, border:'none', fontSize:13, fontWeight:700, cursor:'pointer', marginBottom: letter.ex ? 12 : 0 }}>
-              {Icon.head ? Icon.head({ width:14, height:14 }) : null} Hear the sound
-            </button>
-            {letter.ex ? (
-              <div style={{ fontSize:13, color:'rgba(255,255,255,.75)' }}>
-                e.g. <button onClick={function () { _foundSpeak(letter.ex, code); }} style={{ background:'none', border:'none', color:'#fff', fontWeight:700, cursor:'pointer', padding:0, fontSize:13, textDecoration:'underline', textDecorationColor:'rgba(255,255,255,.3)' }}>{letter.ex}</button>{letter.gloss ? ' — ' + letter.gloss : ''}
-              </div>
-            ) : null}
-          </div>
-        </div>
-        {/* Letter grid */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(58px, 1fr))', gap:9 }}>
+      <div style={{ animation:'fl-rise .3s ease both' }}>
+        <p style={{ fontSize:14.5, color:T.ink3, lineHeight:1.6, marginBottom:26, maxWidth:560 }}>You're learning <strong style={{ color:T.ink }}>{alpha.script}</strong>. {alpha.note}</p>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))', gap:12 }} dir={alpha.rtl ? 'rtl' : undefined}>
           {alpha.letters.map(function (l, i) {
-            var on = i === sel;
+            var on = playing === i;
             return (
-              <button key={l.ch + i} onClick={function () { setSel(i); _foundSpeak(l.ch, code); }} style={{ aspectRatio:'1', borderRadius:12, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? T.brandLight : T.card, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2 }}>
-                <span style={{ fontFamily:T.serif, fontSize:22, lineHeight:1, color: on ? T.brand : T.ink }}>{l.ch}</span>
-                <span style={{ fontSize:9, color: on ? T.brand : T.ink4 }}>{l.name}</span>
+              <button key={l.ch + i} onClick={function () { setPlaying(i); _foundSpeak(l.ch, code); setTimeout(function () { setPlaying(function (p) { return p === i ? -1 : p; }); }, 750); }} className="fl-lift"
+                style={{ aspectRatio:'1', borderRadius:16, border:'1px solid ' + (on ? '#C04A06' : T.border), background: on ? '#FFE5DE' : T.card, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:7 }}>
+                <span style={{ fontFamily:T.serif, fontSize:28, lineHeight:1, color: on ? '#C04A06' : T.ink }}>{l.ch}</span>
+                {on ? (
+                  <span style={{ display:'flex', alignItems:'flex-end', gap:2, height:11 }}>
+                    <span style={{ width:3, height:11, borderRadius:2, background:'#C04A06', transformOrigin:'bottom', animation:'fl-wave .6s ease-in-out infinite' }}/>
+                    <span style={{ width:3, height:11, borderRadius:2, background:'#C04A06', transformOrigin:'bottom', animation:'fl-wave .6s ease-in-out infinite .15s' }}/>
+                    <span style={{ width:3, height:11, borderRadius:2, background:'#C04A06', transformOrigin:'bottom', animation:'fl-wave .6s ease-in-out infinite .3s' }}/>
+                  </span>
+                ) : (
+                  <span style={{ fontSize:10.5, fontWeight:600, color:T.ink4 }}>{l.name}</span>
+                )}
               </button>
             );
           })}
@@ -171,22 +208,18 @@ function FoundationsPage() {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <WebTopbar search=""/>
+      <style>{"@keyframes fl-wave{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}@keyframes fl-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}"}</style>
       <div style={{ flex:1, overflow:'auto', padding:'30px 36px 56px', background:'radial-gradient(1100px 520px at 8% -12%, #FBE3D1 0%, rgba(251,227,209,0) 55%), radial-gradient(950px 480px at 96% -8%, #E9E4F4 0%, rgba(233,228,244,0) 52%), ' + (T.bg || '#F9F8F5') }}>
-        <div style={{ maxWidth:880, margin:'0 auto', background:'rgba(255,255,255,0.55)', backdropFilter:'blur(22px)', WebkitBackdropFilter:'blur(22px)', border:'1px solid rgba(255,255,255,0.7)', borderRadius:24, boxShadow:'0 16px 48px rgba(76,46,18,0.10)', padding:'30px 32px 36px' }}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, marginBottom:26 }}>
-            <div style={{ minWidth:0 }}>
-              <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:8 }}>Foundations</div>
-              <div style={{ fontFamily:T.serif, fontSize:38, color:T.ink, lineHeight:1.06 }}>Start {langName} from zero.</div>
-              <div style={{ fontSize:14, color:T.ink3, marginTop:10, lineHeight:1.6, maxWidth:540 }}>Before exams and essays: learn how the language sounds and reads. Master the script, then build up to words, sentences, and translation.</div>
-            </div>
-            <span style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:99, background:'rgba(255,255,255,0.65)', border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 2px 10px rgba(0,0,0,0.05)', fontSize:12.5, fontWeight:700, color:T.brand, whiteSpace:'nowrap' }}>Learning {langName}</span>
+        <div style={{ maxWidth:1060, margin:'0 auto', display:'flex', gap:30, alignItems:'flex-start' }}>
+          <Rail/>
+          <div style={{ flex:1, minWidth:0, background:'rgba(255,255,255,0.6)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.7)', borderRadius:22, boxShadow:'0 16px 48px rgba(76,46,18,0.08)', padding:'30px 34px 38px' }}>
+            <Header/>
+            {stage === 'alphabet' && (code === 'zh' ? <FoundationsPinyin/> : <Alphabet/>)}
+            {stage === 'phonics' && (phon ? <FoundationsPhonics code={code} langName={langName}/> : <AiStage label="Phonics" />)}
+            {stage === 'words' && <Words/>}
+            {stage === 'sentences' && <AiStage label="Sentences" />}
+            {stage === 'translation' && (words ? <FoundationsTranslationDrill words={words} code={code} langName={langName}/> : <AiStage label="Translation" />)}
           </div>
-          <StageRail/>
-          {stage === 'alphabet' && (code === 'zh' ? <FoundationsPinyin/> : <Alphabet/>)}
-          {stage === 'phonics' && (phon ? <FoundationsPhonics code={code} langName={langName}/> : <AiStage label="Phonics" />)}
-          {stage === 'words' && <Words/>}
-          {stage === 'sentences' && <AiStage label="Sentences" />}
-          {stage === 'translation' && (words ? <FoundationsTranslationDrill words={words} code={code} langName={langName}/> : <AiStage label="Translation" />)}
         </div>
       </div>
     </div>
