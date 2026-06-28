@@ -57,12 +57,13 @@ function FoundationsPage() {
   const langName = FOUND_LABELS[code] || ((typeof langByCode === 'function' && langByCode(code)) ? (langByCode(code).english || langByCode(code).native || 'your language') : 'your language');
   const alpha = FOUND_ALPHABETS[code] || { script:'the alphabet', note:'Tap a letter to hear it.', letters: FOUND_LATIN_FALLBACK };
   const words = FOUND_WORDS[code] || null;
+  const phon = buildPhonics(code);
   const [stage, setStage] = R.useState('alphabet');
   const [sel, setSel] = R.useState(0);
 
   const STAGES = [
     { id:'alphabet',    n:'01', label:'Alphabet',    sub:'Sounds & script',     live:true },
-    { id:'phonics',     n:'02', label:'Phonics',      sub:'Letters into sounds', live:false },
+    { id:'phonics',     n:'02', label:'Phonics',      sub:'Letters into sounds', live:!!phon },
     { id:'words',       n:'03', label:'First words',  sub:'Survival vocabulary', live:!!words },
     { id:'sentences',   n:'04', label:'Sentences',    sub:'Putting it together', live:false },
     { id:'translation', n:'05', label:'Translation',  sub:'Both directions',     live:!!words },
@@ -170,7 +171,7 @@ function FoundationsPage() {
           </div>
           <StageRail/>
           {stage === 'alphabet' && <Alphabet/>}
-          {stage === 'phonics' && <AiStage label="Phonics" />}
+          {stage === 'phonics' && (phon ? <FoundationsPhonics code={code} langName={langName}/> : <AiStage label="Phonics" />)}
           {stage === 'words' && <Words/>}
           {stage === 'sentences' && <AiStage label="Sentences" />}
           {stage === 'translation' && (words ? <FoundationsTranslationDrill words={words} code={code} langName={langName}/> : <AiStage label="Translation" />)}
@@ -263,6 +264,88 @@ function FoundationsTranslationDrill(props) {
           var col = state === 'right' ? '#1E7E34' : state === 'wrong' ? '#B3261E' : T.ink;
           return (
             <button key={o + i} onClick={function () { pick(o); }} disabled={!!picked} style={{ padding:'15px 16px', borderRadius:13, border:'1.5px solid ' + bd, background:bg, color:col, fontSize:15, fontWeight:600, cursor: picked ? 'default' : 'pointer', textAlign:'center', fontFamily: (dir === 'toTarget') ? T.serif : 'inherit' }}>{o}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Phonics (credits-free): build syllables from letters ─────
+// Latin/Cyrillic: consonant+vowel concatenation. Korean: real Unicode hangul
+// block composition. Japanese: the gojūon grouped by consonant row. All + TTS.
+const KO_INIT = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const KO_MED  = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const KO_ROM  = { 'ㄱ':'g','ㄴ':'n','ㄷ':'d','ㄹ':'r','ㅁ':'m','ㅂ':'b','ㅅ':'s','ㅈ':'j','ㅎ':'h' };
+const KO_VROM = { 'ㅏ':'a','ㅓ':'eo','ㅗ':'o','ㅜ':'u','ㅣ':'i' };
+function _koCompose(ini, med) { var L = KO_INIT.indexOf(ini), V = KO_MED.indexOf(med); if (L < 0 || V < 0) return ini + med; return String.fromCharCode(0xAC00 + (L * 21 + V) * 28); }
+
+const PHON_CONFIG = {
+  en: { cons:'b c d f g h j k l m n p r s t v w z'.split(' '), vows:['a','e','i','o','u'] },
+  es: { cons:'b c d f g l m n p r s t'.split(' '), vows:['a','e','i','o','u'] },
+  fr: { cons:'b c d f g l m n p r s t'.split(' '), vows:['a','e','i','o','u'] },
+  ru: { cons:'б в г д к л м н п р с т'.split(' '), vows:['а','е','и','о','у'] },
+  ko: { compose:true, cons:['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅈ','ㅎ'], vows:['ㅏ','ㅓ','ㅗ','ㅜ','ㅣ'] },
+  ja: { syllabary:true },
+};
+
+function buildPhonics(code) {
+  var cfg = PHON_CONFIG[code];
+  if (!cfg) return null;
+  if (cfg.syllabary) {
+    var alpha = FOUND_ALPHABETS.ja; if (!alpha) return null;
+    var map = {}, order = [];
+    alpha.letters.forEach(function (l) {
+      var rom = l.name, key;
+      if (rom.length <= 1 || 'aiueo'.indexOf(rom[0]) >= 0) key = '(vowels)';
+      else if (rom === 'shi') key = 's';
+      else if (rom === 'chi' || rom === 'tsu') key = 't';
+      else if (rom === 'fu') key = 'h';
+      else key = rom[0];
+      if (!map[key]) { map[key] = []; order.push(key); }
+      map[key].push({ ch: l.ch, romaji: l.name });
+    });
+    return { mode:'syllabary', groups: order.map(function (k) { return { label: k === '(vowels)' ? 'vowels' : k.toUpperCase() + '-row', syllables: map[k] }; }) };
+  }
+  if (cfg.compose) {
+    return { mode:'compose', groups: cfg.cons.map(function (ci) {
+      return { label: (KO_ROM[ci] || ci), syllables: cfg.vows.map(function (v) { return { ch: _koCompose(ci, v), romaji: (KO_ROM[ci] || '') + (KO_VROM[v] || '') }; }) };
+    }) };
+  }
+  return { mode:'cv', groups: cfg.cons.map(function (ci) {
+    return { label: ci.toUpperCase(), syllables: cfg.vows.map(function (v) { return { ch: ci + v, romaji: ci + v }; }) };
+  }) };
+}
+
+function FoundationsPhonics(props) {
+  const R = React;
+  const code = props.code;
+  const phon = buildPhonics(code);
+  const [gi, setGi] = R.useState(0);
+  if (!phon) return null;
+  const g = phon.groups[gi] || phon.groups[0];
+  const note = phon.mode === 'syllabary'
+    ? 'Japanese is read in syllables. Pick a row, then tap each syllable to hear it.'
+    : phon.mode === 'compose'
+      ? 'Korean letters stack into a single block. Pick a consonant, then tap each block to hear the consonant join a vowel.'
+      : 'Sounds are built by joining a consonant to a vowel. Pick a consonant, then tap each syllable to hear it.';
+  return (
+    <div>
+      <div style={{ fontSize:13, color:T.ink3, lineHeight:1.55, marginBottom:18, maxWidth:560 }}>{note}</div>
+      <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:10 }}>{phon.mode === 'syllabary' ? 'Pick a row' : 'Pick a consonant'}</div>
+      <div style={{ display:'flex', gap:7, flexWrap:'wrap', marginBottom:24 }}>
+        {phon.groups.map(function (grp, i) {
+          var on = i === gi;
+          return <button key={grp.label + i} onClick={function () { setGi(i); }} style={{ padding:'8px 14px', borderRadius:99, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? T.brandLight : T.card, fontSize:13, fontWeight: on ? 700 : 600, color: on ? T.brand : T.ink2, cursor:'pointer', minWidth:42 }}>{grp.label}</button>;
+        })}
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(84px, 1fr))', gap:11 }}>
+        {g.syllables.map(function (s, i) {
+          return (
+            <button key={s.ch + i} onClick={function () { if (window.flSpeak) window.flSpeak(s.ch, code); }} style={{ padding:'18px 8px', borderRadius:14, border:'1px solid ' + T.border, background:T.card, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
+              <span style={{ fontFamily:T.serif, fontSize:28, lineHeight:1, color:T.ink }}>{s.ch}</span>
+              <span style={{ fontSize:11, color:T.ink4 }}>{s.romaji}</span>
+            </button>
           );
         })}
       </div>
