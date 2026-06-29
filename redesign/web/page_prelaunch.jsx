@@ -249,6 +249,13 @@ function PaymentRetry() {
 
 // ─── COOKIE / GDPR ──────────────────────────────────────
 function CookieBanner() {
+  const [hidden, setHidden] = useStPL(false);
+  const save = function (v) { try { localStorage.setItem('fl-cookie-consent', v); } catch (e) {} setHidden(true); };
+  if (hidden) return (
+    <div style={{ position:'absolute', inset:0, padding:24, background:'linear-gradient(180deg, #F5F2ED 0%, #EDEAE3 100%)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ fontSize:13, color:T.ink3, fontWeight:600 }}>Cookie preferences saved.</div>
+    </div>
+  );
   return (
     <div style={{ position:'absolute', inset:0, padding:24, background:'linear-gradient(180deg, #F5F2ED 0%, #EDEAE3 100%)' }}>
       <div style={{ position:'absolute', left:24, right:24, bottom:24, background:T.ink, color:'#fff', borderRadius:14, padding:'18px 20px', boxShadow:'0 16px 40px rgba(0,0,0,.25)' }}>
@@ -260,9 +267,9 @@ function CookieBanner() {
             <div style={{ fontFamily:T.serif, fontSize:16, marginBottom:4 }}>We use cookies to make Fluentra work.</div>
             <div style={{ fontSize:11.5, color:'rgba(255,255,255,.7)', lineHeight:1.5, marginBottom:12 }}>Essential cookies keep you signed in. Optional ones help us understand which lessons land. You're in control — tweak anytime.</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
-              <button style={{ padding:'8px 14px', borderRadius:8, background:'#fff', color:T.ink, fontSize:11.5, fontWeight:700, cursor:'pointer', border:'none' }}>Accept all</button>
-              <button style={{ padding:'8px 14px', borderRadius:8, background:'transparent', color:'#fff', fontSize:11.5, fontWeight:700, border:'1px solid rgba(255,255,255,.25)', cursor:'pointer' }}>Essential only</button>
-              <button style={{ padding:'8px 14px', borderRadius:8, background:'transparent', color:'rgba(255,255,255,.7)', fontSize:11.5, fontWeight:600, border:'none', textDecoration:'underline', textUnderlineOffset:3, cursor:'pointer' }}>Customize</button>
+              <button onClick={()=>save('all')} style={{ padding:'8px 14px', borderRadius:8, background:'#fff', color:T.ink, fontSize:11.5, fontWeight:700, cursor:'pointer', border:'none' }}>Accept all</button>
+              <button onClick={()=>save('essential')} style={{ padding:'8px 14px', borderRadius:8, background:'transparent', color:'#fff', fontSize:11.5, fontWeight:700, border:'1px solid rgba(255,255,255,.25)', cursor:'pointer' }}>Essential only</button>
+              <button onClick={()=>save('essential')} style={{ padding:'8px 14px', borderRadius:8, background:'transparent', color:'rgba(255,255,255,.7)', fontSize:11.5, fontWeight:600, border:'none', textDecoration:'underline', textUnderlineOffset:3, cursor:'pointer' }}>Customize</button>
             </div>
           </div>
         </div>

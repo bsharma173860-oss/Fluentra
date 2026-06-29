@@ -27,9 +27,9 @@ function TutorCallPage() {
   function pickVoice() {
     if (!canTTS) return null;
     var vs = window.speechSynthesis.getVoices() || [];
-    var exact = vs.filter(function (v) { return v.lang && v.lang.toLowerCase() === locale.toLowerCase(); })[0];
+    var exact = vs.filter(function (v) { return v.lang && v.lang.toLowerCase() === String(locale||'').toLowerCase(); })[0];
     if (exact) return exact;
-    var pre = locale.split('-')[0].toLowerCase();
+    var pre = String(locale||'').split('-')[0].toLowerCase();
     return vs.filter(function (v) { return v.lang && v.lang.toLowerCase().indexOf(pre) === 0; })[0] || null;
   }
   function speak(text, done) {

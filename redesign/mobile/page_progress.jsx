@@ -14,6 +14,7 @@ function MProgressLineChart({ data, color, w=350, h=150 }) {
     y: pad.t + (1 - (d.score - minY) / (maxY - minY)) * innerH,
     label:d.label, score:d.score,
   }));
+  if (!pts.length) return null;
   const path = pts.reduce((a, p, i) => {
     if (i === 0) return `M ${p.x} ${p.y}`;
     const prev = pts[i-1]; const cx = prev.x + (p.x - prev.x) / 2;

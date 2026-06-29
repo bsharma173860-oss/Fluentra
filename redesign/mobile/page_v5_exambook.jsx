@@ -3,7 +3,7 @@
 function MExamHistoryPageV5() {
   const nav = (id) => window.__nav && window.__nav(id);
   const _R = ((typeof window !== 'undefined' && window.__results) || []).filter(function (r) { return r && typeof r.score === 'number'; });
-  const _band = function (pct) { return (pct / 100 * 9).toFixed(1); };
+  const _band = function (pct) { return ((Number(pct)||0) / 100 * 9).toFixed(1); };
   const attempts = _R.slice().reverse().slice(0, 20).map(function (r, i) {
     var m = (r.detail && r.detail.module) || 'practice';
     var label = m.replace(/_/g, ' ').replace(/^./, function (ch) { return ch.toUpperCase(); });
