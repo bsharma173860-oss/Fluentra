@@ -84,7 +84,7 @@
     var token = getToken();
     return fetch(API_URL + path, {
       headers: token ? { Authorization: 'Bearer ' + token } : {},
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json().catch(function () { return null; }); });
   }
 
   function apiPost(path, body) {
@@ -96,7 +96,7 @@
         token ? { Authorization: 'Bearer ' + token } : {}
       ),
       body: JSON.stringify(body),
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json().catch(function () { return null; }); });
   }
 
   // ── Init ───────────────────────────────────────────────────────
@@ -292,6 +292,19 @@
                 (user.user_metadata && user.user_metadata.full_name) ||
                 ((user.email || 'there').split('@')[0]);
               name = String(name || 'there');
+
+              // Self-heal: if no profile row exists yet (e.g. the signup trigger
+              // didn't run), create one. Without a row, every later .update()
+              // (syncStats, setInterests, setUsername…) targets nothing and
+              // silently persists no stats at all.
+              if (!prof || !prof.data) {
+                try {
+                  var seed = { id: user.id, email: user.email, full_name: name };
+                  var _ref = (typeof window !== 'undefined' && window.__refCode) ? window.__refCode() : null;
+                  if (_ref) seed.referred_by = _ref;
+                  client.from('profiles').upsert(seed, { onConflict: 'id' }).then(function () {}, function () {});
+                } catch (e) {}
+              }
 
               var data = {
                 id: user.id,
@@ -733,7 +746,7 @@
           method: 'POST',
           headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}),
           body: JSON.stringify({ task: task, text: text, lang: langCode || 'en' }),
-        }).then(function (r) { return r.json(); });
+        }).then(function (r) { return r.json().catch(function () { return { error: 'unavailable' }; }); });
       },
 
       // Read the signed-in user's current usage (for "X left" UI). RLS lets a
@@ -1070,7 +1083,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b227-exam-progress-srs-audit';
+    window.__FL_BUILD = 'b228-backend-resilience';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
