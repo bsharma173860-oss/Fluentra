@@ -39,10 +39,10 @@ function PublicProfilePage() {
           <div style={{ display:'flex', alignItems:'center', gap:20, marginBottom:24 }}>
             <div style={{ position:'relative' }}>
               {p.avatar_url
-                ? <img src={p.avatar_url} style={{ width:84, height:84, borderRadius:42, objectFit:'cover' }}/>
+                ? <img alt="Avatar" src={p.avatar_url} style={{ width:84, height:84, borderRadius:42, objectFit:'cover' }}/>
                 : <div style={{ width:84, height:84, borderRadius:42, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:36 }}>{(name || String.fromCharCode(63))[0].toUpperCase()}</div>}
               {rel && rel.k === 'me' && (<>
-                <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display:'none' }}/>
+                <input aria-label="Upload avatar" ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display:'none' }}/>
                 <button onClick={function () { if (fileRef.current) fileRef.current.click(); }} style={{ position:'absolute', bottom:-2, right:-2, width:28, height:28, borderRadius:14, background:T.brand, color:'#fff', border:`2px solid ${T.card}`, cursor:'pointer', fontSize:13 }}>{uploading ? '…' : '✎'}</button>
               </>)}
             </div>
@@ -136,7 +136,7 @@ function FeedIco_media(color) { return (<svg width="16" height="16" viewBox="0 0
 function feedAvatar(p, size) {
   var s = size || 40;
   var url = p && p.avatar_url;
-  if (url) return <img src={url} style={{ width:s, height:s, borderRadius:s/2, objectFit:'cover', flexShrink:0 }}/>;
+  if (url) return <img alt="Avatar" src={url} style={{ width:s, height:s, borderRadius:s/2, objectFit:'cover', flexShrink:0 }}/>;
   var n = (p && (p.full_name || p.username)) || '?';
   var parts = n.trim().split(/\s+/);
   var initials = (((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'')).toUpperCase();
@@ -173,7 +173,7 @@ function FeedPostCard(props) {
           {post.mine && <button onClick={removePost} style={{ fontSize:11, color:T.ink4, background:'transparent', cursor:'pointer' }}>Delete</button>}
         </div>
         <div style={{ fontSize:14, color:T.ink, lineHeight:1.55, whiteSpace:'pre-wrap' }}>{post.body}</div>
-        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', maxHeight:540, borderRadius:12, marginTop:10, display:'block', background:'#000' }}/> : <img src={post.image_url} style={{ width:'100%', maxHeight:540, objectFit:'cover', borderRadius:12, marginTop:10, display:'block', border:`1px solid ${T.hairline}` }}/>)}
+        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', maxHeight:540, borderRadius:12, marginTop:10, display:'block', background:'#000' }}/> : <img alt="Post image" src={post.image_url} style={{ width:'100%', maxHeight:540, objectFit:'cover', borderRadius:12, marginTop:10, display:'block', border:`1px solid ${T.hairline}` }}/>)}
         <div style={{ display:'flex', gap:4, marginTop:12, paddingTop:8, borderTop:`1px solid ${T.hairline}` }}>
           <button onClick={toggleLike} onMouseEnter={function(e){ e.currentTarget.style.background=T.bg2; }} onMouseLeave={function(e){ e.currentTarget.style.background='transparent'; }} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:7, fontSize:12.5, fontWeight:700, color: liked ? T.brand : T.ink3, padding:'7px 13px', borderRadius:9, transition:'background .15s' }}>{FeedIco_heart(liked, liked ? T.brand : T.ink3)}<span>{likeCount > 0 ? likeCount + ' ' : ''}Like</span></button>
           <button onClick={openComments} onMouseEnter={function(e){ e.currentTarget.style.background=T.bg2; }} onMouseLeave={function(e){ e.currentTarget.style.background='transparent'; }} style={{ background:'transparent', cursor:'pointer', display:'flex', alignItems:'center', gap:7, fontSize:12.5, fontWeight:700, color: showComments ? T.ink : T.ink3, padding:'7px 13px', borderRadius:9, transition:'background .15s' }}>{FeedIco_chat(showComments ? T.ink : T.ink3)}<span>{cCount > 0 ? cCount + ' ' : ''}Comment</span></button>
@@ -218,7 +218,7 @@ function CircleNav(props) {
           </button>
         ); })}
       </div>
-      <button onClick={function () { setTab('settings'); }} title="Settings" style={{ width:36, height:36, borderRadius:10, background: tab==='settings' ? T.brandLight : 'transparent', color: tab==='settings' ? T.brand : T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.settings ? Icon.settings({ width:18, height:18 }) : '\u2699'}</button>
+      <button aria-label="Settings" onClick={function () { setTab('settings'); }} title="Settings" style={{ width:36, height:36, borderRadius:10, background: tab==='settings' ? T.brandLight : 'transparent', color: tab==='settings' ? T.brand : T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.settings ? Icon.settings({ width:18, height:18 }) : '\u2699'}</button>
     </div>
   );
 }
@@ -242,10 +242,10 @@ function CircleHome() {
             {feedAvatar((typeof window!=='undefined' ? window.__user : null), 40)}
             <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="Share something with your Circle\u2026" rows={2} style={{ flex:1, border:'none', resize:'none', fontSize:15, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit', lineHeight:1.55, minHeight:46, paddingTop:9 }}/>
           </div>
-          {img && <div style={{ padding:'2px 16px 0 68px' }}><div style={{ position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:200, borderRadius:12, display:'block' }}/> : <img src={URL.createObjectURL(img)} style={{ maxHeight:200, borderRadius:12, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:7, right:7, width:26, height:26, borderRadius:13, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:14, lineHeight:1 }}>\u00d7</button></div></div>}
+          {img && <div style={{ padding:'2px 16px 0 68px' }}><div style={{ position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:200, borderRadius:12, display:'block' }}/> : <img alt="Image preview" src={URL.createObjectURL(img)} style={{ maxHeight:200, borderRadius:12, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:7, right:7, width:26, height:26, borderRadius:13, background:'rgba(0,0,0,.6)', color:'#fff', cursor:'pointer', fontSize:14, lineHeight:1 }}>\u00d7</button></div></div>}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', marginTop:12, borderTop:`1px solid ${T.hairline}` }}>
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-              <input ref={composerFileRef} type="file" accept="image/*,video/*" onChange={function (e) { var f = e.target.files && e.target.files[0]; if (f) setImg(f); }} style={{ display:'none' }}/>
+              <input aria-label="Upload avatar" ref={composerFileRef} type="file" accept="image/*,video/*" onChange={function (e) { var f = e.target.files && e.target.files[0]; if (f) setImg(f); }} style={{ display:'none' }}/>
               <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 13px', borderRadius:9, background:T.bg2, cursor:'pointer', fontSize:12.5, color:T.ink2, fontWeight:700 }}>{FeedIco_media(T.ink3)} Media</button>
               <div style={{ display:'flex', background:T.bg2, borderRadius:9, padding:3 }}>
                 {[['public','Public'],['friends','Friends']].map(function (o) { var a = vis===o[0]; return <button key={o[0]} onClick={function () { setVis(o[0]); }} style={{ padding:'6px 12px', borderRadius:7, fontSize:11.5, fontWeight:700, cursor:'pointer', border:'none', background:a?T.card:'transparent', color:a?T.ink:T.ink4, boxShadow:a?'0 1px 2px rgba(0,0,0,.08)':'none' }}>{o[1]}</button>; })}
@@ -351,7 +351,7 @@ function CircleProfile() {
           <div style={{ display:'flex', alignItems:'center', gap:18, marginBottom:22 }}>
             <div style={{ position:'relative' }}>
               {feedAvatar(me, 88)}
-              <input ref={fileRef} type="file" accept="image/*" onChange={onPick} style={{ display:'none' }}/>
+              <input aria-label="Upload image" ref={fileRef} type="file" accept="image/*" onChange={onPick} style={{ display:'none' }}/>
               <button onClick={function () { if (fileRef.current) fileRef.current.click(); }} title="Change photo" style={{ position:'absolute', bottom:-2, right:-2, width:30, height:30, borderRadius:15, background:T.brand, color:'#fff', border:`2px solid ${T.card}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{FeedIco_media('#fff')}</button>
             </div>
             <div style={{ flex:1 }}>

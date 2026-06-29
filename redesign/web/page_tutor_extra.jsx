@@ -104,7 +104,7 @@ function TutorCallPage() {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:T.ink, color:'#fff' }}>
       <div style={{ padding:'18px 28px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
-        <button onClick={function () { try { if (recRef.current) recRef.current.abort(); } catch (e) {} try { if (canTTS) window.speechSynthesis.cancel(); } catch (e) {} window.__nav && window.__nav('tutor'); }} style={{ width:36, height:36, borderRadius:18, background:'rgba(255,255,255,.1)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.arrowL ? Icon.arrowL() : '←'}</button>
+        <button aria-label="Back" onClick={function () { try { if (recRef.current) recRef.current.abort(); } catch (e) {} try { if (canTTS) window.speechSynthesis.cancel(); } catch (e) {} window.__nav && window.__nav('tutor'); }} style={{ width:36, height:36, borderRadius:18, background:'rgba(255,255,255,.1)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.arrowL ? Icon.arrowL() : '←'}</button>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase' }}>Voice call · {langObj.english || code}</div>
           <div style={{ fontFamily:T.serif, fontSize:18, marginTop:2 }}>AI tutor</div>

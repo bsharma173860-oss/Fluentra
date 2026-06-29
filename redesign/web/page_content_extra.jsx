@@ -182,7 +182,7 @@ function ArticleReaderPage() {
               <div style={{ fontSize:13, fontWeight:700, color:T.ink }}>Elena Marín</div>
               <div style={{ fontSize:11, color:T.ink4 }}>Mar 18, 2025 · El País Semanal</div>
             </div>
-            <button style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, background:T.card, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }} onClick={_listen}>{Icon.play({ width:11, height:11 })}Listen</button>
+            <button aria-label="Play audio" style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, background:T.card, display:'flex', alignItems:'center', gap:6, cursor:'pointer' }} onClick={_listen}>{Icon.play({ width:11, height:11 })}Listen</button>
             <button onClick={() => setFontBig(function (b) { return !b; })} style={{ padding:'7px 12px', fontSize: fontBig ? 13 : 11, fontWeight:700, color: fontBig ? T.brand : T.ink2, border:`1px solid ${fontBig ? T.brand : T.border}`, borderRadius:8, background:T.card, cursor:'pointer' }}>Aa</button>
           </div>
 

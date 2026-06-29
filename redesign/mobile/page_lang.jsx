@@ -30,7 +30,7 @@ function MLangDetail() {
   return (
     <>
       <MobileHeader back onBack={()=>nav('dashboard')} title={lang.english}
-        right={<button onClick={()=>nav('settings')} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, boxShadow:MT.shadowSm }}>{Icon.cog ? Icon.cog({ width:14, height:14 }) : '⚙'}</button>}
+        right={<button aria-label="Settings" onClick={()=>nav('settings')} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, boxShadow:MT.shadowSm }}>{Icon.cog ? Icon.cog({ width:14, height:14 }) : '⚙'}</button>}
       />
       <MobileBody padding={0}>
         {/* GRADIENT HERO — mirrors web LangHero */}

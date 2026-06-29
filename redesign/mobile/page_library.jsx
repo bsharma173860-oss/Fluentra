@@ -31,7 +31,7 @@ function MLibrary() {
   return (
     <>
       <MobileHeader title="Library" eyebrow={items.length + (items.length===1?" item":" items")} large right={
-        <button onClick={()=>nav('search')} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, boxShadow:MT.shadowSm }}>{Icon.search({ width:14, height:14 })}</button>
+        <button aria-label="Search" onClick={()=>nav('search')} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2, boxShadow:MT.shadowSm }}>{Icon.search({ width:14, height:14 })}</button>
       }/>
       <MobileBody padding={0}>
         {/* Filter chips */}

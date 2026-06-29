@@ -216,7 +216,7 @@ function AISpeakingSession() {
       {/* Top bar */}
       <div style={{ padding:'18px 32px', borderBottom:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:T.bg, flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <button data-nav="exams" style={{ width:32, height:32, borderRadius:8, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', background:T.bg2 }}>{Icon.x({ width:13, height:13 })}</button>
+          <button aria-label="Close" data-nav="exams" style={{ width:32, height:32, borderRadius:8, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', background:T.bg2 }}>{Icon.x({ width:13, height:13 })}</button>
           <div>
             <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>Live · Whisper + Claude</div>
             <div style={{ fontSize:13, fontWeight:700, color:T.ink, marginTop:2 }}>{topic}</div>

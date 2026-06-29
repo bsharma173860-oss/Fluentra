@@ -43,7 +43,7 @@ function Field({ label, type='text', placeholder, hint, value, onChange, right }
         {right}
       </div>
       <div style={{ position:'relative' }}>
-        <input
+        <input aria-label={label}
           type={type}
           placeholder={placeholder}
           value={value}

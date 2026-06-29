@@ -93,7 +93,7 @@ function MReferPageV5() {
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
-          <button onClick={share} disabled={!link} style={{ padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:7, opacity: link ? 1 : .5 }}>{Icon.share ? Icon.share({width:13,height:13}) : '\u2197'} Share link</button>
+          <button aria-label="Share" onClick={share} disabled={!link} style={{ padding:'13px', borderRadius:12, background:T.ink, color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', gap:7, opacity: link ? 1 : .5 }}>{Icon.share ? Icon.share({width:13,height:13}) : '\u2197'} Share link</button>
           <button onClick={whatsapp} disabled={!link} style={{ padding:'13px', borderRadius:12, background:T.card, color:T.ink, fontSize:12, fontWeight:700, border:`1px solid ${T.hairline}`, opacity: link ? 1 : .5 }}>WhatsApp</button>
         </div>
 

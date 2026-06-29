@@ -143,7 +143,7 @@ function MockTestPage() {
                   <div style={{ fontFamily:T.serif, fontSize:18, color:T.ink, lineHeight:1 }}>{h.score ?? '—'}</div>
                   <div style={{ fontSize:10, color:T.ink4, marginTop:2 }}>{ex.scoreLabel}</div>
                 </div>
-                <button data-nav="mock_results" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.arrow({ width:11, height:11 })}</button>
+                <button aria-label="Next" data-nav="mock_results" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.arrow({ width:11, height:11 })}</button>
               </div>
             ))}
           </Card>

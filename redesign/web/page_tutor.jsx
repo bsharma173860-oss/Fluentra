@@ -346,7 +346,7 @@ function TutorPage() {
 
         {/* Composer */}
         <div style={{ padding:'12px 24px 18px', background:T.bg, flexShrink:0 }}>
-          <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt,image/*,audio/*" onChange={onFile} style={{ display:'none' }}/>
+          <input aria-label="Upload file" ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt,image/*,audio/*" onChange={onFile} style={{ display:'none' }}/>
           {recording && (
             <div style={{ maxWidth:840, margin:'0 auto 8px', padding:'10px 14px', background:'#FCE6E2', border:'1px solid #F4C9C0', borderRadius:12, display:'flex', alignItems:'center', gap:12 }}>
               <span style={{ width:9, height:9, borderRadius:'50%', background:'#C0392B', animation:'pulse 1s infinite' }}/>

@@ -158,7 +158,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
           </div>
           )}
           {m.color === 'listening' && _c && _c.passage && (
-            <button onClick={()=>window.flSpeak && window.flSpeak(_c.passage, code)} style={{ marginBottom:12, padding:'9px 14px', borderRadius:10, background:c.bg, color:c.c, fontSize:12, fontWeight:700, border:`1px solid ${c.c}33`, display:'inline-flex', alignItems:'center', gap:6 }}>{Icon.play ? Icon.play({width:12,height:12}) : '▶'} Play audio</button>
+            <button aria-label="Play audio" onClick={()=>window.flSpeak && window.flSpeak(_c.passage, code)} style={{ marginBottom:12, padding:'9px 14px', borderRadius:10, background:c.bg, color:c.c, fontSize:12, fontWeight:700, border:`1px solid ${c.c}33`, display:'inline-flex', alignItems:'center', gap:6 }}>{Icon.play ? Icon.play({width:12,height:12}) : '▶'} Play audio</button>
           )}
           {m.color === 'writing' && (
             <>
@@ -167,7 +167,7 @@ function MExamRunnerV5({ mode = 'monthly' }) {
             </>
           )}
           {m.color === 'speaking' && (
-            <button onClick={mic.toggle} style={{ width:'100%', padding:'14px', borderRadius:11, background:c.bg, color:c.c, fontSize:12.5, fontWeight:700, border:`1px solid ${c.c}33`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'} {mic.recording ? ('Recording ' + mic.time + ' · tap to stop') : mic.done ? ('Recorded ' + mic.time + ' · tap to redo') : 'Tap to record'}</button>
+            <button aria-label="Record" onClick={mic.toggle} style={{ width:'100%', padding:'14px', borderRadius:11, background:c.bg, color:c.c, fontSize:12.5, fontWeight:700, border:`1px solid ${c.c}33`, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'} {mic.recording ? ('Recording ' + mic.time + ' · tap to stop') : mic.done ? ('Recorded ' + mic.time + ' · tap to redo') : 'Tap to record'}</button>
           )}
           {(m.color === 'reading' || m.color === 'listening') && (
             <div style={{ display:'flex', flexDirection:'column', gap:18 }}>

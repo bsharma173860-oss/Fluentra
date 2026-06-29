@@ -534,7 +534,7 @@ function BadgeDetailModal({ badge: b, onClose, onShare }) {
       <div onClick={e => e.stopPropagation()} style={{ background:T.card, borderRadius:18, width:520, maxWidth:'90%', overflow:'hidden', boxShadow:'0 20px 60px rgba(0,0,0,.18)' }}>
         {/* Header w/ medallion */}
         <div style={{ background:`linear-gradient(155deg, ${rar}18 0%, ${T.bg} 100%)`, padding:'28px 28px 24px', position:'relative', borderBottom:`1px solid ${T.border}` }}>
-          <button onClick={onClose} style={{ position:'absolute', top:16, right:16, width:30, height:30, borderRadius:15, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x({ width:14, height:14 })}</button>
+          <button aria-label="Close" onClick={onClose} style={{ position:'absolute', top:16, right:16, width:30, height:30, borderRadius:15, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x({ width:14, height:14 })}</button>
           <div style={{ display:'flex', gap:18, alignItems:'center' }}>
             <div style={{ width:84, height:84, borderRadius:'50%', background: b.earned ? T.card : T.bg2, border:`3.5px solid ${b.earned ? rar : T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color: b.earned ? rar : T.ink5, flexShrink:0, boxShadow: b.earned ? `0 8px 22px ${rar}33` : 'none', position:'relative' }}>
               {Icon[b.ic]({ width:34, height:34 })}
@@ -602,7 +602,7 @@ function ShareModal({ badge: b, onClose }) {
       <div onClick={e => e.stopPropagation()} style={{ background:T.card, borderRadius:18, width:440, maxWidth:'90%', overflow:'hidden', boxShadow:'0 20px 60px rgba(0,0,0,.18)' }}>
         <div style={{ padding:'18px 22px 14px', borderBottom:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ fontFamily:T.serif, fontSize:20, color:T.ink }}>Share {b.asProfile ? 'progress' : 'badge'}</div>
-          <button onClick={onClose} style={{ width:28, height:28, borderRadius:14, background:T.bg2, border:`1px solid ${T.border}`, color:T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x({ width:13, height:13 })}</button>
+          <button aria-label="Close" onClick={onClose} style={{ width:28, height:28, borderRadius:14, background:T.bg2, border:`1px solid ${T.border}`, color:T.ink3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x({ width:13, height:13 })}</button>
         </div>
         <div style={{ padding:22 }}>
           {/* preview card */}

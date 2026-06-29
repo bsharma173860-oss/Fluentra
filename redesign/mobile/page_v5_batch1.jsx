@@ -29,7 +29,7 @@ function MForgotPwPageV5() {
           <V5b1Pre eyebrow="FORGOT YOUR PASSWORD?" title="Let's get you back in" lede="Enter the email on your account and we'll send a secure reset link — usually arrives in under a minute."/>
           <MCard style={{ padding:14, marginBottom:14 }}>
             <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.1em', marginBottom:7 }}>EMAIL</div>
-            <input value={email} onChange={e=>setEmail(e.target.value)} style={{ width:'100%', padding:'10px 12px', borderRadius:10, background:T.bg2, border:`1px solid ${T.border}`, fontSize:14, color:T.ink, outline:'none' }}/>
+            <input aria-label="Email" value={email} onChange={e=>setEmail(e.target.value)} style={{ width:'100%', padding:'10px 12px', borderRadius:10, background:T.bg2, border:`1px solid ${T.border}`, fontSize:14, color:T.ink, outline:'none' }}/>
           </MCard>
           <button onClick={()=>setStep(1)} style={{ width:'100%', padding:'14px', borderRadius:13, background:T.brandGrad, color:'#fff', fontSize:13.5, fontWeight:700, boxShadow:`0 6px 16px ${T.brand}40` }}>Send reset link</button>
           <button onClick={()=>nav('auth_login')} style={{ width:'100%', padding:'12px', marginTop:9, fontSize:12, color:T.ink3, fontWeight:600, background:'transparent' }}>Back to sign in</button>

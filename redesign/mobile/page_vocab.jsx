@@ -20,7 +20,7 @@ function MVocabStudy({ deck, words, onExit }) {
       <div style={{ background:`linear-gradient(180deg, ${deck.accent.bg} 0%, ${T.bg} 70%)`, flex:1, display:'flex', flexDirection:'column' }}>
         {/* Top bar */}
         <div style={{ padding:'8px 16px 4px', display:'flex', alignItems:'center', gap:8 }}>
-          <button onClick={onExit} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2 }}>{Icon.x()}</button>
+          <button aria-label="Exit" onClick={onExit} style={{ width:36, height:36, borderRadius:18, background:T.card, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', color:T.ink2 }}>{Icon.x()}</button>
           <div style={{ flex:1, height:6, background:T.trackWarm, borderRadius:3, overflow:'hidden' }}>
             <div style={{ height:'100%', width:`${pct}%`, background:accent, borderRadius:3, transition:'width .3s' }}/>
           </div>

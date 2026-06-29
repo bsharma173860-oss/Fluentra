@@ -141,7 +141,7 @@ function DashboardPage() {
               <div style={{ fontSize:13, fontWeight:700, color:T.ink, lineHeight:1.2 }}>{lang.english} added</div>
               <div style={{ fontSize:11.5, color:T.ink4, marginTop:2 }}>Find it in your sidebar</div>
             </div>
-            <button onClick={() => { setToastVisible(false); window.__justAddedLang = null; }} style={{ width:24, height:24, borderRadius:6, color:T.ink5, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.x({ width:11, height:11 })}</button>
+            <button aria-label="Dismiss" onClick={() => { setToastVisible(false); window.__justAddedLang = null; }} style={{ width:24, height:24, borderRadius:6, color:T.ink5, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.x({ width:11, height:11 })}</button>
             <style>{`@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
           </div>
         );

@@ -55,7 +55,7 @@ function HelpPage() {
             <div style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search()}</div>
             <div style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', display:'flex', gap:6, alignItems:'center' }}>
               <span style={{ fontSize:11, color:T.ink5, fontFamily:T.sans }}>or</span>
-              <button onClick={() => window.__nav && window.__nav('tutor')} style={{ padding:'7px 12px', fontSize:12, fontWeight:700, color:T.brand, background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:8, display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>{Icon.spark({ width:11, height:11 })} Ask the tutor</button>
+              <button aria-label="Ask the tutor" onClick={() => window.__nav && window.__nav('tutor')} style={{ padding:'7px 12px', fontSize:12, fontWeight:700, color:T.brand, background:T.brandLight, border:`1px solid ${T.brandLight}`, borderRadius:8, display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>{Icon.spark({ width:11, height:11 })} Ask the tutor</button>
             </div>
           </div>
           {/* Quick suggested */}
@@ -76,7 +76,7 @@ function HelpPage() {
                 <div style={{ fontSize:11, color:T.ink4, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>Most asked this week</div>
                 <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1.1 }}>What others are reading</div>
               </div>
-              <button onClick={() => window.__nav && window.__nav('tutor')} style={{ fontSize:12, color:T.brand, fontWeight:700, display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>All popular {Icon.arrow({ width:11, height:11 })}</button>
+              <button aria-label="See all" onClick={() => window.__nav && window.__nav('tutor')} style={{ fontSize:12, color:T.brand, fontWeight:700, display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>All popular {Icon.arrow({ width:11, height:11 })}</button>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12 }}>
               {popular.map((p, i) => (

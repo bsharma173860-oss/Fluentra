@@ -100,9 +100,9 @@ function MTutorCallPageV5() {
 
       {/* Controls */}
       <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', gap:14, padding:'18px 16px 26px', borderTop:'1px solid rgba(255,255,255,.08)' }}>
-        <button onClick={()=>setMuted(m=>!m)} style={{ width:54, height:54, borderRadius:27, background: muted ? T.brand : 'rgba(255,255,255,.08)', border:`1px solid ${muted ? T.brand : 'rgba(255,255,255,.14)'}`, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.mic ? Icon.mic({width:18,height:18}) : '🎙'}</button>
+        <button aria-label="Toggle mute" onClick={()=>setMuted(m=>!m)} style={{ width:54, height:54, borderRadius:27, background: muted ? T.brand : 'rgba(255,255,255,.08)', border:`1px solid ${muted ? T.brand : 'rgba(255,255,255,.14)'}`, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.mic ? Icon.mic({width:18,height:18}) : '🎙'}</button>
         <button onClick={()=>nav('tutor')} style={{ width:64, height:64, borderRadius:32, background:'#D63E3E', color:'#fff', boxShadow:'0 8px 24px rgba(214,62,62,.4)', border:'none', fontSize:20 }}>✕</button>
-        <button onClick={()=>setSpeaker(s=>!s)} style={{ width:54, height:54, borderRadius:27, background: speaker ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.14)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.head ? Icon.head({width:18,height:18}) : '🔊'}</button>
+        <button aria-label="Toggle speaker" onClick={()=>setSpeaker(s=>!s)} style={{ width:54, height:54, borderRadius:27, background: speaker ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.14)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.head ? Icon.head({width:18,height:18}) : '🔊'}</button>
       </div>
     </div>
   );
@@ -199,9 +199,9 @@ function MPublicProfilePageV5() {
          : <>
            <div style={{ textAlign:'center', padding:'16px 0 20px' }}>
              <div style={{ position:'relative', display:'inline-block' }}>
-               {p.avatar_url ? <img src={p.avatar_url} style={{ width:84, height:84, borderRadius:42, objectFit:'cover' }}/> : V5_av(ini(name), 84, T.brandGrad)}
+               {p.avatar_url ? <img alt="Avatar" src={p.avatar_url} style={{ width:84, height:84, borderRadius:42, objectFit:'cover' }}/> : V5_av(ini(name), 84, T.brandGrad)}
                {rel && rel.k === 'me' && (<>
-                 <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display:'none' }}/>
+                 <input aria-label="Upload avatar" ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display:'none' }}/>
                  <button onClick={function () { if (fileRef.current) fileRef.current.click(); }} style={{ position:'absolute', bottom:0, right:0, width:28, height:28, borderRadius:14, background:T.brand, color:'#fff', border:`2px solid ${T.card}`, fontSize:13 }}>{uploading ? '…' : '✎'}</button>
                </>)}
              </div>
@@ -286,12 +286,12 @@ function MFeedPostCard(props) {
     <MCard style={{ padding:0, marginBottom:10, overflow:'hidden' }}>
       <div style={{ padding:'12px 14px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-          {a.avatar_url ? <img src={a.avatar_url} style={{ width:36, height:36, borderRadius:18, objectFit:'cover' }}/> : V5_av(ini(name), 36, T.brandGrad)}
+          {a.avatar_url ? <img alt="Avatar" src={a.avatar_url} style={{ width:36, height:36, borderRadius:18, objectFit:'cover' }}/> : V5_av(ini(name), 36, T.brandGrad)}
           <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:13, fontWeight:700, color:T.ink }}>{name}</div><div style={{ fontSize:10.5, color:T.ink5 }}>{a.username?'@'+a.username+' · ':''}{ago(post.created_at)}{post.visibility==='friends'?' · friends':''}</div></div>
           {post.mine && <button onClick={rm} style={{ fontSize:10.5, color:T.ink4, background:'transparent' }}>Delete</button>}
         </div>
         <div style={{ fontSize:13.5, color:T.ink, lineHeight:1.5, whiteSpace:'pre-wrap' }}>{post.body}</div>
-        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', borderRadius:10, marginTop:8, display:'block', background:'#000' }}/> : <img src={post.image_url} style={{ width:'100%', borderRadius:10, marginTop:8, display:'block' }}/>)}
+        {post.image_url && (/\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(post.image_url) ? <video src={post.image_url} controls playsInline style={{ width:'100%', borderRadius:10, marginTop:8, display:'block', background:'#000' }}/> : <img alt="Post image" src={post.image_url} style={{ width:'100%', borderRadius:10, marginTop:8, display:'block' }}/>)}
         <div style={{ display:'flex', gap:16, marginTop:10 }}>
           <button onClick={tl} style={{ background:'transparent', fontSize:12, fontWeight:700, color: liked?T.brand:T.ink3 }}>{liked?'♥':'♡'} {lc>0?lc:''} Like</button>
           <button onClick={oc} style={{ background:'transparent', fontSize:12, fontWeight:700, color:T.ink3 }}>💬 {cc>0?cc:''} Comment</button>
@@ -341,10 +341,10 @@ function MActivityFeedPageV5() {
           <>
             <MCard style={{ padding:12, marginBottom:14 }}>
               <textarea value={draft} onChange={function (e) { setDraft(e.target.value); }} placeholder="What did you learn today?" rows={3} style={{ width:'100%', border:'none', resize:'vertical', fontSize:13.5, color:T.ink, outline:'none', background:'transparent', fontFamily:'inherit' }}/>
-              {img && <div style={{ marginTop:8, position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:120, borderRadius:10, display:'block' }}/> : <img src={URL.createObjectURL(img)} style={{ maxHeight:120, borderRadius:10, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:5, right:5, width:22, height:22, borderRadius:11, background:'rgba(0,0,0,.6)', color:'#fff', fontSize:12 }}>×</button></div>}
+              {img && <div style={{ marginTop:8, position:'relative', display:'inline-block' }}>{(img.type && img.type.indexOf('video')===0) ? <video src={URL.createObjectURL(img)} controls style={{ maxHeight:120, borderRadius:10, display:'block' }}/> : <img alt="Image preview" src={URL.createObjectURL(img)} style={{ maxHeight:120, borderRadius:10, display:'block' }}/>}<button onClick={function () { setImg(null); }} style={{ position:'absolute', top:5, right:5, width:22, height:22, borderRadius:11, background:'rgba(0,0,0,.6)', color:'#fff', fontSize:12 }}>×</button></div>}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:8, paddingTop:8, borderTop:`1px solid ${T.hairline}` }}>
                 <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-                  <input ref={composerFileRef} type="file" accept="image/*,video/*" onChange={function (e) { var fl = e.target.files && e.target.files[0]; if (fl) setImg(fl); }} style={{ display:'none' }}/>
+                  <input aria-label="Upload image" ref={composerFileRef} type="file" accept="image/*,video/*" onChange={function (e) { var fl = e.target.files && e.target.files[0]; if (fl) setImg(fl); }} style={{ display:'none' }}/>
                   <button onClick={function () { if (composerFileRef.current) composerFileRef.current.click(); }} style={{ background:'transparent', fontSize:13, color:T.ink3, fontWeight:700 }}>📷</button>
                   <select value={vis} onChange={function (e) { setVis(e.target.value); }} style={{ fontSize:12, fontWeight:600, color:T.ink2, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 9px', background:T.card }}><option value="public">🌍 Public</option><option value="friends">👥 Friends</option></select>
                 </div>

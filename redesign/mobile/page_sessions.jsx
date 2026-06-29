@@ -9,7 +9,7 @@ function MSessionHeader({ title, eyebrow, progress, timeLeft, color, onExit }) {
   return (
     <div style={{ flexShrink:0, background:MT.card, borderBottom:`1px solid ${MT.divider}`, padding:'4px 14px 10px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:36, marginBottom:8 }}>
-        <button onClick={()=> onExit ? onExit() : nav('practice')} style={{ width:32, height:32, borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center', color:MT.ink2, background:MT.bg2 }}>{Icon.x ? Icon.x() : Icon.arrowL()}</button>
+        <button aria-label="Exit" onClick={()=> onExit ? onExit() : nav('practice')} style={{ width:32, height:32, borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center', color:MT.ink2, background:MT.bg2 }}>{Icon.x ? Icon.x() : Icon.arrowL()}</button>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:9.5, color:MT.ink4, fontWeight:800, letterSpacing:'.14em', textTransform:'uppercase' }}>{eyebrow}</div>
           <div style={{ fontSize:13, color:MT.ink, fontWeight:700, marginTop:1, lineHeight:1.1 }}>{title}</div>

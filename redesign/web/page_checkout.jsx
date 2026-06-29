@@ -54,7 +54,7 @@ function CheckoutInput({ label, value, onChange, placeholder, type='text', maxLe
     <label style={{ display:'block' }}>
       <div style={{ fontSize:11, fontWeight:600, color:T.ink3, marginBottom:6, letterSpacing:'.02em' }}>{label}</div>
       <div style={{ position:'relative' }}>
-        <input
+        <input aria-label="Card details"
           type={type}
           value={value}
           onChange={onChange}

@@ -498,7 +498,7 @@ function TutorTab({ lang }) {
           {thinking && <div style={{ fontSize:12, color:T.ink4, paddingLeft:38 }}>Tutor is typing…</div>}
         </div>
         <div style={{ padding:'14px 22px', borderTop:`1px solid ${T.hairline}`, display:'flex', gap:10 }}>
-          <input value={input} onChange={function(e){ setInput(e.target.value); }} onKeyDown={function(e){ if(e.key==='Enter') send(); }}
+          <input aria-label="Your message" value={input} onChange={function(e){ setInput(e.target.value); }} onKeyDown={function(e){ if(e.key==='Enter') send(); }}
             placeholder="Ask anything — grammar, vocab, phrases, exam tips…"
             style={{ flex:1, padding:'10px 14px', borderRadius:10, border:`1.5px solid ${T.border}`, fontSize:13, color:T.ink, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
           <button onClick={send} disabled={thinking} style={{ width:40, height:40, borderRadius:10, background:thinking?T.ink4:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, cursor:thinking?'default':'pointer' }}>

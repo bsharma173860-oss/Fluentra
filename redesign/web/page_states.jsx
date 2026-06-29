@@ -205,11 +205,11 @@ function StatesPage() {
                   <div style={{ fontSize:12, color:T.ink4, marginBottom:18 }}>Welcome back — let's keep your streak alive.</div>
                   <div style={{ marginBottom:14 }}>
                     <div style={{ fontSize:11, color:T.ink3, fontWeight:600, marginBottom:6 }}>Email</div>
-                    <input defaultValue="maria@example.com" style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, fontFamily:"'Inter',sans-serif" }}/>
+                    <input aria-label="Email" defaultValue="maria@example.com" style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, fontFamily:"'Inter',sans-serif" }}/>
                   </div>
                   <div style={{ marginBottom:6 }}>
                     <div style={{ fontSize:11, color:T.brand, fontWeight:600, marginBottom:6 }}>Password</div>
-                    <input type="password" defaultValue="••••" style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.brand}`, fontSize:13, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
+                    <input aria-label="Password" type="password" defaultValue="••••" style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.brand}`, fontSize:13, fontFamily:"'Inter',sans-serif", outline:'none' }}/>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8, color:T.brand, fontSize:11.5, fontWeight:600, padding:'8px 10px', background:T.brandLight, borderRadius:7, marginBottom:14 }}>
                     <span style={{ width:14, height:14, borderRadius:7, background:T.brand, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:700 }}>!</span>

@@ -142,7 +142,7 @@ function MNotificationsPageV5() {
 
   return (
     <>
-      <MobileHeader title="Inbox" right={unread > 0 ? <button onClick={()=>setReadAll(true)} style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>{Icon.check ? Icon.check({width:13,height:13}) : '✓'}</button> : undefined}/>
+      <MobileHeader title="Inbox" right={unread > 0 ? <button aria-label="Mark all read" onClick={()=>setReadAll(true)} style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>{Icon.check ? Icon.check({width:13,height:13}) : '✓'}</button> : undefined}/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
         <V5_pre eyebrow={`${unread} UNREAD · ${NOTIFS.length} TOTAL`} title="Your inbox" lede="Streaks, social pings and account events from the past week."/>
         {/* Pill tabs */}
@@ -445,7 +445,7 @@ function MVocabPageV5() {
 
   return (
     <>
-      <MobileHeader title="Vocabulary" right={<button onClick={()=>nav('search')} style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.search({width:13,height:13})}</button>}/>
+      <MobileHeader title="Vocabulary" right={<button aria-label="Search" onClick={()=>nav('search')} style={{ width:34, height:34, borderRadius:17, background:T.card, border:`1px solid ${T.hairline}`, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.search({width:13,height:13})}</button>}/>
       <MobileBody padding={[0,16,30]} tabBarPad={false}>
         <V5_pre eyebrow={dueWords.length + ' CARDS DUE TODAY'} title="Vocabulary" lede="Spaced-repetition decks across all your languages — review now to keep them sticky."/>
         {/* Today's review hero — dark */}
@@ -514,7 +514,7 @@ function MVocabPageV5() {
                   </div>
                   <div style={{ fontSize:10, color:T.ink5, marginTop:2 }}>{c.m} · {c.d}</div>
                 </div>
-                <button onClick={()=>window.flSpeak && window.flSpeak(c.f, _vcode)} style={{ width:26, height:26, borderRadius:7, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>{Icon.play ? Icon.play({width:10,height:10}) : '▶'}</button>
+                <button aria-label="Play audio" onClick={()=>window.flSpeak && window.flSpeak(c.f, _vcode)} style={{ width:26, height:26, borderRadius:7, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>{Icon.play ? Icon.play({width:10,height:10}) : '▶'}</button>
               </div>
             ))}
           </MCard>
@@ -570,7 +570,7 @@ function MTutorPageV5() {
               <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.16em', color:'rgba(255,255,255,.55)', marginBottom:2 }}>YOUR TUTOR</div>
               <div style={{ fontSize:13, fontWeight:700 }}>Ask anything — grammar, words, conversation</div>
             </div>
-            <button onClick={()=>setShowIntro(false)} style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.12)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>{Icon.x ? Icon.x({width:11,height:11}) : '×'}</button>
+            <button aria-label="Close" onClick={()=>setShowIntro(false)} style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.12)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', border:'none' }}>{Icon.x ? Icon.x({width:11,height:11}) : '×'}</button>
           </div>
         </div>
         )}
@@ -608,9 +608,9 @@ function MTutorPageV5() {
 
       {/* Input bar */}
       <div style={{ padding:'10px 14px 14px', background:T.card, borderTop:`1px solid ${T.hairline}`, flexShrink:0, display:'flex', gap:8, alignItems:'center' }}>
-        <button onClick={()=>window.__nav && window.__nav('tutor_call')} style={{ width:36, height:36, borderRadius:10, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:'none' }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'}</button>
+        <button aria-label="Voice tutor" onClick={()=>window.__nav && window.__nav('tutor_call')} style={{ width:36, height:36, borderRadius:10, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:'none' }}>{Icon.mic ? Icon.mic({width:14,height:14}) : '🎙'}</button>
         <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{ if (e.key==="Enter") send(); }} placeholder="Ask anything…" style={{ flex:1, padding:'10px 13px', borderRadius:11, background:T.bg2, border:`1px solid ${T.border}`, fontSize:13, color:T.ink, outline:'none', minWidth:0 }}/>
-        <button onClick={()=>send()} style={{ width:36, height:36, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 10px ${T.brand}55`, flexShrink:0 }}>{Icon.arrow ? Icon.arrow({width:13,height:13}) : '→'}</button>
+        <button aria-label="Send" onClick={()=>send()} style={{ width:36, height:36, borderRadius:10, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 10px ${T.brand}55`, flexShrink:0 }}>{Icon.arrow ? Icon.arrow({width:13,height:13}) : '→'}</button>
       </div>
     </div>
   );
@@ -727,7 +727,7 @@ function MSearchPageV5() {
         <div style={{ position:'relative', marginBottom:14 }}>
           <div style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:T.ink4 }}>{Icon.search({width:14,height:14})}</div>
           <input value={q} onChange={e=>setQ(e.target.value)} autoFocus placeholder="Search lessons, vocab, languages…" style={{ width:'100%', padding:'12px 40px 12px 38px', borderRadius:12, background:T.card, border:'1px solid '+T.hairline, fontSize:13, color:T.ink, outline:'none', boxShadow:MT.shadowSm }}/>
-          {q && <button onClick={()=>setQ('')} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', width:26, height:26, borderRadius:13, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x ? Icon.x({width:11,height:11}) : '×'}</button>}
+          {q && <button aria-label="Clear" onClick={()=>setQ('')} style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', width:26, height:26, borderRadius:13, background:T.bg2, color:T.ink4, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon.x ? Icon.x({width:11,height:11}) : '×'}</button>}
         </div>
 
         {!q ? (
@@ -735,11 +735,11 @@ function MSearchPageV5() {
             <V5_pre eyebrow="WHAT WOULD YOU LIKE TO STUDY?" title="Search anything" lede="Lessons, vocab, grammar topics, languages and pages — all in one place."/>
             {recent.length > 0 && V5_label('RECENT')}
             {recent.length > 0 && <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:18 }}>
-              {recent.map(r => <button key={r} onClick={()=>setQ(r)} style={{ padding:'7px 12px', borderRadius:99, background:T.card, border:'1px solid '+T.hairline, fontSize:11.5, color:T.ink2, fontWeight:600, display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.clock ? Icon.clock({width:11,height:11}) : '⏱'} {r}</button>)}
+              {recent.map(r => <button aria-label="Recent search" key={r} onClick={()=>setQ(r)} style={{ padding:'7px 12px', borderRadius:99, background:T.card, border:'1px solid '+T.hairline, fontSize:11.5, color:T.ink2, fontWeight:600, display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.clock ? Icon.clock({width:11,height:11}) : '⏱'} {r}</button>)}
             </div>}
             {trending.length > 0 && V5_label('TOPICS TO TRY')}
             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-              {trending.map(t => <button key={t} onClick={()=>setQ(t)} style={{ padding:'7px 12px', borderRadius:99, background:T.brandLight, color:T.brand, fontSize:11.5, fontWeight:700, border:'1px solid '+T.brand+'33', display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.spark ? Icon.spark({width:11,height:11}) : '✦'} {t}</button>)}
+              {trending.map(t => <button aria-label="Suggested search" key={t} onClick={()=>setQ(t)} style={{ padding:'7px 12px', borderRadius:99, background:T.brandLight, color:T.brand, fontSize:11.5, fontWeight:700, border:'1px solid '+T.brand+'33', display:'inline-flex', alignItems:'center', gap:5 }}>{Icon.spark ? Icon.spark({width:11,height:11}) : '✦'} {t}</button>)}
             </div>
           </>
         ) : (

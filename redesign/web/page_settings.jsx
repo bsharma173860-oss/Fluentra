@@ -235,7 +235,7 @@ function ReferralCard() {
           <div style={{ fontFamily:T.serif, fontSize:21, color:T.ink, lineHeight:1.12, marginBottom:5 }}>Bring a friend to Fluentra.</div>
           <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, marginBottom:15, maxWidth:440 }}>Share your link. When a friend joins through it and upgrades, you both get rewarded.</div>
           <div style={{ display:'flex', gap:8, alignItems:'stretch', maxWidth:480 }}>
-            <input readOnly value={link} onFocus={function (e) { e.target.select(); }} style={{ flex:1, minWidth:0, padding:'11px 13px', borderRadius:11, border:'1px solid rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.7)', fontSize:12.5, color:T.ink2, fontFamily:'monospace' }}/>
+            <input aria-label="Referral link" readOnly value={link} onFocus={function (e) { e.target.select(); }} style={{ flex:1, minWidth:0, padding:'11px 13px', borderRadius:11, border:'1px solid rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.7)', fontSize:12.5, color:T.ink2, fontFamily:'monospace' }}/>
             <button onClick={copy} style={{ flexShrink:0, padding:'11px 18px', borderRadius:11, border:'none', background: copied ? T.listening.c : 'linear-gradient(135deg,#C04A06,#E8732F)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', boxShadow:'0 4px 12px rgba(192,74,6,0.25)' }}>{copied ? 'Copied ✓' : 'Copy link'}</button>
           </div>
           <div style={{ fontSize:11, color:T.ink4, marginTop:9 }}>Your code: <strong style={{ color:T.ink2, fontFamily:'monospace' }}>{code}</strong></div>

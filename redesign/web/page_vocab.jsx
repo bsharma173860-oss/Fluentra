@@ -401,8 +401,8 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
                 <Chip label={`Strength ${card.strength}/5`} accent={T.ink3} bg={T.bg2} style={{ fontSize:10 }}/>
               </div>
               <div style={{ display:'flex', gap:6 }}>
-                <button onClick={e => { e.stopPropagation(); /* star toggle local-only */ card.starred = !card.starred; }} title="Star" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer' }}>{Icon.star({ width:13, height:13, fill: card.starred ? 'currentColor' : 'none' })}</button>
-                <button onClick={e => { e.stopPropagation(); speak(card.word); }} title="Hear it" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer' }}>{Icon.head({ width:14, height:14 })}</button>
+                <button aria-label="Star word" onClick={e => { e.stopPropagation(); /* star toggle local-only */ card.starred = !card.starred; }} title="Star" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer' }}>{Icon.star({ width:13, height:13, fill: card.starred ? 'currentColor' : 'none' })}</button>
+                <button aria-label="Listen" onClick={e => { e.stopPropagation(); speak(card.word); }} title="Hear it" style={{ width:30, height:30, borderRadius:8, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer' }}>{Icon.head({ width:14, height:14 })}</button>
               </div>
             </div>
 
@@ -436,9 +436,9 @@ function VocabStudy({ deck, words, kind = 'due', onExit }) {
         {/* Action row */}
         {!flipped ? (
           <div style={{ marginTop:32, display:'flex', alignItems:'center', gap:14 }}>
-            <button onClick={reshuffle} title="Reshuffle remaining cards" style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.refresh({ width:16, height:16 })}</button>
+            <button aria-label="Shuffle" onClick={reshuffle} title="Reshuffle remaining cards" style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.refresh({ width:16, height:16 })}</button>
             <Btn label="Show answer" size="lg" accent={accent} onClick={() => setFlipped(true)} iconRight={<span style={{ fontSize:10, fontWeight:600, padding:'2px 6px', background:'rgba(255,255,255,.22)', borderRadius:4, marginLeft:4 }}>SPACE</span>}/>
-            <button onClick={() => speak(card.word)} title="Hear pronunciation" style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.head({ width:16, height:16 })}</button>
+            <button aria-label="Listen" onClick={() => speak(card.word)} title="Hear pronunciation" style={{ width:44, height:44, borderRadius:22, background:T.card, border:`1px solid ${T.border}`, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>{Icon.head({ width:16, height:16 })}</button>
           </div>
         ) : (
           <div style={{ marginTop:32, display:'flex', alignItems:'center', gap:10 }}>

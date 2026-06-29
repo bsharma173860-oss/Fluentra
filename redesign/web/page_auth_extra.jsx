@@ -22,7 +22,7 @@ function ForgotPwPage() {
     <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:T.bg, padding:40 }}>
       <div style={{ width:'100%', maxWidth:420, background:T.card, border:`1px solid ${T.border}`, borderRadius:18, padding:'40px 36px', boxShadow:T.shadow }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:28 }}>
-          <button data-nav="auth_login" style={{ width:32, height:32, borderRadius:8, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', background:'transparent', border:'none', cursor:'pointer' }}>{Icon.arrowL()}</button>
+          <button aria-label="Back" data-nav="auth_login" style={{ width:32, height:32, borderRadius:8, color:T.ink2, display:'flex', alignItems:'center', justifyContent:'center', background:'transparent', border:'none', cursor:'pointer' }}>{Icon.arrowL()}</button>
           <AuthLogo size="sm"/>
         </div>
         {sent ? (
