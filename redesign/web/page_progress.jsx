@@ -46,9 +46,11 @@ function MiniLineChart({ data, color, w=520, h=140 }) {
 function getExamStreams() {
   var R = (typeof window !== 'undefined' && window.__results) ? window.__results : [];
   function toRun(r) {
-    var unit = (r.detail && r.detail.unit) ? r.detail.unit : '/9';
-    var sc = Number(r.score) || 0;
-    var val = unit === '%' ? Math.round(sc) : Math.round(sc / 100 * 9 * 2) / 2;
+    var ex = (typeof examFor === 'function') ? examFor(r.lang || (typeof window !== 'undefined' && window.__langCode) || 'en') : null;
+    var unit = (r.detail && r.detail.unit) ? r.detail.unit : ((ex && ex.scoreUnit) || '/9');
+    var max = parseFloat(String(unit).replace('/', '')) || 9;
+    var sc = Number(r.score) || 0;  // stored 0-100
+    var val = unit === '%' ? Math.round(sc) : (max <= 10 ? Math.round(sc / 100 * max * 2) / 2 : Math.round(sc / 100 * max));
     var mod = (r.detail && r.detail.module) || '';
     var labelMap = { reading:'Reading', listening:'Listening', writing:'Writing', speaking:'Speaking', mock_exam:'Full mock' };
     return { date: r.updated_at ? new Date(r.updated_at).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : 'Recent', score: val, unit: unit, label: labelMap[mod] || 'Session', delta: null, dur: '' };

@@ -205,7 +205,7 @@ function StatesPage() {
                   <div style={{ fontSize:12, color:T.ink4, marginBottom:18 }}>Welcome back — let's keep your streak alive.</div>
                   <div style={{ marginBottom:14 }}>
                     <div style={{ fontSize:11, color:T.ink3, fontWeight:600, marginBottom:6 }}>Email</div>
-                    <input aria-label="Email" defaultValue="maria@example.com" style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, fontFamily:"'Inter',sans-serif" }}/>
+                    <input aria-label="Email" defaultValue="you@example.com" style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:`1.5px solid ${T.border}`, fontSize:13, fontFamily:"'Inter',sans-serif" }}/>
                   </div>
                   <div style={{ marginBottom:6 }}>
                     <div style={{ fontSize:11, color:T.brand, fontWeight:600, marginBottom:6 }}>Password</div>
@@ -269,7 +269,7 @@ function StatesPage() {
                   </div>
                   <div style={{ fontFamily:T.serif, fontSize:24, color:T.ink, lineHeight:1.15, marginBottom:6 }}>Welcome to Fluentra Pro</div>
                   <div style={{ fontFamily:T.serif, fontStyle:'italic', fontSize:13, color:T.brand, marginBottom:8, letterSpacing:'.02em' }}>Speak it. Score it. Own it.</div>
-                  <div style={{ fontSize:13, color:T.ink4, maxWidth:300, lineHeight:1.55, marginBottom:18 }}>Your card was charged $24.00. A receipt is on the way to maria@example.com.</div>
+                  <div style={{ fontSize:13, color:T.ink4, maxWidth:300, lineHeight:1.55, marginBottom:18 }}>Your card was charged $24.00. A receipt is on the way to you@example.com.</div>
                   <div style={{ width:'100%', maxWidth:300, padding:'12px 14px', background:T.bg2, borderRadius:10, marginBottom:18, display:'flex', justifyContent:'space-between', fontSize:12.5 }}>
                     <span style={{ color:T.ink3 }}>Next billing date</span>
                     <span style={{ color:T.ink, fontWeight:600 }}>June 7, 2026</span>
