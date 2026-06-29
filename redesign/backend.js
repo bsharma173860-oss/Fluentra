@@ -222,7 +222,7 @@
         searchUsers: function (q) { if (!q || q.length < 2) return Promise.resolve([]); var like = '%' + q.replace(/[%,]/g, '') + '%'; return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak').or('username.ilike.' + like + ',full_name.ilike.' + like).limit(20).then(function (r) { return r.data || []; }); },
 
         leaderboard: function (by, limit) { var col = (by === 'streak' ? 'streak' : 'xp'); return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak,best_score').eq('is_public', true).order(col, { ascending: false }).limit(limit || 50).then(function (r) { return r.data || []; }); },
-        syncStats: function () { return this._uid().then(function (id) { if (!id) return null; var R = window.__results || []; var best = R.length ? Math.max.apply(null, R.map(function (x) { return Number(x.score) || 0; })) : 0; var streak = (typeof window.computeStreak === 'function') ? (window.computeStreak(R) || 0) : 0; var xp = (window.__user && window.__user.xp) || R.length * 10; return client.from('profiles').update({ best_score: Math.round(best), streak: streak, xp: xp }).eq('id', id); }).catch(function () {}); },
+        syncStats: function () { return this._uid().then(function (id) { if (!id) return null; var R = window.__results || []; var best = R.length ? Math.max.apply(null, R.map(function (x) { return Number(x.score) || 0; })) : 0; var streak = (typeof window.computeStreak === 'function') ? (window.computeStreak(R) || 0) : 0; var xp = Math.max((window.__user && window.__user.xp) || 0, R.length * 10); if (window.__user) window.__user.xp = xp; return client.from('profiles').update({ best_score: Math.round(best), streak: streak, xp: xp }).eq('id', id); }).catch(function () {}); },
 
         listFriends: function () { return this._uid().then(function (id) { if (!id) return { friends: [], incoming: [], outgoing: [] }; return client.from('friendships').select('*').or('requester.eq.' + id + ',addressee.eq.' + id).then(function (res) { var rows = res.data || []; var ids = {}; rows.forEach(function (f) { ids[f.requester] = 1; ids[f.addressee] = 1; }); delete ids[id]; var idList = Object.keys(ids); var profP = idList.length ? client.from('profiles').select('id,full_name,username,avatar_url,xp,streak').in('id', idList).then(function (p) { return p.data || []; }) : Promise.resolve([]); return profP.then(function (profs) { var pm = {}; profs.forEach(function (p) { pm[p.id] = p; }); var friends = [], incoming = [], outgoing = []; rows.forEach(function (f) { var other = f.requester === id ? f.addressee : f.requester; var rec = { friendshipId: f.id, status: f.status, profile: pm[other] || { id: other } }; if (f.status === 'accepted') friends.push(rec); else if (f.addressee === id) incoming.push(rec); else outgoing.push(rec); }); return { friends: friends, incoming: incoming, outgoing: outgoing }; }); }); }); },
         sendFriendRequest: function (addresseeId) { return this._uid().then(function (id) { if (!id) return null; return client.from('friendships').insert({ requester: id, addressee: addresseeId, status: 'pending' }); }); },
@@ -1004,7 +1004,34 @@
       if (!headers.Authorization) { try { console.warn('[FL] save-result skipped — not signed in'); } catch (e) {} return Promise.resolve({ ok: false, reason: 'no-auth' }); }
       return fetch('/api/save-result', { method: 'POST', headers: headers, body: JSON.stringify(body || {}) })
         .then(function (r) {
-          if (r.ok) return r.json().then(function (j) { return { ok: true, data: j }; }).catch(function () { return { ok: true }; });
+          if (r.ok) {
+            // Reflect the new result locally right away so streak, best score,
+            // XP and the learner-model update immediately — then refetch
+            // authoritatively in the background (which also re-runs syncStats to
+            // persist best/streak/xp to the profile). Without this, the local
+            // __results array — which every stat reads from — stayed stale until
+            // a full reload, so a just-finished lesson didn't move any numbers.
+            try {
+              var _opt = {
+                lang: (body && body.lang) || window.__langCode || 'en',
+                score: (body && typeof body.score === 'number') ? body.score : (Number(body && body.score) || 0),
+                detail: (body && body.detail) || null,
+                content_id: (body && body.content_id) || null,
+                status: (body && body.status) || 'completed',
+                updated_at: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+              };
+              if (!Array.isArray(window.__results)) window.__results = [];
+              window.__results.unshift(_opt);
+              try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {}
+            } catch (e) {}
+            try {
+              if (window.FL && window.FL.fetchResults) {
+                window.FL.fetchResults(300).then(function () { try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {} });
+              }
+            } catch (e) {}
+            return r.json().then(function (j) { return { ok: true, data: j }; }).catch(function () { return { ok: true }; });
+          }
           return r.text().then(function (t) {
             try { console.error('[FL] save-result failed', r.status, (t || '').slice(0, 200)); } catch (e) {}
             if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved (' + r.status + ').');
@@ -1040,7 +1067,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b225-referral-share-ui';
+    window.__FL_BUILD = 'b226-stats-integrity';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
