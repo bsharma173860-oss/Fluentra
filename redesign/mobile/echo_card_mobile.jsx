@@ -16,7 +16,7 @@ function MEchoCard() {
     return `__echo_done_${code}_${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
   })();
   const stored = typeof window !== 'undefined' && localStorage.getItem(storeKey);
-  const initialDone = stored ? JSON.parse(stored) : null;
+  const initialDone = (function () { try { return stored ? JSON.parse(stored) : null; } catch (e) { return null; } })();
 
   const [state, setState] = useStateMEcho(initialDone ? 'done' : 'idle');
   const [score, setScore] = useStateMEcho(initialDone?.score || 0);

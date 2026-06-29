@@ -78,7 +78,7 @@ function EchoCard() {
   const prompt = getEchoPrompt(code);
 
   const storedDone = typeof window !== 'undefined' && localStorage.getItem(todayKey(code));
-  const initialDone = storedDone ? JSON.parse(storedDone) : null;
+  const initialDone = (function () { try { return storedDone ? JSON.parse(storedDone) : null; } catch (e) { return null; } })();
   const [state, setState] = useStateEcho(initialDone ? 'done' : 'idle');
   const [score, setScore] = useStateEcho(initialDone?.score || 0);
   const [duration, setDuration] = useStateEcho(0);
