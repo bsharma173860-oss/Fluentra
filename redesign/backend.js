@@ -354,7 +354,7 @@
                   native: r.native_name || r.language_code.toUpperCase(),
                   english: r.english_name || r.language_code,
                   streak: r.streak || 0,
-                  level: r.level || 'A2',
+                  level: r.level || 'A1',
                   exam: r.exam_type || 'IELTS',
                   flag: r.language_code,
                 };
@@ -1114,7 +1114,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b233-level-streak-heatmap';
+    window.__FL_BUILD = 'b234-nan-divzero-defaults';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

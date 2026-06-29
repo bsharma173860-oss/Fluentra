@@ -34,7 +34,7 @@ function PracticePage() {
     var lc = (typeof window !== 'undefined' && window.__langCode) || 'en';
     var lang = (typeof langByCode === 'function' && langByCode(lc) && langByCode(lc).name) || 'English';
     var rel = function (ts) { if (!ts) return ''; var d = (Date.now() - new Date(ts).getTime()) / 86400000; return d < 1 ? 'Today' : d < 2 ? 'Yesterday' : Math.floor(d) + ' days ago'; };
-    return R.slice(0, 8).map(function (r) { var mod = (r.detail && r.detail.module) || ''; var m = MOD[mod] || { ic:'book', c:T.reading, label: mod ? mod.replace(/_/g, ' ').replace(/^./, function (ch) { return ch.toUpperCase(); }) : 'Session' }; return { ic:m.ic, c:m.c, module: mod, title: m.label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), lang: lang, langCode: lc, date: rel(r.updated_at), score: (r.score / 100 * 9).toFixed(1) + '/9' }; });
+    return R.slice(0, 8).map(function (r) { var mod = (r.detail && r.detail.module) || ''; var m = MOD[mod] || { ic:'book', c:T.reading, label: mod ? mod.replace(/_/g, ' ').replace(/^./, function (ch) { return ch.toUpperCase(); }) : 'Session' }; return { ic:m.ic, c:m.c, module: mod, title: m.label + ((r.detail && r.detail.unit) ? (' · ' + r.detail.unit) : ''), lang: lang, langCode: lc, date: rel(r.updated_at), score: ((Number(r.score)||0) / 100 * 9).toFixed(1) + '/9' }; });
   })();
   const _shownRows = pfilter === 'All' ? _recentRows : _recentRows.filter(function (r) { return (r.module || '').toLowerCase() === pfilter.toLowerCase(); });
   return (

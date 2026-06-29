@@ -37,7 +37,7 @@ function AchievementsPage() {
     const m = REAL[b.id];
     if (!m) return { ...b, earned:false, pct:0, label:'Not tracked yet', date:null, earnedBy:null };
     const cur = m[0], thr = m[1], earned = cur >= thr;
-    return { ...b, earned, pct: Math.min(100, Math.round((cur / thr) * 100)), label: earned ? null : (cur + '/' + thr), date: null, earnedBy: null };
+    return { ...b, earned, pct: (thr > 0 ? Math.min(100, Math.round((cur / thr) * 100)) : 0), label: earned ? null : (cur + '/' + thr), date: null, earnedBy: null };
   };
   const realCollections = collections.map(c => ({ ...c, badges: c.badges.map(realize) }));
   const allReal = realCollections.reduce((a, c) => a.concat(c.badges), []);
@@ -400,7 +400,7 @@ function HeroCase({ badge: b, onShare, onOpen }) {
         {/* Plaque */}
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
-            <Chip label={b.rarity.toUpperCase()} accent={b.accent} bg={`${b.accent}1f`} style={{ fontSize:9.5 }}/>
+            <Chip label={(b.rarity||"").toUpperCase()} accent={b.accent} bg={`${b.accent}1f`} style={{ fontSize:9.5 }}/>
             {b.earnedBy && <Chip label={`Top ${String(b.earnedBy).replace('% of learners','%')}`} accent={T.ink3} bg={T.bg2} style={{ fontSize:9.5 }} icon={Icon.trending({ width:9, height:9 })}/>}
           </div>
           <div style={{ fontSize:10.5, fontWeight:700, color:T.ink4, letterSpacing:'.18em', textTransform:'uppercase', marginBottom:4 }}>Latest acquisition</div>
@@ -446,7 +446,7 @@ function BadgePoster({ badge: b, onShare, onOpen }) {
         </div>
       </div>
       <div style={{ flex:1, minWidth:0, position:'relative' }}>
-        <Chip label={b.rarity.toUpperCase()} accent={b.accent} bg={`${b.accent}1f`} style={{ fontSize:9, marginBottom:6 }}/>
+        <Chip label={(b.rarity||"").toUpperCase()} accent={b.accent} bg={`${b.accent}1f`} style={{ fontSize:9, marginBottom:6 }}/>
         <div style={{ fontFamily:T.serif, fontSize:22, color:T.ink, lineHeight:1.05, marginBottom:4 }}>{b.title}</div>
         <div style={{ fontSize:11.5, color:T.ink3, lineHeight:1.4, marginBottom:8 }}>{b.sub}</div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -541,7 +541,7 @@ function BadgeDetailModal({ badge: b, onClose, onShare }) {
               {b.earned && <div style={{ position:'absolute', bottom:-2, right:-2, width:24, height:24, borderRadius:12, background:rar, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 3px ${T.card}` }}>{Icon.check({ width:12, height:12, strokeWidth:4 })}</div>}
             </div>
             <div style={{ flex:1, minWidth:0 }}>
-              <Chip label={b.rarity.toUpperCase()} accent={rar} bg={`${rar}1f`} style={{ fontSize:9.5, marginBottom:6 }}/>
+              <Chip label={(b.rarity||"").toUpperCase()} accent={rar} bg={`${rar}1f`} style={{ fontSize:9.5, marginBottom:6 }}/>
               <div style={{ fontFamily:T.serif, fontSize:28, color:T.ink, lineHeight:1.05 }}>{b.name || b.title}</div>
               <div style={{ fontSize:12, color:T.ink3, marginTop:4 }}>{b.desc || b.sub}</div>
             </div>
