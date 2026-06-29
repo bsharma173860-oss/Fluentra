@@ -1114,7 +1114,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b230-bugfix-jsonparse';
+    window.__FL_BUILD = 'b231-remove-dead-fakedata';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 

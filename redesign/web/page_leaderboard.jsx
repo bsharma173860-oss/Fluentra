@@ -57,31 +57,6 @@ function LBRow({ r }) {
 }
 
 // ── Filter helpers ────────────────────────────────────────
-const REGION_FLAGS = {
-  Global:    null,
-  Europe:    ['🇩🇪','🇮🇹','🇸🇪','🇫🇷','🇬🇧','🇵🇱','🇪🇸'],
-  Asia:      ['🇯🇵','🇮🇳','🇰🇷','🇧🇩'],
-  Americas:  ['🇧🇷','🇲🇽'],
-  Africa:    ['🇪🇬'],
-  Oceania:   ['🇦🇺','🇳🇿'],
-};
-const MOD_OFFSET = { Overall:0, Reading:+0.2, Listening:+0.1, Speaking:-0.2, Writing:-0.3 };
-const TIME_FACTOR = { 'This week':1, 'This month':1.04, 'All time':1.08 };
-
-function applyFilters(rows, region, time, mod) {
-  const flags = REGION_FLAGS[region];
-  let filtered = flags ? rows.filter(r => flags.includes(r.country) || r.user) : rows;
-  const off = MOD_OFFSET[mod] || 0;
-  const tf  = TIME_FACTOR[time] || 1;
-  filtered = filtered.map(r => {
-    const s = Math.min(9, Math.max(4, parseFloat(r.score) * tf + off));
-    return { ...r, score: s.toFixed(1) };
-  });
-  // Re-rank
-  filtered = [...filtered].sort((a,b) => parseFloat(b.score) - parseFloat(a.score))
-    .map((r,i) => ({ ...r, rank: r.user ? r.rank : i+4 }));
-  return filtered;
-}
 
 // ═══ desktop ═══════════════════════════════════════════════
 function LeaderboardPage() {
