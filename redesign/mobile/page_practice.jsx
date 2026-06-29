@@ -235,9 +235,9 @@ function MFoundationsPage() {
           {STAGES.map(function (s) {
             var on = stage === s.id;
             return (
-              <button key={s.id} onClick={function () { setStage(s.id); }} style={{ flex:'0 0 auto', padding:'9px 14px', borderRadius:11, border:'1.5px solid ' + (on ? T.brand : T.border), background: on ? (T.brandLight || '#FBF3E9') : T.card, cursor:'pointer', position:'relative' }}>
-                <span style={{ fontSize:12.5, fontWeight:700, color: on ? T.brand : T.ink }}>{s.label}</span>
-                {!s.live ? <span style={{ marginLeft:6, fontSize:8, fontWeight:800, color:T.ink5 || '#aaa' }}>AI</span> : null}
+              <button key={s.id} onClick={function () { setStage(s.id); }} style={{ flex:'0 0 auto', padding:'9px 15px', borderRadius:99, border: on ? '1px solid transparent' : '1px solid ' + T.border, background: on ? 'linear-gradient(135deg,#C04A06,#E8732F)' : T.card, boxShadow: on ? '0 4px 12px rgba(192,74,6,0.28)' : 'none', cursor:'pointer', position:'relative' }}>
+                <span style={{ fontSize:12.5, fontWeight:700, color: on ? '#fff' : T.ink }}>{s.label}</span>
+                {!s.live ? <span style={{ marginLeft:6, fontSize:8, fontWeight:800, color: on ? 'rgba(255,255,255,0.85)' : (T.ink5 || '#aaa') }}>AI</span> : null}
               </button>
             );
           })}

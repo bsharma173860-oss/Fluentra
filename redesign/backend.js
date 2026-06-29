@@ -147,11 +147,12 @@
           return client.auth.signInWithPassword({ email: email, password: pw });
         },
         signUp: function (email, pw, name) {
+          var ref = null; try { ref = (typeof window !== 'undefined' && window.__refCode) ? window.__refCode() : (localStorage.getItem('fl-ref') || null); } catch (e) {}
           return client.auth.signUp({
             email: email,
             password: pw,
             options: {
-              data: { full_name: name },
+              data: ref ? { full_name: name, referred_by: ref } : { full_name: name },
               // Send the confirmation link back to wherever the app is actually
               // hosted (not Supabase's default Site URL, which may be localhost).
               emailRedirectTo: (typeof window !== 'undefined' ? window.location.origin : undefined),
@@ -921,6 +922,24 @@
     }
     handleBillingReturn();
 
+    // Referral / affiliate capture: a promoter's link (?ref=CODE) is saved on the
+    // very first landing so it can be attached to this visitor's account when they
+    // sign up — that's how promoter-driven signups get attributed. Kept for 60 days.
+    try {
+      var _refParam = new URLSearchParams(window.location.search).get('ref');
+      if (_refParam) {
+        localStorage.setItem('fl-ref', _refParam.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40));
+        localStorage.setItem('fl-ref-at', String(Date.now()));
+      }
+    } catch (e) {}
+    window.__refCode = function () {
+      try {
+        var at = parseInt(localStorage.getItem('fl-ref-at') || '0', 10);
+        if (at && Date.now() - at > 60 * 864e5) return null; // expire after 60 days
+        return localStorage.getItem('fl-ref') || null;
+      } catch (e) { return null; }
+    };
+
     // Also expose signOut globally for sign-out buttons
     window.__signOut = function () { return window.FL.signOut(); };
 
@@ -1021,7 +1040,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b223-launch6-foundations';
+    window.__FL_BUILD = 'b224-mobile-glass-referral';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
