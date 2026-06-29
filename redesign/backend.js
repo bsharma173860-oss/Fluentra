@@ -335,15 +335,18 @@
       fetchLanguages: function () {
         return client.auth.getUser().then(function (res) {
           var user = res.data && res.data.user;
-          if (!user) return null;
+          if (!user) return window.__userLanguages || null;
 
           return client
             .from('user_languages')
             .select('*')
             .eq('user_id', user.id)
             .then(function (result) {
+              // On a query error keep the languages already loaded — don't drop the
+              // user into an empty "nothing to learn" state on a transient failure.
+              if (result && result.error) { console.warn('[FL] fetchLanguages:', result.error.message); return window.__userLanguages || null; }
               var rows = (result && result.data) || [];
-              if (!rows.length) return null;
+              if (!rows.length) return null; // genuinely has no languages yet
 
               var langs = rows.map(function (r) {
                 return {
@@ -362,6 +365,9 @@
               FL._patchUserLanguages();
               return langs;
             });
+        }).catch(function (e) {
+          try { console.warn('[FL] fetchLanguages failed:', (e && e.message) || e); } catch (x) {}
+          return window.__userLanguages || null;
         });
       },
 
@@ -427,18 +433,24 @@
       fetchResults: function (limit) {
         return client.auth.getUser().then(function (res) {
           var user = res.data && res.data.user;
-          if (!user) return [];
+          if (!user) return window.__results || [];
           return client.from('user_content')
             .select('lang,score,status,detail,content_id,updated_at')
             .eq('user_id', user.id)
             .order('updated_at', { ascending: false })
             .limit(limit || 200)
             .then(function (r) {
-              if (r.error) { console.warn('[FL] fetchResults:', r.error.message); return []; }
+              // On a query error keep whatever results we already have rather than
+              // wiping them to [] — a transient failure shouldn't zero a user's
+              // streak/XP/progress on screen.
+              if (r.error) { console.warn('[FL] fetchResults:', r.error.message); return window.__results || []; }
               window.__results = r.data || [];
               try { if (FL.social && FL.social.syncStats) FL.social.syncStats(); } catch (e) {}
               return window.__results;
             });
+        }).catch(function (e) {
+          try { console.warn('[FL] fetchResults failed:', (e && e.message) || e); } catch (x) {}
+          return window.__results || [];
         });
       },
 
@@ -1016,49 +1028,68 @@
     // never be silently swallowed again: it checks the HTTP status, logs, and
     // surfaces failures through the fl-error channel. Returns {ok, ...} (never throws).
     window.__saveResult = function (body) {
-      var headers = Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {});
-      if (!headers.Authorization) { try { console.warn('[FL] save-result skipped — not signed in'); } catch (e) {} return Promise.resolve({ ok: false, reason: 'no-auth' }); }
-      return fetch('/api/save-result', { method: 'POST', headers: headers, body: JSON.stringify(body || {}) })
-        .then(function (r) {
-          if (r.ok) {
-            // Reflect the new result locally right away so streak, best score,
-            // XP and the learner-model update immediately — then refetch
-            // authoritatively in the background (which also re-runs syncStats to
-            // persist best/streak/xp to the profile). Without this, the local
-            // __results array — which every stat reads from — stayed stale until
-            // a full reload, so a just-finished lesson didn't move any numbers.
-            try {
-              var _opt = {
-                lang: (body && body.lang) || window.__langCode || 'en',
-                score: (body && typeof body.score === 'number') ? body.score : (Number(body && body.score) || 0),
-                detail: (body && body.detail) || null,
-                content_id: (body && body.content_id) || null,
-                status: (body && body.status) || 'completed',
-                updated_at: new Date().toISOString(),
-                created_at: new Date().toISOString(),
-              };
-              if (!Array.isArray(window.__results)) window.__results = [];
-              window.__results.unshift(_opt);
-              try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {}
-            } catch (e) {}
-            try {
-              if (window.FL && window.FL.fetchResults) {
-                window.FL.fetchResults(300).then(function () { try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {} });
-              }
-            } catch (e) {}
-            return r.json().then(function (j) { return { ok: true, data: j }; }).catch(function () { return { ok: true }; });
+      var tok0 = (window.__authToken ? window.__authToken() : null);
+      if (!tok0) { try { console.warn('[FL] save-result skipped — not signed in'); } catch (e) {} return Promise.resolve({ ok: false, reason: 'no-auth' }); }
+      function hdr(tok) { return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }; }
+      function post(tok) { return fetch('/api/save-result', { method: 'POST', headers: hdr(tok), body: JSON.stringify(body || {}) }); }
+      function onOk() {
+        // Reflect the new result locally right away so streak, best score, XP and
+        // the learner-model update immediately — then refetch authoritatively in
+        // the background (which also re-runs syncStats). Without this, the local
+        // __results array — which every stat reads from — stayed stale until a full
+        // reload, so a just-finished lesson didn't move any numbers.
+        try {
+          var _opt = {
+            lang: (body && body.lang) || window.__langCode || 'en',
+            score: (body && typeof body.score === 'number') ? body.score : (Number(body && body.score) || 0),
+            detail: (body && body.detail) || null,
+            content_id: (body && body.content_id) || null,
+            status: (body && body.status) || 'completed',
+            updated_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          };
+          if (!Array.isArray(window.__results)) window.__results = [];
+          window.__results.unshift(_opt);
+          try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {}
+        } catch (e) {}
+        try {
+          if (window.FL && window.FL.fetchResults) {
+            window.FL.fetchResults(300).then(function () { try { window.dispatchEvent(new CustomEvent('fl-updated')); } catch (e) {} });
           }
-          return r.text().then(function (t) {
-            try { console.error('[FL] save-result failed', r.status, (t || '').slice(0, 200)); } catch (e) {}
-            if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved (' + r.status + ').');
-            return { ok: false, status: r.status, detail: (t || '').slice(0, 200) };
-          });
-        })
-        .catch(function (e) {
-          try { console.error('[FL] save-result network error', e); } catch (x) {}
-          if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved — check your connection.');
-          return { ok: false, error: String((e && e.message) || e) };
+        } catch (e) {}
+      }
+      function handle(r) {
+        if (r.ok) {
+          onOk();
+          return r.json().then(function (j) { return { ok: true, data: j }; }).catch(function () { return { ok: true }; });
+        }
+        return r.text().then(function (t) {
+          try { console.error('[FL] save-result failed', r.status, (t || '').slice(0, 200)); } catch (e) {}
+          if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved (' + r.status + ').');
+          return { ok: false, status: r.status, detail: (t || '').slice(0, 200) };
         });
+      }
+      return post(tok0).then(function (r) {
+        // An auth failure usually means the access token just rotated/expired.
+        // Force a session refresh and retry ONCE with the fresh token, so a routine
+        // token rotation never silently drops the user's progress.
+        if (r.status === 401 || r.status === 403) {
+          return (client.auth.refreshSession ? client.auth.refreshSession() : Promise.resolve(null))
+            .then(function (rs) {
+              var tok1 = (rs && rs.data && rs.data.session && rs.data.session.access_token) || (window.__authToken ? window.__authToken() : null);
+              if (!tok1 || tok1 === tok0) return r; // nothing fresher available — keep the original failure
+              return post(tok1);
+            })
+            .catch(function () { return r; })
+            .then(handle);
+        }
+        return handle(r);
+      })
+      .catch(function (e) {
+        try { console.error('[FL] save-result network error', e); } catch (x) {}
+        if (window.__flReportError) window.__flReportError('save', 'Your result could not be saved — check your connection.');
+        return { ok: false, error: String((e && e.message) || e) };
+      });
     };
     // Full delete-account action: call the API, then sign out and return to landing.
     window.__deleteAccount = function () {
@@ -1083,7 +1114,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b228-backend-resilience';
+    window.__FL_BUILD = 'b229-auth-fetch-resilience';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
