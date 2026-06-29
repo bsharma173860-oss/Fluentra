@@ -87,7 +87,7 @@ function TutorCallPage() {
       var iTxt = '';
       for (var k = 0; k < e.results.length; k++) {
         var res = e.results[k];
-        if (res.isFinal) finalText += res[0].transcript; else iTxt += res[0].transcript;
+        var _tr = (res[0] && res[0].transcript) || ""; if (res.isFinal) finalText += _tr; else iTxt += _tr;
       }
       setInterim(iTxt);
     };

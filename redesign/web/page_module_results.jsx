@@ -128,7 +128,7 @@ function CriterionCard({ name, value, accent }) {
     <Card padding={22} style={{ marginBottom:14 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
         <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>{name}</div>
-        <div style={{ background:scoreColor(value)+'18', color:scoreColor(value), padding:'4px 10px', borderRadius:6, fontSize:12, fontWeight:700 }}>{value.toFixed(1)}</div>
+        <div style={{ background:scoreColor(value)+'18', color:scoreColor(value), padding:'4px 10px', borderRadius:6, fontSize:12, fontWeight:700 }}>{(Number(value)||0).toFixed(1)}</div>
       </div>
       <div style={{ fontSize:13, color:T.ink3, lineHeight:1.55, marginBottom:12 }}>{fb.summary}</div>
       {/* Good usage */}
@@ -197,7 +197,7 @@ function ModuleResultsPage() {
               <div style={{ display:'flex', gap:8, paddingTop:16, marginTop:16, borderTop:'1px solid rgba(255,255,255,.15)' }}>
                 {crit.map(function(c){ return (
                   <div key={c.key} style={{ flex:1, textAlign:'center' }}>
-                    <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1, marginBottom:4 }}>{Number(c.val).toFixed(1)}</div>
+                    <div style={{ fontFamily:T.serif, fontSize:22, lineHeight:1, marginBottom:4 }}>{(Number(c.val)||0).toFixed(1)}</div>
                     <div style={{ fontSize:9.5, color:'rgba(255,255,255,.6)', textTransform:'capitalize' }}>{c.key}</div>
                   </div>
                 ); })}

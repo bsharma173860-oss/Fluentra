@@ -48,7 +48,7 @@ function MSettingsPageV5() {
   const subViews = { account:'AccountTab', subscription:'SubscriptionTab', billing:'BillingTab', preferences:'PreferencesTab', notifications:'NotificationsTab', data:'DataPrivacyTab' };
   if (view !== 'list') {
     const Comp = window[subViews[view]];
-    return (<><MobileHeader back onBack={()=>setView('list')} title={view === 'data' ? 'Data & privacy' : view[0].toUpperCase()+view.slice(1)}/><MobileBody padding={[0,16,30]} tabBarPad={false}>{Comp ? <Comp/> : <div style={{ padding:30, textAlign:'center', color:T.ink4 }}>Coming soon</div>}</MobileBody></>);
+    return (<><MobileHeader back onBack={()=>setView('list')} title={view === 'data' ? 'Data & privacy' : (view ? view[0].toUpperCase()+view.slice(1) : '')}/><MobileBody padding={[0,16,30]} tabBarPad={false}>{Comp ? <Comp/> : <div style={{ padding:30, textAlign:'center', color:T.ink4 }}>Coming soon</div>}</MobileBody></>);
   }
   const groups = [
     { title:'ACCOUNT', items: [
@@ -643,7 +643,7 @@ function MPricingPageV5() {
             const a = billing === b;
             return (
               <button key={b} onClick={()=>setBilling(b)} style={{ flex:1, padding:'9px 6px', borderRadius:9, fontSize:12, fontWeight: a?700:500, color: a?T.ink:T.ink3, background: a?T.card:'transparent', boxShadow: a?MT.shadowSm:'none', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                {b[0].toUpperCase()+b.slice(1)}
+                {b ? b[0].toUpperCase()+b.slice(1) : ""}
                 {b === 'yearly' && <span style={{ fontSize:9, padding:'2px 6px', borderRadius:99, background:'#5A9C7A', color:'#fff', fontWeight:800, letterSpacing:'.05em' }}>−25%</span>}
               </button>
             );

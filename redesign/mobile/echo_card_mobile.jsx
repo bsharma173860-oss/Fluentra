@@ -168,7 +168,7 @@ function MEchoCard() {
     );
   }
 
-  const echoStreak = parseInt((typeof window !== 'undefined' && localStorage.getItem(`__echo_streak_${code}`)) || '0', 10);
+  const echoStreak = (function () { try { return parseInt((typeof window !== 'undefined' && localStorage.getItem(`__echo_streak_${code}`)) || '0', 10) || 0; } catch (e) { return 0; } })();
   const verdict =
     score >= 92 ? { label:'Crisp.',       hint:`Native-level. Echo streak +1 → ${echoStreak} days.`, color:'#1A8F4E' } :
     score >= 86 ? { label:'Solid.',       hint:`Almost there. Echo streak → ${echoStreak} days.`,    color:t.accent } :

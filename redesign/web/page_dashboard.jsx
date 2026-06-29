@@ -455,7 +455,7 @@ function RecentAttemptsPanel() {
           <div style={{ padding:'24px 4px', fontSize:12.5, color:T.ink3, lineHeight:1.55 }}>{stream.empty}</div>
         ) : stream.rows.map((r, i) => (
           <button key={i} data-nav={stream.resultsRoute} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'12px 4px', borderBottom: i < stream.rows.length-1 ? `1px solid ${T.hairline}` : 'none', background:'transparent', textAlign:'left', cursor:'pointer' }}>
-            <div style={{ width:32, height:32, borderRadius:9, background:stream.accent+'1f', color:stream.accent, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10.5, fontWeight:800, flexShrink:0, letterSpacing:'.04em' }}>{tab[0].toUpperCase()}</div>
+            <div style={{ width:32, height:32, borderRadius:9, background:stream.accent+'1f', color:stream.accent, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10.5, fontWeight:800, flexShrink:0, letterSpacing:'.04em' }}>{(tab || String.fromCharCode(63))[0].toUpperCase()}</div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{r.mod}</div>
               <div style={{ fontSize:11, color:T.ink4, marginTop:2 }}>{[r.date, r.time, r.meta].filter(Boolean).join(' · ')}</div>

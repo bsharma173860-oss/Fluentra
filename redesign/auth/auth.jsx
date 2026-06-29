@@ -457,7 +457,7 @@ const AUTH_EXAMS = [
 function ScoreSlider({ min=4, max=9, step=0.5, value, onChange, color }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:'8px 0' }}>
-      <div style={{ fontFamily:T.serif, fontSize:72, color, lineHeight:1 }}>{value.toFixed(step < 1 ? 1 : 0)}</div>
+      <div style={{ fontFamily:T.serif, fontSize:72, color, lineHeight:1 }}>{(Number(value)||0).toFixed(step < 1 ? 1 : 0)}</div>
       <div style={{ fontSize:13, color:T.ink4 }}>Target band score</div>
       <div style={{ width:'100%', position:'relative', padding:'16px 0' }}>
         <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(parseFloat(e.target.value))}

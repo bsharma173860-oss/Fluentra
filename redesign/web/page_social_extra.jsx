@@ -40,7 +40,7 @@ function PublicProfilePage() {
             <div style={{ position:'relative' }}>
               {p.avatar_url
                 ? <img src={p.avatar_url} style={{ width:84, height:84, borderRadius:42, objectFit:'cover' }}/>
-                : <div style={{ width:84, height:84, borderRadius:42, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:36 }}>{name[0].toUpperCase()}</div>}
+                : <div style={{ width:84, height:84, borderRadius:42, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:36 }}>{(name || String.fromCharCode(63))[0].toUpperCase()}</div>}
               {rel && rel.k === 'me' && (<>
                 <input ref={fileRef} type="file" accept="image/*" onChange={onPickAvatar} style={{ display:'none' }}/>
                 <button onClick={function () { if (fileRef.current) fileRef.current.click(); }} style={{ position:'absolute', bottom:-2, right:-2, width:28, height:28, borderRadius:14, background:T.brand, color:'#fff', border:`2px solid ${T.card}`, cursor:'pointer', fontSize:13 }}>{uploading ? '…' : '✎'}</button>
@@ -102,7 +102,7 @@ function DMThreadPage() {
       <WebTopbar/>
       <div style={{ padding:'14px 24px', borderBottom:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', gap:12 }}>
         <button onClick={function () { window.__nav && window.__nav('friends'); }} style={{ background:'transparent', cursor:'pointer', color:T.ink3, fontSize:13 }}>← Friends</button>
-        <div style={{ width:34, height:34, borderRadius:17, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:15 }}>{name[0].toUpperCase()}</div>
+        <div style={{ width:34, height:34, borderRadius:17, background:T.brandGrad, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:15 }}>{(name || String.fromCharCode(63))[0].toUpperCase()}</div>
         <div style={{ fontSize:14, fontWeight:700, color:T.ink }}>{name}</div>
       </div>
       <div style={{ flex:1, overflow:'auto', padding:'24px', display:'flex', flexDirection:'column', gap:10, background:T.bg }}>

@@ -238,7 +238,7 @@ function EchoCard() {
     );
   }
 
-  const echoStreak = parseInt((typeof window !== 'undefined' && localStorage.getItem(streakKey(code))) || '0', 10);
+  const echoStreak = (function () { try { return parseInt((typeof window !== 'undefined' && localStorage.getItem(streakKey(code))) || '0', 10) || 0; } catch (e) { return 0; } })();
   const verdict =
     score >= 92 ? { label:'Crisp.',       hint:`Sounded native. Echo streak +1 → ${echoStreak} days.`, color:'#1A8F4E' } :
     score >= 86 ? { label:'Solid.',       hint:`Just a touch more crisp on the consonant. Echo streak → ${echoStreak} days.`, color:t.accent } :
