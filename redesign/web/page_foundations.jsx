@@ -7,6 +7,15 @@
 // Curated scripts. Each letter: { ch, name, ex?, gloss? } (ex = example word in
 // the target language; romaji carried in `name` for non-Latin scripts).
 const FOUND_ALPHABETS = {
+  de: { script:'the German alphabet', note:'26 letters plus ä, ö, ü and ß (eszett). Tap a letter to hear its German name, then the example word.', letters:[
+    {ch:'A',name:'ah',ex:'Apfel',gloss:'apple'},{ch:'B',name:'beh',ex:'Brot',gloss:'bread'},{ch:'C',name:'tseh',ex:'Computer',gloss:'computer'},{ch:'D',name:'deh',ex:'Danke',gloss:'thanks'},{ch:'E',name:'eh',ex:'Eis',gloss:'ice cream'},{ch:'F',name:'eff',ex:'Frau',gloss:'woman'},{ch:'G',name:'geh',ex:'gut',gloss:'good'},{ch:'H',name:'hah',ex:'Hallo',gloss:'hello'},{ch:'I',name:'ih',ex:'Igel',gloss:'hedgehog'},{ch:'J',name:'yot',ex:'ja',gloss:'yes'},{ch:'K',name:'kah',ex:'Katze',gloss:'cat'},{ch:'L',name:'ell',ex:'Liebe',gloss:'love'},{ch:'M',name:'emm',ex:'Mutter',gloss:'mother'},{ch:'N',name:'enn',ex:'nein',gloss:'no'},{ch:'O',name:'oh',ex:'Obst',gloss:'fruit'},{ch:'P',name:'peh',ex:'Preis',gloss:'price'},{ch:'Q',name:'kuh',ex:'Quelle',gloss:'source'},{ch:'R',name:'err',ex:'rot',gloss:'red'},{ch:'S',name:'ess',ex:'Sonne',gloss:'sun'},{ch:'T',name:'teh',ex:'Tee',gloss:'tea'},{ch:'U',name:'uh',ex:'Uhr',gloss:'clock'},{ch:'V',name:'fau',ex:'Vater',gloss:'father'},{ch:'W',name:'veh',ex:'Wasser',gloss:'water'},{ch:'X',name:'iks',ex:'Xylophon',gloss:'xylophone'},{ch:'Y',name:'uepsilon',ex:'Yoga',gloss:'yoga'},{ch:'Z',name:'tsett',ex:'Zeit',gloss:'time'},{ch:'Ä',name:'ah-umlaut',ex:'Äpfel',gloss:'apples'},{ch:'Ö',name:'oh-umlaut',ex:'Öl',gloss:'oil'},{ch:'Ü',name:'uh-umlaut',ex:'über',gloss:'over'},{ch:'ß',name:'eszett',ex:'Straße',gloss:'street'},
+  ]},
+  it: { script:'the Italian alphabet', note:'21 core letters (j, k, w, x, y appear only in foreign words). Tap a letter to hear its Italian name, then the example word.', letters:[
+    {ch:'A',name:'a',ex:'Amore',gloss:'love'},{ch:'B',name:'bi',ex:'Bene',gloss:'well'},{ch:'C',name:'ci',ex:'Ciao',gloss:'hi'},{ch:'D',name:'di',ex:'Donna',gloss:'woman'},{ch:'E',name:'e',ex:'Estate',gloss:'summer'},{ch:'F',name:'effe',ex:'Famiglia',gloss:'family'},{ch:'G',name:'gi',ex:'Grazie',gloss:'thanks'},{ch:'H',name:'acca',ex:'Hotel',gloss:'hotel'},{ch:'I',name:'i',ex:'Italia',gloss:'Italy'},{ch:'L',name:'elle',ex:'Latte',gloss:'milk'},{ch:'M',name:'emme',ex:'Mare',gloss:'sea'},{ch:'N',name:'enne',ex:'Notte',gloss:'night'},{ch:'O',name:'o',ex:'Oggi',gloss:'today'},{ch:'P',name:'pi',ex:'Pane',gloss:'bread'},{ch:'Q',name:'cu',ex:'Quattro',gloss:'four'},{ch:'R',name:'erre',ex:'Rosso',gloss:'red'},{ch:'S',name:'esse',ex:'Sole',gloss:'sun'},{ch:'T',name:'ti',ex:'Tempo',gloss:'time'},{ch:'U',name:'u',ex:'Uno',gloss:'one'},{ch:'V',name:'vu',ex:'Vino',gloss:'wine'},{ch:'Z',name:'zeta',ex:'Zucchero',gloss:'sugar'},
+  ]},
+  pt: { script:'the Portuguese alphabet', note:'26 letters plus ç (cedilha). Tap a letter to hear its Portuguese name, then the example word.', letters:[
+    {ch:'A',name:'á',ex:'Amor',gloss:'love'},{ch:'B',name:'bê',ex:'Bom',gloss:'good'},{ch:'C',name:'cê',ex:'Casa',gloss:'house'},{ch:'D',name:'dê',ex:'Dia',gloss:'day'},{ch:'E',name:'é',ex:'Escola',gloss:'school'},{ch:'F',name:'efe',ex:'Feliz',gloss:'happy'},{ch:'G',name:'gê',ex:'Gato',gloss:'cat'},{ch:'H',name:'agá',ex:'Hoje',gloss:'today'},{ch:'I',name:'i',ex:'Ilha',gloss:'island'},{ch:'J',name:'jota',ex:'Janela',gloss:'window'},{ch:'K',name:'cá',ex:'Kiwi',gloss:'kiwi'},{ch:'L',name:'ele',ex:'Leite',gloss:'milk'},{ch:'M',name:'eme',ex:'Mãe',gloss:'mother'},{ch:'N',name:'ene',ex:'Noite',gloss:'night'},{ch:'O',name:'ó',ex:'Olá',gloss:'hello'},{ch:'P',name:'pê',ex:'Pão',gloss:'bread'},{ch:'Q',name:'quê',ex:'Quatro',gloss:'four'},{ch:'R',name:'erre',ex:'Rua',gloss:'street'},{ch:'S',name:'esse',ex:'Sol',gloss:'sun'},{ch:'T',name:'tê',ex:'Tempo',gloss:'time'},{ch:'U',name:'u',ex:'Uva',gloss:'grape'},{ch:'V',name:'vê',ex:'Verde',gloss:'green'},{ch:'W',name:'dáblio',ex:'Wi-fi',gloss:'wifi'},{ch:'X',name:'xis',ex:'Xícara',gloss:'cup'},{ch:'Y',name:'ípsilon',ex:'Yoga',gloss:'yoga'},{ch:'Z',name:'zê',ex:'Zero',gloss:'zero'},{ch:'Ç',name:'cê-cedilha',ex:'Coração',gloss:'heart'},
+  ]},
   en: { script:'the Latin alphabet', note:'26 letters. Tap any letter to hear it, then the example word.', letters:[
     {ch:'A',name:'ay',ex:'Apple'},{ch:'B',name:'bee',ex:'Ball'},{ch:'C',name:'see',ex:'Cat'},{ch:'D',name:'dee',ex:'Dog'},{ch:'E',name:'ee',ex:'Egg'},{ch:'F',name:'ef',ex:'Fish'},{ch:'G',name:'gee',ex:'Goat'},{ch:'H',name:'aitch',ex:'Hat'},{ch:'I',name:'eye',ex:'Ink'},{ch:'J',name:'jay',ex:'Jam'},{ch:'K',name:'kay',ex:'Key'},{ch:'L',name:'el',ex:'Lion'},{ch:'M',name:'em',ex:'Moon'},{ch:'N',name:'en',ex:'Nose'},{ch:'O',name:'oh',ex:'Orange'},{ch:'P',name:'pee',ex:'Pen'},{ch:'Q',name:'cue',ex:'Queen'},{ch:'R',name:'ar',ex:'Rain'},{ch:'S',name:'ess',ex:'Sun'},{ch:'T',name:'tee',ex:'Tree'},{ch:'U',name:'you',ex:'Umbrella'},{ch:'V',name:'vee',ex:'Van'},{ch:'W',name:'double-u',ex:'Water'},{ch:'X',name:'ex',ex:'Box'},{ch:'Y',name:'why',ex:'Yellow'},{ch:'Z',name:'zee',ex:'Zebra'},
   ]},
@@ -47,6 +56,9 @@ const FOUND_LATIN_FALLBACK = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function
 
 // Curated survival words (work with no AI). gloss = English.
 const FOUND_WORDS = {
+  de: [{w:'Hallo',g:'hello'},{w:'Danke',g:'thank you'},{w:'Bitte',g:'please'},{w:'Ja',g:'yes'},{w:'Nein',g:'no'},{w:'Entschuldigung',g:'sorry'},{w:'Wasser',g:'water'},{w:'Essen',g:'food'},{w:'Hilfe',g:'help'},{w:'Tschüss',g:'goodbye'}],
+  it: [{w:'Ciao',g:'hi'},{w:'Grazie',g:'thank you'},{w:'Prego',g:'you are welcome'},{w:'Sì',g:'yes'},{w:'No',g:'no'},{w:'Scusa',g:'sorry'},{w:'Acqua',g:'water'},{w:'Cibo',g:'food'},{w:'Aiuto',g:'help'},{w:'Arrivederci',g:'goodbye'}],
+  pt: [{w:'Olá',g:'hello'},{w:'Obrigado',g:'thank you'},{w:'Por favor',g:'please'},{w:'Sim',g:'yes'},{w:'Não',g:'no'},{w:'Desculpa',g:'sorry'},{w:'Água',g:'water'},{w:'Comida',g:'food'},{w:'Ajuda',g:'help'},{w:'Tchau',g:'goodbye'}],
   en: [{w:'Hello',g:'greeting'},{w:'Thank you',g:'gratitude'},{w:'Yes',g:'affirm'},{w:'No',g:'deny'},{w:'Please',g:'request'},{w:'Water',g:'drink'},{w:'Food',g:'eat'},{w:'Help',g:'assistance'},{w:'Sorry',g:'apology'},{w:'Goodbye',g:'parting'}],
   es: [{w:'Hola',g:'hello'},{w:'Gracias',g:'thank you'},{w:'Sí',g:'yes'},{w:'No',g:'no'},{w:'Por favor',g:'please'},{w:'Agua',g:'water'},{w:'Comida',g:'food'},{w:'Ayuda',g:'help'},{w:'Perdón',g:'sorry'},{w:'Adiós',g:'goodbye'}],
   fr: [{w:'Bonjour',g:'hello'},{w:'Merci',g:'thank you'},{w:'Oui',g:'yes'},{w:'Non',g:'no'},{w:"S'il vous plaît",g:'please'},{w:'Eau',g:'water'},{w:'Nourriture',g:'food'},{w:'Aide',g:'help'},{w:'Pardon',g:'sorry'},{w:'Au revoir',g:'goodbye'}],
@@ -70,6 +82,7 @@ function FoundationsPage() {
   const phon = buildPhonics(code);
   const [stage, setStage] = R.useState('alphabet');
   const [playing, setPlaying] = R.useState(-1);
+  const [selL, setSelL] = R.useState(0);
 
   const FLAGS = { es:'\uD83C\uDDEA\uD83C\uDDF8', fr:'\uD83C\uDDEB\uD83C\uDDF7', en:'\uD83C\uDDEC\uD83C\uDDE7', ja:'\uD83C\uDDEF\uD83C\uDDF5', ko:'\uD83C\uDDF0\uD83C\uDDF7', ru:'\uD83C\uDDF7\uD83C\uDDFA', ar:'\uD83C\uDDF8\uD83C\uDDE6', hi:'\uD83C\uDDEE\uD83C\uDDF3', zh:'\uD83C\uDDE8\uD83C\uDDF3', de:'\uD83C\uDDE9\uD83C\uDDEA', it:'\uD83C\uDDEE\uD83C\uDDF9', pt:'\uD83C\uDDF5\uD83C\uDDF9', nl:'\uD83C\uDDF3\uD83C\uDDF1', pl:'\uD83C\uDDF5\uD83C\uDDF1', tr:'\uD83C\uDDF9\uD83C\uDDF7', sv:'\uD83C\uDDF8\uD83C\uDDEA' };
   const ACC = {
@@ -146,15 +159,25 @@ function FoundationsPage() {
   }
 
   function Alphabet() {
+    var sl = alpha.letters[selL] || alpha.letters[0];
     return (
       <div style={{ animation:'fl-rise .3s ease both' }}>
+        {sl && sl.ex ? (
+          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20, padding:'14px 18px', borderRadius:14, background:'#FFF6F0', border:'1px solid #FCE3D4' }}>
+            <button onClick={function () { _foundSpeak(sl.ch, code); }} style={{ flexShrink:0, width:52, height:52, borderRadius:13, background:'linear-gradient(135deg,#C04A06,#E8732F)', color:'#fff', border:'none', cursor:'pointer', fontFamily:T.serif, fontSize:26, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 12px rgba(192,74,6,0.28)' }}>{sl.ch}</button>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#C04A06', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:3 }}>Reads as &ldquo;{sl.name}&rdquo;</div>
+              <div style={{ fontSize:15, color:T.ink }}>e.g. <button onClick={function () { _foundSpeak(sl.ex, code); }} style={{ background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:T.serif, fontSize:17, color:T.ink, fontWeight:600, borderBottom:'1.5px solid #FCD0B5' }}>{sl.ex}</button>{sl.gloss ? <span style={{ color:T.ink4 }}> &mdash; {sl.gloss}</span> : null}</div>
+            </div>
+          </div>
+        ) : null}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(80px, 1fr))', gap:12 }} dir={alpha.rtl ? 'rtl' : undefined}>
           {alpha.letters.map(function (l, i) {
-            var on = playing === i;
+            var on = playing === i; var isSel = selL === i;
             return (
-              <button key={l.ch + i} onClick={function () { setPlaying(i); _foundSpeak(l.ch, code); setTimeout(function () { setPlaying(function (p) { return p === i ? -1 : p; }); }, 750); }} className="fl-lift"
-                style={{ aspectRatio:'1', borderRadius:16, border:'1px solid ' + (on ? '#C04A06' : T.border), background: on ? '#FFE5DE' : T.card, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:7 }}>
-                <span style={{ fontFamily:T.serif, fontSize:28, lineHeight:1, color: on ? '#C04A06' : T.ink }}>{l.ch}</span>
+              <button key={l.ch + i} onClick={function () { setSelL(i); setPlaying(i); _foundSpeak(l.ch, code); setTimeout(function () { setPlaying(function (p) { return p === i ? -1 : p; }); }, 750); }} className="fl-lift"
+                style={{ aspectRatio:'1', borderRadius:16, border:'1px solid ' + (on || isSel ? '#C04A06' : T.border), background: on ? '#FFE5DE' : (isSel ? '#FFF6F0' : T.card), cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:7 }}>
+                <span style={{ fontFamily:T.serif, fontSize:28, lineHeight:1, color: on || isSel ? '#C04A06' : T.ink }}>{l.ch}</span>
                 {on ? (
                   <span style={{ display:'flex', alignItems:'flex-end', gap:2, height:11 }}>
                     <span style={{ width:3, height:11, borderRadius:2, background:'#C04A06', transformOrigin:'bottom', animation:'fl-wave .6s ease-in-out infinite' }}/>
@@ -333,6 +356,9 @@ const KO_VROM = { 'ㅏ':'a','ㅓ':'eo','ㅗ':'o','ㅜ':'u','ㅣ':'i' };
 function _koCompose(ini, med) { var L = KO_INIT.indexOf(ini), V = KO_MED.indexOf(med); if (L < 0 || V < 0) return ini + med; return String.fromCharCode(0xAC00 + (L * 21 + V) * 28); }
 
 const PHON_CONFIG = {
+  de: { cons:'b d f g h k l m n p r s t w z'.split(' '), vows:['a','e','i','o','u'] },
+  it: { cons:'b c d f g l m n p r s t v z'.split(' '), vows:['a','e','i','o','u'] },
+  pt: { cons:'b c d f g j l m n p r s t v z'.split(' '), vows:['a','e','i','o','u'] },
   en: { cons:'b c d f g h j k l m n p r s t v w z'.split(' '), vows:['a','e','i','o','u'] },
   es: { cons:'b c d f g l m n p r s t'.split(' '), vows:['a','e','i','o','u'] },
   fr: { cons:'b c d f g l m n p r s t'.split(' '), vows:['a','e','i','o','u'] },
