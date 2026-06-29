@@ -50,7 +50,7 @@ function VocabPage() {
       if (!items.length) {
         // pool empty for this language → generate one set on the spot
         try {
-          var gr = await fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: _vLang, type: 'vocab', difficulty: 'medium' }) });
+          var gr = await fetch('/api/generate-content', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ lang: _vLang, type: 'vocab', difficulty: 'medium' }) });
           var gen = await gr.json(); if (gen && gen.content) items = [gen.content];
         } catch (e) {}
       }
@@ -66,7 +66,7 @@ function VocabPage() {
     if (genning) return;
     setGenning(true);
     try {
-      var gr = await fetch('/api/generate-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: _vLang, type: 'vocab', difficulty: 'medium' }) });
+      var gr = await fetch('/api/generate-content', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ lang: _vLang, type: 'vocab', difficulty: 'medium' }) });
       var gen = await gr.json();
       var ws = gen && gen.content && gen.content.payload && gen.content.payload.words;
       if (ws && ws.length) {
