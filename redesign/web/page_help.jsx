@@ -107,7 +107,7 @@ function HelpPage() {
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:12 }}>
               {filtered.map(c => (
-                <button key={c.id} style={{ padding:'18px 16px', background:T.card, border:`1px solid ${T.border}`, borderRadius:14, textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:10 }}>
+                <button key={c.id} onClick={()=>setCat(c.id)} style={{ padding:'18px 16px', background:T.card, border:`1px solid ${T.border}`, borderRadius:14, textAlign:'left', cursor:'pointer', display:'flex', flexDirection:'column', gap:10 }}>
                   <div style={{ width:38, height:38, borderRadius:10, background:c.cBg, color:c.c, display:'flex', alignItems:'center', justifyContent:'center' }}>
                     {Icon[c.ic]({ width:16, height:16 })}
                   </div>
@@ -143,8 +143,8 @@ function HelpPage() {
                           <div style={{ marginTop:14, paddingTop:14, borderTop:`1px solid ${T.hairline}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                             <div style={{ fontSize:11.5, color:T.ink4 }}>Was this helpful?</div>
                             <div style={{ display:'flex', gap:6 }}>
-                              <button style={{ padding:'4px 12px', fontSize:11.5, fontWeight:600, color:T.ink2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8 }}>Yes</button>
-                              <button style={{ padding:'4px 12px', fontSize:11.5, fontWeight:600, color:T.ink2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8 }}>No</button>
+                              <button onClick={()=>{ try{ window.FL&&window.FL.social&&window.FL.social.logActivity('help_feedback', window.__langCode||'en', { helpful:true }); }catch(e){} }} style={{ padding:'4px 12px', fontSize:11.5, fontWeight:600, color:T.ink2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, cursor:'pointer' }}>Yes</button>
+                              <button onClick={()=>{ try{ window.FL&&window.FL.social&&window.FL.social.logActivity('help_feedback', window.__langCode||'en', { helpful:false }); }catch(e){} window.__nav&&window.__nav('tutor'); }} style={{ padding:'4px 12px', fontSize:11.5, fontWeight:600, color:T.ink2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, cursor:'pointer' }}>No</button>
                             </div>
                           </div>
                         </div>
@@ -174,7 +174,7 @@ function HelpPage() {
                     { ic:'card', label:'Charged the wrong amount' },
                     { ic:'globe',label:'App stuck on loading' },
                   ].map((t, i) => (
-                    <button key={i} style={{ padding:'10px 12px', background:T.card, border:`1px solid ${T.border}`, borderRadius:9, display:'flex', alignItems:'center', gap:10, fontSize:13, color:T.ink2, fontWeight:600, textAlign:'left', cursor:'pointer' }}>
+                    <button key={i} onClick={()=>window.__nav&&window.__nav('tutor')} style={{ padding:'10px 12px', background:T.card, border:`1px solid ${T.border}`, borderRadius:9, display:'flex', alignItems:'center', gap:10, fontSize:13, color:T.ink2, fontWeight:600, textAlign:'left', cursor:'pointer' }}>
                       <div style={{ width:24, height:24, borderRadius:6, background:T.bg2, color:T.ink3, display:'flex', alignItems:'center', justifyContent:'center' }}>{Icon[t.ic]({ width:11, height:11 })}</div>
                       <span style={{ flex:1 }}>{t.label}</span>
                       {Icon.chev({ width:12, height:12, style:{ color:T.ink4 } })}
@@ -200,7 +200,7 @@ function HelpPage() {
                     <span style={{ color:T.ink3, fontFamily:T.serif }}>{s.pct}% <span style={{ fontFamily:T.sans, color:T.ink5, fontSize:11 }}>30d</span></span>
                   </div>
                 ))}
-                <button style={{ marginTop:10, width:'100%', padding:'8px', fontSize:11.5, fontWeight:600, color:T.ink3, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8 }}>Full status page →</button>
+                <button onClick={()=>window.__nav&&window.__nav('tutor')} style={{ marginTop:10, width:'100%', padding:'8px', fontSize:11.5, fontWeight:600, color:T.ink3, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, cursor:'pointer' }}>Full status page →</button>
               </Card>
             </div>
           </div>

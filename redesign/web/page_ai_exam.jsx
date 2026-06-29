@@ -172,7 +172,7 @@ function AISpeakingSession() {
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
       const audioBase64 = await new Promise(function (resolve) {
         const fr = new FileReader();
-        fr.onloadend = function () { resolve(String(fr.result).split(',')[1]); };
+        fr.onloadend = function () { resolve((String(fr.result).split(',')[1] || '')); };
         fr.readAsDataURL(blob);
       });
       const resp = await fetch('/api/speaking-eval', {

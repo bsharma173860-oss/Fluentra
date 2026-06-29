@@ -759,7 +759,7 @@ function SpeakingSession() {
   async function handleEvaluate(blob){
     _stopTracks();
     try {
-      var b64 = await new Promise(function(resolve,reject){ var fr=new FileReader(); fr.onload=function(){ resolve(String(fr.result).split(',')[1]); }; fr.onerror=reject; fr.readAsDataURL(blob); });
+      var b64 = await new Promise(function(resolve,reject){ var fr=new FileReader(); fr.onload=function(){ resolve((String(fr.result).split(',')[1] || '')); }; fr.onerror=reject; fr.readAsDataURL(blob); });
       if (b64 && b64.length > 5000000) { setEvalErr('That recording is too long to evaluate \u2014 please keep it under ~40 seconds and try again.'); setPhase('prep'); return; }
       var lang = window.__langCode || 'en';
       var ex = (typeof examFor === 'function') ? examFor(lang) : { short:'IELTS' };

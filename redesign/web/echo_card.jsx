@@ -124,7 +124,7 @@ function EchoCard() {
     _stopTracks();
     try {
       if (!blob) { setErr("Didn't catch any audio — try again."); setState('idle'); return; }
-      const b64 = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(String(fr.result).split(',')[1]); fr.onerror = reject; fr.readAsDataURL(blob); });
+      const b64 = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve((String(fr.result).split(',')[1] || '')); fr.onerror = reject; fr.readAsDataURL(blob); });
       if (!b64) { setErr("Didn't catch any audio — try again."); setState('idle'); return; }
       if (b64.length > 5000000) { setErr('That was a bit long — keep it to one sentence.'); setState('idle'); return; }
       const r = await fetch('/api/speaking-eval', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, window.__authHeaders ? window.__authHeaders() : {}), body: JSON.stringify({ audioBase64: b64, mimeType: blob.type || 'audio/webm', prompt: prompt.sentence, lang: code, speak: false }) });

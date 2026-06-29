@@ -430,3 +430,10 @@ function DataPrivacyTab() {
 }
 
 // ═══ mobile ═══════════════════════════════════════════════
+// Export the settings tab components so the mobile settings screen (which renders
+// window[tabName]) can show them. Without this, every mobile settings sub-page
+// (Profile, Subscription, Billing, Preferences, Notifications, Data) fell back to
+// "Coming soon" — and the Subscription tab is also where the invite/referral card lives.
+if (typeof window !== 'undefined') {
+  Object.assign(window, { AccountTab, SubscriptionTab, BillingTab, PreferencesTab, NotificationsTab, DataPrivacyTab });
+}
