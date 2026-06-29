@@ -98,7 +98,39 @@ function AIWritingGrading() {
 function MicCheckPage() {
   const [granted, setGranted] = useStateAI(false);
   const [level, setLevel] = useStateAI(0);
-  useEffectAI(() => { if (!granted) return; const i = setInterval(() => setLevel(20 + Math.random()*70), 100); return () => clearInterval(i); }, [granted]);
+  const [micErr, setMicErr] = useStateAI(false);
+  const streamRef = useRefAI(null);
+  const ctxRef = useRefAI(null);
+  const intRef = useRefAI(null);
+  // Request the mic for real and drive the level meter from the actual input
+  // signal (Web Audio analyser energy) instead of a random animation.
+  const startMic = async function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setMicErr(true); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      setMicErr(false);
+      setGranted(true);
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        const ctx = new Ctx(); ctxRef.current = ctx;
+        const analyser = ctx.createAnalyser(); analyser.fftSize = 256;
+        ctx.createMediaStreamSource(stream).connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        intRef.current = setInterval(function () {
+          analyser.getByteFrequencyData(data);
+          let sum = 0; for (let i = 0; i < data.length; i++) sum += data[i];
+          const avg = sum / data.length;            // 0..255 average energy
+          setLevel(Math.max(0, Math.min(100, Math.round((avg / 130) * 100))));
+        }, 80);
+      } else { setLevel(60); } // no Web Audio: at least show the mic is on
+    } catch (e) { setMicErr(true); }
+  };
+  useEffectAI(() => function cleanup() {
+    if (intRef.current) clearInterval(intRef.current);
+    if (ctxRef.current) { try { ctxRef.current.close(); } catch (e) {} }
+    if (streamRef.current) { try { streamRef.current.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} }
+  }, []);
   return (
     <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:T.bg, padding:40 }}>
       <div style={{ width:'100%', maxWidth:520, background:T.card, border:`1px solid ${T.border}`, borderRadius:22, padding:'40px 36px', textAlign:'center' }}>
@@ -107,7 +139,7 @@ function MicCheckPage() {
           {granted && <div style={{ position:'absolute', inset:-8, borderRadius:50, border:`3px solid ${T.speaking.c}`, opacity:level/100 }}/>}
         </div>
         <div style={{ fontFamily:T.serif, fontSize:28, color:T.ink, lineHeight:1.15, marginBottom:10 }}>{granted ? 'Mic is working!' : 'Mic check'}</div>
-        <div style={{ fontSize:14, color:T.ink3, lineHeight:1.55, marginBottom:24 }}>{granted ? 'Say a few words to confirm input level. Looks good — ready when you are.' : 'The AI examiner needs to hear you. Click below to allow microphone access.'}</div>
+        <div style={{ fontSize:14, color:T.ink3, lineHeight:1.55, marginBottom:24 }}>{micErr ? 'Microphone blocked. Please allow mic access in your browser settings, then try again.' : (granted ? 'Say a few words to confirm input level. Looks good — ready when you are.' : 'The AI examiner needs to hear you. Click below to allow microphone access.')}</div>
         {granted && (
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:3, height:36, marginBottom:24 }}>
             {Array.from({length:24}).map((_,i) => {
@@ -118,7 +150,7 @@ function MicCheckPage() {
         )}
         <div style={{ display:'flex', gap:10, flexDirection:'column' }}>
           {!granted ? (
-            <Btn label="Allow microphone" icon={Icon.mic({ width:14, height:14 })} accent={T.speaking.c} size="lg" fullWidth onClick={() => setGranted(true)}/>
+            <Btn label="Allow microphone" icon={Icon.mic({ width:14, height:14 })} accent={T.speaking.c} size="lg" fullWidth onClick={startMic}/>
           ) : (
             <Btn label="Start AI examiner" iconRight={Icon.arrow({ width:13, height:13 })} accent={T.speaking.c} size="lg" fullWidth onClick={() => window.__nav && window.__nav('ai_speaking')}/>
           )}
