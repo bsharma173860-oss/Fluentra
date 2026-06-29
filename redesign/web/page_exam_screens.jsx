@@ -226,8 +226,12 @@ function ExamRunner() {
     window.__exam = { active: true, lang: code, sections: secs.map(function (sx) { return sx.kind; }), idx: 0, results: [] };
     function onSectionDone(e) {
       var d = (e && e.detail) || {};
+      if (!d.module) return;
       setResults(function (prev) {
-        var next = prev.concat([{ module: d.module, score: Number(d.score) || 0 }]);
+        // One result per section module — a section that fires twice (e.g. a
+        // double-tapped "Finish") must not add a duplicate, which would corrupt
+        // both the section count and the averaged overall band.
+        var next = prev.filter(function (r) { return r.module !== d.module; }).concat([{ module: d.module, score: Number(d.score) || 0 }]);
         if (next.length >= secs.length) { window.__exam.active = false; setDone(true); }
         else { setIdx(next.length); }
         return next;

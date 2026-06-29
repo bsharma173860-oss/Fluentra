@@ -154,8 +154,13 @@ function ProgressPage() {
   const modOf = (r) => (r.detail && r.detail.module) || 'reading';
   const scoreOf = (r) => Number(r.score) || 0;
   const now = Date.now();
-  const sessions = R.length;
-  const last7 = R.filter(r => r.updated_at && (now - new Date(r.updated_at).getTime()) < 7 * 86400000).length;
+  // A mock_exam row is a rollup of its own section rows (which are saved
+  // separately and counted via per-skill stats); counting it again here would
+  // double-count one exam as an extra session. Exclude rollups from the session
+  // totals — they remain available as exam-history records elsewhere.
+  const _practice = R.filter(r => !(r.detail && r.detail.module === 'mock_exam'));
+  const sessions = _practice.length;
+  const last7 = _practice.filter(r => r.updated_at && (now - new Date(r.updated_at).getTime()) < 7 * 86400000).length;
   const langCount = (typeof window !== 'undefined' && window.__userLanguages ? window.__userLanguages.length : 0);
 
   const perMod = ['speaking','writing','listening','reading'].map(k => {

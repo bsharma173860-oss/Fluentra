@@ -222,7 +222,7 @@
         searchUsers: function (q) { if (!q || q.length < 2) return Promise.resolve([]); var like = '%' + q.replace(/[%,]/g, '') + '%'; return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak').or('username.ilike.' + like + ',full_name.ilike.' + like).limit(20).then(function (r) { return r.data || []; }); },
 
         leaderboard: function (by, limit) { var col = (by === 'streak' ? 'streak' : 'xp'); return client.from('profiles').select('id,full_name,username,avatar_url,xp,streak,best_score').eq('is_public', true).order(col, { ascending: false }).limit(limit || 50).then(function (r) { return r.data || []; }); },
-        syncStats: function () { return this._uid().then(function (id) { if (!id) return null; var R = window.__results || []; var best = R.length ? Math.max.apply(null, R.map(function (x) { return Number(x.score) || 0; })) : 0; var streak = (typeof window.computeStreak === 'function') ? (window.computeStreak(R) || 0) : 0; var xp = Math.max((window.__user && window.__user.xp) || 0, R.length * 10); if (window.__user) window.__user.xp = xp; return client.from('profiles').update({ best_score: Math.round(best), streak: streak, xp: xp }).eq('id', id); }).catch(function () {}); },
+        syncStats: function () { return this._uid().then(function (id) { if (!id) return null; var R = window.__results || []; var best = R.length ? Math.max.apply(null, R.map(function (x) { return Number(x.score) || 0; })) : 0; var streak = (typeof window.computeStreak === 'function') ? (window.computeStreak(R) || 0) : 0; var practiceN = R.filter(function (r) { return !(r.detail && r.detail.module === 'mock_exam'); }).length; var xp = Math.max((window.__user && window.__user.xp) || 0, practiceN * 10); if (window.__user) window.__user.xp = xp; return client.from('profiles').update({ best_score: Math.round(best), streak: streak, xp: xp }).eq('id', id); }).catch(function () {}); },
 
         listFriends: function () { return this._uid().then(function (id) { if (!id) return { friends: [], incoming: [], outgoing: [] }; return client.from('friendships').select('*').or('requester.eq.' + id + ',addressee.eq.' + id).then(function (res) { var rows = res.data || []; var ids = {}; rows.forEach(function (f) { ids[f.requester] = 1; ids[f.addressee] = 1; }); delete ids[id]; var idList = Object.keys(ids); var profP = idList.length ? client.from('profiles').select('id,full_name,username,avatar_url,xp,streak').in('id', idList).then(function (p) { return p.data || []; }) : Promise.resolve([]); return profP.then(function (profs) { var pm = {}; profs.forEach(function (p) { pm[p.id] = p; }); var friends = [], incoming = [], outgoing = []; rows.forEach(function (f) { var other = f.requester === id ? f.addressee : f.requester; var rec = { friendshipId: f.id, status: f.status, profile: pm[other] || { id: other } }; if (f.status === 'accepted') friends.push(rec); else if (f.addressee === id) incoming.push(rec); else outgoing.push(rec); }); return { friends: friends, incoming: incoming, outgoing: outgoing }; }); }); }); },
         sendFriendRequest: function (addresseeId) { return this._uid().then(function (id) { if (!id) return null; return client.from('friendships').insert({ requester: id, addressee: addresseeId, status: 'pending' }); }); },
@@ -434,7 +434,10 @@
       // sessions return null stats. Used to adapt content difficulty per skill.
       learnerProfile: function (lang) {
         var L = lang || window.__langCode || 'en';
-        var R = (window.__results || []).filter(function (r) { return r && r.lang === L && typeof r.score === 'number'; });
+        // Exclude mock_exam rollups: each is the average of its own section rows
+        // (which are saved and counted separately), so including it would
+        // double-represent one exam in the overall average and session count.
+        var R = (window.__results || []).filter(function (r) { return r && r.lang === L && typeof r.score === 'number' && !(r.detail && r.detail.module === 'mock_exam'); });
         var SKILLS = ['reading', 'listening', 'writing', 'speaking'];
         function statFor(mod) {
           var rows = R.filter(function (r) { return r.detail && r.detail.module === mod; })
@@ -1067,7 +1070,7 @@
     window.__authToken = getToken;          // central token getter for all call sites
     window.__AUTH_KEY  = SUPABASE_AUTH_KEY;  // exposed for any direct readers
 
-    window.__FL_BUILD = 'b226-stats-integrity';
+    window.__FL_BUILD = 'b227-exam-progress-srs-audit';
     console.log('[FL] Backend ready ✓ build', window.__FL_BUILD);
   }
 
