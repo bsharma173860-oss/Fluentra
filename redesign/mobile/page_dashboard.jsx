@@ -182,8 +182,11 @@ function MDashboard() {
 // Gradient language card — mirrors web DashLangCard 1:1, mobile width
 function MDashLangCard({ lang }) {
   const t = langTheme(lang.code);
-  const lvl = (typeof levelFor === 'function') ? levelFor(lang.streak) : { short: lang.level, long: lang.level };
-  const pct = Math.min((lang.streak / 9) * 100, 100);
+  const _rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(function(r){ return r.lang === lang.code; }) : [];
+  const streak = (typeof computeStreak==='function') ? computeStreak(_rows) : (lang.streak||0);
+  const _abil = (typeof abilityScore==='function') ? abilityScore(_rows) : null;
+  const lvl = (typeof levelFor === 'function') ? levelFor(_abil) : { short: lang.level, long: lang.level };
+  const pct = Math.min((streak / 9) * 100, 100);
   const nav = (id) => window.__nav && window.__nav(id);
   return (
     <button onClick={() => { window.__setLang(lang.code); nav('lang'); }} style={{

@@ -180,9 +180,12 @@ function ProgressPage() {
   const recent = R.slice(0, 5).map(r => { const k = modOf(r); return { ic:MOD[k].ic, c:MOD[k].c, title:MOD[k].title, meta:rel(r.updated_at), score:scoreOf(r) }; });
 
   const dayCounts = {};
-  R.forEach(r => { if (r.updated_at) { const key = new Date(r.updated_at).toISOString().slice(0, 10); dayCounts[key] = (dayCounts[key] || 0) + 1; } });
+  // Bucket by LOCAL calendar day (matching computeStreak); toISOString() would
+  // bucket by UTC and disagree with the streak near midnight / in other timezones.
+  const _localKey = (d) => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  R.forEach(r => { if (r.updated_at) { const key = _localKey(r.updated_at); dayCounts[key] = (dayCounts[key] || 0) + 1; } });
   const heat = [];
-  for (let i = 83; i >= 0; i--) { const key = new Date(now - i * 86400000).toISOString().slice(0, 10); heat.push(dayCounts[key] || 0); }
+  for (let i = 83; i >= 0; i--) { const key = _localKey(now - i * 86400000); heat.push(dayCounts[key] || 0); }
 
   const stats = [
     { eyebrow:'Sessions',  value:String(sessions),     delta: sessions ? 'all time' : 'none yet', up:null },

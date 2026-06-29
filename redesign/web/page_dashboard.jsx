@@ -3,18 +3,29 @@
 
 const EXAM_UNLOCK_DAYS = 9;
 
-function levelFor(streak) {
-  if (streak < 8)  return { short:'B1', long:'B1 · Intermediate' };
-  if (streak < 21) return { short:'B2', long:'B2 · Upper-int.' };
-  if (streak < 36) return { short:'C1', long:'C1 · Advanced' };
+// CEFR level reflects ABILITY, not how many days in a row you showed up.
+// `score` is the learner's average session score (0-100) for the language, or
+// null when there's no completed session yet (a brand-new learner is A1, not B1).
+function levelFor(score) {
+  if (score == null) return { short:'A1', long:'A1 · Beginner' };
+  if (score < 45) return { short:'A1', long:'A1 · Beginner' };
+  if (score < 58) return { short:'A2', long:'A2 · Elementary' };
+  if (score < 70) return { short:'B1', long:'B1 · Intermediate' };
+  if (score < 82) return { short:'B2', long:'B2 · Upper-int.' };
+  if (score < 92) return { short:'C1', long:'C1 · Advanced' };
   return { short:'C2', long:'C2 · Mastery' };
+}
+// Average session score (0-100) for one language, or null if no sessions yet.
+function abilityScore(rows) {
+  var s = (rows || []).map(function (r) { return Number(r.score); }).filter(function (n) { return !isNaN(n); });
+  return s.length ? Math.round(s.reduce(function (a, b) { return a + b; }, 0) / s.length) : null;
 }
 
 function DashLangCard({ lang, freshlyAdded=false }) {
   const t = langTheme(lang.code);
   const _rows = (typeof window!=='undefined' && window.__results) ? window.__results.filter(function(r){ return r.lang === lang.code; }) : [];
   const streak = (typeof computeStreak==='function') ? computeStreak(_rows) : (lang.streak||0);
-  const lvl = levelFor(streak);
+  const lvl = levelFor(abilityScore(_rows));
   const pct = Math.min((streak / EXAM_UNLOCK_DAYS) * 100, 100);
 
   return (
@@ -383,7 +394,7 @@ function DashboardPage() {
   );
 }
 
-Object.assign(window, { DashboardPage, levelFor, EXAM_UNLOCK_DAYS });
+Object.assign(window, { DashboardPage, levelFor, abilityScore, EXAM_UNLOCK_DAYS });
 
 // ═══════════════════════════════════════════════════════════
 // RECENT ATTEMPTS — three streams the backend records separately:
