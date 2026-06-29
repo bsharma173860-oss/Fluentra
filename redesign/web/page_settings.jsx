@@ -274,8 +274,19 @@ function BillingTab() {
 
 function PreferencesTab() {
   const _pu = (typeof window !== 'undefined' && window.__user) || {};
-  const [exam, setExam] = useStateS(_pu.targetExam || 'IELTS Academic');
-  const [target, setTarget] = useStateS(_pu.targetScore || 7.0);
+  // Derive the target-score scale from the learner's actual exam, so DELE (/100),
+  // JLPT (/180) etc. don't get an IELTS 4-9 band slider.
+  const _ex = (typeof examFor === 'function') ? examFor((typeof window !== 'undefined' && window.__langCode) || 'en') : null;
+  const _unit = (_ex && _ex.scoreUnit) || '/9';
+  const _max = parseFloat(String(_unit).replace('/', '')) || 9;
+  const _isBand = _max <= 10;
+  const _min = _isBand ? 4 : Math.round(_max * 0.4);
+  const _step = _isBand ? 0.5 : 1;
+  const _scoreLabel = (_ex && _ex.scoreLabel) || 'Band';
+  const _defaultTarget = _isBand ? 7.0 : Math.round(_max * 0.78);
+  const _fmtTarget = (v) => _isBand ? Number(v).toFixed(1) : String(Math.round(v));
+  const [exam, setExam] = useStateS(_pu.targetExam || ((_ex && _ex.name) || 'IELTS Academic'));
+  const [target, setTarget] = useStateS(_pu.targetScore || _defaultTarget);
   const [native, setNative] = useStateS(_pu.nativeLang || 'Spanish');
   const _saveProfile = function (patch) { if (window.FL && window.FL.updateProfile) window.FL.updateProfile(patch).catch(function(){}); };
   return (
@@ -297,13 +308,13 @@ function PreferencesTab() {
 
         <div style={{ marginBottom:18 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
-            <span style={{ fontSize:12.5, color:T.ink3, fontWeight:600 }}>Target band score</span>
-            <span style={{ fontFamily:T.serif, fontSize:24, color:T.brand }}>{target.toFixed(1)}</span>
+            <span style={{ fontSize:12.5, color:T.ink3, fontWeight:600 }}>Target {_scoreLabel.toLowerCase() === 'band' ? 'band' : 'score'} ({_unit})</span>
+            <span style={{ fontFamily:T.serif, fontSize:24, color:T.brand }}>{_fmtTarget(target)}</span>
           </div>
-          <input type="range" min="4" max="9" step="0.5" value={target} onChange={e=>{ setTarget(+e.target.value); _saveProfile({ target_score: +e.target.value }); }}
+          <input type="range" min={_min} max={_max} step={_step} value={target} onChange={e=>{ setTarget(+e.target.value); _saveProfile({ target_score: +e.target.value }); }}
             style={{ width:'100%', accentColor:T.brand }}/>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:T.ink5, marginTop:4 }}>
-            <span>4.0</span><span>5.0</span><span>6.0</span><span>7.0</span><span>8.0</span><span>9.0</span>
+            <span>{_fmtTarget(_min)}</span><span>{_fmtTarget((_min+_max)/2)}</span><span>{_fmtTarget(_max)}</span>
           </div>
         </div>
 

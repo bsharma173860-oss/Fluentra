@@ -578,7 +578,7 @@ function PostExamUpsellPage() {
             <div style={{ position:'relative' }}>
               <div style={{ display:'inline-block', fontSize:10.5, fontWeight:800, color:t.brand, letterSpacing:'.18em', textTransform:'uppercase', marginBottom:14, padding:'5px 11px', borderRadius:6, background: t.brandLight || T.brandLight }}>What's next</div>
               <div style={{ fontFamily:T.serif, fontSize:46, lineHeight:1.02, color:T.ink, letterSpacing:'-.025em', marginBottom:14 }}>Close the {(typeof best==='number') ? (target-best).toFixed(1) : '0.5'} gap.</div>
-              <div style={{ fontSize:14.5, color:T.ink2, lineHeight:1.55, marginBottom:24, maxWidth:480 }}>Pro students hit <strong style={{ color:T.ink }}>{target}+ on average</strong> after 30 days. Unlimited tutor sessions, weekly mock exams, and AI drills targeting your weakest skill.</div>
+              <div style={{ fontSize:14.5, color:T.ink2, lineHeight:1.55, marginBottom:24, maxWidth:480 }}>Aim for <strong style={{ color:T.ink }}>{target}+</strong> on your exam. Pro gives you Unlimited tutor sessions, weekly mock exams, and AI drills targeting your weakest skill.</div>
             </div>
 
             <div style={{ position:'relative' }}>
@@ -601,15 +601,16 @@ function PostExamUpsellPage() {
         {/* Improvement comparison */}
         <div style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:20, padding:'24px 32px', marginBottom:18 }}>
           <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:18 }}>
-            <div style={{ fontSize:11, fontWeight:800, color:T.ink4, letterSpacing:'.16em', textTransform:'uppercase' }}>How users improve</div>
-            <div style={{ fontSize:11.5, color:T.ink5 }}>Vertical line marks your score</div>
+            <div style={{ fontSize:11, fontWeight:800, color:T.ink4, letterSpacing:'.16em', textTransform:'uppercase' }}>Your goal path</div>
+            <div style={{ fontSize:11.5, color:T.ink5 }}>Targets based on your current level</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             {(() => {
+              const fmt = (v) => (typeof v === 'number') ? v.toFixed(1) : '—';
               const rows = [
-                { l:'Free users · 30 days', to: typeof best==='number' ? Math.round((best*1.03)*10)/10 : best, color:'#9AA5AE', tag:'+0.2' },
-                { l:'Pro users · 30 days',  to:target,   color:t.brand,   tag:'+'+(typeof best==='number'?(target-best).toFixed(1):'0.7'), highlight:true },
-                { l:'Pro users · 90 days',  to:target90, color:'#1A8F4E', tag:'+'+(typeof best==='number'?(target90-best).toFixed(1):'1.1'), highlight:true },
+                { l:'Where you are now', to: best, color:'#9AA5AE', tag: fmt(best) },
+                { l:'Your exam target',  to: target,   color:t.brand,   tag: fmt(target),   highlight:true },
+                { l:'Stretch goal',      to: target90, color:'#1A8F4E', tag: fmt(target90), highlight:true },
               ];
               return rows.map((row,i) => (
                 <div key={i} style={{ display:'grid', gridTemplateColumns:'200px 1fr 80px', alignItems:'center', gap:16 }}>
@@ -643,7 +644,7 @@ function MilestonesReelPage() {
     { day:3,  status:'unlocked', title:'Practice exam', body:'A short, low-stakes mock exam to warm up. Free for everyone, no streak break needed.', reward:'Free · unlimited', color:'#5B7B8A', icon:'📝', teaser:'Day 9: full mock exam' },
     { day:9,  status:'unlocked', title:`${ex.short} Full Mock Exam`, body:`The real thing. Same ${(ex.modules||[]).length}-section structure, AI-graded with detailed ${ex.scoreLabel || 'score'} feedback.`, reward:`${ex.cost || '$5'} once · or Pro`, color:t.brand, icon:'🎓', teaser:'Day 30: monthly retake', highlight:true },
     { day:30, status:'locked',   title:'Monthly retake', body:'A fresh exam every 30 days, included in Pro. Track your improvement curve.', reward:'Pro only', color:'#8E7AB5', icon:'🏆', teaser:'Day 90: Elite badge' },
-    { day:90, status:'locked',   title:'Elite badge', body:'Three months of consistency. Public profile badge, leaderboard placement, and lifetime exam history.', reward:'Permanent', color:'#E8B23F', icon:'⭐', teaser:'You become rare. Less than 4% reach this.' },
+    { day:90, status:'locked',   title:'Elite badge', body:'Three months of consistency. Public profile badge, leaderboard placement, and lifetime exam history.', reward:'Permanent', color:'#E8B23F', icon:'⭐', teaser:'You become rare — a top-tier milestone.' },
   ];
 
   return (
