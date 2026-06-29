@@ -23,6 +23,38 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
+  // ── TTS branch (op:'tts') ────────────────────────────────────────────────
+  // Neural voice for flSpeak, folded into this audio endpoint so we stay under
+  // the Vercel Hobby 12-function cap. Provider priority: Google Cloud TTS
+  // (GOOGLE_TTS_KEY, cheapest/best per-language) -> OpenAI TTS (OPENAI_API_KEY,
+  // already configured) -> 503 so the client falls back to browser speech.
+  if (req.body && req.body.op === 'tts') {
+    const ttsText = String(req.body.text || '').slice(0, 800);
+    const ttsLang = String(req.body.lang || 'en');
+    if (!ttsText) return res.status(400).json({ error: 'text required' });
+    const GKEY = process.env.GOOGLE_TTS_KEY;
+    const OKEY = process.env.OPENAI_API_KEY;
+    try {
+      if (GKEY) {
+        const gmap = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', ja:'ja-JP', zh:'cmn-CN', ko:'ko-KR', ru:'ru-RU', ar:'ar-XA', hi:'hi-IN', nl:'nl-NL', pl:'pl-PL', tr:'tr-TR', sv:'sv-SE' };
+        const lc = gmap[ttsLang] || 'en-US';
+        const g = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + GKEY, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: { text: ttsText }, voice: { languageCode: lc }, audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95 } }),
+        });
+        if (g.ok) { const gj = await g.json(); if (gj && gj.audioContent) return res.status(200).json({ audioBase64: gj.audioContent, mime: 'audio/mpeg', provider: 'google' }); }
+      }
+      if (OKEY) {
+        const o = await fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST', headers: { Authorization: `Bearer ${OKEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'tts-1', voice: 'alloy', input: ttsText }),
+        });
+        if (o.ok) { const b64 = Buffer.from(await o.arrayBuffer()).toString('base64'); return res.status(200).json({ audioBase64: b64, mime: 'audio/mpeg', provider: 'openai' }); }
+      }
+    } catch (e) {}
+    return res.status(503).json({ error: 'tts-unavailable' });
+  }
+
   const OPENAI = process.env.OPENAI_API_KEY;
   const ANTHROPIC = process.env.ANTHROPIC_API_KEY;
   if (!OPENAI || !ANTHROPIC) {

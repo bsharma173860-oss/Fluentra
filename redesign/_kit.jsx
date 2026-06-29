@@ -803,7 +803,19 @@ function _flPickVoice(lang) {
   });
   return best;
 }
-function flSpeak(text, code) {
+// Neural TTS scaffold. Stays dormant until window.__neuralTTS is turned on
+// (so there are no surprise provider charges). When on, flSpeak tries the
+// folded /api/speaking-eval?op=tts endpoint (Google Cloud TTS, else OpenAI),
+// caches the audio per phrase, and falls back to browser speech on any failure.
+var _flTTSCache = {};
+var _flNeuralOff = false;
+var _flAudio = null;
+function _flPlayURL(url) {
+  try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+  try { if (_flAudio) _flAudio.pause(); } catch (e) {}
+  try { _flAudio = new Audio(url); _flAudio.play().catch(function () {}); } catch (e) {}
+}
+function _flBrowserSpeak(text, code) {
   if (typeof window === 'undefined' || !window.speechSynthesis || !text) return false;
   var map = { en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE', it:'it-IT', pt:'pt-PT', ja:'ja-JP', zh:'zh-CN', ko:'ko-KR', ru:'ru-RU', ar:'ar-SA', hi:'hi-IN', nl:'nl-NL', pl:'pl-PL', tr:'tr-TR', sv:'sv-SE' };
   try {
@@ -814,7 +826,6 @@ function flSpeak(text, code) {
     var v = _flPickVoice(u.lang);
     if (v) u.voice = v;
     if (!_flVoices.length) {
-      // Voices not ready yet (they load async on first use) — retry once after they arrive.
       _flLoadVoices();
       setTimeout(function () { try { var v2 = _flPickVoice(u.lang); if (v2) u.voice = v2; window.speechSynthesis.speak(u); } catch (e) {} }, 200);
     } else {
@@ -822,6 +833,25 @@ function flSpeak(text, code) {
     }
     return true;
   } catch (e) { return false; }
+}
+function flSpeak(text, code) {
+  if (typeof window === 'undefined' || !text) return false;
+  var key = (code || 'en') + '|' + String(text);
+  if (_flTTSCache[key]) { _flPlayURL(_flTTSCache[key]); return true; }
+  // Dormant unless explicitly enabled, no provider learned-unavailable, fetch exists.
+  if (!window.__neuralTTS || _flNeuralOff || typeof fetch === 'undefined') return _flBrowserSpeak(text, code);
+  try {
+    var headers = { 'Content-Type': 'application/json' };
+    if (window.__authHeaders) { try { Object.assign(headers, window.__authHeaders()); } catch (e) {} }
+    fetch('/api/speaking-eval', { method: 'POST', headers: headers, body: JSON.stringify({ op: 'tts', text: String(text).slice(0, 800), lang: code || 'en' }) })
+      .then(function (r) { if (!r.ok) { if (r.status === 503) _flNeuralOff = true; throw 0; } return r.json(); })
+      .then(function (j) {
+        if (j && j.audioBase64) { var url = 'data:' + (j.mime || 'audio/mpeg') + ';base64,' + j.audioBase64; _flTTSCache[key] = url; _flPlayURL(url); }
+        else { _flBrowserSpeak(text, code); }
+      })
+      .catch(function () { _flBrowserSpeak(text, code); });
+    return true;
+  } catch (e) { return _flBrowserSpeak(text, code); }
 }
 if (typeof window !== 'undefined') window.flSpeak = flSpeak;
 
