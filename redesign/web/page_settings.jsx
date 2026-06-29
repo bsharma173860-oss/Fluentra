@@ -200,6 +200,47 @@ function SubscriptionTab() {
           );
         })}
       </div>
+
+      <SectionHd title="Invite friends & earn"/>
+      <ReferralCard/>
+    </div>
+  );
+}
+
+function ReferralCard() {
+  const R = React;
+  const u = (typeof window !== 'undefined' && window.__user) || {};
+  const id = (u.id || '').replace(/-/g, '');
+  const code = id ? ('FL' + id.slice(0, 7)).toUpperCase() : null;
+  const origin = (typeof window !== 'undefined' && window.location && window.location.origin) || 'https://fluentra-kappa.vercel.app';
+  const link = code ? (origin + '/?ref=' + code) : '';
+  const [copied, setCopied] = R.useState(false);
+  function copy() {
+    if (!link) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { setCopied(true); setTimeout(function () { setCopied(false); }, 1800); });
+      }
+    } catch (e) {}
+  }
+  if (!code) {
+    return <div style={{ background:T.card, border:'1px solid '+T.border, borderRadius:16, padding:'20px 22px', fontSize:13, color:T.ink3 }}>Sign in to get your personal invite link.</div>;
+  }
+  return (
+    <div style={{ borderRadius:18, padding:'22px 24px', position:'relative', overflow:'hidden', background:'linear-gradient(120deg, #FFF1E9 0%, #FCEFF6 55%, #F1EEFB 100%)', border:'1px solid rgba(255,255,255,0.85)', boxShadow:'0 10px 30px rgba(76,46,18,0.08)' }}>
+      <div style={{ display:'flex', alignItems:'flex-start', gap:18 }}>
+        <div style={{ flexShrink:0, width:54, height:54, borderRadius:15, background:'linear-gradient(135deg,#C04A06,#E8732F)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:T.serif, fontSize:26, boxShadow:'0 6px 16px rgba(192,74,6,0.28)' }}>＋</div>
+        <div style={{ minWidth:0, flex:1 }}>
+          <div style={{ fontSize:10.5, fontWeight:700, color:T.brand, letterSpacing:'.14em', textTransform:'uppercase', marginBottom:6 }}>Invite &amp; earn</div>
+          <div style={{ fontFamily:T.serif, fontSize:21, color:T.ink, lineHeight:1.12, marginBottom:5 }}>Bring a friend to Fluentra.</div>
+          <div style={{ fontSize:12.5, color:T.ink3, lineHeight:1.5, marginBottom:15, maxWidth:440 }}>Share your link. When a friend joins through it and upgrades, you both get rewarded.</div>
+          <div style={{ display:'flex', gap:8, alignItems:'stretch', maxWidth:480 }}>
+            <input readOnly value={link} onFocus={function (e) { e.target.select(); }} style={{ flex:1, minWidth:0, padding:'11px 13px', borderRadius:11, border:'1px solid rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.7)', fontSize:12.5, color:T.ink2, fontFamily:'monospace' }}/>
+            <button onClick={copy} style={{ flexShrink:0, padding:'11px 18px', borderRadius:11, border:'none', background: copied ? T.listening.c : 'linear-gradient(135deg,#C04A06,#E8732F)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', boxShadow:'0 4px 12px rgba(192,74,6,0.25)' }}>{copied ? 'Copied ✓' : 'Copy link'}</button>
+          </div>
+          <div style={{ fontSize:11, color:T.ink4, marginTop:9 }}>Your code: <strong style={{ color:T.ink2, fontFamily:'monospace' }}>{code}</strong></div>
+        </div>
+      </div>
     </div>
   );
 }
